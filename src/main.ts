@@ -16,6 +16,7 @@ import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizRe
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, type UIState } from './ui';
 import { saveGame, loadGame, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
+import { preloadTiles } from './tiles';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -137,6 +138,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // Wordlist from LLM
   const wordlist = await generateWordlist();
   setWordlist(wordlist);
+
+  // Preload SVG tile sprites (async, must complete before rendering)
+  await preloadTiles();
 
   // Load char sprite (initial idle)
   const variation = characterVariations[PLAYER_CONFIG.defaultVariation];

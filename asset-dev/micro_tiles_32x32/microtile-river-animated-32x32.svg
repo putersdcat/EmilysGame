@@ -1,0 +1,12 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="32" height="32" fill="#00BFFF" />
+  <path d="M0 16 Q8 12 16 16 Q24 20 32 16" stroke="#FFFFFF" stroke-width="2">
+    <animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite" />
+  </path>
+  <circle cx="8" cy="20" r="2" fill="#FFFFFF">
+    <animate attributeName="r" values="2;3;2" dur="1s" repeatCount="indefinite" />
+  </circle>
+  <circle cx="24" cy="12" r="1" fill="#FFFFFF">
+    <animate attributeName="r" values="1;2;1" dur="1.5s" repeatCount="indefinite" />
+  </circle>
+</svg>

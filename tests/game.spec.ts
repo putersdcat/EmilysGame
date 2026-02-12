@@ -11,20 +11,23 @@ test.describe('Emily\'s Game', () => {
 
   test('shows LLM splash or proceeds if LLM connected', async ({ page }) => {
     await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    // Wait briefly for JS to init
     await page.waitForTimeout(300);
 
-    // Either splash visible (LLM down) OR game started (LLM up)
+    // Either splash visible (LLM down) OR game started (LLM up).
+    // NOTE: The splash can disappear mid-assertion if LLM connects quickly,
+    // so we check button existence rather than visibility to avoid race.
     const splash = page.locator('#llmSplash');
     const splashVisible = await splash.isVisible();
 
     if (splashVisible) {
-      // LLM not running: splash should show status
+      // LLM not running yet: splash should show status text
       const status = page.locator('#llmStatus');
-      await expect(status).toContainText(/Connecting|LLM/i);
-      // Skip button should exist for dev mode
-      await expect(page.locator('#btnSkipLlm')).toBeVisible();
+      await expect(status).toContainText(/Connecting|LLM|connected/i);
+      // Skip button should exist in DOM for dev mode
+      await expect(page.locator('#btnSkipLlm')).toBeAttached();
     } else {
-      // LLM running: game should have loaded (canvas exists)
+      // LLM already connected: game should have loaded (canvas exists)
       await expect(page.locator('#gameContainer canvas')).toBeAttached({ timeout: 5000 });
     }
   });

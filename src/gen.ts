@@ -19,6 +19,7 @@ import {
 } from './utils';
 import { expandEntropy } from './llm';
 import { DIRECTION_WORDS } from './config/entropy.config';
+import { selectTemplate, getTemplate } from './config/tiles.config';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -110,7 +111,9 @@ export async function generateChunk(
   // Step 5: Build chunk using Perlin + biome weights
   const cells = buildChunkCells(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
-  // Step 6: Enforce playability
+  // Stamp world unit templates for structured features (rivers, walls, etc.)
+  stampTemplates(cells, size, biome, seededRandom(featureSeed + 77));
+
   enforcePassability(cells, size, seededRandom(featureSeed));
   balanceObstacles(cells, size, seededRandom(noiseSeed + 1));
 
@@ -145,6 +148,10 @@ export function generateChunkSync(
   const biome = getBiome(biomeSeed);
 
   const cells = buildChunkCells(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
+
+  // Stamp world unit templates for structured features
+  stampTemplates(cells, size, biome, seededRandom(featureSeed + 77));
+
   enforcePassability(cells, size, seededRandom(featureSeed));
   balanceObstacles(cells, size, seededRandom(noiseSeed + 1));
 
@@ -226,6 +233,71 @@ function assignCell(
       walkable: def?.walkable ?? true,
       interactable: def?.interactable ?? false,
     };
+  }
+}
+
+// ─── Template Stamping ───────────────────────────────────────
+
+/**
+ * Stamp world unit templates (5×5) onto the chunk for structured features.
+ * Templates overwrite Perlin-generated cells at selected positions.
+ * Placement is sparse: 0-3 templates per chunk, based on biome + entropy.
+ */
+function stampTemplates(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  // How many templates to attempt (0-3)
+  const maxTemplates = Math.floor(rng() * 4);
+  const templateSize = 5;
+  const placed: Array<{ x: number; y: number }> = [];
+
+  for (let i = 0; i < maxTemplates; i++) {
+    const templateName = selectTemplate(biome.name, rng);
+    if (!templateName) continue;
+
+    const template = getTemplate(templateName);
+    if (!template) continue;
+
+    // Find a non-overlapping position (avoid chunk edges for cleaner stitching)
+    let px = -1;
+    let py = -1;
+    let valid = false;
+
+    for (let attempt = 0; attempt < 20; attempt++) {
+      px = 2 + Math.floor(rng() * (size - templateSize - 4));
+      py = 2 + Math.floor(rng() * (size - templateSize - 4));
+
+      // Check for overlap with previously placed templates
+      const overlaps = placed.some(
+        (p) => Math.abs(p.x - px) < templateSize + 1 && Math.abs(p.y - py) < templateSize + 1,
+      );
+      if (!overlaps) {
+        valid = true;
+        break;
+      }
+    }
+
+    if (!valid) continue;
+
+    // Stamp the template cells
+    for (let ty = 0; ty < templateSize; ty++) {
+      for (let tx = 0; tx < templateSize; tx++) {
+        const cellKey = template.cells[ty][tx];
+        if (cellKey === null) continue; // null = keep existing
+
+        const def = ASSET_DEFS[cellKey];
+        cells[py + ty][px + tx] = {
+          assetKey: cellKey,
+          walkable: def?.walkable ?? true,
+          interactable: def?.interactable ?? false,
+        };
+      }
+    }
+
+    placed.push({ x: px, y: py });
   }
 }
 
