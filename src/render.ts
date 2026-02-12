@@ -7,6 +7,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
+import { getIsoTile, type TileType } from './tiles';
 import type { ChunkData } from './gen';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -21,6 +22,7 @@ const CMD_EMOJI = 0;
 const CMD_SHADOW_EMOJI = 1;
 const CMD_PLAYER = 2;
 const CMD_ITEM = 3;
+const CMD_TILE = 4;
 
 interface DrawCmd {
   sortKey: number;
@@ -34,6 +36,8 @@ interface DrawCmd {
   img?: HTMLImageElement | null;
   flipX?: boolean;
   shadow?: boolean;
+  // Tile-specific fields
+  tileType?: TileType;
 }
 
 // ─── Renderer ────────────────────────────────────────────────
@@ -79,6 +83,16 @@ export class IsometricRenderer {
   private drawGroundFill(color: string): void {
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, 0, RENDER_CONFIG.canvasWidth, RENDER_CONFIG.canvasHeight);
+  }
+
+  /** Draw a pre-rendered isometric tile (64x32 diamond) at screen position. */
+  private drawTile(tileType: TileType, sx: number, sy: number): void {
+    const tileCanvas = getIsoTile(tileType);
+    if (tileCanvas) {
+      // Tile canvas is 64x32, centered on the diamond.
+      // Diamond center is at (32, 16) within the canvas.
+      this.ctx.drawImage(tileCanvas, sx - 32, sy - 16);
+    }
   }
 
   private drawShadow(sx: number, sy: number, scale: number): void {
@@ -179,26 +193,53 @@ export class IsometricRenderer {
 
             // Base terrain is always drawn at sortKey = gy (flat)
             if (def.layer === 'base') {
-              drawCmds.push({
-                sortKey: gy,
-                type: CMD_EMOJI,
-                emoji: def.emoji,
-                sx, sy,
-                scale: def.scale,
-                tint: biome.tintHue,
-              });
+              // Prefer SVG tile if available
+              if (def.tileType) {
+                drawCmds.push({
+                  sortKey: gy,
+                  type: CMD_TILE,
+                  emoji: def.emoji,
+                  sx, sy,
+                  scale: def.scale,
+                  tint: biome.tintHue,
+                  tileType: def.tileType,
+                });
+              } else {
+                drawCmds.push({
+                  sortKey: gy,
+                  type: CMD_EMOJI,
+                  emoji: def.emoji,
+                  sx, sy,
+                  scale: def.scale,
+                  tint: biome.tintHue,
+                });
+              }
             } else {
-              // Elevated objects with optional shadow
+              // Elevated objects - use tile if available, else emoji
               const depthKey = gy + def.height * 0.1;
-              drawCmds.push({
-                sortKey: depthKey,
-                type: def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI,
-                emoji: def.emoji,
-                sx, sy,
-                scale: def.scale,
-                tint: biome.tintHue,
-                shadow: def.shadow,
-              });
+              if (def.tileType) {
+                // Tile-based elevated object (wall, door, etc.)
+                drawCmds.push({
+                  sortKey: depthKey,
+                  type: CMD_TILE,
+                  emoji: def.emoji,
+                  sx, sy,
+                  scale: def.scale,
+                  tint: biome.tintHue,
+                  tileType: def.tileType,
+                  shadow: def.shadow,
+                });
+              } else {
+                drawCmds.push({
+                  sortKey: depthKey,
+                  type: def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI,
+                  emoji: def.emoji,
+                  sx, sy,
+                  scale: def.scale,
+                  tint: biome.tintHue,
+                  shadow: def.shadow,
+                });
+              }
             }
 
             // Draw collectible overlay if present
@@ -240,6 +281,10 @@ export class IsometricRenderer {
     // Execute all draw commands (no closures!)
     for (const cmd of drawCmds) {
       switch (cmd.type) {
+        case CMD_TILE:
+          if (cmd.shadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+          if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
+          break;
         case CMD_EMOJI:
           this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
           break;
