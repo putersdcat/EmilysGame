@@ -1,5 +1,7 @@
 # Emily's Game - Isometric PoC
 
+[![Pages](https://github.com/putersdcat/EmilysGame/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/putersdcat/EmilysGame/actions/workflows/ci-cd.yml)
+
 A lightweight, browser-based procedural adventure game with isometric view and LLM-driven entropy.
 
 ## Project Overview
