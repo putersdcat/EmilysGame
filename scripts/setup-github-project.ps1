@@ -99,19 +99,93 @@ foreach ($im in $issueMilestones.GetEnumerator()) {
 Write-Host "`n--- Creating GitHub Project V2 ---" -ForegroundColor Yellow
 Write-Host "  Note: Projects V2 are user-level, not repo-level."
 
-# Create the project
-$projectJson = gh project create --owner "@me" --title "EmilysGame - Development Roadmap" --format json 2>&1
-$project = $projectJson | ConvertFrom-Json
-$projectNumber = $project.number
-Write-Host "  Created project #$projectNumber"
+# Create the project (idempotent)
+$projTitle = "EmilysGame - Development Roadmap"
+Write-Host "  Looking for existing project titled '$projTitle'..."
+$gql = @"
+query {
+  user(login: \"$OWNER\") {
+    projectsV2(first:100) { nodes { number title } }
+  }
+}
+"@
+$projectsRaw = gh api graphql -f query="$gql" 2>&1
+$projectsJson = ($projectsRaw | Out-String).Trim()
+try {
+    $projects = $projectsJson | ConvertFrom-Json
+    $existing = $projects.data.user.projectsV2.nodes | Where-Object { $_.title -eq $projTitle } | Select-Object -ExpandProperty number -First 1
+} catch {
+    $existing = $null
+}
 
-# Link repository to project
-Write-Host "  Linking repository to project..."
-$repoId = (gh api repos/$OWNER/$REPO --jq '.node_id') 2>&1
-$projectId = (gh api graphql -f query="query { user(login: `"$OWNER`") { projectV2(number: $projectNumber) { id } } }" --jq '.data.user.projectV2.id') 2>&1
+if ($existing) {
+    $projectNumber = $existing.ToString()
+    Write-Host "  Found existing project #$projectNumber"
+} else {
+    Write-Host "  Creating new project..."
+    $projectNumberRaw = gh project create --owner "@me" --title $projTitle --format json --jq '.number' 2>&1
+    $projectNumber = ($projectNumberRaw | Out-String).Trim()
+    Write-Host "  Created project #$projectNumber"
 
-gh api graphql -f query="mutation { linkProjectV2ToRepository(input: { projectId: `"$projectId`", repositoryId: `"$repoId`" }) { repository { name } } }" 2>&1 | Out-Null
-Write-Host "  Repository linked."
+# Validate project number is numeric (gh may return error text if creation failed or scopes are missing)
+if (-not ($projectNumber -match '^\d+$')) {
+    Write-Error "Project creation/fetch failed: $projectNumber"
+    Write-Host "Please run: gh auth refresh -s project,read:project"
+    exit 1
+}
+}
+
+# Link repository to project — skip if already linked
+Write-Host "  Checking if repository is already linked to project #$projectNumber..."
+$repoId = gh api repos/$OWNER/$REPO --jq '.node_id' 2>&1
+$repoId = ($repoId | Out-String).Trim()
+if ($repoId -match '(^|\b)(error|gh:|Usage:|flag:|expected)') {
+    Write-Error "Failed to obtain repository node id. Output:\n$repoId"
+    exit 1
+}
+if ([string]::IsNullOrWhiteSpace($repoId)) {
+    Write-Error "Repository node id is empty"
+    exit 1
+}
+
+# Query the repository's projects to see if the project number is already present
+$repoProjectsRaw = gh api graphql -f query="query { repository(owner:\"$OWNER\", name:\"$REPO\") { projectsV2(first:100) { nodes { number } } } }" --jq '.data.repository.projectsV2.nodes[].number' 2>&1
+$repoProjectsRaw = ($repoProjectsRaw | Out-String).Trim()
+$repoProjectsFetchFailed = $false
+if ($repoProjectsRaw -match '(^|\b)(error|gh:|Usage:|flag:|expected)') {
+    Write-Warning "Warning: unexpected output when fetching repository projects: $repoProjectsRaw"
+    $repoProjects = @()
+    $repoProjectsFetchFailed = $true
+} else {
+    $repoProjects = $repoProjectsRaw.Split("`n") | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne '' }
+}
+
+if ($repoProjects -contains $projectNumber.ToString()) {
+    Write-Host "  Repository is already linked to project #$projectNumber — skipping link."
+} elseif ($repoProjectsFetchFailed) {
+    Write-Warning "Could not verify repository → project link due to API output; skipping link to avoid mutation failures."
+} else {
+    Write-Host "  Repository not linked — linking now..."
+    $projectId = gh api graphql -f query="query { user(login:\"$OWNER\") { projectV2(number: $projectNumber) { id } } }" --jq '.data.user.projectV2.id' 2>&1
+    $projectId = ($projectId | Out-String).Trim()
+    if ($projectId -match '(^|\b)(error|gh:|Usage:|flag:|expected)') {
+        Write-Error "Failed to obtain project node id. Output:\n$projectId"
+        exit 1
+    }
+    if ([string]::IsNullOrWhiteSpace($projectId)) {
+        Write-Error "Project node id is empty"
+        exit 1
+    }
+
+    # Use GraphQL variables to avoid quoting/escaping issues
+    $mutationQuery = 'mutation ($pid: ID!, $rid: ID!) { linkProjectV2ToRepository(input: { projectId: $pid, repositoryId: $rid }) { repository { name } } }'
+    $mutationResult = gh api graphql -f query="$mutationQuery" -f pid="$projectId" -f rid="$repoId" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "Failed to link repository to project: $mutationResult"
+        exit 1
+    }
+    Write-Host "  Repository linked."
+}
 
 # Add custom fields
 Write-Host "  Adding custom fields..."
