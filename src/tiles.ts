@@ -13,6 +13,60 @@ export type TileType =
   | 'grass' | 'dirt' | 'rock' | 'water'
   | 'stone_wall' | 'bridge' | 'door_gate' | 'wooden_fence';
 
+// ─── Grass Variants (4 patterns for visual variety) ──────────
+
+const GRASS_VARIANT_SVGS: string[] = [
+  // V0: Original wavy stripes (default)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gG0" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#98FB98"/><stop offset="1" stop-color="#228B22"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#gG0)"/>
+  <path d="M0 10 Q8 6 16 10 Q24 14 32 10 M0 18 Q8 14 16 18 Q24 22 32 18 M0 26 Q8 22 16 26 Q24 30 32 26" stroke="#006400" stroke-width="0.8" opacity="0.5"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.12"/>
+</svg>`,
+
+  // V1: Scattered grass blades (more organic)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gG1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#90EE90"/><stop offset="1" stop-color="#2E8B2E"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#gG1)"/>
+  <path d="M4 6 L6 2 M10 8 L12 4 M18 5 L20 1 M26 7 L28 3 M7 15 L9 11 M15 14 L17 10 M23 16 L25 12 M3 24 L5 20 M11 22 L13 18 M19 25 L21 21 M27 23 L29 19 M8 30 L10 26 M16 31 L18 27 M24 29 L26 25" stroke="#006400" stroke-width="0.7" opacity="0.45"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V2: Dense short grass (darker, denser)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gG2" x1="0" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7CCD7C"/><stop offset="1" stop-color="#1E7B1E"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#gG2)"/>
+  <path d="M2 4 Q4 2 6 4 M10 3 Q12 1 14 3 M18 5 Q20 3 22 5 M26 2 Q28 0 30 2 M6 12 Q8 10 10 12 M14 11 Q16 9 18 11 M22 13 Q24 11 26 13 M0 10 Q2 8 4 10 M4 20 Q6 18 8 20 M12 19 Q14 17 16 19 M20 21 Q22 19 24 21 M28 18 Q30 16 32 18 M2 28 Q4 26 6 28 M10 27 Q12 25 14 27 M18 29 Q20 27 22 29 M26 26 Q28 24 30 26" stroke="#006400" stroke-width="0.6" opacity="0.4"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V3: Open meadow (lighter, sparse)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gG3" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A0E8A0"/><stop offset="1" stop-color="#3CB43C"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#gG3)"/>
+  <path d="M4 14 Q8 12 12 14 M20 10 Q24 8 28 10 M2 24 Q6 22 10 24 M16 22 Q20 20 24 22 M8 6 L10 3 M22 4 L24 1" stroke="#006400" stroke-width="0.6" opacity="0.35"/>
+  <circle cx="14" cy="8" r="0.8" fill="#FFFF88" opacity="0.3"/>
+  <circle cx="26" cy="20" r="0.6" fill="#FFFF88" opacity="0.25"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.08"/>
+</svg>`,
+];
+
 // ─── SVG Sources (opt-v4 variants, inlined) ──────────────────
 
 const TILE_SVG_SOURCES: Record<TileType, string> = {
@@ -208,6 +262,14 @@ export async function preloadTiles(): Promise<void> {
   for (const { type, canvas } of results) {
     isoTileCache.set(type, canvas);
   }
+
+  // Pre-render grass variants
+  const grassResults = await Promise.all(
+    GRASS_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+  );
+  for (const canvas of grassResults) {
+    grassVariantCache.push(canvas);
+  }
 }
 
 /**
@@ -217,6 +279,20 @@ export async function preloadTiles(): Promise<void> {
 export function getIsoTile(type: TileType): HTMLCanvasElement | undefined {
   return isoTileCache.get(type);
 }
+
+/**
+ * Get a deterministic grass variant tile based on cell position.
+ * Uses a fast hash to distribute variants evenly across the terrain.
+ */
+export function getGrassVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
+  if (grassVariantCache.length === 0) return isoTileCache.get('grass');
+  // Simple position hash for deterministic but varied selection
+  const hash = ((cx * 7919) + (cy * 6271)) & 0x7FFFFFFF;
+  return grassVariantCache[hash % grassVariantCache.length];
+}
+
+/** Pre-rendered grass variant isometric tiles */
+const grassVariantCache: HTMLCanvasElement[] = [];
 
 /**
  * Check if tiles have been preloaded.

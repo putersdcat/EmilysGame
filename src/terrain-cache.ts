@@ -12,7 +12,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
-import { getIsoTile } from './tiles';
+import { getIsoTile, getGrassVariant } from './tiles';
 import { getEmojiSprite } from './emoji-cache';
 import type { ChunkData } from './gen';
 
@@ -76,7 +76,10 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
       if (def.tileType) {
-        const tileCanvas = getIsoTile(def.tileType);
+        // Use grass variants for visual variety
+        const tileCanvas = def.tileType === 'grass'
+          ? getGrassVariant(chunk.chunkX * SIZE + cx, chunk.chunkY * SIZE + cy)
+          : getIsoTile(def.tileType);
         if (tileCanvas) {
           ctx.drawImage(tileCanvas, lsx - 32, lsy - 16);
         }
