@@ -4,12 +4,13 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite } from './sprites';
 import { generateChunkSync, setWordlist, type ChunkData } from './gen';
 import { generateWordlist, checkLlmHealth } from './llm';
+import { FALLBACK_WORDLIST } from './config/entropy.config';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, type QuizState } from './quiz';
@@ -17,6 +18,10 @@ import { createUIState, addToast, showDialog, advanceDialog, closeDialog, render
 import { saveGame, loadGame, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
+import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
+import { clearTerrainCache } from './terrain-cache';
+import { clearObjectCache } from './render';
+import { preloadEmojiSprites } from './emoji-cache';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -133,14 +138,58 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   container.appendChild(canvas);
 
   const renderer = new IsometricRenderer(canvas);
+
+  // Responsive canvas: fill viewport, render at scaled resolution
+  const resizeCanvas = () => {
+    const wrapper = document.getElementById('gameWrapper');
+    if (!wrapper) return;
+    const w = wrapper.clientWidth;
+    const h = wrapper.clientHeight;
+    const scale = RENDER_CONFIG.renderScale;
+    const rw = Math.round(w * scale);
+    const rh = Math.round(h * scale);
+    if (rw > 0 && rh > 0 && (rw !== canvas.width || rh !== canvas.height)) {
+      // CSS fills viewport, canvas renders at lower resolution
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      canvas.style.imageRendering = 'pixelated';
+      canvas.width = rw;
+      canvas.height = rh;
+      RENDER_CONFIG.canvasWidth = rw;
+      RENDER_CONFIG.canvasHeight = rh;
+      updateWasmConfig(rw, rh);
+      clearTerrainCache(); // terrain cache depends on viewport
+      clearObjectCache(); // object cell cache depends on chunk rendering
+    }
+  };
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
   const input = new InputManager();
 
-  // Wordlist from LLM
-  const wordlist = await generateWordlist();
-  setWordlist(wordlist);
+  // Start with fallback wordlist immediately, swap in LLM wordlist when ready
+  // (LLM is CPU BitNet — wordlist gen can take 60-120s, don't block init)
+  setWordlist([...FALLBACK_WORDLIST]);
+  generateWordlist().then((wl) => {
+    setWordlist(wl);
+    console.log('[INIT] LLM wordlist ready');
+  });
 
   // Preload SVG tile sprites (async, must complete before rendering)
   await preloadTiles();
+
+  // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
+  preloadEmojiSprites();
+
+  // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
+  const wasmOk = await initWasmRenderer();
+  if (wasmOk) {
+    console.log('[INIT] WASM rendering core loaded');
+    // Run benchmark on first load
+    wasmBenchmark();
+  } else {
+    console.log('[INIT] WASM unavailable, using JS renderer');
+  }
 
   // Load char sprite (initial idle)
   const variation = characterVariations[PLAYER_CONFIG.defaultVariation];
@@ -401,8 +450,8 @@ function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
 ): void {
-  // World render
-  renderer.render(
+  // World render (WASM if available, JS fallback)
+  renderer.renderAuto(
     state.chunks,
     state.camera,
     { x: state.player.x, y: state.player.y },
@@ -474,6 +523,9 @@ async function main(): Promise<void> {
   );
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
+  if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
+    addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
+  }
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
 

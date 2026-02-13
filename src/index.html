@@ -11,19 +11,22 @@
       font-family: Arial, sans-serif;
       background: #1a1a1a;
       display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      min-height: 100vh; gap: 0.5rem;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-    h1 { color: #fff; margin-top: 0.5rem; font-size: 1.2rem; }
+    h1 { color: #fff; font-size: 1rem; flex-shrink: 0; margin: 2px 0; line-height: 1.2; }
 
-    /* ── Game wrapper (relative for overlay positioning) ── */
+    /* ── Game wrapper fills viewport ── */
     #gameWrapper {
       position: relative;
-      width: 800px; height: 600px;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
       background: #000;
-      border: 3px solid #444;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      overflow: hidden;
     }
+    #gameContainer { position: absolute; inset: 0; }
     canvas {
       display: block;
       image-rendering: -webkit-optimize-contrast;
@@ -182,9 +185,9 @@
     }
 
     .controls {
-      color: #aaa; font-size: 12px; max-width: 800px; padding: 0 1rem;
+      color: #aaa; font-size: 11px; flex-shrink: 0; padding: 2px 1rem;
     }
-    .controls p { margin-bottom: 0.3rem; }
+    .controls p { margin-bottom: 0; }
     .controls strong { color: #fff; }
   </style>
 </head>

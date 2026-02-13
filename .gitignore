@@ -10,3 +10,5 @@ test-results/
 
 .env.local
 MigrateToGitHubNativeProjectWork.md
+# WASM build artifacts
+public/wasm/
