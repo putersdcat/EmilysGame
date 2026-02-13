@@ -662,6 +662,10 @@ function findTerminator(
     const pondRots = allRotations.get('river_end_pond');
     if (pondRots && pondRots.length > 0) return pondRots[0];
   }
+  if (baseName.startsWith('wall_') || baseName === 'guard_tower') {
+    const wallEndRots = allRotations.get('wall_end');
+    if (wallEndRots && wallEndRots.length > 0) return wallEndRots[0];
+  }
   const meadowRots = allRotations.get('meadow_base');
   if (meadowRots && meadowRots.length > 0) return meadowRots[0];
   return null;

@@ -518,6 +518,241 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 3, y: 3, role: 'item' },
     ],
   },
+
+  // ─────────── New templates (#24: Template Library Expansion) ───────────
+
+  // --- Dirt clearing (dirt center with grass border) ---
+  {
+    name: 'dirt_clearing',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 3, role: 'item' },
+    ],
+  },
+
+  // --- Rocky outcrop (rocks clustered in center, open edges) ---
+  {
+    name: 'rocky_outcrop',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'rock', 'grass', 'rock', 'grass'],
+      ['grass', 'grass', 'rock', 'grass', 'grass'],
+      ['grass', 'rock', 'grass', 'rock', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 0.8,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'feature' },
+    ],
+  },
+
+  // --- Dirt path N-S (path running north-south) ---
+  {
+    name: 'dirt_path_ns',
+    cells: [
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+    ],
+    anchors: [
+      { x: 0, y: 2, role: 'decoration' },
+      { x: 4, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- Dirt path E-W (path running east-west) ---
+  {
+    name: 'dirt_path_ew',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+  },
+
+  // --- River T-junction (water from N, S, and E) ---
+  {
+    name: 'river_t_junction',
+    cells: [
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['grass', 'grass', 'water', 'water', 'water'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'water', s: 'water', e: 'water', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'river',
+    minPassability: 0.68,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 0, y: 4 }],  // W-side walkable
+    ],
+  },
+
+  // --- River crossroads (4-way water intersection) ---
+  {
+    name: 'river_crossroads',
+    cells: [
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['water', 'water', 'water', 'water', 'water'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+      ['grass', 'grass', 'water', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'water', s: 'water', e: 'water', w: 'water' },
+    rotatable: false,
+    terminator: false,
+    chainType: 'river',
+    minPassability: 0.64,
+    category: 'natural',
+    anchors: [
+      { x: 0, y: 0, role: 'decoration' },
+      { x: 4, y: 0, role: 'decoration' },
+      { x: 0, y: 4, role: 'decoration' },
+      { x: 4, y: 4, role: 'decoration' },
+    ],
+  },
+
+  // --- Wall corner (wall bends from S to E) ---
+  {
+    name: 'wall_corner',
+    cells: [
+      [null, null, null, null, null],
+      [null, null, null, null, null],
+      [null, null, 'stone_wall', 'stone_wall', 'stone_wall'],
+      [null, null, 'stone_wall', null, null],
+      [null, null, 'stone_wall', null, null],
+    ],
+    edgeTags: { n: 'open', s: 'wall', e: 'wall', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.76,
+    category: 'structural',
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 4, y: 0 }],  // N corridor
+      [{ x: 0, y: 4 }, { x: 0, y: 0 }],  // W corridor
+    ],
+  },
+
+  // --- Wall end cap (terminates a wall) ---
+  {
+    name: 'wall_end',
+    cells: [
+      [null, null, null, null, null],
+      [null, null, null, null, null],
+      [null, null, 'stone_wall', 'stone_wall', 'stone_wall'],
+      [null, null, null, null, null],
+      [null, null, null, null, null],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'wall', w: 'open' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.88,
+    category: 'structural',
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+      [{ x: 0, y: 4 }, { x: 4, y: 4 }],
+    ],
+  },
+
+  // --- Guard tower (stone enclosure with door) ---
+  {
+    name: 'guard_tower',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'grass', 'grass', 'grass', 'stone_wall'],
+      ['stone_wall', 'grass', 'grass', 'grass', 'stone_wall'],
+      ['stone_wall', 'grass', 'grass', 'grass', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+    ],
+    edgeTags: { n: 'wall', s: 'wall', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.36,
+    category: 'structural',
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 2 }],  // Enter through door
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 1, role: 'item' },
+    ],
+  },
+
+  // --- Rock cluster (dense rock formation) ---
+  {
+    name: 'rock_cluster',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'rock', 'rock', 'rock', 'grass'],
+      ['grass', 'rock', 'rock', 'rock', 'grass'],
+      ['grass', 'rock', 'rock', 'rock', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 0.64,
+    category: 'natural',
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 0, y: 4 }],
+      [{ x: 4, y: 0 }, { x: 4, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'feature' },
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -525,44 +760,74 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    river_straight_ns: 0.15,
-    river_straight_ew: 0.15,
+    meadow_base: 0.3,
+    dirt_clearing: 0.12,
+    dirt_path_ns: 0.08,
+    dirt_path_ew: 0.08,
+    river_straight_ns: 0.1,
+    river_straight_ew: 0.1,
+    river_bend_ne: 0.06,
+    river_bend_nw: 0.06,
+    river_end_pond: 0.06,
+    river_t_junction: 0.03,
+    river_crossroads: 0.01,
+    bridge_ns: 0.04,
+    bridge_ew: 0.04,
+    fence_enclosure: 0.08,
+    rocky_outcrop: 0.05,
+    wall_gate: 0.02,
+    wall_segment: 0.01,
+    wall_corner: 0.01,
+    wall_end: 0.01,
+  },
+  forest: {
+    meadow_base: 0.15,
+    dirt_clearing: 0.08,
+    rocky_outcrop: 0.1,
+    rock_cluster: 0.08,
+    dirt_path_ns: 0.06,
+    dirt_path_ew: 0.06,
+    river_straight_ns: 0.1,
+    river_straight_ew: 0.1,
     river_bend_ne: 0.08,
     river_bend_nw: 0.08,
     river_end_pond: 0.08,
+    river_t_junction: 0.04,
     bridge_ns: 0.06,
     bridge_ew: 0.06,
-    fence_enclosure: 0.1,
+    wall_segment: 0.03,
     wall_gate: 0.03,
-    wall_segment: 0.02,
-  },
-  forest: {
-    river_straight_ns: 0.12,
-    river_straight_ew: 0.12,
-    river_bend_ne: 0.1,
-    river_bend_nw: 0.1,
-    river_end_pond: 0.1,
-    bridge_ns: 0.08,
-    bridge_ew: 0.08,
-    wall_segment: 0.05,
-    wall_gate: 0.05,
-    fence_enclosure: 0.05,
+    fence_enclosure: 0.04,
   },
   cave: {
-    wall_segment: 0.2,
-    wall_gate: 0.15,
-    river_straight_ns: 0.08,
-    river_straight_ew: 0.08,
-    river_end_pond: 0.06,
-    bridge_ns: 0.04,
-    bridge_ew: 0.04,
+    rock_cluster: 0.15,
+    rocky_outcrop: 0.12,
+    wall_segment: 0.15,
+    wall_gate: 0.1,
+    wall_corner: 0.08,
+    wall_end: 0.05,
+    guard_tower: 0.06,
+    river_straight_ns: 0.06,
+    river_straight_ew: 0.06,
+    river_end_pond: 0.04,
+    bridge_ns: 0.03,
+    bridge_ew: 0.03,
+    dirt_path_ns: 0.04,
+    dirt_path_ew: 0.04,
   },
   castle: {
-    wall_segment: 0.25,
-    wall_gate: 0.2,
-    fence_enclosure: 0.1,
-    river_straight_ns: 0.04,
-    river_straight_ew: 0.04,
+    wall_segment: 0.18,
+    wall_gate: 0.14,
+    wall_corner: 0.1,
+    wall_end: 0.06,
+    guard_tower: 0.1,
+    fence_enclosure: 0.08,
+    dirt_clearing: 0.06,
+    dirt_path_ns: 0.05,
+    dirt_path_ew: 0.05,
+    rocky_outcrop: 0.04,
+    river_straight_ns: 0.03,
+    river_straight_ew: 0.03,
   },
 };
 
