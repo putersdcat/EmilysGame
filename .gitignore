@@ -12,3 +12,4 @@ test-results/
 MigrateToGitHubNativeProjectWork.md
 # WASM build artifacts
 public/wasm/
+game-*.png

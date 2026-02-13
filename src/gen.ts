@@ -196,6 +196,17 @@ function generateGridChunk(
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
 
+  // Phase 5: content population (anchors, decorations, collectibles)
+  populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200));
+  scatterDecorations(cells, size, biome, seededRandom(featureSeed + 300));
+  scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400));
+
+  // Phase 6: balance obstacles (ensure keys exist before locks)
+  balanceObstacles(cells, size, seededRandom(featureSeed + 500));
+
+  // Phase 7: re-enforce passability after population may have added non-walkable objects
+  enforcePassability(cells, size, seededRandom(featureSeed + 600));
+
   return { cells, borderEdges };
 }
 
@@ -747,23 +758,341 @@ function enforcePassability(
   }
 }
 
-// --- Population Hooks (modular stubs) ---
-// TODO: DOC — Population phase will be re-enabled once world building is stable.
-// See WorldEngine-05-PopulationAndProgression.md for design.
+// --- Phase 5: Content Population ---
+// Places NPCs, items, decorations, and collectibles onto the generated terrain.
+// Uses template anchor points + biome weights. See WorldEngine-05-PopulationAndProgression.md.
 
+/** Biome-specific decoration palettes for SCATTER (must all be walkable!) */
+const BIOME_SCATTER_DECORATIONS: Record<string, string[]> = {
+  meadow:  ['flower', 'flower', 'flower', 'mushroom'],
+  forest:  ['mushroom', 'mushroom', 'flower', 'flower'],
+  cave:    ['mushroom'],
+  castle:  ['flower'],
+};
+
+/** Biome-specific decoration palettes for ANCHOR placement (may include non-walkable) */
+const BIOME_ANCHOR_DECORATIONS: Record<string, string[]> = {
+  meadow:  ['flower', 'bush', 'mushroom'],
+  forest:  ['mushroom', 'bush', 'tree'],
+  cave:    ['rock', 'mushroom'],
+  castle:  ['wall', 'rock'],
+};
+
+/** Biome-specific NPC pools for anchor roles */
+const BIOME_NPC_POOL: Record<string, string[]> = {
+  meadow:  ['npc_villager', 'npc_merchant'],
+  forest:  ['npc_villager', 'npc_merchant'],
+  cave:    ['npc_guardian', 'npc_merchant'],
+  castle:  ['npc_guardian', 'npc_guardian', 'npc_merchant'],
+};
+
+/** NPC id mapping by asset key */
+const NPC_ID_MAP: Record<string, string> = {
+  npc_merchant: 'merchant_default',
+  npc_villager: 'villager_default',
+  npc_guardian: 'guardian_default',
+};
+
+/**
+ * Phase 5a: Place entities at template anchor points.
+ * Each anchor role maps to a placement strategy:
+ *   - 'npc'        → place an NPC from biome pool
+ *   - 'item'       → place a collectible (coin, key, potion) based on biome feature weights
+ *   - 'decoration' → place a biome-appropriate decorative object
+ *   - 'feature'    → place a chest or sign (special interactive)
+ */
 export function populateAnchors(
-  _cells: CellData[][],
-  _grid: (RotatedTemplate | null)[][],
-  _biome: BiomeDef,
-  _rng: () => number,
+  cells: CellData[][],
+  grid: (RotatedTemplate | null)[][],
+  biome: BiomeDef,
+  rng: () => number,
 ): void {
-  // TODO: Iterate over grid slots, find anchor points, spawn entities
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      const template = grid[gy][gx];
+      if (!template || !template.anchors) continue;
+
+      const baseX = gx * WU_SIZE;
+      const baseY = gy * WU_SIZE;
+
+      for (const anchor of template.anchors) {
+        const cx = baseX + anchor.x;
+        const cy = baseY + anchor.y;
+        if (cy >= cells.length || cx >= cells[0].length) continue;
+
+        const cell = cells[cy][cx];
+        // Skip if cell is already occupied by a non-terrain object
+        if (!cell.walkable && cell.assetKey !== 'grass' && cell.assetKey !== 'dirt') continue;
+
+        switch (anchor.role) {
+          case 'npc':
+            placeNpcAtCell(cells, cx, cy, biome, rng);
+            break;
+          case 'item':
+            placeItemAtCell(cells, cx, cy, biome, rng);
+            break;
+          case 'decoration':
+            placeDecorationAtCell(cells, cx, cy, biome, rng);
+            break;
+          case 'feature':
+            placeFeatureAtCell(cells, cx, cy, biome, rng);
+            break;
+        }
+      }
+    }
+  }
 }
 
-export function balanceObstacles(
-  _cells: CellData[][],
-  _size: number,
-  _rng: () => number,
+function placeNpcAtCell(
+  cells: CellData[][], cx: number, cy: number,
+  biome: BiomeDef, rng: () => number,
 ): void {
-  // TODO: Scan for locked doors/barricades and spawn matching keys/tools
+  // Respect biome NPC rate (skip some NPCs at random)
+  if (rng() > biome.npcRate * 0.3) return; // ~30% chance per anchor × npcRate
+
+  const pool = BIOME_NPC_POOL[biome.name] ?? ['npc_villager'];
+  const npcAsset = pool[Math.floor(rng() * pool.length)];
+  const npcId = NPC_ID_MAP[npcAsset] ?? 'villager_default';
+
+  cells[cy][cx] = {
+    assetKey: npcAsset,
+    walkable: false,
+    interactable: true,
+    npcId,
+  };
+}
+
+function placeItemAtCell(
+  cells: CellData[][], cx: number, cy: number,
+  biome: BiomeDef, rng: () => number,
+): void {
+  // Use biome feature weights to pick item type
+  const roll = rng();
+  if (roll > biome.collectibleRate * 0.4) return; // ~40% × collectibleRate
+
+  const fw = biome.featureWeights;
+  const itemPool: Array<{ key: string; w: number }> = [];
+  if (fw.coin) itemPool.push({ key: 'coin', w: fw.coin });
+  if (fw.key) itemPool.push({ key: 'key', w: fw.key });
+  if (fw.potion) itemPool.push({ key: 'potion', w: fw.potion });
+  if (fw.mushroom) itemPool.push({ key: 'mushroom', w: fw.mushroom });
+
+  if (itemPool.length === 0) {
+    // Default: coins
+    cells[cy][cx].itemId = 'coin';
+    return;
+  }
+
+  const totalW = itemPool.reduce((s, e) => s + e.w, 0);
+  let pick = rng() * totalW;
+  for (const entry of itemPool) {
+    pick -= entry.w;
+    if (pick <= 0) {
+      cells[cy][cx].itemId = entry.key;
+      return;
+    }
+  }
+  cells[cy][cx].itemId = itemPool[itemPool.length - 1].key;
+}
+
+function placeDecorationAtCell(
+  cells: CellData[][], cx: number, cy: number,
+  biome: BiomeDef, rng: () => number,
+): void {
+  // 60% chance to place a decoration at anchor
+  if (rng() > 0.6) return;
+
+  const palette = BIOME_ANCHOR_DECORATIONS[biome.name] ?? ['flower'];
+  const deco = palette[Math.floor(rng() * palette.length)];
+  const def = ASSET_DEFS[deco];
+  if (!def) return;
+
+  // Only place on walkable cells to avoid blocking movement
+  if (!cells[cy][cx].walkable) return;
+
+  cells[cy][cx] = {
+    assetKey: deco,
+    walkable: def.walkable,
+    interactable: def.interactable,
+  };
+}
+
+function placeFeatureAtCell(
+  cells: CellData[][], cx: number, cy: number,
+  _biome: BiomeDef, rng: () => number,
+): void {
+  // 25% chance for chest, 15% for sign, rest skip
+  const roll = rng();
+  if (roll < 0.25) {
+    cells[cy][cx] = {
+      assetKey: 'chest',
+      walkable: false,
+      interactable: true,
+    };
+  } else if (roll < 0.40) {
+    cells[cy][cx] = {
+      assetKey: 'sign',
+      walkable: false,
+      interactable: true,
+    };
+  }
+  // else: leave cell as-is (not every feature anchor gets content)
+}
+
+/**
+ * Phase 5b: Scatter additional decorations on eligible empty cells.
+ * Creates natural-feeling clusters (per WorldEngine-05 §6.2).
+ * Target: ~15-25% of walkable grass/dirt cells get decorations.
+ */
+export function scatterDecorations(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  const palette = BIOME_SCATTER_DECORATIONS[biome.name] ?? ['flower'];
+  // Target density: 8-15% of walkable base cells
+  const targetRate = 0.08 + rng() * 0.07;
+
+  // Gather eligible cells (walkable base terrain with no existing content)
+  const eligible: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      if (cell.itemId || cell.npcId) continue;
+      // Only decorate base terrain types
+      if (cell.assetKey !== 'grass' && cell.assetKey !== 'dirt' && cell.assetKey !== 'sand') continue;
+      eligible.push({ x, y });
+    }
+  }
+
+  // Shuffle eligible cells deterministically
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+
+  const count = Math.floor(eligible.length * targetRate);
+  for (let i = 0; i < count && i < eligible.length; i++) {
+    const { x, y } = eligible[i];
+    const deco = palette[Math.floor(rng() * palette.length)];
+    const def = ASSET_DEFS[deco];
+    if (!def) continue;
+
+    // Don't place next to NPCs or interactables (per design doc §6.4)
+    if (hasAdjacentInteractable(cells, x, y, size)) continue;
+
+    // Safety: scatter should only place walkable decorations
+    if (!def.walkable) continue;
+
+    cells[y][x] = {
+      assetKey: deco,
+      walkable: true,
+      interactable: def.interactable,
+    };
+  }
+}
+
+/** Check if any adjacent cell has an NPC or interactable object */
+function hasAdjacentInteractable(
+  cells: CellData[][], x: number, y: number, size: number,
+): boolean {
+  for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+    const n = cells[ny][nx];
+    if (n.npcId || n.interactable) return true;
+  }
+  return false;
+}
+
+/**
+ * Phase 5c: Scatter collectibles (coins) along walkable corridors.
+ * Density follows biome collectibleRate. Keys/crowbars handled in balanceObstacles.
+ */
+export function scatterCollectibles(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  // Coin density: ~3-6% of walkable base cells × collectibleRate
+  const baseRate = (0.03 + rng() * 0.03) * biome.collectibleRate;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable || cell.itemId || cell.npcId) continue;
+      // Only place coins on walkable base terrain
+      if (cell.assetKey !== 'grass' && cell.assetKey !== 'dirt' && cell.assetKey !== 'sand'
+          && cell.assetKey !== 'flower') continue;
+
+      if (rng() < baseRate) {
+        cell.itemId = 'coin';
+      }
+    }
+  }
+}
+
+/**
+ * Phase 6: Balance Obstacles — ensure locks have reachable keys.
+ * Scans for door_locked/barricade cells, places corresponding key/crowbar
+ * in reachable walkable cells before the lock (closer to chunk center).
+ */
+export function balanceObstacles(
+  cells: CellData[][],
+  size: number,
+  rng: () => number,
+): void {
+  const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
+
+  // Find all locks
+  const locks: Array<{ x: number; y: number; type: string; keyItem: string }> = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = cells[y][x];
+      if (cell.assetKey === 'door_locked' || cell.assetKey === 'door_gate') {
+        locks.push({ x, y, type: cell.assetKey, keyItem: 'key' });
+      } else if (cell.assetKey === 'barricade' || cell.assetKey === 'wooden_fence') {
+        // Only barricade-type fences are interactable locks
+        if (cell.interactable) {
+          locks.push({ x, y, type: cell.assetKey, keyItem: 'crowbar' });
+        }
+      }
+    }
+  }
+
+  if (locks.length === 0) return;
+
+  // BFS from center to find reachable cells (not blocked by locks themselves)
+  const reachable = bfsFloodFill(
+    (x, y) => cells[y][x].walkable,
+    size, size, center,
+  );
+
+  // For each lock, place key item in a reachable walkable cell
+  for (const lock of locks) {
+    // Find candidate cells: walkable, reachable, no existing item, close to center
+    const candidates: Array<{ x: number; y: number; dist: number }> = [];
+    for (const key of reachable) {
+      const [px, py] = key.split(',').map(Number);
+      const cell = cells[py][px];
+      if (!cell.walkable || cell.itemId || cell.npcId) continue;
+      // Prefer cells closer to center (player starts near center)
+      const dist = Math.abs(px - center.x) + Math.abs(py - center.y);
+      candidates.push({ x: px, y: py, dist });
+    }
+
+    if (candidates.length === 0) continue;
+
+    // Sort by distance to center (place keys in accessible early areas)
+    candidates.sort((a, b) => a.dist - b.dist);
+
+    // Pick from the first ~30% closest candidates (with some randomness)
+    const poolSize = Math.max(1, Math.floor(candidates.length * 0.3));
+    const pick = candidates[Math.floor(rng() * poolSize)];
+    cells[pick.y][pick.x].itemId = lock.keyItem;
+  }
 }
