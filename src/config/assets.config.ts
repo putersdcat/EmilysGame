@@ -153,17 +153,17 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   // --- NPCs ---
   npc_merchant: {
     emoji: '🧙', category: 'npc', height: 4, layer: 'mid',
-    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
     description: 'Merchant NPC',
   },
   npc_villager: {
     emoji: '👤', category: 'npc', height: 4, layer: 'mid',
-    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
     description: 'Villager NPC (hints/quizzes)',
   },
   npc_guardian: {
     emoji: '🛡️', category: 'npc', height: 5, layer: 'high',
-    scale: 1.1, shadow: true, walkable: false, interactable: true,
+    scale: 0.9, shadow: true, walkable: false, interactable: true,
     description: 'Guardian NPC (quiz gate)',
   },
 };

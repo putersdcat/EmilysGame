@@ -99,6 +99,36 @@ export function getDirectionPair(direction: string, rng: () => number): string {
   return `${verb} ${noun}`;
 }
 
+/**
+ * Distance-based biome selection.
+ * Closer chunks = easier biomes. Progression:
+ *   dist 0-2: meadow only (safe start)
+ *   dist 3-4: meadow/forest (70/30)
+ *   dist 5-6: forest/meadow/cave (50/30/20)
+ *   dist 7+:  all biomes weighted by distance
+ * Uses seedVal for deterministic per-chunk variation.
+ */
+function selectBiomeByDistance(chunkX: number, chunkY: number, seedVal: number): BiomeDef {
+  const dist = Math.max(Math.abs(chunkX), Math.abs(chunkY));
+  const roll = (seedVal % 100) / 100; // 0-1 deterministic roll
+
+  if (dist <= 2) {
+    return getBiome(0); // meadow
+  } else if (dist <= 4) {
+    return getBiome(roll < 0.7 ? 0 : 1); // 70% meadow, 30% forest
+  } else if (dist <= 6) {
+    if (roll < 0.3) return getBiome(0);      // 30% meadow
+    else if (roll < 0.8) return getBiome(1); // 50% forest
+    else return getBiome(2);                  // 20% cave
+  } else {
+    // dist 7+: progressive unlock
+    if (roll < 0.15) return getBiome(0);      // 15% meadow
+    else if (roll < 0.45) return getBiome(1); // 30% forest
+    else if (roll < 0.75) return getBiome(2); // 30% cave
+    else return getBiome(3);                  // 25% castle
+  }
+}
+
 // --- World Unit Grid Constants ---
 
 const WU_SIZE = WORLD_CONFIG.worldUnitSize;
@@ -124,7 +154,7 @@ export async function generateChunk(
   const noiseSeed = fastHash(hashHex.slice(8, 16));
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
-  const biome = getBiome(biomeSeed);
+  const biome = selectBiomeByDistance(chunkX, chunkY, biomeSeed);
   const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
@@ -151,8 +181,8 @@ export function generateChunkSync(
 
   const noiseSeed = fastHash(seedText);
   const featureSeed = fastHash(seedText + '_features');
-  const biomeSeed = asciiModulo(pair, WORLD_CONFIG.biomeCount);
-  const biome = getBiome(biomeSeed);
+  const biomeSeed = asciiModulo(pair, 100); // seed for distance-based selection
+  const biome = selectBiomeByDistance(chunkX, chunkY, biomeSeed);
 
   const { cells, borderEdges } = generateGridChunk(
     size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints,
@@ -921,15 +951,15 @@ function placeFeatureAtCell(
   cells: CellData[][], cx: number, cy: number,
   _biome: BiomeDef, rng: () => number,
 ): void {
-  // 25% chance for chest, 15% for sign, rest skip
+  // 12% chance for chest, 10% for sign, rest skip (tuned for less clutter)
   const roll = rng();
-  if (roll < 0.25) {
+  if (roll < 0.12) {
     cells[cy][cx] = {
       assetKey: 'chest',
       walkable: false,
       interactable: true,
     };
-  } else if (roll < 0.40) {
+  } else if (roll < 0.22) {
     cells[cy][cx] = {
       assetKey: 'sign',
       walkable: false,
@@ -1018,8 +1048,8 @@ export function scatterCollectibles(
   biome: BiomeDef,
   rng: () => number,
 ): void {
-  // Coin density: ~3-6% of walkable base cells × collectibleRate
-  const baseRate = (0.03 + rng() * 0.03) * biome.collectibleRate;
+  // Coin density: ~2-4% of walkable base cells × collectibleRate
+  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
