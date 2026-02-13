@@ -445,6 +445,7 @@ export class IsometricRenderer {
 
   /**
    * Main render entry point: uses WASM path if available, falls back to JS.
+   * When showDebug=true, draws world-unit template grid overlay after scene.
    */
   public renderAuto(
     chunks: Map<string, ChunkData>,
@@ -452,11 +453,16 @@ export class IsometricRenderer {
     egoPos: { x: number; y: number },
     egoDir: number,
     egoImg: HTMLImageElement | null,
+    showDebug = false,
   ): void {
     if (RENDER_CONFIG.useWasmRenderer && isWasmReady()) {
       this.renderWasm(chunks, camera, egoPos, egoDir, egoImg);
     } else {
       this.render(chunks, camera, egoPos, egoDir, egoImg);
+    }
+    // Debug overlay: world unit grid boundaries (after all scene layers)
+    if (showDebug) {
+      this.drawDebugGrid(chunks, camera);
     }
   }
 
@@ -469,6 +475,81 @@ export class IsometricRenderer {
     this.ctx.fillStyle = color;
     this.ctx.fillText(text, x, y);
     this.ctx.restore();
+  }
+
+  // ─── Debug Grid Overlay ────────────────────────────────────
+  // Draws world unit boundaries (every worldUnitSize cells) as isometric grid lines.
+  // TODO: DOC - debug overlay rendering, toggle via F3
+
+  /**
+   * Draw world-unit grid boundaries on visible chunks.
+   * Shows the 5×5 template grid structure within each 25×25 chunk.
+   */
+  public drawDebugGrid(
+    chunks: Map<string, ChunkData>,
+    camera: Camera,
+  ): void {
+    const ctx = this.ctx;
+    const chunkSize = WORLD_CONFIG.chunkSize;
+    const wuSize = WORLD_CONFIG.worldUnitSize;
+    const camCX = Math.floor(camera.x / chunkSize);
+    const camCY = Math.floor(camera.y / chunkSize);
+    const buf = WORLD_CONFIG.viewportBuffer;
+
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+
+    for (let dcy = -buf; dcy <= buf; dcy++) {
+      for (let dcx = -buf; dcx <= buf; dcx++) {
+        const key = `${camCX + dcx},${camCY + dcy}`;
+        const chunk = chunks.get(key);
+        if (!chunk) continue;
+
+        const baseGX = chunk.chunkX * chunkSize;
+        const baseGY = chunk.chunkY * chunkSize;
+
+        // Draw world unit grid lines (vertical lines in grid space = iso diagonals)
+        for (let wu = 0; wu <= chunkSize; wu += wuSize) {
+          const isChunkBorder = wu === 0 || wu === chunkSize;
+          ctx.strokeStyle = isChunkBorder ? '#ff0' : '#0ff';
+          ctx.lineWidth = isChunkBorder ? 2 : 1;
+
+          // "Vertical" grid line at x=wu (from y=0 to y=chunkSize)
+          ctx.beginPath();
+          const v0 = this.gridToScreen(baseGX + wu, baseGY, camera);
+          const v1 = this.gridToScreen(baseGX + wu, baseGY + chunkSize, camera);
+          ctx.moveTo(v0.x, v0.y);
+          ctx.lineTo(v1.x, v1.y);
+          ctx.stroke();
+
+          // "Horizontal" grid line at y=wu (from x=0 to x=chunkSize)
+          ctx.beginPath();
+          const h0 = this.gridToScreen(baseGX, baseGY + wu, camera);
+          const h1 = this.gridToScreen(baseGX + chunkSize, baseGY + wu, camera);
+          ctx.moveTo(h0.x, h0.y);
+          ctx.lineTo(h1.x, h1.y);
+          ctx.stroke();
+        }
+
+        // Label world units with their coordinates
+        ctx.font = '10px monospace';
+        ctx.fillStyle = '#0ff';
+        ctx.globalAlpha = 0.6;
+        const gridDim = chunkSize / wuSize;
+        for (let wy = 0; wy < gridDim; wy++) {
+          for (let wx = 0; wx < gridDim; wx++) {
+            const centerGX = baseGX + wx * wuSize + wuSize / 2;
+            const centerGY = baseGY + wy * wuSize + wuSize / 2;
+            const { x: lx, y: ly } = this.gridToScreen(centerGX, centerGY, camera);
+            if (this.isVisible(lx, ly)) {
+              ctx.fillText(`${wx},${wy}`, lx - 8, ly + 3);
+            }
+          }
+        }
+        ctx.globalAlpha = 0.35;
+      }
+    }
+    ctx.restore();
   }
 
   /** Get the underlying canvas for UI overlays. */

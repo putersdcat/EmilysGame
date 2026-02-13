@@ -482,6 +482,7 @@ function renderFrame(
     { x: state.player.x, y: state.player.y },
     state.player.direction,
     state.egoImg,
+    state.ui.showDebug,
   );
 
   // UI overlay - throttle DOM sync to every 4th frame
