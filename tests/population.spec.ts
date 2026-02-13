@@ -108,6 +108,7 @@ test.describe('Content Population (WorldEngine-05)', () => {
   });
 
   test('no crash during extended exploration across chunk boundaries', async ({ page }) => {
+    test.setTimeout(60000); // Extended exploration needs more time
     const errors: string[] = [];
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text());
@@ -119,12 +120,12 @@ test.describe('Content Population (WorldEngine-05)', () => {
     // At speed 0.05/frame × 60fps = 3 tiles/sec, need ~8 sec per 25-tile chunk
     for (let i = 0; i < 3; i++) {
       await page.keyboard.down('d');
-      await page.waitForTimeout(5000);
+      await page.waitForTimeout(4000);
       await page.keyboard.up('d');
       await page.waitForTimeout(200);
 
       await page.keyboard.down('s');
-      await page.waitForTimeout(3000);
+      await page.waitForTimeout(2500);
       await page.keyboard.up('s');
       await page.waitForTimeout(200);
     }

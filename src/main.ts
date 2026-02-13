@@ -30,7 +30,9 @@ interface GameState {
   player: {
     x: number;
     y: number;
-    direction: number;    // 1 = right, -1 = left
+    direction: number;    // 1 = right, -1 = left (sprite flip)
+    facingDx: number;     // Last movement dx (-1/0/1)
+    facingDy: number;     // Last movement dy (-1/0/1)
     speed: number;
     isMoving: boolean;
     animFrame: number;
@@ -232,6 +234,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
       x: startX,
       y: startY,
       direction: save?.player.direction ?? 1,
+      facingDx: 1,
+      facingDy: 0,
       speed: PLAYER_CONFIG.speed,
       isMoving: false,
       animFrame: 0,
@@ -266,6 +270,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Generate initial chunks
   ensureChunksAround(state);
+
+  // Expose state for debugging / E2E tests
+  (window as any).__gameState = state;
 
   return { state, renderer, input };
 }
@@ -340,6 +347,12 @@ function update(state: GameState, input: InputManager): void {
     if (mv.dx > 0) state.player.direction = 1;
     else if (mv.dx < 0) state.player.direction = -1;
 
+    // Track full 2D facing direction for interaction
+    if (mv.dx !== 0 || mv.dy !== 0) {
+      state.player.facingDx = Math.sign(mv.dx);
+      state.player.facingDy = Math.sign(mv.dy);
+    }
+
     state.player.isMoving = true;
     // Throttle animation: only advance sprite frame every 6th game frame
     if (state.frameCount % 6 === 0) {
@@ -378,14 +391,27 @@ function update(state: GameState, input: InputManager): void {
 
   // --- Interaction (Space, edge-detected) ---
   if (justKeys.interact && !isMoving) {
+    // Try facing direction first, then check all 4 neighbors as fallback
     const facingDir = {
-      dx: state.player.direction,
-      dy: 0,
+      dx: state.player.facingDx || state.player.direction,
+      dy: state.player.facingDy,
     };
-    const result = interact(
+    let result = interact(
       state.player.x, state.player.y,
       facingDir, state.chunks, state.inventory,
     );
+
+    // Fallback: try all 4 cardinal neighbors if facing dir had nothing
+    if (result.type === 'none') {
+      const dirs = [
+        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      ];
+      for (const d of dirs) {
+        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
+        if (result.type !== 'none') break;
+      }
+    }
 
     handleInteraction(result, state);
   }
