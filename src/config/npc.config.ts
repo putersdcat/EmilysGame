@@ -90,6 +90,46 @@ export const NPC_PERSONAS: NpcPersona[] = [
     canQuiz: true,
     quizDifficulty: 'hard',
   },
+  {
+    id: 'cat_default',
+    assetKey: 'npc_cat',
+    displayName: 'Friendly Cat',
+    llmPersona: 'You are a friendly orange cat. Respond only with cat sounds and purring. Use *purrs*, *meows*, *rubs against leg*. Never use human words. Be affectionate.',
+    greetings: [
+      '*purrrrrr* 🐈',
+      '*meow!* *rubs against your leg* 🐈',
+      '*prrrr* *nuzzles your hand* 🐈',
+      '*mrow?* *tilts head curiously* 🐈',
+    ],
+    fallbackResponses: [
+      '*purrrrrr* *kneads paws happily*',
+      '*meow meow* *rolls over for belly rubs*',
+      '*prrrrrr* *slow blink*',
+    ],
+    trades: [],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
+  {
+    id: 'black_cat_default',
+    assetKey: 'npc_black_cat',
+    displayName: 'Mysterious Black Cat',
+    llmPersona: 'You are a mysterious black cat. Respond only with cryptic cat sounds. Use *stares intensely*, *silent meow*, *vanishes into shadow*. Be enigmatic.',
+    greetings: [
+      '*stares at you with golden eyes* 🐈‍⬛',
+      '*silent meow* *blinks slowly* 🐈‍⬛',
+      '*appears from nowhere* *mrrow?* 🐈‍⬛',
+      '*purrs softly in the shadows* 🐈‍⬛',
+    ],
+    fallbackResponses: [
+      '*stares into the distance knowingly*',
+      '*disappears behind a bush, then reappears*',
+      '*rubs against your leg mysteriously*',
+    ],
+    trades: [],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
 ];
 
 /** Lookup NPC persona by id */

@@ -132,6 +132,7 @@ export class IsometricRenderer {
 
   // --- Shadow Sprite Cache ---
   // Pre-rendered shadow ellipses at common scales → 1 drawImage vs 3 canvas calls per shadow
+  // Shadows offset SE to simulate NW sun angle (not overhead 12:00)
   private shadowCache = new Map<number, HTMLCanvasElement>();
 
   private getShadowSprite(scale: number): HTMLCanvasElement {
@@ -141,15 +142,18 @@ export class IsometricRenderer {
     if (cached) return cached;
     const rw = Math.ceil(qScale * RENDER_CONFIG.shadowScale.width);
     const rh = Math.ceil(qScale * RENDER_CONFIG.shadowScale.height);
-    const w = rw * 2 + 4;
-    const h = rh * 2 + 4;
+    // Elongated shadow for angled sunlight (stretch in cast direction)
+    const stretchX = Math.ceil(rw * 1.3);
+    const w = stretchX * 2 + 8;
+    const h = rh * 2 + 8;
     cached = document.createElement('canvas');
     cached.width = w;
     cached.height = h;
     const sctx = cached.getContext('2d')!;
     sctx.fillStyle = `rgba(0,0,0,${RENDER_CONFIG.shadowAlpha})`;
     sctx.beginPath();
-    sctx.ellipse(w / 2, h / 2, rw, rh, 0, 0, Math.PI * 2);
+    // Slightly rotated ellipse (~15°) for angled cast
+    sctx.ellipse(w / 2, h / 2, stretchX, rh, 0.26, 0, Math.PI * 2);
     sctx.fill();
     this.shadowCache.set(qScale, cached);
     return cached;
@@ -170,9 +174,13 @@ export class IsometricRenderer {
     }
   }
 
+  /** Draw shadow offset SE (sun from NW). Larger objects cast longer shadows. */
   private drawShadow(sx: number, sy: number, scale: number): void {
     const sprite = this.getShadowSprite(scale);
-    this.ctx.drawImage(sprite, sx - sprite.width / 2, sy + 18 - sprite.height / 2);
+    // Offset shadow to the right and slightly down (NW sun casting SE)
+    const offsetX = 6 * scale;
+    const offsetY = 18 + 4 * scale;
+    this.ctx.drawImage(sprite, sx - sprite.width / 2 + offsetX, sy + offsetY - sprite.height / 2);
   }
 
   private drawEmoji(emoji: string, sx: number, sy: number, scale: number, tint = 0): void {

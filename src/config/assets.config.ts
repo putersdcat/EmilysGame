@@ -63,6 +63,21 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.6, shadow: false, walkable: true, interactable: false,
     description: 'Wildflower',
   },
+  flower_pink: {
+    emoji: '🌸', category: 'plant', height: 1, layer: 'base',
+    scale: 0.55, shadow: false, walkable: true, interactable: false,
+    description: 'Cherry blossom',
+  },
+  flower_red: {
+    emoji: '🌺', category: 'plant', height: 1, layer: 'base',
+    scale: 0.6, shadow: false, walkable: true, interactable: false,
+    description: 'Red hibiscus',
+  },
+  sunflower: {
+    emoji: '🌻', category: 'plant', height: 2, layer: 'base',
+    scale: 0.65, shadow: false, walkable: true, interactable: false,
+    description: 'Sunflower',
+  },
   bush: {
     emoji: '🌿', category: 'plant', height: 3, layer: 'mid',
     scale: 0.9, shadow: true, walkable: false, interactable: false,
@@ -70,13 +85,33 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   },
   tree: {
     emoji: '🌳', category: 'plant', height: 8, layer: 'high',
-    scale: 1.2, shadow: true, walkable: false, interactable: false,
-    description: 'Large tree',
+    scale: 1.6, shadow: true, walkable: false, interactable: false,
+    description: 'Large deciduous tree',
+  },
+  tree_pine: {
+    emoji: '🌲', category: 'plant', height: 9, layer: 'high',
+    scale: 1.8, shadow: true, walkable: false, interactable: false,
+    description: 'Tall pine tree',
+  },
+  tree_palm: {
+    emoji: '🌴', category: 'plant', height: 7, layer: 'high',
+    scale: 1.5, shadow: true, walkable: false, interactable: false,
+    description: 'Palm tree',
+  },
+  tall_plant: {
+    emoji: '🪾', category: 'plant', height: 3, layer: 'mid',
+    scale: 0.7, shadow: false, walkable: true, interactable: false,
+    description: 'Tall ornamental plant',
+  },
+  stump: {
+    emoji: '🪵', category: 'plant', height: 1, layer: 'base',
+    scale: 0.5, shadow: false, walkable: true, interactable: false,
+    description: 'Tree stump',
   },
   mushroom: {
-    emoji: '🍄', category: 'plant', height: 2, layer: 'mid',
-    scale: 0.8, shadow: true, walkable: true, interactable: true,
-    description: 'Collectible mushroom',
+    emoji: '🍄', category: 'plant', height: 0, layer: 'base',
+    scale: 0.35, shadow: false, walkable: true, interactable: true,
+    description: 'Tiny mushroom cluster',
   },
 
   // --- Obstacles (block movement, may require items) ---
@@ -165,6 +200,16 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🛡️', category: 'npc', height: 5, layer: 'high',
     scale: 0.9, shadow: true, walkable: false, interactable: true,
     description: 'Guardian NPC (quiz gate)',
+  },
+  npc_cat: {
+    emoji: '🐈', category: 'npc', height: 2, layer: 'mid',
+    scale: 0.65, shadow: true, walkable: false, interactable: true,
+    description: 'Friendly cat (pet me!)',
+  },
+  npc_black_cat: {
+    emoji: '🐈\u200D⬛', category: 'npc', height: 2, layer: 'mid',
+    scale: 0.65, shadow: true, walkable: false, interactable: true,
+    description: 'Mysterious black cat',
   },
 };
 

@@ -272,8 +272,10 @@ function assignTerrainCell(density: number, biome: BiomeDef): CellData {
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   } else if (density <= obstacle.max) {
-    const def = ASSET_DEFS['rock'];
-    return { assetKey: 'rock', walkable: def?.walkable ?? false, interactable: false };
+    // Use biome obstacleWeights for varied obstacles (not just rock)
+    const assetKey = weightedPick(biome.obstacleWeights, Math.random());
+    const def = ASSET_DEFS[assetKey];
+    return { assetKey, walkable: def?.walkable ?? false, interactable: def?.interactable ?? false };
   } else {
     const assetKey = weightedPick(biome.terrainWeights, Math.random());
     const def = ASSET_DEFS[assetKey];
@@ -794,26 +796,26 @@ function enforcePassability(
 
 /** Biome-specific decoration palettes for SCATTER (must all be walkable!) */
 const BIOME_SCATTER_DECORATIONS: Record<string, string[]> = {
-  meadow:  ['flower', 'flower', 'flower', 'mushroom'],
-  forest:  ['mushroom', 'mushroom', 'flower', 'flower'],
-  cave:    ['mushroom'],
-  castle:  ['flower'],
+  meadow:  ['flower', 'flower', 'flower_pink', 'flower_red', 'sunflower', 'mushroom', 'tall_plant', 'stump'],
+  forest:  ['mushroom', 'mushroom', 'flower', 'flower_pink', 'tall_plant', 'stump', 'stump'],
+  cave:    ['mushroom', 'mushroom', 'stump'],
+  castle:  ['flower', 'flower_red', 'stump'],
 };
 
 /** Biome-specific decoration palettes for ANCHOR placement (may include non-walkable) */
 const BIOME_ANCHOR_DECORATIONS: Record<string, string[]> = {
-  meadow:  ['flower', 'bush', 'mushroom'],
-  forest:  ['mushroom', 'bush', 'tree'],
-  cave:    ['rock', 'mushroom'],
-  castle:  ['wall', 'rock'],
+  meadow:  ['flower', 'flower_pink', 'flower_red', 'sunflower', 'bush', 'mushroom', 'tall_plant'],
+  forest:  ['mushroom', 'bush', 'tree', 'tree_pine', 'tall_plant', 'stump'],
+  cave:    ['rock', 'mushroom', 'stump'],
+  castle:  ['wall', 'rock', 'tall_plant'],
 };
 
 /** Biome-specific NPC pools for anchor roles */
 const BIOME_NPC_POOL: Record<string, string[]> = {
-  meadow:  ['npc_villager', 'npc_merchant'],
-  forest:  ['npc_villager', 'npc_merchant'],
-  cave:    ['npc_guardian', 'npc_merchant'],
-  castle:  ['npc_guardian', 'npc_guardian', 'npc_merchant'],
+  meadow:  ['npc_villager', 'npc_merchant', 'npc_cat', 'npc_cat', 'npc_black_cat'],
+  forest:  ['npc_villager', 'npc_merchant', 'npc_cat', 'npc_black_cat', 'npc_black_cat'],
+  cave:    ['npc_guardian', 'npc_merchant', 'npc_black_cat'],
+  castle:  ['npc_guardian', 'npc_guardian', 'npc_merchant', 'npc_cat'],
 };
 
 /** NPC id mapping by asset key */
@@ -821,6 +823,8 @@ const NPC_ID_MAP: Record<string, string> = {
   npc_merchant: 'merchant_default',
   npc_villager: 'villager_default',
   npc_guardian: 'guardian_default',
+  npc_cat: 'cat_default',
+  npc_black_cat: 'black_cat_default',
 };
 
 /**
