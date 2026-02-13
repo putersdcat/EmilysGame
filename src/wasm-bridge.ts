@@ -74,6 +74,35 @@ function getTileTypeIndex(tileType: TileType | undefined): number {
   return tileTypeToIndex.get(tileType) ?? -1;
 }
 
+// === Cached chunk offsets (computed once, reused every frame) ===
+let cachedChunkOffsets: { dcx: number; dcy: number }[] | null = null;
+let cachedBufSize = -1;
+
+function getChunkOffsets(buf: number): { dcx: number; dcy: number }[] {
+  if (cachedChunkOffsets && buf === cachedBufSize) return cachedChunkOffsets;
+  const offsets: { dcx: number; dcy: number }[] = [];
+  for (let dcy = -buf; dcy <= buf; dcy++) {
+    for (let dcx = -buf; dcx <= buf; dcx++) {
+      offsets.push({ dcx, dcy });
+    }
+  }
+  offsets.sort((a, b) =>
+    (a.dcx * a.dcx + a.dcy * a.dcy) - (b.dcx * b.dcx + b.dcy * b.dcy)
+  );
+  cachedChunkOffsets = offsets;
+  cachedBufSize = buf;
+  return offsets;
+}
+
+// === Pre-allocated draw command pool (avoid per-frame GC) ===
+const CMD_POOL_SIZE = 8192;
+const cmdPool: WasmDrawCmd[] = [];
+for (let i = 0; i < CMD_POOL_SIZE; i++) {
+  cmdPool.push({ type: 0, sx: 0, sy: 0, scale: 0, tint: 0, assetKey: '', tileType: null, sortKey: 0, flags: 0 });
+}
+// Reusable result view (avoids new Array allocation)
+let cmdResultBuf: WasmDrawCmd[] = [];
+
 // === WASM Module State ===
 
 let wasmModule: WasmExports | null = null;
@@ -167,17 +196,25 @@ export function isWasmReady(): boolean {
   return wasmReady && wasmModule !== null;
 }
 
+/** Update WASM viewport config after canvas resize */
+export function updateWasmConfig(w: number, h: number): void {
+  if (!wasmModule) return;
+  wasmModule.setConfig(w, h, RENDER_CONFIG.tileWidth, RENDER_CONFIG.tileHeight, 64);
+}
+
 // === Main render pipeline: marshal data → WASM → read results ===
 
 /**
  * Process visible chunks through WASM: transform, cull, sort.
  * Returns sorted draw commands ready for Canvas execution.
+ * @param skipBaseTerrain - if true, skip base-layer cells (they're rendered from terrain cache)
  */
 export function wasmBuildDrawCmds(
   chunks: Map<string, ChunkData>,
   camera: Camera,
   egoPos: { x: number; y: number },
   egoDir: number,
+  skipBaseTerrain = false,
 ): WasmDrawCmd[] {
   if (!wasmModule || !cellView || !cmdView || !sortView) return [];
 
@@ -195,18 +232,10 @@ export function wasmBuildDrawCmds(
   const size = WORLD_CONFIG.chunkSize;
   const camCX = Math.floor(camera.x / size);
   const camCY = Math.floor(camera.y / size);
-  const buf = WORLD_CONFIG.viewportBuffer + 1;
+  const buf = WORLD_CONFIG.viewportBuffer; // matches chunk loading radius
 
-  // Build chunk list sorted by distance from camera chunk (spiral order)
-  const chunkOffsets: { dcx: number; dcy: number }[] = [];
-  for (let dcy = -buf; dcy <= buf; dcy++) {
-    for (let dcx = -buf; dcx <= buf; dcx++) {
-      chunkOffsets.push({ dcx, dcy });
-    }
-  }
-  chunkOffsets.sort((a, b) =>
-    (a.dcx * a.dcx + a.dcy * a.dcy) - (b.dcx * b.dcx + b.dcy * b.dcy)
-  );
+  // Use cached chunk offsets (no per-frame alloc+sort)
+  const chunkOffsets = getChunkOffsets(buf);
 
   let cellCount = 0;
 
@@ -223,6 +252,9 @@ export function wasmBuildDrawCmds(
         const cell = chunk.cells[cy][cx];
         const def = ASSET_DEFS[cell.assetKey];
         if (!def) continue;
+
+        // Skip base-layer cells when terrain is cached (huge perf win)
+        if (skipBaseTerrain && def.layer === 'base' && !cell.itemId) continue;
 
         const gx = chunk.chunkX * size + cx;
         const gy = chunk.chunkY * size + cy;
@@ -260,28 +292,29 @@ export function wasmBuildDrawCmds(
   // Add player and sort
   const totalCmds = wasmModule.addPlayerAndSort(egoPos.x, egoPos.y, egoDir);
 
-  // Read sorted draw commands from WASM output
-  const result: WasmDrawCmd[] = new Array(totalCmds);
-  for (let i = 0; i < totalCmds; i++) {
+  // Read sorted draw commands from WASM output (reuse pooled objects)
+  const usable = Math.min(totalCmds, CMD_POOL_SIZE);
+  cmdResultBuf.length = usable;
+  for (let i = 0; i < usable; i++) {
     const cmdIdx = sortView[i];
     const b = cmdIdx * cmdStride;
     const assetIdx = Math.round(cmdView[b + 5]);
     const tileTypeIdx = Math.round(cmdView[b + 6]);
+    const cmd = cmdPool[i];
 
-    result[i] = {
-      type: cmdView[b],
-      sx: cmdView[b + 1],
-      sy: cmdView[b + 2],
-      scale: cmdView[b + 3],
-      tint: cmdView[b + 4],
-      assetKey: assetIdx >= 0 && assetIdx < assetKeys.length ? assetKeys[assetIdx] : '',
-      tileType: tileTypeIdx >= 0 && tileTypeIdx < ALL_TILE_TYPES.length ? ALL_TILE_TYPES[tileTypeIdx] : null,
-      sortKey: cmdView[b + 7],
-      flags: cmdView[b + 8],
-    };
+    cmd.type = cmdView[b];
+    cmd.sx = cmdView[b + 1];
+    cmd.sy = cmdView[b + 2];
+    cmd.scale = cmdView[b + 3];
+    cmd.tint = cmdView[b + 4];
+    cmd.assetKey = assetIdx >= 0 && assetIdx < assetKeys.length ? assetKeys[assetIdx] : '';
+    cmd.tileType = tileTypeIdx >= 0 && tileTypeIdx < ALL_TILE_TYPES.length ? ALL_TILE_TYPES[tileTypeIdx] : null;
+    cmd.sortKey = cmdView[b + 7];
+    cmd.flags = cmdView[b + 8];
+    cmdResultBuf[i] = cmd;
   }
 
-  return result;
+  return cmdResultBuf;
 }
 
 // === Benchmark utility ===

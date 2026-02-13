@@ -27,23 +27,38 @@ interface LlmChatResponse {
 let llmAvailable = false;
 let lastHealthCheck = 0;
 const HEALTH_CHECK_INTERVAL = 30000; // Re-check every 30s
+let activeEndpoint = LLM_CONFIG.endpoint;
+
+function getAuthHeaders(): HeadersInit {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (LLM_CONFIG.apiKey) {
+    headers.Authorization = `Bearer ${LLM_CONFIG.apiKey}`;
+  }
+
+  return headers;
+}
 
 // ─── Core API Call ───────────────────────────────────────────
 
 /**
  * Make a raw fetch call to the LLM API with timeout.
+ * @param timeoutMs - Override default timeout (e.g., longer for wordlist gen)
  */
 async function llmFetch(
   path: string,
   body: Record<string, unknown>,
+  timeoutMs: number = LLM_CONFIG.timeoutMs,
 ): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), LLM_CONFIG.timeoutMs);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await fetch(`${LLM_CONFIG.endpoint}${path}`, {
+    const response = await fetch(`${activeEndpoint}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(body),
       signal: controller.signal,
     });
@@ -66,19 +81,44 @@ export async function checkLlmHealth(): Promise<boolean> {
   }
   lastHealthCheck = now;
 
+  const endpointsToTry = [
+    activeEndpoint,
+    LLM_CONFIG.endpoint,
+    ...LLM_CONFIG.fallbackEndpoints,
+  ].filter((value, index, arr) => arr.indexOf(value) === index);
+
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-    const response = await fetch(`${LLM_CONFIG.endpoint}${LLM_CONFIG.healthPath}`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    llmAvailable = response.ok;
+    llmAvailable = false;
+
+    for (const endpoint of endpointsToTry) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      try {
+        const response = await fetch(`${endpoint}${LLM_CONFIG.healthPath}`, {
+          headers: LLM_CONFIG.apiKey ? { Authorization: `Bearer ${LLM_CONFIG.apiKey}` } : undefined,
+          signal: controller.signal,
+        });
+
+        if (response.ok) {
+          activeEndpoint = endpoint;
+          llmAvailable = true;
+          clearTimeout(timeoutId);
+          break;
+        }
+      } catch {
+        // Endpoint unreachable (CORS, network, timeout) - try next
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
   } catch {
     llmAvailable = false;
   }
 
-  console.log(`[LLM] Health check: ${llmAvailable ? 'AVAILABLE' : 'UNAVAILABLE'}`);
+  console.log(
+    `[LLM] Health check: ${llmAvailable ? `AVAILABLE @ ${activeEndpoint}` : 'UNAVAILABLE'}`,
+  );
   return llmAvailable;
 }
 
@@ -89,6 +129,7 @@ export async function checkLlmHealth(): Promise<boolean> {
 export async function llmComplete(
   prompt: string,
   maxTokens: number = LLM_CONFIG.maxTokens.entropy,
+  timeoutMs?: number,
 ): Promise<string | null> {
   if (!llmAvailable) {
     await checkLlmHealth();
@@ -102,7 +143,7 @@ export async function llmComplete(
       max_tokens: maxTokens,
       temperature: LLM_CONFIG.temperature,
       stream: false,
-    });
+    }, timeoutMs);
 
     if (!response.ok) return null;
 
@@ -110,7 +151,10 @@ export async function llmComplete(
     return data.choices?.[0]?.text?.trim() || null;
   } catch (err) {
     console.warn('[LLM] Completion failed:', err);
-    llmAvailable = false;
+    // Only mark unavailable on connection errors, not timeouts
+    if (err instanceof Error && err.name !== 'AbortError') {
+      llmAvailable = false;
+    }
     return null;
   }
 }
@@ -147,7 +191,10 @@ export async function llmChat(
     return data.choices?.[0]?.message?.content?.trim() || null;
   } catch (err) {
     console.warn('[LLM] Chat failed:', err);
-    llmAvailable = false;
+    // Only mark unavailable on connection errors, not timeouts
+    if (err instanceof Error && err.name !== 'AbortError') {
+      llmAvailable = false;
+    }
     return null;
   }
 }
@@ -156,12 +203,15 @@ export async function llmChat(
 
 /**
  * Generate the initial 50 verb-noun pair wordlist from LLM.
- * Falls back to FALLBACK_WORDLIST if unavailable.
+ * Falls back to FALLBACK_WORDLIST if unavailable or too slow.
+ * Uses a longer timeout since wordlist generation needs many tokens.
  */
 export async function generateWordlist(): Promise<string[]> {
+  // Local LLM is slow (CPU); give it 120s for 300 tokens
   const text = await llmComplete(
     ENTROPY_PROMPTS.wordlistInit,
     LLM_CONFIG.maxTokens.wordlist,
+    120000, // 2 min timeout for initial wordlist
   );
 
   if (text) {

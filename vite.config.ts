@@ -15,6 +15,14 @@ export default defineConfig({
         path.resolve(__dirname),
       ],
     },
+    // Proxy LLM API to avoid CORS in dev mode
+    proxy: {
+      '/api/llm': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/llm/, ''),
+      },
+    },
   },
   // Include .wasm files as assets
   assetsInclude: ['**/*.wasm'],

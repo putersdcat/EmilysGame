@@ -11,27 +11,29 @@ export const RENDER_CONFIG = {
   tileWidth: 64,        // Isometric tile width in px
   tileHeight: 32,       // Isometric tile height in px (squished Y)
   targetFPS: 60,
+  renderScale: 1.0,   // Internal render resolution (0.5=half, 1.0=full).
+  maxDrawCmds: 400,    // Max draw commands per frame (graceful degradation beyond this)
   baseColor: '#1a5c1a', // Ground fill color
-  useWasmRenderer: true, // Toggle: true=WASM rendering core, false=pure JS fallback
+  useWasmRenderer: false, // Disabled: JS path with object cache is faster (no marshal overhead)
   shadowAlpha: 0.5,
   shadowScale: { width: 22, height: 12 },
   emojiSize: 32,        // Base emoji font size
   spriteSize: 48,       // Base SVG sprite render size
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
-} as const;
+};  // Mutable: canvasWidth/canvasHeight updated on viewport resize
 
 // ─── Grid / World ────────────────────────────────────────────
 export const WORLD_CONFIG = {
   chunkSize: 32,        // Cells per chunk side (32x32)
   cellPixels: 128,      // Logical cell size in px
-  viewportBuffer: 1,    // Extra chunks rendered off-screen
+  viewportBuffer: 1,    // Extra chunks rendered off-screen (0 = tight, 1 = smooth)
 
   /** Density thresholds for procedural gen (0-100 from hash) */
   density: {
-    terrain: { min: 0, max: 70 },   // 0-70 = open terrain
-    obstacle: { min: 70, max: 88 },  // 70-88 = obstacles
-    feature: { min: 88, max: 100 },  // 88-100 = features (NPC, chest, etc.)
+    terrain: { min: 0, max: 78 },   // 0-78 = open terrain (was 70; more open world)
+    obstacle: { min: 78, max: 92 },  // 78-92 = obstacles (14% vs 18%)
+    feature: { min: 92, max: 100 },  // 92-100 = features (8% vs 12%)
   },
 
   /** Target passability ratio (BFS will inject paths if below) */
@@ -54,9 +56,9 @@ export const PLAYER_CONFIG = {
 // ─── LLM / Entropy ──────────────────────────────────────────
 export const LLM_CONFIG = {
   /** Local OpenAI-style API endpoint (CPU default) */
-  endpoint: import.meta.env.VITE_LLM_ENDPOINT || 'http://127.0.0.1:8000',
-  /** Optional local fallback endpoints (GPU + legacy) */
-  fallbackEndpoints: ['http://127.0.0.1:8001', 'http://127.0.0.1:8002'],
+  endpoint: import.meta.env.VITE_LLM_ENDPOINT || '/api/llm',
+  /** Proxied in dev via vite.config.ts; set VITE_LLM_ENDPOINT for production */
+  fallbackEndpoints: [] as string[],
   /** Local API key used for Authorization: Bearer <key> */
   apiKey: import.meta.env.VITE_LLM_API_KEY || 'local-secret',
   model: import.meta.env.VITE_LLM_MODEL || 'BitNet',
@@ -76,7 +78,7 @@ export const LLM_CONFIG = {
   },
 
   /** Timeout before falling back to RNG (ms) */
-  timeoutMs: 2000,
+  timeoutMs: 15000,
 
   /** Temperature (higher = more creative/random) */
   temperature: 1.2,
