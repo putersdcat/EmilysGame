@@ -8,7 +8,7 @@ import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite } from './sprites';
-import { generateChunkSync, setWordlist, type ChunkData } from './gen';
+import { generateChunkSync, setWordlist, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth } from './llm';
 import { FALLBACK_WORDLIST } from './config/entropy.config';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
@@ -72,11 +72,36 @@ function ensureChunksAround(state: GameState): void {
       const cy = pcy + dy;
       const key = chunkKey(cx, cy);
       if (!state.chunks.has(key)) {
-        const chunk = generateChunkSync(cx, cy);
+        // Collect border constraints from already-generated neighbors (#17)
+        const bc = collectBorderConstraints(state.chunks, cx, cy);
+        const chunk = generateChunkSync(cx, cy, bc);
         state.chunks.set(key, chunk);
       }
     }
   }
+}
+
+/** Read edge tags from adjacent chunks' borderEdges for inter-chunk stitching. */
+function collectBorderConstraints(
+  chunks: Map<string, ChunkData>,
+  cx: number,
+  cy: number,
+): BorderConstraints | undefined {
+  const northChunk = chunks.get(chunkKey(cx, cy - 1));
+  const southChunk = chunks.get(chunkKey(cx, cy + 1));
+  const eastChunk = chunks.get(chunkKey(cx + 1, cy));
+  const westChunk = chunks.get(chunkKey(cx - 1, cy));
+
+  const hasAny = northChunk?.borderEdges || southChunk?.borderEdges ||
+                 eastChunk?.borderEdges || westChunk?.borderEdges;
+  if (!hasAny) return undefined;
+
+  return {
+    n: northChunk?.borderEdges?.s,  // south border of chunk above
+    s: southChunk?.borderEdges?.n,  // north border of chunk below
+    e: eastChunk?.borderEdges?.w,   // west border of chunk to the east
+    w: westChunk?.borderEdges?.e,   // east border of chunk to the west
+  };
 }
 
 /** Only call ensureChunksAround when player crosses a chunk boundary */

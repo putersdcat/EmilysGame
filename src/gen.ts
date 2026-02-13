@@ -48,6 +48,22 @@ export interface CellData {
   resolved?: boolean;
 }
 
+/** Edge tags along each chunk border, one per world unit slot (GRID_DIM values). */
+export interface ChunkBorderEdges {
+  n: EdgeTag[];
+  s: EdgeTag[];
+  e: EdgeTag[];
+  w: EdgeTag[];
+}
+
+/** Constraints from already-generated neighboring chunks. */
+export interface BorderConstraints {
+  n?: EdgeTag[]; // south border Edge tags from chunk above
+  s?: EdgeTag[]; // north border edge tags from chunk below
+  e?: EdgeTag[]; // west border edge tags from chunk to the east
+  w?: EdgeTag[]; // east border edge tags from chunk to the west
+}
+
 export interface ChunkData {
   chunkX: number;
   chunkY: number;
@@ -55,6 +71,8 @@ export interface ChunkData {
   cells: CellData[][];
   seed: string;
   generated: boolean;
+  /** World unit grid border edges for inter-chunk stitching (#17) */
+  borderEdges?: ChunkBorderEdges;
 }
 
 // --- Entropy State ---
@@ -107,12 +125,13 @@ export async function generateChunk(
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
   const biome = getBiome(biomeSeed);
-  const cells = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
+  const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
     chunkX, chunkY,
     biomeId: biome.id,
     cells, seed: entropyText, generated: true,
+    borderEdges,
   };
 }
 
@@ -121,6 +140,7 @@ export async function generateChunk(
 export function generateChunkSync(
   chunkX: number,
   chunkY: number,
+  borderConstraints?: BorderConstraints,
 ): ChunkData {
   const size = WORLD_CONFIG.chunkSize;
 
@@ -134,16 +154,24 @@ export function generateChunkSync(
   const biomeSeed = asciiModulo(pair, WORLD_CONFIG.biomeCount);
   const biome = getBiome(biomeSeed);
 
-  const cells = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
+  const { cells, borderEdges } = generateGridChunk(
+    size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints,
+  );
 
   return {
     chunkX, chunkY,
     biomeId: biome.id,
     cells, seed: seedText, generated: true,
+    borderEdges,
   };
 }
 
 // --- Grid-based chunk generation (core pipeline) ---
+
+interface GridChunkResult {
+  cells: CellData[][];
+  borderEdges: ChunkBorderEdges;
+}
 
 function generateGridChunk(
   size: number,
@@ -152,14 +180,15 @@ function generateGridChunk(
   biome: BiomeDef,
   chunkX: number,
   chunkY: number,
-): CellData[][] {
+  borderConstraints?: BorderConstraints,
+): GridChunkResult {
   const rng = seededRandom(featureSeed);
 
   // Phase 1: Perlin noise base terrain
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
 
-  // Phase 2: solve world unit grid
-  const grid = solveWorldUnitGrid(biome, rng);
+  // Phase 2: solve world unit grid (AC-3 constraint propagation)
+  const { grid, borderEdges } = solveWorldUnitGrid(biome, rng, borderConstraints);
 
   // Phase 3: stamp solved templates onto cell grid
   stampWorldUnitGrid(cells, grid);
@@ -167,7 +196,7 @@ function generateGridChunk(
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
 
-  return cells;
+  return { cells, borderEdges };
 }
 
 // --- Phase 1: Perlin Noise Base Terrain ---
@@ -211,45 +240,90 @@ function assignTerrainCell(density: number, biome: BiomeDef): CellData {
   }
 }
 
-// --- Phase 2: World Unit Grid Solver ---
+// --- Phase 2: AC-3 World Unit Grid Solver (#17) ---
+// TODO: DOC — AC-3 constraint propagation solver for world unit placement.
+// Design: WorldEngine-02-EdgeContracts.md, Section 6.
 
 interface WeightedCandidate {
   template: RotatedTemplate;
   weight: number;
 }
 
-interface SlotConstraints {
-  n?: EdgeTag;
-  w?: EdgeTag;
+/** Possibility set for each grid slot. Candidates shrink via propagation. */
+interface SlotState {
+  candidates: WeightedCandidate[];
+  collapsed: RotatedTemplate | null;
 }
+
+/** An arc connects two adjacent slots along a specific direction pair. */
+interface Arc {
+  fromY: number;
+  fromX: number;
+  toY: number;
+  toX: number;
+  /** Which edge of 'from' faces 'to' */
+  fromSide: Cardinal;
+  /** Which edge of 'to' faces 'from' */
+  toSide: Cardinal;
+}
+
+interface SolveResult {
+  grid: (RotatedTemplate | null)[][];
+  borderEdges: ChunkBorderEdges;
+}
+
+// --- AC-3 Solver Budget ---
+const MAX_PROPAGATION_ITERATIONS = 1000;
 
 function solveWorldUnitGrid(
   biome: BiomeDef,
   rng: () => number,
-): (RotatedTemplate | null)[][] {
+  borderConstraints?: BorderConstraints,
+): SolveResult {
   const allRotations = getAllRotations();
-  const grid: (RotatedTemplate | null)[][] = [];
-
   const biomeCandidates = buildBiomeCandidatePool(biome, allRotations);
   const fallback = findFallbackTemplate(allRotations);
 
+  // Phase 2a: Initialize possibility sets
+  const slots: SlotState[][] = [];
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    slots[gy] = [];
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      slots[gy][gx] = {
+        candidates: biomeCandidates.map(c => ({ ...c })),
+        collapsed: null,
+      };
+    }
+  }
+
+  // Phase 2b: Apply border constraints from neighboring chunks
+  if (borderConstraints) {
+    applyBorderConstraints(slots, borderConstraints);
+  }
+
+  // Phase 2c: Build arc set and run initial AC-3 propagation
+  const arcs = buildAllArcs();
+  propagateAC3(slots, arcs);
+
+  // Phase 2d: Collapse slots using MRV heuristic + propagation
+  collapseAllMRV(slots, rng, fallback, arcs);
+
+  // Build result grid
+  const grid: (RotatedTemplate | null)[][] = [];
   for (let gy = 0; gy < GRID_DIM; gy++) {
     grid[gy] = [];
     for (let gx = 0; gx < GRID_DIM; gx++) {
-      const constraints = getSlotConstraints(grid, gx, gy);
-      const valid = filterByConstraints(biomeCandidates, constraints);
-
-      if (valid.length > 0) {
-        grid[gy][gx] = weightedSelectTemplate(valid, rng);
-      } else {
-        grid[gy][gx] = fallback;
-      }
+      grid[gy][gx] = slots[gy][gx].collapsed;
     }
   }
 
   enforceChainIntegrity(grid, allRotations);
-  return grid;
+  const borderEdges = extractGridBorderEdges(grid);
+
+  return { grid, borderEdges };
 }
+
+// --- Biome Candidate Pool ---
 
 function buildBiomeCandidatePool(
   biome: BiomeDef,
@@ -275,34 +349,232 @@ function findFallbackTemplate(
   return null;
 }
 
-function getSlotConstraints(
-  grid: (RotatedTemplate | null)[][],
-  gx: number,
-  gy: number,
-): SlotConstraints {
-  const constraints: SlotConstraints = {};
-  if (gy > 0 && grid[gy - 1][gx]) {
-    constraints.n = grid[gy - 1][gx]!.edgeTags.s;
+// --- Border Constraints from Neighboring Chunks ---
+
+function applyBorderConstraints(
+  slots: SlotState[][],
+  bc: BorderConstraints,
+): void {
+  // North border: our row 0 must match the south edge of the chunk above
+  if (bc.n) {
+    for (let gx = 0; gx < GRID_DIM && gx < bc.n.length; gx++) {
+      const requiredTag = bc.n[gx];
+      slots[0][gx].candidates = slots[0][gx].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.n, requiredTag),
+      );
+    }
   }
-  if (gx > 0 && grid[gy][gx - 1]) {
-    constraints.w = grid[gy][gx - 1]!.edgeTags.e;
+  // South border: our last row must match the north edge of the chunk below
+  if (bc.s) {
+    const lastRow = GRID_DIM - 1;
+    for (let gx = 0; gx < GRID_DIM && gx < bc.s.length; gx++) {
+      const requiredTag = bc.s[gx];
+      slots[lastRow][gx].candidates = slots[lastRow][gx].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.s, requiredTag),
+      );
+    }
   }
-  return constraints;
+  // West border: our column 0 must match the east edge of the chunk to the left
+  if (bc.w) {
+    for (let gy = 0; gy < GRID_DIM && gy < bc.w.length; gy++) {
+      const requiredTag = bc.w[gy];
+      slots[gy][0].candidates = slots[gy][0].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.w, requiredTag),
+      );
+    }
+  }
+  // East border: our last column must match the west edge of the chunk to the right
+  if (bc.e) {
+    const lastCol = GRID_DIM - 1;
+    for (let gy = 0; gy < GRID_DIM && gy < bc.e.length; gy++) {
+      const requiredTag = bc.e[gy];
+      slots[gy][lastCol].candidates = slots[gy][lastCol].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.e, requiredTag),
+      );
+    }
+  }
 }
 
-function filterByConstraints(
-  candidates: WeightedCandidate[],
-  constraints: SlotConstraints,
-): WeightedCandidate[] {
-  return candidates.filter(({ template }) => {
-    if (constraints.n !== undefined) {
-      if (!edgesCompatible(template.edgeTags.n, constraints.n)) return false;
+// --- Arc Construction ---
+
+const OPPOSITES: Record<Cardinal, Cardinal> = { n: 's', s: 'n', e: 'w', w: 'e' };
+
+function buildAllArcs(): Arc[] {
+  const arcs: Arc[] = [];
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      // Right neighbor
+      if (gx + 1 < GRID_DIM) {
+        arcs.push({ fromY: gy, fromX: gx, toY: gy, toX: gx + 1, fromSide: 'e', toSide: 'w' });
+        arcs.push({ fromY: gy, fromX: gx + 1, toY: gy, toX: gx, fromSide: 'w', toSide: 'e' });
+      }
+      // Bottom neighbor
+      if (gy + 1 < GRID_DIM) {
+        arcs.push({ fromY: gy, fromX: gx, toY: gy + 1, toX: gx, fromSide: 's', toSide: 'n' });
+        arcs.push({ fromY: gy + 1, fromX: gx, toY: gy, toX: gx, fromSide: 'n', toSide: 's' });
+      }
     }
-    if (constraints.w !== undefined) {
-      if (!edgesCompatible(template.edgeTags.w, constraints.w)) return false;
+  }
+  return arcs;
+}
+
+// --- AC-3 Constraint Propagation ---
+
+function propagateAC3(slots: SlotState[][], allArcs: Arc[]): void {
+  // Worklist: start with all arcs
+  const queue: Arc[] = [...allArcs];
+  let iterations = 0;
+
+  while (queue.length > 0 && iterations < MAX_PROPAGATION_ITERATIONS) {
+    iterations++;
+    const arc = queue.shift()!;
+    const fromSlot = slots[arc.fromY][arc.fromX];
+    const toSlot = slots[arc.toY][arc.toX];
+
+    // Skip if either is already collapsed
+    if (fromSlot.collapsed || toSlot.collapsed) continue;
+
+    // Revise: remove candidates from 'from' that have no compatible candidate in 'to'
+    const before = fromSlot.candidates.length;
+    fromSlot.candidates = fromSlot.candidates.filter(fc => {
+      // At least one candidate in 'to' must be compatible with fc on the shared edge
+      return toSlot.candidates.some(tc =>
+        edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide]),
+      );
+    });
+
+    // If candidates were removed, re-enqueue arcs pointing TO this slot
+    if (fromSlot.candidates.length < before) {
+      for (const otherArc of allArcs) {
+        if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX &&
+            !(otherArc.fromY === arc.toY && otherArc.fromX === arc.toX)) {
+          queue.push(otherArc);
+        }
+      }
     }
-    return true;
-  });
+  }
+}
+
+// --- Arcs Affected by a Specific Slot ---
+
+function getArcsAffectedBy(
+  gy: number, gx: number, allArcs: Arc[],
+): Arc[] {
+  return allArcs.filter(a => a.toY === gy && a.toX === gx);
+}
+
+// --- MRV Collapse with Propagation ---
+
+function collapseAllMRV(
+  slots: SlotState[][],
+  rng: () => number,
+  fallback: RotatedTemplate | null,
+  allArcs: Arc[],
+): void {
+  const totalSlots = GRID_DIM * GRID_DIM;
+
+  for (let step = 0; step < totalSlots; step++) {
+    // Find uncollapsed slot with minimum remaining values (MRV)
+    let bestY = -1, bestX = -1, bestCount = Infinity;
+    for (let gy = 0; gy < GRID_DIM; gy++) {
+      for (let gx = 0; gx < GRID_DIM; gx++) {
+        const slot = slots[gy][gx];
+        if (slot.collapsed) continue;
+        if (slot.candidates.length < bestCount) {
+          bestCount = slot.candidates.length;
+          bestY = gy;
+          bestX = gx;
+        }
+      }
+    }
+
+    if (bestY < 0) break; // All collapsed
+
+    const slot = slots[bestY][bestX];
+
+    // Collapse: pick from candidates (weighted) or use fallback
+    if (slot.candidates.length > 0) {
+      slot.collapsed = weightedSelectTemplate(slot.candidates, rng);
+    } else {
+      // Contradiction: use fallback (recovery strategy 1: degrade)
+      slot.collapsed = fallback;
+    }
+    slot.candidates = [];
+
+    // After collapsing, propagate constraints from this slot's neighbors
+    // Re-enqueue arcs involving this slot's neighbors
+    const affectedArcs = getArcsAffectedBy(bestY, bestX, allArcs);
+    // For each neighbor of the collapsed slot, filter their candidates
+    for (const arc of affectedArcs) {
+      const neighborSlot = slots[arc.fromY][arc.fromX];
+      if (neighborSlot.collapsed) continue;
+
+      const oppSide = OPPOSITES[arc.fromSide];
+      if (slot.collapsed) {
+        neighborSlot.candidates = neighborSlot.candidates.filter(c =>
+          edgesCompatible(c.template.edgeTags[arc.fromSide], slot.collapsed!.edgeTags[oppSide]),
+        );
+      }
+    }
+
+    // Run AC-3 from the affected neighbors outward
+    const propagationQueue: Arc[] = [];
+    for (const arc of affectedArcs) {
+      if (!slots[arc.fromY][arc.fromX].collapsed) {
+        // Re-enqueue arcs pointing to the affected neighbor
+        for (const otherArc of allArcs) {
+          if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX) {
+            propagationQueue.push(otherArc);
+          }
+        }
+      }
+    }
+    propagateAC3Partial(slots, propagationQueue, allArcs);
+  }
+}
+
+/** Partial AC-3 propagation from a specific worklist. */
+function propagateAC3Partial(
+  slots: SlotState[][],
+  queue: Arc[],
+  allArcs: Arc[],
+): void {
+  let iterations = 0;
+  while (queue.length > 0 && iterations < MAX_PROPAGATION_ITERATIONS) {
+    iterations++;
+    const arc = queue.shift()!;
+    const fromSlot = slots[arc.fromY][arc.fromX];
+    const toSlot = slots[arc.toY][arc.toX];
+
+    if (fromSlot.collapsed) continue;
+
+    // If toSlot is collapsed, filter from against the single collapsed value
+    let changed = false;
+    if (toSlot.collapsed) {
+      const before = fromSlot.candidates.length;
+      fromSlot.candidates = fromSlot.candidates.filter(fc =>
+        edgesCompatible(fc.template.edgeTags[arc.fromSide], toSlot.collapsed!.edgeTags[arc.toSide]),
+      );
+      changed = fromSlot.candidates.length < before;
+    } else {
+      const before = fromSlot.candidates.length;
+      fromSlot.candidates = fromSlot.candidates.filter(fc =>
+        toSlot.candidates.some(tc =>
+          edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide]),
+        ),
+      );
+      changed = fromSlot.candidates.length < before;
+    }
+
+    if (changed) {
+      for (const otherArc of allArcs) {
+        if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX &&
+            !(otherArc.fromY === arc.toY && otherArc.fromX === arc.toX)) {
+          queue.push(otherArc);
+        }
+      }
+    }
+  }
 }
 
 function weightedSelectTemplate(
@@ -316,6 +588,19 @@ function weightedSelectTemplate(
     if (roll <= 0) return c.template;
   }
   return candidates[candidates.length - 1].template;
+}
+
+// --- Border Edge Extraction ---
+
+function extractGridBorderEdges(
+  grid: (RotatedTemplate | null)[][],
+): ChunkBorderEdges {
+  return {
+    n: Array.from({ length: GRID_DIM }, (_, gx) => grid[0]?.[gx]?.edgeTags.n ?? 'open'),
+    s: Array.from({ length: GRID_DIM }, (_, gx) => grid[GRID_DIM - 1]?.[gx]?.edgeTags.s ?? 'open'),
+    e: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[GRID_DIM - 1]?.edgeTags.e ?? 'open'),
+    w: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[0]?.edgeTags.w ?? 'open'),
+  };
 }
 
 // --- Chain Integrity ---
@@ -343,10 +628,12 @@ function enforceChainIntegrity(
         if (needsFix && tag !== 'open') {
           const replacement = findTerminator(template.baseName, allRotations);
           if (replacement) {
-            const constraints = getSlotConstraints(grid, gx, gy);
+            // Check that replacement is compatible with placed neighbors
+            const nTag = gy > 0 && grid[gy - 1][gx] ? grid[gy - 1][gx]!.edgeTags.s : undefined;
+            const wTag = gx > 0 && grid[gy][gx - 1] ? grid[gy][gx - 1]!.edgeTags.e : undefined;
             if (
-              (!constraints.n || edgesCompatible(replacement.edgeTags.n, constraints.n)) &&
-              (!constraints.w || edgesCompatible(replacement.edgeTags.w, constraints.w))
+              (!nTag || edgesCompatible(replacement.edgeTags.n, nTag)) &&
+              (!wTag || edgesCompatible(replacement.edgeTags.w, wTag))
             ) {
               grid[gy][gx] = replacement;
             }
