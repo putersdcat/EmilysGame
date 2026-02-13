@@ -25,6 +25,8 @@ interface CachedChunkTerrain {
   originY: number;
   /** Generation stamp - invalidate if chunk is modified */
   stamp: number;
+  /** Local screen positions of water tiles for animated overlay */
+  waterPositions: { lsx: number; lsy: number }[];
 }
 
 const chunkCache = new Map<string, CachedChunkTerrain>();
@@ -60,6 +62,7 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
   const ctx = canvas.getContext('2d')!;
 
   const biome = getBiome(chunk.biomeId);
+  const waterPositions: { lsx: number; lsy: number }[] = [];
 
   // Render base terrain tiles (at TCSCALE resolution)
   for (let cy = 0; cy < SIZE; cy++) {
@@ -77,6 +80,10 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
         if (tileCanvas) {
           ctx.drawImage(tileCanvas, lsx - 32, lsy - 16);
         }
+        // Track water tile positions for animated overlay
+        if (def.tileType === 'water') {
+          waterPositions.push({ lsx, lsy });
+        }
       } else {
         const sprite = getEmojiSprite(def.emoji, biome.tintHue);
         const size = sprite.width * def.scale;
@@ -93,6 +100,7 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
     originX: ORIGIN_X,
     originY: ORIGIN_Y,
     stamp: cacheStamp++,
+    waterPositions,
   };
   chunkCache.set(chunkKey, entry);
   return entry;
@@ -134,6 +142,110 @@ export function drawCachedChunkTerrain(
   }
 
   ctx.drawImage(cached.canvas, destX, destY);
+
+  // Draw animated water wave overlays if chunk has water tiles
+  if (cached.waterPositions.length > 0) {
+    drawWaterOverlays(ctx, cached.waterPositions, destX, destY, waterAnimFrame);
+  }
+}
+
+// ─── Animated Water Wave Overlay ──────────────────────────────
+// Pre-rendered wave overlay frames blitted on top of cached water tiles.
+
+const WATER_FRAME_COUNT = 4;
+let waterAnimFrame = 0;
+let waterFrameTimer = 0;
+
+/** Pre-rendered wave overlay canvases (one per frame, 64x32 each). */
+const waterOverlayFrames: HTMLCanvasElement[] = [];
+
+/**
+ * Build the 4-frame wave overlay sprites.
+ * Each frame shifts the wave pattern by 25% of a wavelength.
+ */
+function buildWaterOverlayFrames(): void {
+  for (let f = 0; f < WATER_FRAME_COUNT; f++) {
+    const c = document.createElement('canvas');
+    c.width = TW;   // 64
+    c.height = TH;  // 32
+    const cx = c.getContext('2d')!;
+
+    // Clip to isometric diamond shape
+    cx.beginPath();
+    cx.moveTo(TW / 2, 0);       // top
+    cx.lineTo(TW, TH / 2);      // right
+    cx.lineTo(TW / 2, TH);      // bottom
+    cx.lineTo(0, TH / 2);       // left
+    cx.closePath();
+    cx.clip();
+
+    // Phase offset for this frame
+    const phase = (f / WATER_FRAME_COUNT) * Math.PI * 2;
+
+    // Draw 3 animated wave lines across the diamond
+    cx.strokeStyle = 'rgba(255,255,255,0.35)';
+    cx.lineWidth = 1.5;
+    for (let row = 0; row < 3; row++) {
+      const baseY = 8 + row * 10;
+      cx.beginPath();
+      for (let px = 0; px <= TW; px += 2) {
+        const wy = baseY + Math.sin((px / 16) * Math.PI + phase + row * 1.2) * 2.5;
+        if (px === 0) cx.moveTo(px, wy);
+        else cx.lineTo(px, wy);
+      }
+      cx.stroke();
+    }
+
+    // Add subtle sparkle highlights
+    cx.fillStyle = 'rgba(255,255,255,0.3)';
+    const sparkleX = 16 + Math.cos(phase) * 12;
+    const sparkleY = 12 + Math.sin(phase * 0.7) * 6;
+    cx.beginPath();
+    cx.arc(sparkleX, sparkleY, 1.5, 0, Math.PI * 2);
+    cx.fill();
+    const sparkle2X = 48 + Math.cos(phase + 2) * 10;
+    const sparkle2Y = 20 + Math.sin(phase * 0.5 + 1) * 5;
+    cx.beginPath();
+    cx.arc(sparkle2X, sparkle2Y, 1, 0, Math.PI * 2);
+    cx.fill();
+
+    waterOverlayFrames.push(c);
+  }
+}
+
+/**
+ * Draw animated wave overlay at water tile positions.
+ * Called during the live render pass (not cached).
+ */
+function drawWaterOverlays(
+  ctx: CanvasRenderingContext2D,
+  positions: { lsx: number; lsy: number }[],
+  destX: number,
+  destY: number,
+  frame: number,
+): void {
+  if (waterOverlayFrames.length === 0) buildWaterOverlayFrames();
+  const overlay = waterOverlayFrames[frame % WATER_FRAME_COUNT];
+  for (let i = 0; i < positions.length; i++) {
+    const wx = destX + positions[i].lsx - 32;
+    const wy = destY + positions[i].lsy - 16;
+    // Quick per-tile bounds check
+    if (wx + TW < 0 || wx > RENDER_CONFIG.canvasWidth ||
+        wy + TH < 0 || wy > RENDER_CONFIG.canvasHeight) continue;
+    ctx.drawImage(overlay, wx, wy);
+  }
+}
+
+/**
+ * Advance the water animation frame. Call from game loop (throttled).
+ */
+export function tickWaterAnimation(): void {
+  waterFrameTimer++;
+  // Advance every 15 frames (~4fps wave animation at 60fps game)
+  if (waterFrameTimer >= 15) {
+    waterFrameTimer = 0;
+    waterAnimFrame = (waterAnimFrame + 1) % WATER_FRAME_COUNT;
+  }
 }
 
 // ─── Auto-Tile Transitions ───────────────────────────────────

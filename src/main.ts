@@ -19,7 +19,7 @@ import { saveGame, loadGame, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache } from './terrain-cache';
+import { clearTerrainCache, tickWaterAnimation } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 
@@ -530,6 +530,7 @@ function gameLoop(
   _time: number,
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
+  tickWaterAnimation();
   update(ctx.state, ctx.input);
   renderFrame(ctx.renderer, ctx.state);
   requestAnimationFrame((t) => gameLoop(t, ctx));

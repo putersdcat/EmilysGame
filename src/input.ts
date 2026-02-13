@@ -146,22 +146,26 @@ export class InputManager {
   }
 
   /**
-   * Get normalized movement vector.
+   * Get normalized movement vector, rotated 45° for isometric alignment.
+   * Pressing Up moves visually upward on screen (NW in grid).
+   * Pressing Right moves visually right on screen (NE in grid).
    */
   public getMovementVector(): { dx: number; dy: number } {
-    let dx = 0;
-    let dy = 0;
+    // Raw screen-intent input
+    let sdx = 0;
+    let sdy = 0;
+    if (this.keyState.up) sdy -= 1;
+    if (this.keyState.down) sdy += 1;
+    if (this.keyState.left) sdx -= 1;
+    if (this.keyState.right) sdx += 1;
 
-    // In isometric, diagonal movement maps differently than cardinal
-    // Up-Left = (-x, -y), Up-Right = (+x, -y)
-    // Down-Right = (+x, +y), Down-Left = (-x, +y)
+    // Rotate 45° to convert screen-space intent → isometric grid-space
+    // Screen Up (0,-1) → Grid (-1,-1) = visually move toward top of screen
+    // Screen Right (1,0) → Grid (1,-1) = visually move toward right of screen
+    let dx = sdx + sdy;
+    let dy = -sdx + sdy;
 
-    if (this.keyState.up) dy -= 1;
-    if (this.keyState.down) dy += 1;
-    if (this.keyState.left) dx -= 1;
-    if (this.keyState.right) dx += 1;
-
-    // Normalize diagonal movement to avoid faster speed
+    // Normalize to constant speed regardless of direction
     const magnitude = Math.sqrt(dx * dx + dy * dy);
     if (magnitude > 0) {
       dx /= magnitude;
