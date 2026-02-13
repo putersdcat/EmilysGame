@@ -31,19 +31,19 @@ const chunkCache = new Map<string, CachedChunkTerrain>();
 let cacheStamp = 0;
 
 // Chunk content dimensions (computed from chunk size & tile dims)
-const SIZE = WORLD_CONFIG.chunkSize; // 32
+const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
 const TW = RENDER_CONFIG.tileWidth;  // 64
 const TH = RENDER_CONFIG.tileHeight; // 32
 const HALF_TW = TW / 2;             // 32
 const HALF_TH = TH / 2;             // 16
 
-// Full-res chunk pixel dimensions
-const CHUNK_PX_W = (SIZE * 2) * HALF_TW + TW;  // 2112
-const CHUNK_PX_H = SIZE * 2 * HALF_TH + TH;    // 1056
+// Full-res chunk pixel dimensions (computed from chunk size)
+const CHUNK_PX_W = (SIZE * 2) * HALF_TW + TW;
+const CHUNK_PX_H = SIZE * 2 * HALF_TH + TH;
 
 // Origin offset within the canvas (where local 0,0 maps to)
-const ORIGIN_X = SIZE * HALF_TW; // 1024
-const ORIGIN_Y = HALF_TH;        // 16
+const ORIGIN_X = SIZE * HALF_TW;
+const ORIGIN_Y = HALF_TH;
 
 /**
  * Get or create cached terrain canvas for a chunk.
@@ -84,6 +84,9 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
       }
     }
   }
+
+  // --- Auto-tile transitions: subtle edge darkening at tile-type boundaries ---
+  renderAutoTileTransitions(ctx, chunk);
 
   entry = {
     canvas,
@@ -131,6 +134,78 @@ export function drawCachedChunkTerrain(
   }
 
   ctx.drawImage(cached.canvas, destX, destY);
+}
+
+// ─── Auto-Tile Transitions ───────────────────────────────────
+// Draws subtle edge darkening where adjacent cells have different base tile types.
+// Applied to the terrain cache so it renders once, not per-frame.
+
+/** Color for transition edge overlays (semi-transparent dark) */
+const TRANSITION_ALPHA = 0.12;
+
+function getBaseTileType(chunk: ChunkData, cx: number, cy: number): string | null {
+  if (cx < 0 || cy < 0 || cx >= SIZE || cy >= SIZE) return null;
+  const cell = chunk.cells[cy][cx];
+  const def = ASSET_DEFS[cell.assetKey];
+  if (!def || def.layer !== 'base') return null;
+  return def.tileType ?? def.emoji ?? cell.assetKey;
+}
+
+function renderAutoTileTransitions(
+  ctx: CanvasRenderingContext2D,
+  chunk: ChunkData,
+): void {
+  ctx.save();
+  ctx.globalAlpha = TRANSITION_ALPHA;
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1.5;
+
+  for (let cy = 0; cy < SIZE; cy++) {
+    for (let cx = 0; cx < SIZE; cx++) {
+      const myType = getBaseTileType(chunk, cx, cy);
+      if (!myType) continue;
+
+      const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
+      const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
+
+      // Check 4 cardinal neighbors; draw edge segment where type differs
+      // Isometric diamond edges: top-right(+1,0), bottom-right(0,+1), bottom-left(-1,0), top-left(0,-1)
+      const neighbors = [
+        { dx: 1, dy: 0 },  // east neighbor → top-right edge
+        { dx: 0, dy: 1 },  // south neighbor → bottom-right edge
+        { dx: -1, dy: 0 }, // west neighbor → bottom-left edge
+        { dx: 0, dy: -1 }, // north neighbor → top-left edge
+      ];
+
+      for (let ni = 0; ni < 4; ni++) {
+        const nbType = getBaseTileType(chunk, cx + neighbors[ni].dx, cy + neighbors[ni].dy);
+        if (nbType === null || nbType === myType) continue;
+
+        // Draw the isometric diamond edge between this cell and the differing neighbor
+        ctx.beginPath();
+        switch (ni) {
+          case 0: // east → top-right edge: top to right
+            ctx.moveTo(lsx, lsy - HALF_TH);
+            ctx.lineTo(lsx + HALF_TW, lsy);
+            break;
+          case 1: // south → bottom-right edge: right to bottom
+            ctx.moveTo(lsx + HALF_TW, lsy);
+            ctx.lineTo(lsx, lsy + HALF_TH);
+            break;
+          case 2: // west → bottom-left edge: bottom to left
+            ctx.moveTo(lsx, lsy + HALF_TH);
+            ctx.lineTo(lsx - HALF_TW, lsy);
+            break;
+          case 3: // north → top-left edge: left to top
+            ctx.moveTo(lsx - HALF_TW, lsy);
+            ctx.lineTo(lsx, lsy - HALF_TH);
+            break;
+        }
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
 }
 
 /**
