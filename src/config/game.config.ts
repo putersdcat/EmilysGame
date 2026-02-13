@@ -25,7 +25,8 @@ export const RENDER_CONFIG = {
 
 // ─── Grid / World ────────────────────────────────────────────
 export const WORLD_CONFIG = {
-  chunkSize: 32,        // Cells per chunk side (32x32)
+  chunkSize: 25,        // Cells per chunk side (25x25 = 5×5 world units)
+  worldUnitSize: 5,     // Cells per world unit side
   cellPixels: 128,      // Logical cell size in px
   viewportBuffer: 1,    // Extra chunks rendered off-screen (0 = tight, 1 = smooth)
 
@@ -46,7 +47,7 @@ export const WORLD_CONFIG = {
 // ─── Player / Ego ────────────────────────────────────────────
 export const PLAYER_CONFIG = {
   speed: 0.05,          // Grid units per frame
-  startPosition: { x: 16, y: 16 }, // Center of first chunk (32/2)
+  startPosition: { x: 12, y: 12 }, // Center of first chunk (25/2)
   height: 3,
   scale: 1.0,
   defaultVariation: 'blonde_pink',

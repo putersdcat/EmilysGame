@@ -31,19 +31,19 @@ const chunkCache = new Map<string, CachedChunkTerrain>();
 let cacheStamp = 0;
 
 // Chunk content dimensions (computed from chunk size & tile dims)
-const SIZE = WORLD_CONFIG.chunkSize; // 32
+const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
 const TW = RENDER_CONFIG.tileWidth;  // 64
 const TH = RENDER_CONFIG.tileHeight; // 32
 const HALF_TW = TW / 2;             // 32
 const HALF_TH = TH / 2;             // 16
 
-// Full-res chunk pixel dimensions
-const CHUNK_PX_W = (SIZE * 2) * HALF_TW + TW;  // 2112
-const CHUNK_PX_H = SIZE * 2 * HALF_TH + TH;    // 1056
+// Full-res chunk pixel dimensions (computed from chunk size)
+const CHUNK_PX_W = (SIZE * 2) * HALF_TW + TW;
+const CHUNK_PX_H = SIZE * 2 * HALF_TH + TH;
 
 // Origin offset within the canvas (where local 0,0 maps to)
-const ORIGIN_X = SIZE * HALF_TW; // 1024
-const ORIGIN_Y = HALF_TH;        // 16
+const ORIGIN_X = SIZE * HALF_TW;
+const ORIGIN_Y = HALF_TH;
 
 /**
  * Get or create cached terrain canvas for a chunk.

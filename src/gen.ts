@@ -1,7 +1,14 @@
 /**
- * gen.ts - World generation system.
- * Converts LLM entropy into chunk data via hashing and Perlin noise.
- * Enforces playability rules (BFS passability, item/obstacle balance).
+ * gen.ts — World generation system (v2: grid-based world unit solver).
+ *
+ * Replaces random template stamping with structured 5x5 world unit grid filling.
+ * Each chunk (25x25 cells) is a 5x5 grid of world unit slots, filled via
+ * edge-contract-aware constraint selection.
+ *
+ * Design docs: WorldEngine-01 (Spatial Hierarchy), WorldEngine-03 (Solver Pipeline)
+ * GitHub: #23 — Generation Pipeline Refactor
+ *
+ * TODO: DOC — document the grid solver algorithm and chain integrity rules
  */
 
 import { WORLD_CONFIG } from './config/game.config';
@@ -19,33 +26,42 @@ import {
 } from './utils';
 import { expandEntropy } from './llm';
 import { DIRECTION_WORDS } from './config/entropy.config';
-import { selectTemplate, getTemplate } from './config/tiles.config';
+import {
+  edgesCompatible,
+  getAllRotations,
+  BIOME_TEMPLATE_WEIGHTS,
+  MICRO_TILE_DEFS,
+  type EdgeTag,
+  type RotatedTemplate,
+  type Cardinal,
+} from './config/tiles.config';
+import type { TileType } from './tiles';
 
-// ─── Types ───────────────────────────────────────────────────
+// --- Types ---
 
 export interface CellData {
-  assetKey: string;       // Key into ASSET_DEFS
+  assetKey: string;
   walkable: boolean;
   interactable: boolean;
-  npcId?: string;         // NPC persona ID (if NPC cell)
-  itemId?: string;        // Collectible item ID
-  resolved?: boolean;     // True if obstacle has been solved
+  npcId?: string;
+  itemId?: string;
+  resolved?: boolean;
 }
 
 export interface ChunkData {
-  chunkX: number;         // Chunk grid coordinate
+  chunkX: number;
   chunkY: number;
   biomeId: number;
-  cells: CellData[][];    // [y][x] 2D array, size = chunkSize × chunkSize
-  seed: string;           // The entropy string used to generate this chunk
+  cells: CellData[][];
+  seed: string;
   generated: boolean;
 }
 
-// ─── Entropy State ───────────────────────────────────────────
+// --- Entropy State ---
 
-/** Session wordlist (filled on game init from LLM or fallback) */
 let wordlist: string[] = [];
 let lastEntropyOutput = '';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let entropyBuffer = '';
 
 export function setWordlist(list: string[]): void {
@@ -56,12 +72,8 @@ export function getWordlist(): string[] {
   return wordlist;
 }
 
-// ─── Direction → Pair Mapping ────────────────────────────────
+// --- Direction Pair ---
 
-/**
- * Get a verb-noun pair from the player's movement direction.
- * Direction: 'up' | 'down' | 'left' | 'right'
- */
 export function getDirectionPair(direction: string, rng: () => number): string {
   const table = DIRECTION_WORDS[direction] || DIRECTION_WORDS['right'];
   const verb = table.verbs[Math.floor(rng() * table.verbs.length)];
@@ -69,68 +81,43 @@ export function getDirectionPair(direction: string, rng: () => number): string {
   return `${verb} ${noun}`;
 }
 
-// ─── Chunk Generation ────────────────────────────────────────
+// --- World Unit Grid Constants ---
 
-/**
- * Generate a chunk at (chunkX, chunkY) using entropy from the wordlist.
- * This is the main entry point for world generation.
- *
- * Process:
- * 1. Pick wordlist pair based on chunk coords
- * 2. Expand pair to nonsense sentence via LLM (or fallback)
- * 3. Hash sentence to numerical seeds
- * 4. Use Perlin noise + seeds to build density map
- * 5. Assign cell types from biome weights
- * 6. Place features (NPCs, chests, collectibles)
- * 7. Enforce playability rules (BFS passability, key/door balance)
- */
+const WU_SIZE = WORLD_CONFIG.worldUnitSize;
+const GRID_DIM = WORLD_CONFIG.chunkSize / WU_SIZE;
+
+// --- Chunk Generation (async + LLM) ---
+
 export async function generateChunk(
   chunkX: number,
   chunkY: number,
 ): Promise<ChunkData> {
   const size = WORLD_CONFIG.chunkSize;
 
-  // Step 1: Pick wordlist pair for this chunk
   const pairIndex = Math.abs(fastHash(`${chunkX},${chunkY}`)) % wordlist.length;
   const pair = wordlist[pairIndex] || 'obliterate quasar';
 
-  // Step 2: Expand via LLM (async, with fallback)
   const entropyText = await expandEntropy(pair, lastEntropyOutput);
   lastEntropyOutput = entropyText;
   entropyBuffer += entropyText;
 
-  // Step 3: Hash to numerical seeds
   const hashHex = await sha256(entropyText);
   const biomeSeed = hexToInt(hashHex.slice(0, 8), WORLD_CONFIG.biomeCount - 1);
   const noiseSeed = fastHash(hashHex.slice(8, 16));
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
-  // Step 4: Determine biome
   const biome = getBiome(biomeSeed);
-
-  // Step 5: Build chunk using Perlin + biome weights
-  const cells = buildChunkCells(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
-
-  // Stamp world unit templates for structured features (rivers, walls, etc.)
-  stampTemplates(cells, size, biome, seededRandom(featureSeed + 77));
-
-  enforcePassability(cells, size, seededRandom(featureSeed));
-  balanceObstacles(cells, size, seededRandom(noiseSeed + 1));
+  const cells = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
-    chunkX,
-    chunkY,
+    chunkX, chunkY,
     biomeId: biome.id,
-    cells,
-    seed: entropyText,
-    generated: true,
+    cells, seed: entropyText, generated: true,
   };
 }
 
-/**
- * Synchronous chunk generation (no LLM, for immediate needs).
- * Uses only the wordlist + hashing, no LLM expansion.
- */
+// --- Chunk Generation (sync, no LLM) ---
+
 export function generateChunkSync(
   chunkX: number,
   chunkY: number,
@@ -147,27 +134,18 @@ export function generateChunkSync(
   const biomeSeed = asciiModulo(pair, WORLD_CONFIG.biomeCount);
   const biome = getBiome(biomeSeed);
 
-  const cells = buildChunkCells(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
-
-  // Stamp world unit templates for structured features
-  stampTemplates(cells, size, biome, seededRandom(featureSeed + 77));
-
-  enforcePassability(cells, size, seededRandom(featureSeed));
-  balanceObstacles(cells, size, seededRandom(noiseSeed + 1));
+  const cells = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
-    chunkX,
-    chunkY,
+    chunkX, chunkY,
     biomeId: biome.id,
-    cells,
-    seed: seedText,
-    generated: true,
+    cells, seed: seedText, generated: true,
   };
 }
 
-// ─── Cell Building ───────────────────────────────────────────
+// --- Grid-based chunk generation (core pipeline) ---
 
-function buildChunkCells(
+function generateGridChunk(
   size: number,
   noiseSeed: number,
   featureSeed: number,
@@ -175,293 +153,326 @@ function buildChunkCells(
   chunkX: number,
   chunkY: number,
 ): CellData[][] {
-  const perlin = new PerlinNoise(noiseSeed);
   const rng = seededRandom(featureSeed);
+
+  // Phase 1: Perlin noise base terrain
+  const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
+
+  // Phase 2: solve world unit grid
+  const grid = solveWorldUnitGrid(biome, rng);
+
+  // Phase 3: stamp solved templates onto cell grid
+  stampWorldUnitGrid(cells, grid);
+
+  // Phase 4: enforce passability
+  enforcePassability(cells, size, seededRandom(featureSeed + 99));
+
+  return cells;
+}
+
+// --- Phase 1: Perlin Noise Base Terrain ---
+
+function buildPerlinBase(
+  size: number,
+  noiseSeed: number,
+  biome: BiomeDef,
+  chunkX: number,
+  chunkY: number,
+): CellData[][] {
+  const perlin = new PerlinNoise(noiseSeed);
   const cells: CellData[][] = [];
 
   for (let y = 0; y < size; y++) {
     cells[y] = [];
     for (let x = 0; x < size; x++) {
-      // Global coords for noise continuity across chunks
       const gx = chunkX * size + x;
       const gy = chunkY * size + y;
-
-      // Get density from Perlin (0-100)
       const density = perlin.noise100(gx * 0.1, gy * 0.1);
-
-      cells[y][x] = assignCell(density, biome, rng);
+      cells[y][x] = assignTerrainCell(density, biome);
     }
   }
-
-  // Place features (NPCs, chests, collectibles) sparsely
-  placeFeatures(cells, size, biome, rng);
-
   return cells;
 }
 
-function assignCell(
-  density: number,
-  biome: BiomeDef,
-  rng: () => number,
-): CellData {
-  const { terrain, obstacle, feature: _feat } = WORLD_CONFIG.density;
+function assignTerrainCell(density: number, biome: BiomeDef): CellData {
+  const { terrain, obstacle } = WORLD_CONFIG.density;
 
   if (density <= terrain.max) {
-    // Open terrain
-    const assetKey = weightedPick(biome.terrainWeights, rng());
+    const assetKey = weightedPick(biome.terrainWeights, Math.random());
     const def = ASSET_DEFS[assetKey];
-    return {
-      assetKey,
-      walkable: def?.walkable ?? true,
-      interactable: def?.interactable ?? false,
-    };
+    return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   } else if (density <= obstacle.max) {
-    // Obstacle
-    const assetKey = weightedPick(biome.obstacleWeights, rng());
-    const def = ASSET_DEFS[assetKey];
-    return {
-      assetKey,
-      walkable: def?.walkable ?? false,
-      interactable: def?.interactable ?? false,
-    };
+    const def = ASSET_DEFS['rock'];
+    return { assetKey: 'rock', walkable: def?.walkable ?? false, interactable: false };
   } else {
-    // Feature slot (will be populated by placeFeatures or left as terrain)
-    const assetKey = weightedPick(biome.terrainWeights, rng());
+    const assetKey = weightedPick(biome.terrainWeights, Math.random());
     const def = ASSET_DEFS[assetKey];
-    return {
-      assetKey,
-      walkable: def?.walkable ?? true,
-      interactable: def?.interactable ?? false,
-    };
+    return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   }
 }
 
-// ─── Template Stamping ───────────────────────────────────────
+// --- Phase 2: World Unit Grid Solver ---
 
-/**
- * Stamp world unit templates (5×5) onto the chunk for structured features.
- * Templates overwrite Perlin-generated cells at selected positions.
- * Placement is sparse: 0-3 templates per chunk, based on biome + entropy.
- */
-function stampTemplates(
-  cells: CellData[][],
-  size: number,
+interface WeightedCandidate {
+  template: RotatedTemplate;
+  weight: number;
+}
+
+interface SlotConstraints {
+  n?: EdgeTag;
+  w?: EdgeTag;
+}
+
+function solveWorldUnitGrid(
   biome: BiomeDef,
   rng: () => number,
-): void {
-  // How many templates to attempt (0-3)
-  const maxTemplates = Math.floor(rng() * 4);
-  const templateSize = 5;
-  const placed: Array<{ x: number; y: number }> = [];
+): (RotatedTemplate | null)[][] {
+  const allRotations = getAllRotations();
+  const grid: (RotatedTemplate | null)[][] = [];
 
-  for (let i = 0; i < maxTemplates; i++) {
-    const templateName = selectTemplate(biome.name, rng);
-    if (!templateName) continue;
+  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations);
+  const fallback = findFallbackTemplate(allRotations);
 
-    const template = getTemplate(templateName);
-    if (!template) continue;
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    grid[gy] = [];
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      const constraints = getSlotConstraints(grid, gx, gy);
+      const valid = filterByConstraints(biomeCandidates, constraints);
 
-    // Find a non-overlapping position (avoid chunk edges for cleaner stitching)
-    let px = -1;
-    let py = -1;
-    let valid = false;
-
-    for (let attempt = 0; attempt < 20; attempt++) {
-      px = 2 + Math.floor(rng() * (size - templateSize - 4));
-      py = 2 + Math.floor(rng() * (size - templateSize - 4));
-
-      // Check for overlap with previously placed templates
-      const overlaps = placed.some(
-        (p) => Math.abs(p.x - px) < templateSize + 1 && Math.abs(p.y - py) < templateSize + 1,
-      );
-      if (!overlaps) {
-        valid = true;
-        break;
+      if (valid.length > 0) {
+        grid[gy][gx] = weightedSelectTemplate(valid, rng);
+      } else {
+        grid[gy][gx] = fallback;
       }
     }
-
-    if (!valid) continue;
-
-    // Stamp the template cells
-    for (let ty = 0; ty < templateSize; ty++) {
-      for (let tx = 0; tx < templateSize; tx++) {
-        const cellKey = template.cells[ty][tx];
-        if (cellKey === null) continue; // null = keep existing
-
-        const def = ASSET_DEFS[cellKey];
-        cells[py + ty][px + tx] = {
-          assetKey: cellKey,
-          walkable: def?.walkable ?? true,
-          interactable: def?.interactable ?? false,
-        };
-      }
-    }
-
-    placed.push({ x: px, y: py });
   }
+
+  enforceChainIntegrity(grid, allRotations);
+  return grid;
 }
 
-// ─── Feature Placement ───────────────────────────────────────
-
-function placeFeatures(
-  cells: CellData[][],
-  size: number,
+function buildBiomeCandidatePool(
   biome: BiomeDef,
-  rng: () => number,
-): void {
-  // Scatter collectibles and NPCs based on biome rates
-  const collectibleCount = Math.floor(size * biome.collectibleRate * 0.5);
-  const npcCount = Math.max(1, Math.floor(3 * biome.npcRate));
+  allRotations: Map<string, RotatedTemplate[]>,
+): WeightedCandidate[] {
+  const pool: WeightedCandidate[] = [];
+  const biomeWeights = BIOME_TEMPLATE_WEIGHTS[biome.name] ?? {};
 
-  // Place collectibles on walkable cells
-  let placed = 0;
-  for (let attempt = 0; attempt < size * size && placed < collectibleCount; attempt++) {
-    const x = Math.floor(rng() * size);
-    const y = Math.floor(rng() * size);
-    if (cells[y][x].walkable && !cells[y][x].itemId) {
-      const featureKey = weightedPick(biome.featureWeights, rng());
-      const def = ASSET_DEFS[featureKey];
-      if (def?.category === 'collectible') {
-        cells[y][x].itemId = featureKey;
-        cells[y][x].interactable = true;
-        placed++;
-      } else if (def?.category === 'interactive') {
-        cells[y][x] = {
-          assetKey: featureKey,
-          walkable: def.walkable,
-          interactable: def.interactable,
-        };
-        placed++;
-      }
+  for (const [templateName, rotations] of allRotations.entries()) {
+    const weight = biomeWeights[templateName] ?? 0.01;
+    for (const rot of rotations) {
+      pool.push({ template: rot, weight });
     }
   }
+  return pool;
+}
 
-  // Place NPCs on walkable cells
-  let npcsPlaced = 0;
-  for (let attempt = 0; attempt < size * size && npcsPlaced < npcCount; attempt++) {
-    const x = Math.floor(rng() * size);
-    const y = Math.floor(rng() * size);
-    if (cells[y][x].walkable && !cells[y][x].npcId && !cells[y][x].itemId) {
-      const featureKey = weightedPick(biome.featureWeights, rng());
-      const def = ASSET_DEFS[featureKey];
-      if (def?.category === 'npc') {
-        cells[y][x] = {
-          assetKey: featureKey,
-          walkable: false,
-          interactable: true,
-          npcId: featureKey === 'npc_merchant'
-            ? 'merchant_default'
-            : featureKey === 'npc_guardian'
-              ? 'guardian_default'
-              : 'villager_default',
-        };
-        npcsPlaced++;
+function findFallbackTemplate(
+  allRotations: Map<string, RotatedTemplate[]>,
+): RotatedTemplate | null {
+  const meadowRots = allRotations.get('meadow_base');
+  if (meadowRots && meadowRots.length > 0) return meadowRots[0];
+  return null;
+}
+
+function getSlotConstraints(
+  grid: (RotatedTemplate | null)[][],
+  gx: number,
+  gy: number,
+): SlotConstraints {
+  const constraints: SlotConstraints = {};
+  if (gy > 0 && grid[gy - 1][gx]) {
+    constraints.n = grid[gy - 1][gx]!.edgeTags.s;
+  }
+  if (gx > 0 && grid[gy][gx - 1]) {
+    constraints.w = grid[gy][gx - 1]!.edgeTags.e;
+  }
+  return constraints;
+}
+
+function filterByConstraints(
+  candidates: WeightedCandidate[],
+  constraints: SlotConstraints,
+): WeightedCandidate[] {
+  return candidates.filter(({ template }) => {
+    if (constraints.n !== undefined) {
+      if (!edgesCompatible(template.edgeTags.n, constraints.n)) return false;
+    }
+    if (constraints.w !== undefined) {
+      if (!edgesCompatible(template.edgeTags.w, constraints.w)) return false;
+    }
+    return true;
+  });
+}
+
+function weightedSelectTemplate(
+  candidates: WeightedCandidate[],
+  rng: () => number,
+): RotatedTemplate {
+  const totalWeight = candidates.reduce((sum, c) => sum + c.weight, 0);
+  let roll = rng() * totalWeight;
+  for (const c of candidates) {
+    roll -= c.weight;
+    if (roll <= 0) return c.template;
+  }
+  return candidates[candidates.length - 1].template;
+}
+
+// --- Chain Integrity ---
+
+function enforceChainIntegrity(
+  grid: (RotatedTemplate | null)[][],
+  allRotations: Map<string, RotatedTemplate[]>,
+): void {
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      const template = grid[gy][gx];
+      if (!template) continue;
+
+      const chainEdges = getChainEdges(template);
+      if (chainEdges.length === 0) continue;
+
+      for (const { dir, tag } of chainEdges) {
+        const nx = gx + (dir === 'e' ? 1 : dir === 'w' ? -1 : 0);
+        const ny = gy + (dir === 's' ? 1 : dir === 'n' ? -1 : 0);
+
+        const needsFix =
+          nx < 0 || nx >= GRID_DIM || ny < 0 || ny >= GRID_DIM ||
+          !grid[ny]?.[nx];
+
+        if (needsFix && tag !== 'open') {
+          const replacement = findTerminator(template.baseName, allRotations);
+          if (replacement) {
+            const constraints = getSlotConstraints(grid, gx, gy);
+            if (
+              (!constraints.n || edgesCompatible(replacement.edgeTags.n, constraints.n)) &&
+              (!constraints.w || edgesCompatible(replacement.edgeTags.w, constraints.w))
+            ) {
+              grid[gy][gx] = replacement;
+            }
+          }
+        }
       }
     }
   }
 }
 
-// ─── Playability Enforcement ─────────────────────────────────
+function getChainEdges(template: RotatedTemplate): Array<{ dir: Cardinal; tag: EdgeTag }> {
+  const edges: Array<{ dir: Cardinal; tag: EdgeTag }> = [];
+  const dirs: Cardinal[] = ['n', 's', 'e', 'w'];
+  for (const dir of dirs) {
+    const tag = template.edgeTags[dir];
+    if (tag !== 'open') edges.push({ dir, tag });
+  }
+  return edges;
+}
+
+function findTerminator(
+  baseName: string,
+  allRotations: Map<string, RotatedTemplate[]>,
+): RotatedTemplate | null {
+  if (baseName.startsWith('river_')) {
+    const pondRots = allRotations.get('river_end_pond');
+    if (pondRots && pondRots.length > 0) return pondRots[0];
+  }
+  const meadowRots = allRotations.get('meadow_base');
+  if (meadowRots && meadowRots.length > 0) return meadowRots[0];
+  return null;
+}
+
+// --- Phase 3: Stamp Grid onto Cells ---
+
+function stampWorldUnitGrid(
+  cells: CellData[][],
+  grid: (RotatedTemplate | null)[][],
+): void {
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      const template = grid[gy][gx];
+      if (!template) continue;
+
+      const baseX = gx * WU_SIZE;
+      const baseY = gy * WU_SIZE;
+
+      for (let ty = 0; ty < WU_SIZE; ty++) {
+        for (let tx = 0; tx < WU_SIZE; tx++) {
+          const cellKey = template.cells[ty]?.[tx];
+          if (cellKey === null || cellKey === undefined) continue;
+
+          const microDef = MICRO_TILE_DEFS[cellKey as TileType];
+          const def = ASSET_DEFS[cellKey];
+          cells[baseY + ty][baseX + tx] = {
+            assetKey: cellKey,
+            walkable: microDef?.walkable ?? def?.walkable ?? true,
+            interactable: def?.interactable ?? false,
+          };
+        }
+      }
+    }
+  }
+}
+
+// --- Phase 4: Passability Enforcement ---
 
 function enforcePassability(
   cells: CellData[][],
   size: number,
   rng: () => number,
 ): void {
-  // Check BFS reachability from center
   const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
-
-  // Ensure center is walkable
   cells[center.y][center.x].walkable = true;
   cells[center.y][center.x].assetKey = 'grass';
 
   const reachable = bfsFloodFill(
     (x, y) => cells[y][x].walkable,
-    size,
-    size,
-    center,
+    size, size, center,
   );
 
   const totalCells = size * size;
   const passabilityRatio = reachable.size / totalCells;
 
-  // If below target, carve paths
   if (passabilityRatio < WORLD_CONFIG.passabilityTarget) {
     const needed = Math.floor(WORLD_CONFIG.passabilityTarget * totalCells) - reachable.size;
     let carved = 0;
-
     for (let attempt = 0; attempt < totalCells && carved < needed; attempt++) {
       const x = Math.floor(rng() * size);
       const y = Math.floor(rng() * size);
       if (!cells[y][x].walkable) {
-        cells[y][x] = {
-          assetKey: 'grass',
-          walkable: true,
-          interactable: false,
-        };
+        cells[y][x] = { assetKey: 'grass', walkable: true, interactable: false };
         carved++;
       }
     }
   }
 
-  // Ensure edges have entry points (N/S/E/W midpoints)
   const mid = Math.floor(size / 2);
   const edgePoints = [
-    { x: mid, y: 0 },           // North entry
-    { x: mid, y: size - 1 },    // South entry
-    { x: 0, y: mid },           // West entry
-    { x: size - 1, y: mid },    // East entry
+    { x: mid, y: 0 },
+    { x: mid, y: size - 1 },
+    { x: 0, y: mid },
+    { x: size - 1, y: mid },
   ];
-
   for (const ep of edgePoints) {
-    cells[ep.y][ep.x] = {
-      assetKey: 'grass',
-      walkable: true,
-      interactable: false,
-    };
+    cells[ep.y][ep.x] = { assetKey: 'grass', walkable: true, interactable: false };
   }
 }
 
-function balanceObstacles(
-  cells: CellData[][],
-  size: number,
-  rng: () => number,
+// --- Population Hooks (modular stubs) ---
+// TODO: DOC — Population phase will be re-enabled once world building is stable.
+// See WorldEngine-05-PopulationAndProgression.md for design.
+
+export function populateAnchors(
+  _cells: CellData[][],
+  _grid: (RotatedTemplate | null)[][],
+  _biome: BiomeDef,
+  _rng: () => number,
 ): void {
-  // For each locked door, ensure a key exists somewhere walkable
-  const lockedDoors: Array<{ x: number; y: number }> = [];
-  const barricades: Array<{ x: number; y: number }> = [];
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (cells[y][x].assetKey === 'door_locked') lockedDoors.push({ x, y });
-      if (cells[y][x].assetKey === 'barricade') barricades.push({ x, y });
-    }
-  }
-
-  // Spawn keys for locked doors
-  for (const _door of lockedDoors) {
-    spawnItemNear(cells, size, 'key', rng);
-  }
-
-  // Spawn crowbars for barricades
-  for (const _barr of barricades) {
-    spawnItemNear(cells, size, 'crowbar', rng);
-  }
+  // TODO: Iterate over grid slots, find anchor points, spawn entities
 }
 
-function spawnItemNear(
-  cells: CellData[][],
-  size: number,
-  itemId: string,
-  rng: () => number,
+export function balanceObstacles(
+  _cells: CellData[][],
+  _size: number,
+  _rng: () => number,
 ): void {
-  for (let attempt = 0; attempt < 100; attempt++) {
-    const x = Math.floor(rng() * size);
-    const y = Math.floor(rng() * size);
-    if (cells[y][x].walkable && !cells[y][x].itemId && !cells[y][x].npcId) {
-      cells[y][x].itemId = itemId;
-      cells[y][x].interactable = true;
-      return;
-    }
-  }
+  // TODO: Scan for locked doors/barricades and spawn matching keys/tools
 }
