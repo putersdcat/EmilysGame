@@ -12,6 +12,7 @@ export const RENDER_CONFIG = {
   tileHeight: 32,       // Isometric tile height in px (squished Y)
   targetFPS: 60,
   baseColor: '#1a5c1a', // Ground fill color
+  useWasmRenderer: true, // Toggle: true=WASM rendering core, false=pure JS fallback
   shadowAlpha: 0.5,
   shadowScale: { width: 22, height: 12 },
   emojiSize: 32,        // Base emoji font size
@@ -52,14 +53,18 @@ export const PLAYER_CONFIG = {
 
 // ─── LLM / Entropy ──────────────────────────────────────────
 export const LLM_CONFIG = {
-  /** Local BitNet API endpoint */
-  endpoint: 'http://127.0.0.1:8002',
-  model: 'bitnet-b1.58',
+  /** Local OpenAI-style API endpoint (CPU default) */
+  endpoint: import.meta.env.VITE_LLM_ENDPOINT || 'http://127.0.0.1:8000',
+  /** Optional local fallback endpoints (GPU + legacy) */
+  fallbackEndpoints: ['http://127.0.0.1:8001', 'http://127.0.0.1:8002'],
+  /** Local API key used for Authorization: Bearer <key> */
+  apiKey: import.meta.env.VITE_LLM_API_KEY || 'local-secret',
+  model: import.meta.env.VITE_LLM_MODEL || 'BitNet',
   completionsPath: '/v1/completions',
   codeCompletionsPath: '/v1/code/completions',
   chatPath: '/v1/chat/completions',
   healthPath: '/health',
-  historyPath: '/v1/_history',
+  historyPath: '/ui/history',
   sessionsPath: '/v1/sessions',
 
   /** Max tokens for various prompt types */

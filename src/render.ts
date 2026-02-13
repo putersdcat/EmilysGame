@@ -9,6 +9,10 @@ import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
 import type { ChunkData } from './gen';
+import {
+  WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
+  wasmBuildDrawCmds, isWasmReady,
+} from './wasm-bridge';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -304,6 +308,88 @@ export class IsometricRenderer {
           }
           break;
       }
+    }
+  }
+
+  // === WASM Rendering Path ===
+
+  /**
+   * Render using WASM-computed draw commands.
+   * WASM handles: coordinate transforms, visibility culling, depth sorting.
+   * TS handles: actual Canvas API draw calls (putImage, fillText, drawImage).
+   */
+  public renderWasm(
+    chunks: Map<string, ChunkData>,
+    camera: Camera,
+    egoPos: { x: number; y: number },
+    egoDir: number,
+    egoImg: HTMLImageElement | null,
+  ): void {
+    // Background fill
+    const size = WORLD_CONFIG.chunkSize;
+    const centerKey = `${Math.floor(camera.x / size)},${Math.floor(camera.y / size)}`;
+    const centerChunk = chunks.get(centerKey);
+    const bgColor = centerChunk
+      ? getBiome(centerChunk.biomeId).baseColor
+      : RENDER_CONFIG.baseColor;
+    this.drawGroundFill(bgColor);
+
+    // Get sorted draw commands from WASM
+    const cmds = wasmBuildDrawCmds(chunks, camera, egoPos, egoDir);
+
+    // Execute Canvas API draw calls
+    for (let i = 0; i < cmds.length; i++) {
+      const cmd = cmds[i];
+      const hasShadow = (cmd.flags & 1) !== 0;
+      const flipX = (cmd.flags & 2) !== 0;
+
+      switch (cmd.type) {
+        case WCMD_TILE:
+          if (hasShadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+          if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
+          break;
+        case WCMD_EMOJI: {
+          const def = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+          if (def) this.drawEmoji(def.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          break;
+        }
+        case WCMD_SHADOW_EMOJI: {
+          this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+          const def2 = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+          if (def2) this.drawEmoji(def2.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          break;
+        }
+        case WCMD_ITEM: {
+          const itemDef = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+          if (itemDef) this.drawEmoji(itemDef.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          break;
+        }
+        case WCMD_PLAYER:
+          this.drawShadow(cmd.sx, cmd.sy, 1.0);
+          if (egoImg) {
+            this.drawSprite(egoImg, cmd.sx, cmd.sy, cmd.scale, flipX);
+          } else {
+            this.drawEmoji('🧑', cmd.sx, cmd.sy, cmd.scale, 0);
+          }
+          break;
+      }
+    }
+  }
+
+  /**
+   * Main render entry point: uses WASM path if available, falls back to JS.
+   */
+  public renderAuto(
+    chunks: Map<string, ChunkData>,
+    camera: Camera,
+    egoPos: { x: number; y: number },
+    egoDir: number,
+    egoImg: HTMLImageElement | null,
+  ): void {
+    if (RENDER_CONFIG.useWasmRenderer && isWasmReady()) {
+      this.renderWasm(chunks, camera, egoPos, egoDir, egoImg);
+    } else {
+      this.render(chunks, camera, egoPos, egoDir, egoImg);
     }
   }
 

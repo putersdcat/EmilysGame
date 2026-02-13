@@ -17,6 +17,7 @@ import { createUIState, addToast, showDialog, advanceDialog, closeDialog, render
 import { saveGame, loadGame, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
+import { initWasmRenderer, isWasmReady, wasmBenchmark } from './wasm-bridge';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -141,6 +142,16 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Preload SVG tile sprites (async, must complete before rendering)
   await preloadTiles();
+
+  // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
+  const wasmOk = await initWasmRenderer();
+  if (wasmOk) {
+    console.log('[INIT] WASM rendering core loaded');
+    // Run benchmark on first load
+    wasmBenchmark();
+  } else {
+    console.log('[INIT] WASM unavailable, using JS renderer');
+  }
 
   // Load char sprite (initial idle)
   const variation = characterVariations[PLAYER_CONFIG.defaultVariation];
@@ -401,8 +412,8 @@ function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
 ): void {
-  // World render
-  renderer.render(
+  // World render (WASM if available, JS fallback)
+  renderer.renderAuto(
     state.chunks,
     state.camera,
     { x: state.player.x, y: state.player.y },
@@ -474,6 +485,9 @@ async function main(): Promise<void> {
   );
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
+  if (isWasmReady()) {
+    addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
+  }
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
 
