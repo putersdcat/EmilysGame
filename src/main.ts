@@ -24,6 +24,10 @@ import { clearTerrainCache, tickWaterAnimation } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { initMinimap, renderMinimap } from './minimap';
+import {
+  createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
+  type KnowledgeState,
+} from './knowledge';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -44,6 +48,7 @@ interface GameState {
   inventory: Inventory;
   quiz: QuizState;
   ui: UIState;
+  knowledge: KnowledgeState;
   quizStats: { answered: number; correct: number };
   egoImg: HTMLImageElement | null;
   frameCount: number;
@@ -165,7 +170,7 @@ async function waitForLlm(): Promise<void> {
 
 // ─── Initialization ──────────────────────────────────────────
 
-async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; input: InputManager }> {
+async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; input: InputManager; hasSaveData: boolean }> {
   // --- LLM gate: must be connected before proceeding ---
   await waitForLlm();
 
@@ -277,6 +282,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     inventory: createInventory(),
     quiz: createQuizState(),
     ui: createUIState(),
+    knowledge: createKnowledgeState(),
     quizStats: save?.quizStats ?? { answered: 0, correct: 0 },
     egoImg,
     frameCount: 0,
@@ -297,13 +303,22 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     }
   }
 
+  // Restore knowledge state from save
+  if (save) {
+    if (save.selectedSubjects) state.knowledge.selectedSubjects = save.selectedSubjects as any;
+    if (save.wordBag) state.knowledge.wordBag = save.wordBag;
+    if (save.readArticles) state.knowledge.readArticles = new Set(save.readArticles);
+    if (save.discoveryPoints) state.knowledge.discoveryPoints = save.discoveryPoints;
+    state.knowledge.subjectsChosen = true;
+  }
+
   // Generate initial chunks
   ensureChunksAround(state);
 
   // Expose state for debugging / E2E tests
   (window as any).__gameState = state;
 
-  return { state, renderer, input };
+  return { state, renderer, input, hasSaveData: !!save };
 }
 
 // ─── Update ──────────────────────────────────────────────────
@@ -322,6 +337,12 @@ function update(state: GameState, input: InputManager): void {
 
   // Edge-detected keys for single-fire actions
   const justKeys = input.justPressed();
+
+  // --- Book of Knowledge open: absorb input, skip game logic ---
+  if (state.knowledge.bookOpen) {
+    input.endFrame();
+    return;
+  }
 
   // --- Quiz Input (edge-detected) ---
   if (state.quiz.active) {
@@ -523,6 +544,10 @@ function buildSaveData(state: GameState): SaveData {
     resolvedCells: [], // TODO: track resolved cells
     quizStats: state.quizStats,
     wordlistSeed: '',
+    selectedSubjects: state.knowledge.selectedSubjects,
+    wordBag: state.knowledge.wordBag,
+    readArticles: [...state.knowledge.readArticles],
+    discoveryPoints: state.knowledge.discoveryPoints,
   };
 }
 
@@ -533,6 +558,12 @@ function applySaveData(state: GameState, data: SaveData): void {
   state.player.direction = data.player.direction;
   state.inventory.deserialize(data.inventory);
   state.quizStats = { ...data.quizStats };
+  // Restore knowledge state
+  if (data.selectedSubjects) state.knowledge.selectedSubjects = data.selectedSubjects as any;
+  if (data.wordBag) state.knowledge.wordBag = data.wordBag;
+  if (data.readArticles) state.knowledge.readArticles = new Set(data.readArticles);
+  if (data.discoveryPoints) state.knowledge.discoveryPoints = data.discoveryPoints;
+  state.knowledge.subjectsChosen = true;
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -582,6 +613,9 @@ function renderFrame(
 
   // Minimap (self-throttling to ~6fps)
   renderMinimap(state.chunks, state.player.x, state.player.y);
+
+  // Book of Knowledge overlay (self-throttling)
+  syncBookUI(state.knowledge);
 }
 
 // ─── Game Loop ───────────────────────────────────────────────
@@ -611,8 +645,23 @@ function setupExtraKeys(state: GameState): void {
           state.ui.showInventory = !state.ui.showInventory;
         }
         break;
+      case 'b':
+      case 'B':
+        if (!state.quiz.active && !state.ui.dialog.active) {
+          toggleBook(state.knowledge);
+          state.paused = state.knowledge.bookOpen;
+          // Close inventory if book opens
+          if (state.knowledge.bookOpen && state.ui.showInventory) {
+            state.ui.showInventory = false;
+          }
+        }
+        break;
       case 'Escape':
-        if (state.ui.showInventory) state.ui.showInventory = false;
+        if (state.knowledge.bookOpen) {
+          state.knowledge.bookOpen = false;
+          state.knowledge.currentArticleId = null;
+          state.paused = false;
+        } else if (state.ui.showInventory) state.ui.showInventory = false;
         else if (state.ui.dialog.active) {
           closeDialog(state.ui);
           state.paused = false;
@@ -625,7 +674,7 @@ function setupExtraKeys(state: GameState): void {
 // ─── Entry Point ─────────────────────────────────────────────
 
 async function main(): Promise<void> {
-  const { state, renderer, input } = await init();
+  const { state, renderer, input, hasSaveData } = await init();
   setupExtraKeys(state);
 
   // Wire HTML HUD buttons
@@ -663,6 +712,24 @@ async function main(): Promise<void> {
   } else if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
     addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
   }
+
+  // Wire Book of Knowledge UI
+  wireBookUI(state.knowledge, () => { state.paused = false; });
+
+  // Wire HUD book button
+  document.getElementById('btnBook')?.addEventListener('click', () => {
+    if (!state.quiz.active && !state.ui.dialog.active) {
+      toggleBook(state.knowledge);
+      state.paused = state.knowledge.bookOpen;
+    }
+  });
+
+  // Show subject selection for new games (no save data)
+  if (!hasSaveData && !isTestMode()) {
+    await showSubjectSelection(state.knowledge);
+    addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
+  }
+
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
 
