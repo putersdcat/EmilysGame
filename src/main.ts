@@ -9,7 +9,7 @@ import { getBiome } from './config/biomes.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, clearVariationCache, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
@@ -321,6 +321,10 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     if (save.readArticles) state.knowledge.readArticles = new Set(save.readArticles);
     if (save.discoveryPoints) state.knowledge.discoveryPoints = save.discoveryPoints;
     state.knowledge.subjectsChosen = true;
+    // Restore entropy buffer from auto-save (#4)
+    if (save.entropyBuffer) {
+      restoreEntropyBuffer(save.entropyBuffer);
+    }
   }
 
   // Generate initial chunks
@@ -391,6 +395,11 @@ function update(state: GameState, input: InputManager): void {
         state.paused = state.knowledge.bookOpen;
       } else {
         quizSubmit(state.quiz);
+        // Feed quiz answer text into entropy pool (#4)
+        if (state.quiz.question && state.quiz.selectedIndex >= 0) {
+          const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
+          feedEntropy(`quiz:${state.quiz.question.question}:${answerText}`);
+        }
       }
     }
     input.endFrame();
@@ -534,6 +543,9 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       showDialog(state.ui, npcName, [result.greeting]);
       state.paused = true;
 
+      // Feed NPC greeting into entropy pool (#4)
+      feedEntropy(result.greeting);
+
       // If NPC can quiz, start quiz after dialog
       if (persona?.canQuiz) {
         // Quiz starts on dialog close (handled in update loop)
@@ -572,6 +584,7 @@ function buildSaveData(state: GameState): SaveData {
     resolvedCells: [], // TODO: track resolved cells
     quizStats: state.quizStats,
     wordlistSeed: '',
+    entropyBuffer: getEntropyBuffer(), // Persist entropy pool (#4)
     selectedSubjects: state.knowledge.selectedSubjects,
     wordBag: state.knowledge.wordBag,
     readArticles: [...state.knowledge.readArticles],
@@ -593,6 +606,10 @@ function applySaveData(state: GameState, data: SaveData): void {
   if (data.readArticles) state.knowledge.readArticles = new Set(data.readArticles);
   if (data.discoveryPoints) state.knowledge.discoveryPoints = data.discoveryPoints;
   state.knowledge.subjectsChosen = true;
+  // Restore entropy buffer (#4)
+  if (data.entropyBuffer) {
+    restoreEntropyBuffer(data.entropyBuffer);
+  }
   // Restore player variation
   if (data.playerVariation) {
     state.playerVariation = deserializeVariation(data.playerVariation);

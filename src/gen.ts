@@ -76,11 +76,13 @@ export interface ChunkData {
 }
 
 // --- Entropy State ---
+// The entropy pool grows over the session as NPC chat words, quiz answers,
+// and LLM outputs concatenate. It salts chunk generation for evolving worlds. (#4)
 
 let wordlist: string[] = [];
 let lastEntropyOutput = '';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let entropyBuffer = '';
+let entropyFeedCount = 0; // Number of external feeds (NPC chat, quiz, etc.)
 
 export function setWordlist(list: string[]): void {
   wordlist = list;
@@ -88,6 +90,39 @@ export function setWordlist(list: string[]): void {
 
 export function getWordlist(): string[] {
   return wordlist;
+}
+
+/**
+ * Feed external text into the entropy pool.
+ * Called when NPC dialog, quiz answers, or player chat occurs.
+ * The text is appended to the growing entropy buffer, which salts
+ * future chunk generation for evolving, player-influenced worlds. (#4)
+ */
+export function feedEntropy(text: string): void {
+  if (!text || text.length === 0) return;
+  entropyBuffer += text;
+  entropyFeedCount++;
+}
+
+/** Get entropy pool stats for debug display. */
+export function getEntropyStats(): { poolSize: number; feedCount: number; lastOutput: string } {
+  return {
+    poolSize: entropyBuffer.length,
+    feedCount: entropyFeedCount,
+    lastOutput: lastEntropyOutput.slice(0, 40),
+  };
+}
+
+/** Restore entropy buffer from save data. feedCount approximated from buffer length. */
+export function restoreEntropyBuffer(buffer: string): void {
+  entropyBuffer = buffer || '';
+  // Approximate feedCount from buffer (avg ~40 chars per feed)
+  entropyFeedCount = entropyBuffer.length > 0 ? Math.max(1, Math.round(entropyBuffer.length / 40)) : 0;
+}
+
+/** Get entropy buffer for saving. */
+export function getEntropyBuffer(): string {
+  return entropyBuffer;
 }
 
 // --- Direction Pair ---
@@ -177,7 +212,11 @@ export function generateChunkSync(
   const coordHash = fastHash(`chunk_${chunkX}_${chunkY}_sync`);
   const pairIndex = coordHash % wordlist.length;
   const pair = wordlist[pairIndex] || 'obliterate quasar';
-  const seedText = `${pair}_${chunkX}_${chunkY}`;
+  // Salt with entropy pool for player-influenced variation (#4)
+  const entropySalt = entropyBuffer.length > 0
+    ? `_e${fastHash(entropyBuffer) >>> 0}`
+    : '';
+  const seedText = `${pair}_${chunkX}_${chunkY}${entropySalt}`;
 
   const noiseSeed = fastHash(seedText);
   const featureSeed = fastHash(seedText + '_features');
@@ -230,6 +269,9 @@ function generateGridChunk(
   populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200));
   scatterDecorations(cells, size, biome, seededRandom(featureSeed + 300));
   scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400));
+
+  // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
+  applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
   // Phase 6: balance obstacles (ensure keys exist before locks)
   balanceObstacles(cells, size, seededRandom(featureSeed + 500));
@@ -287,6 +329,66 @@ function assignTerrainCell(density: number, biome: BiomeDef, typeNoise: number):
     const assetKey = weightedPick(biome.terrainWeights, typeNoise);
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
+  }
+}
+
+// --- Phase 5.5: LLM Entropy Cell Flags (#4) ---
+// Binary char code flags from entropy buffer/seed text.
+// Per the design doc: convert text chars to binary, use bits as cell property flags.
+// This creates subtle player-influenced variation: NPC chat → entropy pool → cell flags.
+
+function applyEntropyCellFlags(
+  cells: CellData[][],
+  size: number,
+  featureSeed: number,
+  chunkX: number,
+  chunkY: number,
+  biome: BiomeDef,
+): void {
+  // Build a flag source string from entropy buffer + chunk seed
+  const flagSource = entropyBuffer.length > 0
+    ? entropyBuffer.slice(-256)  // Use last 256 chars of pool
+    : `fallback_${chunkX}_${chunkY}_${featureSeed}`;
+
+  // Convert to byte array for bit extraction
+  const flagBytes: number[] = [];
+  for (let i = 0; i < flagSource.length; i++) {
+    flagBytes.push(flagSource.charCodeAt(i));
+  }
+  if (flagBytes.length === 0) return;
+
+  const rng = seededRandom(featureSeed + 777);
+  let byteIdx = 0;
+
+  // Scan cells and apply entropy-derived flags to a small percentage
+  // (~10% of cells get entropy overrides - enough for subtle variation)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (rng() > 0.10) continue; // Only process ~10% of cells
+
+      const cell = cells[y][x];
+      if (!cell.walkable) continue; // Don't modify obstacles
+
+      const byte = flagBytes[byteIdx % flagBytes.length];
+      byteIdx++;
+
+      // Bit 0: Spawn bonus collectible (coin/flower based on biome)
+      if ((byte & 0x01) && !cell.itemId) {
+        const collectibles = biome.id === 0 ? ['flower', 'coin'] :
+                            biome.id === 1 ? ['mushroom', 'coin'] :
+                            ['coin', 'gem'];
+        const pick = collectibles[byte % collectibles.length];
+        if (ASSET_DEFS[pick]) {
+          cell.itemId = pick;
+        }
+      }
+
+      // Bit 1: Mark cell as interactable (sign, decoration)
+      if ((byte & 0x02) && rng() < 0.02) {
+        // Very rare: entropy-placed signs with flavor text
+        cell.interactable = true;
+      }
+    }
   }
 }
 
