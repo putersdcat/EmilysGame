@@ -8,7 +8,7 @@ import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config
 import { getBiome } from './config/biomes.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
-import { characterVariations, loadCharacterSprite } from './sprites';
+import { characterVariations, loadCharacterSprite, clearVariationCache, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
@@ -30,6 +30,7 @@ import {
   type KnowledgeState,
 } from './knowledge';
 import { searchArticles } from './config/knowledge.config';
+import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -45,6 +46,7 @@ interface GameState {
     isMoving: boolean;
     animFrame: number;
   };
+  playerVariation: CharacterVariation;
   camera: Camera;
   chunks: Map<string, ChunkData>;
   inventory: Inventory;
@@ -255,11 +257,12 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   }
 
   // Load char sprite (initial idle)
-  const variation = characterVariations[PLAYER_CONFIG.defaultVariation];
-  const egoImg = loadCharacterSprite(variation, 0, false);
-
-  // Try loading saved game
+  // Try loading saved game first to get player variation
   const save = loadGame();
+  const playerVariation = save?.playerVariation 
+    ? deserializeVariation(save.playerVariation) 
+    : (characterVariations[PLAYER_CONFIG.defaultVariation] ?? createDefaultVariation());
+  const egoImg = loadCharacterSprite(playerVariation, 0, false);
 
   const startX = save?.player.x ?? PLAYER_CONFIG.startPosition.x;
   const startY = save?.player.y ?? PLAYER_CONFIG.startPosition.y;
@@ -276,6 +279,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
       isMoving: false,
       animFrame: 0,
     },
+    playerVariation,
     camera: {
       x: startX,
       y: startY,
@@ -432,8 +436,7 @@ function update(state: GameState, input: InputManager): void {
 
     // Walking sprite - ONLY reload when frame actually changes
     if (state.player.animFrame !== state.lastAnimFrame) {
-      const variation = characterVariations[PLAYER_CONFIG.defaultVariation];
-      state.egoImg = loadCharacterSprite(variation, state.player.animFrame, true);
+      state.egoImg = loadCharacterSprite(state.playerVariation, state.player.animFrame, true);
       state.lastAnimFrame = state.player.animFrame;
     }
 
@@ -454,8 +457,7 @@ function update(state: GameState, input: InputManager): void {
     // Idle sprite - only reload once when stopping
     if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
       state.player.animFrame = 0;
-      const variation = characterVariations[PLAYER_CONFIG.defaultVariation];
-      state.egoImg = loadCharacterSprite(variation, 0, false);
+      state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
       state.lastAnimFrame = 0;
     }
   }
@@ -569,6 +571,7 @@ function buildSaveData(state: GameState): SaveData {
     wordBag: state.knowledge.wordBag,
     readArticles: [...state.knowledge.readArticles],
     discoveryPoints: state.knowledge.discoveryPoints,
+    playerVariation: serializeVariation(state.playerVariation),
   };
 }
 
@@ -585,6 +588,12 @@ function applySaveData(state: GameState, data: SaveData): void {
   if (data.readArticles) state.knowledge.readArticles = new Set(data.readArticles);
   if (data.discoveryPoints) state.knowledge.discoveryPoints = data.discoveryPoints;
   state.knowledge.subjectsChosen = true;
+  // Restore player variation
+  if (data.playerVariation) {
+    state.playerVariation = deserializeVariation(data.playerVariation);
+    state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
+    state.lastAnimFrame = -1; // force sprite reload
+  }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -745,8 +754,37 @@ async function main(): Promise<void> {
     }
   });
 
-  // Show subject selection for new games (no save data)
+  // Wire HUD customize button
+  const openCustomizer = async () => {
+    if (state.paused || state.quiz.active || state.ui.dialog.active) return;
+    state.paused = true;
+    const newVariation = await showCustomizer(state.playerVariation);
+    clearVariationCache('custom'); // clear old cached sprites
+    state.playerVariation = newVariation;
+    state.egoImg = loadCharacterSprite(newVariation, 0, false);
+    state.lastAnimFrame = -1;
+    state.paused = false;
+    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
+  };
+  document.getElementById('btnCustomize')?.addEventListener('click', openCustomizer);
+
+  // Wire 'C' key to open customizer
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
+      openCustomizer();
+    }
+  });
+
+  // Show character customizer + subject selection for new games (no save data)
   if (!hasSaveData && !isTestMode()) {
+    // Character customizer first
+    const customVariation = await showCustomizer(state.playerVariation);
+    clearVariationCache('custom');
+    state.playerVariation = customVariation;
+    state.egoImg = loadCharacterSprite(customVariation, 0, false);
+    state.lastAnimFrame = -1; // force sprite reload on next movement
+
+    // Then subject selection
     await showSubjectSelection(state.knowledge);
     addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
   }
