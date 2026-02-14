@@ -176,6 +176,35 @@
     }
     .sb-save-btns button:hover { background: rgba(60,55,90,0.9); border-color: #88ccff; }
 
+    /* LLM config inputs */
+    .sb-config-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .sb-config-row label {
+      font-size: 0.72rem;
+      color: #aaa;
+      min-width: 45px;
+    }
+    .sb-input {
+      flex: 1;
+      padding: 3px 5px;
+      background: rgba(20,18,35,0.8);
+      border: 1px solid #444;
+      border-radius: 3px;
+      color: #ddd;
+      font: 0.72rem monospace;
+    }
+    .sb-input:focus { border-color: #88ccff; outline: none; }
+    select.sb-input { cursor: pointer; }
+    #llmApply {
+      padding: 3px 10px;
+      font-size: 0.75rem;
+    }
+
     /* Sidebar toggle button (on left edge of sidebar) */
     #sidebarToggle {
       position: absolute;
@@ -450,6 +479,29 @@
         <div class="sb-stat-row"><span>Biome</span><span class="val" id="sbBiome">—</span></div>
         <div class="sb-stat-row"><span>FPS</span><span class="val" id="sbFps">—</span></div>
         <div class="sb-stat-row"><span>Cache</span><span class="val" id="sbCache">—</span></div>
+      </div>
+      <!-- LLM Settings -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">🤖</span> LLM Config</div>
+        <div class="sb-config-row">
+          <label for="llmMode">Mode</label>
+          <select id="llmMode" class="sb-input" title="LLM connection mode">
+            <option value="local">Local</option>
+            <option value="remote">Remote</option>
+            <option value="off">Off (RNG only)</option>
+          </select>
+        </div>
+        <div class="sb-config-row">
+          <label for="llmUrl">URL</label>
+          <input id="llmUrl" class="sb-input" type="text" placeholder="http://127.0.0.1:8000" title="LLM API endpoint URL" />
+        </div>
+        <div class="sb-config-row">
+          <label for="llmApiKey">API Key</label>
+          <input id="llmApiKey" class="sb-input" type="password" placeholder="local-secret" title="Bearer token for LLM API" />
+        </div>
+        <div class="sb-config-row" style="justify-content:flex-end;margin-top:4px">
+          <button id="llmApply" class="slot-btn" style="padding:3px 10px;font-size:0.75rem" title="Apply LLM configuration changes">Apply</button>
+        </div>
       </div>
     </div>
 

@@ -7,7 +7,7 @@
 
 import { ASSET_DEFS } from './config/assets.config';
 import { ITEM_DEFS } from './config/items.config';
-import { WORLD_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, LLM_CONFIG } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable } from './llm';
 import { getAllSlotInfo } from './save';
@@ -479,5 +479,67 @@ export function wireHudButtons(
     if (action === 'save' && onSlotSave) onSlotSave(slot);
     else if (action === 'load' && onSlotLoad) onSlotLoad(slot);
     else if (action === 'delete' && onSlotDelete) onSlotDelete(slot);
+  });
+
+  // LLM config panel
+  initLlmConfigPanel();
+}
+
+// ─── LLM Config Panel ───────────────────────────────────────
+
+const LLM_SETTINGS_KEY = 'emilys_game_llm_settings';
+
+interface LlmSettings {
+  mode: 'local' | 'remote' | 'off';
+  url: string;
+  apiKey: string;
+}
+
+function loadLlmSettings(): LlmSettings {
+  try {
+    const raw = localStorage.getItem(LLM_SETTINGS_KEY);
+    if (raw) return JSON.parse(raw) as LlmSettings;
+  } catch { /* ignore */ }
+  return {
+    mode: 'local',
+    url: LLM_CONFIG.endpoint,
+    apiKey: LLM_CONFIG.apiKey,
+  };
+}
+
+function saveLlmSettings(settings: LlmSettings): void {
+  localStorage.setItem(LLM_SETTINGS_KEY, JSON.stringify(settings));
+}
+
+function initLlmConfigPanel(): void {
+  const modeEl = document.getElementById('llmMode') as HTMLSelectElement | null;
+  const urlEl = document.getElementById('llmUrl') as HTMLInputElement | null;
+  const keyEl = document.getElementById('llmApiKey') as HTMLInputElement | null;
+  const applyBtn = document.getElementById('llmApply');
+  if (!modeEl || !urlEl || !keyEl || !applyBtn) return;
+
+  // Load saved settings
+  const settings = loadLlmSettings();
+  modeEl.value = settings.mode;
+  urlEl.value = settings.url;
+  keyEl.value = settings.apiKey;
+
+  // Apply: update LLM_CONFIG in-memory and persist
+  applyBtn.addEventListener('click', () => {
+    const newSettings: LlmSettings = {
+      mode: modeEl.value as LlmSettings['mode'],
+      url: urlEl.value.trim() || '/api/llm',
+      apiKey: keyEl.value.trim() || 'local-secret',
+    };
+    saveLlmSettings(newSettings);
+
+    // Update LLM_CONFIG live (cast to mutable)
+    (LLM_CONFIG as Record<string, unknown>).endpoint = newSettings.url;
+    (LLM_CONFIG as Record<string, unknown>).apiKey = newSettings.apiKey;
+
+    // Visual confirmation
+    applyBtn.textContent = '✓ Applied';
+    setTimeout(() => { applyBtn.textContent = 'Apply'; }, 1500);
+    console.log('[UI] LLM config applied:', newSettings.mode, newSettings.url);
   });
 }
