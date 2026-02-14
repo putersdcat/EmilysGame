@@ -159,8 +159,8 @@ test.describe('NPC Interaction', () => {
     expect(dialog.text.length).toBeGreaterThan(0);
 
     // Name should not be 'Stranger' (we have known NPC personas)
-    // It should be one of: Merchant, Villager, Guardian, or Cat NPCs
-    expect(dialog.name).toMatch(/Merchant|Villager|Guardian|Cat/i);
+    // Should match any known NPC persona name
+    expect(dialog.name).toMatch(/Merchant|Villager|Guardian|Cat|Farmer|Beekeeper|Ranger|Hermit|Miner|Ghost|Knight/i);
   });
 
   test('dialog can be closed with Space', async ({ page }) => {
