@@ -127,6 +127,14 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     variationFamily: 'fence', variationIndex: 0,
     description: 'Wooden fence segment',
   },
+  quiz_gate: {
+    type: 'quiz_gate', walkable: false, edgeTag: 'gate',
+    edges: { n: 'gate', s: 'gate', e: 'wall', w: 'wall' },
+    traversal: 'conditional', surface: 'stone', height: 3,
+    connectable: true, decorationEligible: false,
+    variationFamily: 'gate', variationIndex: 1,
+    description: 'Quiz gate — answer a question to pass',
+  },
 };
 
 // ─── Edge Compatibility ──────────────────────────────────────

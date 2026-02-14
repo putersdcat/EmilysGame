@@ -13,7 +13,7 @@ import { characterVariations, loadCharacterSprite, clearVariationCache, type Cha
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
-import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
+import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
@@ -69,6 +69,8 @@ interface GameState {
   lastChunkY: number;
   // Pending quiz triggered by NPC — starts when dialog closes
   pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
+  // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
+  pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -325,6 +327,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     lastChunkX: Math.floor(startX / size),
     lastChunkY: Math.floor(startY / size),
     pendingQuiz: null,
+    pendingGateQuiz: null,
   };
 
   // Restore inventory from save
@@ -390,6 +393,18 @@ function update(state: GameState, input: InputManager): void {
           for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
           addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
           state.quizStats.correct++;
+
+          // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
+          if (state.pendingGateQuiz) {
+            const g = state.pendingGateQuiz;
+            resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
+            state.pendingGateQuiz = null;
+            addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
+          }
+        } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
+          // Wrong answer — gate stays closed
+          state.pendingGateQuiz = null;
+          addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
         } else if (state.quiz.result === 'idk') {
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
@@ -407,6 +422,8 @@ function update(state: GameState, input: InputManager): void {
             addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
           }
           // Don't count "I don't know" as answered
+          // Clear pending gate quiz on "I don't know" too
+          state.pendingGateQuiz = null;
         }
         if (state.quiz.result !== 'idk') {
           state.quizStats.answered++;
@@ -589,6 +606,17 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       showDialog(state.ui, 'Sign', [result.message]);
       state.paused = true;
       break;
+
+    case 'quiz_gate': {
+      // Quiz gate — show dialog then trigger distance-based quiz (Doc 05 §3.5)
+      showDialog(state.ui, 'Quiz Gate', [result.message]);
+      state.paused = true;
+      const gateDiff = getDifficultyForPosition(state.player.x, state.player.y);
+      const gateBias = getQuizBias(state.knowledge);
+      state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
+      state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
+      break;
+    }
   }
 }
 
@@ -742,6 +770,7 @@ function setupExtraKeys(state: GameState): void {
         else if (state.ui.dialog.active) {
           closeDialog(state.ui);
           state.pendingQuiz = null; // Cancel pending quiz on Escape
+          state.pendingGateQuiz = null; // Cancel pending gate quiz on Escape
           state.paused = false;
         }
         break;
