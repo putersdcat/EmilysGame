@@ -164,6 +164,61 @@ const ROCK_VARIANT_SVGS: string[] = [
 </svg>`,
 ];
 
+// ─── Sand Variants (3 patterns for beach/shore variety) ──────
+
+const SAND_VARIANT_SVGS: string[] = [
+  // V0: Smooth dunes with wind ripples
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="saV0" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F0D080"/><stop offset="1" stop-color="#D4B87C"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#saV0)"/>
+  <path d="M0 8 Q8 6 16 8 Q24 10 32 8" stroke="#C4A46C" stroke-width="0.8" opacity="0.35"/>
+  <path d="M0 16 Q10 14 20 16 Q28 18 32 16" stroke="#C4A46C" stroke-width="0.7" opacity="0.3"/>
+  <path d="M0 24 Q6 22 14 24 Q22 26 32 24" stroke="#C4A46C" stroke-width="0.6" opacity="0.25"/>
+  <circle cx="7" cy="12" r="0.5" fill="#BFA06A" opacity="0.3"/>
+  <circle cx="25" cy="20" r="0.4" fill="#BFA06A" opacity="0.25"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V1: Pebbly sand with small shells
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="saV1" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#E8C878"/><stop offset="1" stop-color="#CCAE70"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#saV1)"/>
+  <circle cx="6" cy="5" r="1.2" fill="#D4B87C" opacity="0.4"/>
+  <circle cx="18" cy="8" r="0.8" fill="#C0A060" opacity="0.35"/>
+  <circle cx="10" cy="18" r="1.0" fill="#D4B87C" opacity="0.3"/>
+  <circle cx="26" cy="14" r="0.9" fill="#C0A060" opacity="0.35"/>
+  <circle cx="14" cy="26" r="1.1" fill="#D4B87C" opacity="0.3"/>
+  <circle cx="28" cy="24" r="0.7" fill="#C0A060" opacity="0.3"/>
+  <ellipse cx="8" cy="22" rx="1.5" ry="1" fill="#EDE0C0" opacity="0.25" transform="rotate(20 8 22)"/>
+  <ellipse cx="22" cy="10" rx="1.2" ry="0.8" fill="#EDE0C0" opacity="0.2" transform="rotate(-15 22 10)"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V2: Wet compact sand (darker, near water)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="saV2" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C8A868"/><stop offset="1" stop-color="#B09058"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#saV2)"/>
+  <path d="M2 6 Q10 4 18 6 Q26 8 30 6" stroke="#A08850" stroke-width="0.5" opacity="0.3"/>
+  <path d="M0 14 Q8 12 16 14 Q24 16 32 14" stroke="#A08850" stroke-width="0.4" opacity="0.25"/>
+  <circle cx="5" cy="10" r="0.4" fill="#9A8248" opacity="0.25"/>
+  <circle cx="20" cy="18" r="0.5" fill="#9A8248" opacity="0.2"/>
+  <circle cx="12" cy="24" r="0.3" fill="#9A8248" opacity="0.2"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.12"/>
+</svg>`,
+];
+
 // ─── Stone Floor Variants (3 patterns for cave/castle variety) ───
 
 const STONE_FLOOR_VARIANT_SVGS: string[] = [
@@ -488,6 +543,14 @@ export async function preloadTiles(): Promise<void> {
     rockVariantCache.push(canvas);
   }
 
+  // Pre-render sand variants
+  const sandResults = await Promise.all(
+    SAND_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+  );
+  for (const canvas of sandResults) {
+    sandVariantCache.push(canvas);
+  }
+
   // Pre-render stone floor variants
   const stoneFloorResults = await Promise.all(
     STONE_FLOOR_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
@@ -535,6 +598,15 @@ export function getRockVariant(cx: number, cy: number): HTMLCanvasElement | unde
 }
 
 /**
+ * Get a deterministic sand variant tile based on cell position.
+ */
+export function getSandVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
+  if (sandVariantCache.length === 0) return isoTileCache.get('sand');
+  const hash = ((cx * 6197) + (cy * 4523)) & 0x7FFFFFFF;
+  return sandVariantCache[hash % sandVariantCache.length];
+}
+
+/**
  * Get a deterministic stone floor variant tile based on cell position.
  */
 export function getStoneFloorVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
@@ -545,6 +617,9 @@ export function getStoneFloorVariant(cx: number, cy: number): HTMLCanvasElement 
 
 /** Pre-rendered grass variant isometric tiles */
 const grassVariantCache: HTMLCanvasElement[] = [];
+
+/** Pre-rendered sand variant isometric tiles */
+const sandVariantCache: HTMLCanvasElement[] = [];
 
 /** Pre-rendered stone floor variant isometric tiles */
 const stoneFloorVariantCache: HTMLCanvasElement[] = [];
