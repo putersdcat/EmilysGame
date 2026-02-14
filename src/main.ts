@@ -33,6 +33,7 @@ import {
 } from './knowledge';
 import { searchArticles } from './config/knowledge.config';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
+import { updateAndRenderParticles, clearParticles } from './particles';
 import type { FacingPose } from './sprites';
 
 
@@ -694,6 +695,7 @@ function applySaveData(state: GameState, data: SaveData): void {
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
   clearTerrainCache();
+  clearParticles();
 }
 
 function doSave(state: GameState): void {
@@ -716,6 +718,9 @@ function renderFrame(
     state.egoImg,
     state.ui.showDebug,
   );
+
+  // Ambient particles (butterflies, sparkles, leaves, birds)
+  updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
 
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active) {
