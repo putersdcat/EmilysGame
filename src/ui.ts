@@ -11,6 +11,7 @@ import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getTimeOfDay } from './lighting';
+import { getWeatherInfo } from './weather';
 import { getEntropyStats } from './gen';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
@@ -147,6 +148,12 @@ function syncHUD(inv: Inventory, playerPos: { x: number; y: number }): void {
   const timeEl = document.getElementById('timeBadge');
   if (timeEl) {
     timeEl.textContent = getTimeOfDay();
+  }
+  // Weather badge
+  const weatherEl = document.getElementById('weatherBadge');
+  if (weatherEl) {
+    const w = getWeatherInfo();
+    weatherEl.textContent = `${w.emoji} ${w.label}`;
   }
 }
 

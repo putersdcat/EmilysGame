@@ -35,6 +35,7 @@ import { searchArticles } from './config/knowledge.config';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { updateAndRenderLighting, setTimeOfDay, getCycleProgress } from './lighting';
+import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
 import type { FacingPose } from './sprites';
 
 
@@ -697,6 +698,7 @@ function applySaveData(state: GameState, data: SaveData): void {
   state.camera.y = data.player.y;
   clearTerrainCache();
   clearParticles();
+  clearWeather();
 }
 
 function doSave(state: GameState): void {
@@ -725,6 +727,9 @@ function renderFrame(
 
   // Day/night cycle lighting overlay
   updateAndRenderLighting(renderer.getCtx());
+
+  // Weather effects (rain, fog, clouds, lightning)
+  updateAndRenderWeather(renderer.getCtx());
 
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active) {
@@ -807,6 +812,14 @@ function setupExtraKeys(state: GameState): void {
       case 'T': // Shift+T: advance day/night by 10%
         if (e.shiftKey) {
           setTimeOfDay(getCycleProgress() + 0.1);
+        }
+        break;
+      case 'W': // Shift+W: cycle weather
+        if (e.shiftKey) {
+          const types: Array<'clear' | 'cloudy' | 'rain' | 'storm' | 'fog'> = ['clear', 'cloudy', 'rain', 'storm', 'fog'];
+          const cur = getWeatherInfo().type;
+          const idx = types.indexOf(cur);
+          setWeather(types[(idx + 1) % types.length]);
         }
         break;
     }
