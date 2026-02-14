@@ -1100,8 +1100,31 @@ function placeNpcAtCell(
   // Respect biome NPC rate (skip some NPCs at random)
   if (rng() > biome.npcRate * 0.3) return; // ~30% chance per anchor × npcRate
 
-  const pool = BIOME_NPC_POOL[biome.name] ?? ['npc_villager'];
-  const npcAsset = pool[Math.floor(rng() * pool.length)];
+  const size = cells.length;
+
+  // Clearance check: don't place NPCs in narrow 1-cell corridors (Doc 05 §4.3)
+  // Need at least 2 walkable cardinal neighbors to ensure player can pass
+  const walkableNeighbors = countWalkableNeighbors(cells, cx, cy, size);
+  if (walkableNeighbors < 2) return;
+
+  // Context-aware NPC selection (Doc 05 §4.1):
+  // 1. Near gate/door → guardian
+  // 2. At junction (3+ walkable neighbors) → merchant
+  // 3. Otherwise → biome pool
+  let npcAsset: string;
+
+  if (isNearGate(cells, cx, cy, size)) {
+    // Guards at gates
+    npcAsset = 'npc_guardian';
+  } else if (walkableNeighbors >= 3) {
+    // Merchants at junctions (3+ passable directions = junction)
+    npcAsset = 'npc_merchant';
+  } else {
+    // Standard biome pool selection
+    const pool = BIOME_NPC_POOL[biome.name] ?? ['npc_villager'];
+    npcAsset = pool[Math.floor(rng() * pool.length)];
+  }
+
   const npcId = NPC_ID_MAP[npcAsset] ?? 'villager_default';
 
   cells[cy][cx] = {
@@ -1110,6 +1133,47 @@ function placeNpcAtCell(
     interactable: true,
     npcId,
   };
+}
+
+/**
+ * Count walkable cardinal neighbors of a cell (for junction/clearance detection).
+ */
+function countWalkableNeighbors(
+  cells: CellData[][], cx: number, cy: number, size: number,
+): number {
+  const DX = [1, 0, -1, 0];
+  const DY = [0, 1, 0, -1];
+  let count = 0;
+  for (let i = 0; i < 4; i++) {
+    const nx = cx + DX[i];
+    const ny = cy + DY[i];
+    if (nx >= 0 && ny >= 0 && nx < size && ny < size && cells[ny][nx].walkable) {
+      count++;
+    }
+  }
+  return count;
+}
+
+/**
+ * Check if a cell is near a gate/door (within 2 cells Manhattan distance).
+ * Used to contextually place guardian NPCs near gates (Doc 05 §4.1).
+ */
+function isNearGate(
+  cells: CellData[][], cx: number, cy: number, size: number,
+): boolean {
+  const GATE_ASSETS = ['door_locked', 'toll_gate', 'door_gate'];
+  const RANGE = 2;
+  for (let dy = -RANGE; dy <= RANGE; dy++) {
+    for (let dx = -RANGE; dx <= RANGE; dx++) {
+      if (Math.abs(dx) + Math.abs(dy) > RANGE) continue;
+      const nx = cx + dx;
+      const ny = cy + dy;
+      if (nx >= 0 && ny >= 0 && nx < size && ny < size) {
+        if (GATE_ASSETS.includes(cells[ny][nx].assetKey)) return true;
+      }
+    }
+  }
+  return false;
 }
 
 function placeItemAtCell(
