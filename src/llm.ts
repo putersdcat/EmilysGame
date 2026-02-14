@@ -86,6 +86,8 @@ export function isTestMode(): boolean {
   if (_testMode !== null) return _testMode;
   try {
     const url = new URL(window.location.href);
+    // ?test=0 forces non-test mode (overrides webdriver detection for menu testing)
+    if (url.searchParams.get('test') === '0') { _testMode = false; return false; }
     if (url.searchParams.get('test') === '1') { _testMode = true; return true; }
     // Detect Playwright: navigator.webdriver is true in automated browsers
     if (navigator.webdriver) { _testMode = true; return true; }

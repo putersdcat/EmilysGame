@@ -18,7 +18,7 @@ import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, type UIState } from './ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
@@ -706,7 +706,154 @@ function doSave(state: GameState): void {
   saveGame(buildSaveData(state));
   markSaveSlotsDirty();
 }
+// ─── Menu System ───────────────────────────────────────────────────
+// TODO: DOC - menu flow state diagram
 
+/** Show main menu overlay. Returns promise resolving to player choice. */
+function showMainMenu(hasSaveData: boolean): Promise<string> {
+  return new Promise((resolve) => {
+    const menu = document.getElementById('mainMenu')!;
+    const buttonsPanel = document.getElementById('menuButtonsPanel')!;
+    const loadPanel = document.getElementById('menuLoadPanel')!;
+    const continueBtn = document.getElementById('menuContinue') as HTMLButtonElement;
+    const newGameBtn = document.getElementById('menuNewGame') as HTMLButtonElement;
+    const loadGameBtn = document.getElementById('menuLoadGame') as HTMLButtonElement;
+    const loadBackBtn = document.getElementById('menuLoadBack') as HTMLButtonElement;
+    const slotList = document.getElementById('menuSlotList')!;
+
+    // Show/hide continue based on auto-save
+    continueBtn.style.display = hasSaveData ? 'block' : 'none';
+
+    // Show/hide load based on any save existing
+    const slots = getAllSlotInfo();
+    const anySlots = hasSaveData || slots.some((s) => s.hasData);
+    loadGameBtn.style.display = anySlots ? 'block' : 'none';
+
+    // Reset to buttons view
+    buttonsPanel.style.display = 'flex';
+    loadPanel.style.display = 'none';
+    menu.style.display = 'flex';
+
+    const cleanup = () => { menu.style.display = 'none'; };
+
+    continueBtn.onclick = () => { cleanup(); resolve('continue'); };
+    newGameBtn.onclick = () => { cleanup(); resolve('new-game'); };
+
+    loadGameBtn.onclick = () => {
+      buttonsPanel.style.display = 'none';
+      loadPanel.style.display = 'block';
+      slotList.innerHTML = '';
+
+      // Auto-save slot
+      if (hasSaveData) {
+        const autoSave = loadGame();
+        const autoEl = document.createElement('div');
+        autoEl.className = 'menu-slot';
+        autoEl.innerHTML = `
+          <div class="menu-slot-info">
+            <div class="menu-slot-name">💾 Auto-Save</div>
+            <div class="menu-slot-time">${autoSave?.timestamp ? new Date(autoSave.timestamp).toLocaleString() : 'Unknown'}</div>
+          </div>
+          <div class="menu-slot-icon">▶</div>`;
+        autoEl.onclick = () => { cleanup(); resolve('continue'); };
+        slotList.appendChild(autoEl);
+      }
+
+      // Manual save slots
+      for (const info of slots) {
+        const el = document.createElement('div');
+        el.className = 'menu-slot' + (info.hasData ? '' : ' empty');
+        if (info.hasData) {
+          el.innerHTML = `
+            <div class="menu-slot-info">
+              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
+              <div class="menu-slot-time">${info.timestamp ? new Date(info.timestamp).toLocaleString() : '—'}</div>
+            </div>
+            <div class="menu-slot-icon">▶</div>`;
+          const slotIdx = info.slot;
+          el.onclick = () => { cleanup(); resolve(`load-slot-${slotIdx}`); };
+        } else {
+          el.innerHTML = `
+            <div class="menu-slot-info">
+              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
+              <div class="menu-slot-time">Empty</div>
+            </div>`;
+        }
+        slotList.appendChild(el);
+      }
+    };
+
+    loadBackBtn.onclick = () => {
+      loadPanel.style.display = 'none';
+      buttonsPanel.style.display = 'flex';
+    };
+  });
+}
+
+/** Reset game state for a new game */
+function resetGameState(state: GameState): void {
+  state.player.x = PLAYER_CONFIG.startPosition.x;
+  state.player.y = PLAYER_CONFIG.startPosition.y;
+  state.player.direction = 1;
+  state.player.facingDx = 1;
+  state.player.facingDy = 0;
+  state.player.facingPose = 'front' as FacingPose;
+  state.player.isMoving = false;
+  state.player.animFrame = 0;
+  state.camera.x = state.player.x;
+  state.camera.y = state.player.y;
+  state.chunks.clear();
+  state.inventory = createInventory();
+  state.quiz = createQuizState();
+  state.knowledge = createKnowledgeState();
+  state.quizStats = { answered: 0, correct: 0 };
+  state.pendingQuiz = null;
+  state.pendingGateQuiz = null;
+  state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
+  state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
+  state.playerVariation = createDefaultVariation();
+  state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
+  state.lastAnimFrame = -1;
+  clearTerrainCache();
+  clearObjectCache();
+  clearParticles();
+  clearWeather();
+  deleteSave();
+  ensureChunksAround(state);
+}
+
+/** Show pause menu overlay (Escape during gameplay) */
+function showPauseMenu(state: GameState): void {
+  state.paused = true;
+  const menu = document.getElementById('pauseMenu')!;
+  menu.style.display = 'flex';
+
+  document.getElementById('pauseResume')!.onclick = () => {
+    menu.style.display = 'none';
+    state.paused = false;
+  };
+
+  document.getElementById('pauseSave')!.onclick = () => {
+    doSave(state);
+    addToast(state.ui, 'Game saved!', '#4caf50', 1500);
+  };
+
+  document.getElementById('pauseCustomize')!.onclick = async () => {
+    menu.style.display = 'none';
+    const newVariation = await showCustomizer(state.playerVariation);
+    clearVariationCache('custom');
+    state.playerVariation = newVariation;
+    state.egoImg = loadCharacterSprite(newVariation, 0, false);
+    state.lastAnimFrame = -1;
+    state.paused = false;
+    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
+  };
+
+  document.getElementById('pauseMainMenu')!.onclick = () => {
+    doSave(state);
+    window.location.reload();
+  };
+}
 // ─── Render ──────────────────────────────────────────────────
 
 function renderFrame(
@@ -816,19 +963,34 @@ function setupExtraKeys(state: GameState): void {
           }
         }
         break;
-      case 'Escape':
+      case 'Escape': {
+        // Guard: don't show pause menu if full-screen modal or quiz is active
+        const overlayBlocks =
+          document.getElementById('customizerOverlay')?.style.display === 'flex' ||
+          document.getElementById('subjectOverlay')?.style.display === 'flex' ||
+          document.getElementById('mainMenu')?.style.display === 'flex' ||
+          state.quiz.active;
+        if (overlayBlocks) break;
+
         if (state.knowledge.bookOpen) {
           state.knowledge.bookOpen = false;
           state.knowledge.currentArticleId = null;
           state.paused = false;
-        } else if (state.ui.showInventory) state.ui.showInventory = false;
-        else if (state.ui.dialog.active) {
+        } else if (state.ui.showInventory) {
+          state.ui.showInventory = false;
+        } else if (state.ui.dialog.active) {
           closeDialog(state.ui);
-          state.pendingQuiz = null; // Cancel pending quiz on Escape
-          state.pendingGateQuiz = null; // Cancel pending gate quiz on Escape
+          state.pendingQuiz = null;
+          state.pendingGateQuiz = null;
           state.paused = false;
+        } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
+          document.getElementById('pauseMenu')!.style.display = 'none';
+          state.paused = false;
+        } else {
+          showPauseMenu(state);
         }
         break;
+      }
       case 'T': // Shift+T: advance day/night by 10%
         if (e.shiftKey) {
           setTimeOfDay(getCycleProgress() + 0.1);
@@ -934,18 +1096,30 @@ async function main(): Promise<void> {
     }
   });
 
-  // Show character customizer + subject selection for new games (no save data)
-  if (!hasSaveData && !isTestMode()) {
-    // Character customizer first
-    const customVariation = await showCustomizer(state.playerVariation);
-    clearVariationCache('custom');
-    state.playerVariation = customVariation;
-    state.egoImg = loadCharacterSprite(customVariation, 0, false);
-    state.lastAnimFrame = -1; // force sprite reload on next movement
+  // ─── Main Menu / New Game Flow ─────────────────────────────
+  if (!isTestMode()) {
+    const choice = await showMainMenu(hasSaveData);
 
-    // Then subject selection
-    await showSubjectSelection(state.knowledge);
-    addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
+    if (choice === 'new-game') {
+      resetGameState(state);
+      // Character customizer
+      const customVariation = await showCustomizer(state.playerVariation);
+      clearVariationCache('custom');
+      state.playerVariation = customVariation;
+      state.egoImg = loadCharacterSprite(customVariation, 0, false);
+      state.lastAnimFrame = -1;
+      // Subject selection
+      await showSubjectSelection(state.knowledge);
+      addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
+    } else if (choice.startsWith('load-slot-')) {
+      const slot = parseInt(choice.replace('load-slot-', ''));
+      const data = loadFromSlot(slot);
+      if (data) {
+        applySaveData(state, data);
+        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
+      }
+    }
+    // 'continue' → auto-save already loaded by init()
   }
 
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
