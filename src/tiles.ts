@@ -11,7 +11,7 @@ import { RENDER_CONFIG } from './config/game.config';
 
 export type TileType =
   | 'grass' | 'dirt' | 'rock' | 'water' | 'sand'
-  | 'stone_wall' | 'bridge' | 'door_gate' | 'wooden_fence' | 'quiz_gate';
+  | 'stone_wall' | 'stone_floor' | 'bridge' | 'door_gate' | 'wooden_fence' | 'quiz_gate';
 
 // ─── Grass Variants (4 patterns for visual variety) ──────────
 
@@ -164,6 +164,52 @@ const ROCK_VARIANT_SVGS: string[] = [
 </svg>`,
 ];
 
+// ─── Stone Floor Variants (3 patterns for cave/castle variety) ───
+
+const STONE_FLOOR_VARIANT_SVGS: string[] = [
+  // V0: Flagstone (large regular tiles)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sfV0" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B0A898"/><stop offset="1" stop-color="#887868"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#sfV0)"/>
+  <path d="M0 8 H16 V0 M16 8 H32 M0 16 H10 V8 M16 16 H32 V8 M0 24 H16 V16 M16 24 H32 V16 M0 32 H32 V24" stroke="#706050" stroke-width="0.6" opacity="0.4"/>
+  <circle cx="8" cy="12" r="0.5" fill="#706050" opacity="0.25"/>
+  <circle cx="24" cy="20" r="0.4" fill="#706050" opacity="0.2"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V1: Worn cobblestone (irregular smaller tiles)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sfV1" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A09888"/><stop offset="1" stop-color="#908070"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#sfV1)"/>
+  <path d="M5 0 V10 H0 M12 0 V8 H5 M22 0 V12 H12 M32 0 V10 H22 M0 10 V20 H8 V10 M8 20 H18 V8 M18 12 V22 H32 V10 M0 20 V32 H10 V20 M10 32 V22 H20 V32 M20 22 H32 V32" stroke="#706050" stroke-width="0.5" opacity="0.35"/>
+  <circle cx="4" cy="5" r="0.6" fill="#605040" opacity="0.2"/>
+  <circle cx="15" cy="15" r="0.5" fill="#605040" opacity="0.18"/>
+  <circle cx="26" cy="26" r="0.4" fill="#605040" opacity="0.15"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  // V2: Cracked stone (aged, with visible wear)
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sfV2" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8A898"/><stop offset="1" stop-color="#807060"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#sfV2)"/>
+  <path d="M0 8 H32 M0 16 H32 M0 24 H32 M8 0 V32 M16 0 V32 M24 0 V32" stroke="#706050" stroke-width="0.5" opacity="0.3"/>
+  <path d="M6 4 L10 8 L8 14 M18 2 L22 10 M26 14 L20 22 L24 28 M4 18 L12 24 L8 30" stroke="#605040" stroke-width="0.4" opacity="0.25"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+];
+
 // ─── SVG Sources (opt-v4 variants, inlined) ──────────────────
 
 const TILE_SVG_SOURCES: Record<TileType, string> = {
@@ -251,6 +297,22 @@ const TILE_SVG_SOURCES: Record<TileType, string> = {
   <path d="M2 14 Q10 12 18 14 Q26 16 30 14" stroke="#C4A46C" stroke-width="0.6" opacity="0.3"/>
   <path d="M0 22 Q8 20 16 22 Q24 24 32 22" stroke="#BFA06A" stroke-width="0.6" opacity="0.25"/>
   <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
+</svg>`,
+
+  stone_floor: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sfG" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8B0A0"/>
+      <stop offset="1" stop-color="#8A8070"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#sfG)"/>
+  <path d="M0 8 H32 M0 16 H32 M0 24 H32 M8 0 V32 M16 0 V32 M24 0 V32" stroke="#706858" stroke-width="0.5" opacity="0.35"/>
+  <circle cx="6" cy="6" r="0.6" fill="#706858" opacity="0.3"/>
+  <circle cx="20" cy="12" r="0.5" fill="#706858" opacity="0.25"/>
+  <circle cx="10" cy="22" r="0.7" fill="#706858" opacity="0.3"/>
+  <circle cx="26" cy="28" r="0.4" fill="#706858" opacity="0.2"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.12"/>
 </svg>`,
 
   stone_wall: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
@@ -425,6 +487,14 @@ export async function preloadTiles(): Promise<void> {
   for (const canvas of rockResults) {
     rockVariantCache.push(canvas);
   }
+
+  // Pre-render stone floor variants
+  const stoneFloorResults = await Promise.all(
+    STONE_FLOOR_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+  );
+  for (const canvas of stoneFloorResults) {
+    stoneFloorVariantCache.push(canvas);
+  }
 }
 
 /**
@@ -464,8 +534,20 @@ export function getRockVariant(cx: number, cy: number): HTMLCanvasElement | unde
   return rockVariantCache[hash % rockVariantCache.length];
 }
 
+/**
+ * Get a deterministic stone floor variant tile based on cell position.
+ */
+export function getStoneFloorVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
+  if (stoneFloorVariantCache.length === 0) return isoTileCache.get('stone_floor');
+  const hash = ((cx * 4297) + (cy * 7331)) & 0x7FFFFFFF;
+  return stoneFloorVariantCache[hash % stoneFloorVariantCache.length];
+}
+
 /** Pre-rendered grass variant isometric tiles */
 const grassVariantCache: HTMLCanvasElement[] = [];
+
+/** Pre-rendered stone floor variant isometric tiles */
+const stoneFloorVariantCache: HTMLCanvasElement[] = [];
 
 /** Pre-rendered dirt variant isometric tiles */
 const dirtVariantCache: HTMLCanvasElement[] = [];
