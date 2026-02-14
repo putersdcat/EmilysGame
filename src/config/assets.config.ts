@@ -211,6 +211,42 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.65, shadow: true, walkable: false, interactable: true,
     description: 'Mysterious black cat',
   },
+  // Biome-specific NPCs (Doc 05 §4.2)
+  npc_farmer: {
+    emoji: '👨\u200D🌾', category: 'npc', height: 4, layer: 'mid',
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
+    description: 'Meadow farmer',
+  },
+  npc_beekeeper: {
+    emoji: '🐝', category: 'npc', height: 3, layer: 'mid',
+    scale: 0.75, shadow: true, walkable: false, interactable: true,
+    description: 'Beekeeper with honey to share',
+  },
+  npc_ranger: {
+    emoji: '🏹', category: 'npc', height: 4, layer: 'mid',
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
+    description: 'Forest ranger',
+  },
+  npc_hermit: {
+    emoji: '🧔', category: 'npc', height: 4, layer: 'mid',
+    scale: 0.8, shadow: true, walkable: false, interactable: true,
+    description: 'Forest hermit with wisdom',
+  },
+  npc_miner: {
+    emoji: '⛏️', category: 'npc', height: 4, layer: 'mid',
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
+    description: 'Cave miner',
+  },
+  npc_ghost: {
+    emoji: '👻', category: 'npc', height: 4, layer: 'mid',
+    scale: 0.8, shadow: true, walkable: false, interactable: true,
+    description: 'Castle ghost with secrets',
+  },
+  npc_knight: {
+    emoji: '⚔️', category: 'npc', height: 5, layer: 'high',
+    scale: 0.9, shadow: true, walkable: false, interactable: true,
+    description: 'Castle knight',
+  },
 };
 
 // ─── Obstacle Templates ──────────────────────────────────────
