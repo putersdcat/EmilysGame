@@ -10,7 +10,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, clearVariationCache, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
@@ -247,9 +247,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // LLM if no cache exists. Result is cached for future startups. (#26)
   if (isTestMode()) {
     setWordlist(getScrambledWordlist());
+    setBiomeNoiseSeed(12345); // Deterministic biome map for tests
     console.log('[INIT] Test mode: using scrambled bundled wordlist (no LLM)');
   } else {
     setWordlist(getScrambledWordlist()); // Immediate non-blocking fallback
+    setBiomeNoiseSeed(Date.now()); // Session-unique biome regions
     generateWordlist().then((wl) => {
       setWordlist(wl);
       console.log('[INIT] LLM wordlist ready');

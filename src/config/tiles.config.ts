@@ -11,7 +11,7 @@ import type { TileType } from '../tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 
-export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path';
+export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore';
 
 /** Cardinal direction type used for edge queries */
 export type Cardinal = 'n' | 's' | 'e' | 'w';
@@ -134,11 +134,12 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
 // Design doc: Docs/WorldEngine-02-EdgeContracts.md
 
 const EDGE_COMPAT: Record<EdgeTag, Set<EdgeTag>> = {
-  open:  new Set<EdgeTag>(['open', 'fence', 'path']), // open can touch open, fence, or path
+  open:  new Set<EdgeTag>(['open', 'fence', 'path', 'shore']), // open touches open, fence, path, or shore
   wall:  new Set<EdgeTag>(['wall', 'open']),           // walls can abut walls or open
-  water: new Set<EdgeTag>(['water', 'open']),          // water can touch water or shore (open)
+  water: new Set<EdgeTag>(['water', 'shore']),         // water touches water or shore transitions
   fence: new Set<EdgeTag>(['fence', 'open']),          // fences can touch fences or open
   path:  new Set<EdgeTag>(['path', 'open']),           // paths connect to paths or open ground
+  shore: new Set<EdgeTag>(['shore', 'water', 'open']), // shore transitions between water and land
 };
 
 /** Check if two edge tags are compatible when placed adjacent */
@@ -907,6 +908,247 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 2, y: 2, role: 'feature' },
     ],
   },
+
+  // ─────────── Shore / Transition Templates ───────────────────
+
+  // --- Shore N (water at top, grass at bottom — transition piece) ---
+  {
+    name: 'shore_n',
+    cells: [
+      ['water', 'water', 'water', 'water', 'water'],
+      ['water', 'water', 'water', 'water', 'water'],
+      ['sand', 'sand', 'sand', 'sand', 'sand'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'water', s: 'open', e: 'shore', w: 'shore' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'river',
+    minPassability: 0.6,
+    category: 'transitional',
+    connectivity: 'river-chain',
+    movementChannels: [
+      [{ x: 0, y: 3 }, { x: 4, y: 3 }],  // walk along beach
+    ],
+    anchors: [
+      { x: 2, y: 3, role: 'decoration' },
+    ],
+  },
+
+  // --- Shore corner NE (water top-right, land bottom-left) ---
+  {
+    name: 'shore_corner_ne',
+    cells: [
+      ['water', 'water', 'water', 'water', 'water'],
+      ['water', 'water', 'water', 'water', 'water'],
+      ['sand', 'sand', 'sand', 'water', 'water'],
+      ['grass', 'grass', 'sand', 'sand', 'water'],
+      ['grass', 'grass', 'grass', 'sand', 'water'],
+    ],
+    edgeTags: { n: 'water', s: 'shore', e: 'water', w: 'shore' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'river',
+    minPassability: 0.36,
+    category: 'transitional',
+    connectivity: 'river-chain',
+    movementChannels: [
+      [{ x: 0, y: 3 }, { x: 2, y: 4 }],
+    ],
+  },
+
+  // ─────────── Biome-Specific Templates ───────────────────────
+
+  // --- Forest clearing (trees surrounding a dirt patch) ---
+  {
+    name: 'forest_clearing',
+    cells: [
+      [null, null, null, null, null],
+      [null, 'dirt', 'dirt', 'dirt', null],
+      [null, 'dirt', 'dirt', 'dirt', null],
+      [null, 'dirt', 'dirt', 'dirt', null],
+      [null, null, null, null, null],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['forest', 'meadow'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 3, role: 'decoration' },
+    ],
+  },
+
+  // --- Cave tunnel N-S (rock walls with center passage) ---
+  {
+    name: 'cave_tunnel_ns',
+    cells: [
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.48,
+    category: 'structural',
+    connectivity: 'wall-chain',
+    biomeAffinity: ['cave'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'item' },
+    ],
+  },
+
+  // --- Cave chamber (larger rock-walled room) ---
+  {
+    name: 'cave_chamber',
+    cells: [
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 0.52,
+    category: 'structural',
+    connectivity: 'standalone',
+    biomeAffinity: ['cave'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 3, role: 'feature' },
+    ],
+  },
+
+  // --- Castle courtyard (walled on 3 sides, open south) ---
+  {
+    name: 'castle_courtyard',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+    ],
+    edgeTags: { n: 'wall', s: 'wall', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'enclosure',
+    biomeAffinity: ['castle'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 1, role: 'feature' },
+      { x: 1, y: 3, role: 'decoration' },
+      { x: 3, y: 3, role: 'decoration' },
+    ],
+  },
+
+  // --- Castle corridor (wall-lined hallway) ---
+  {
+    name: 'castle_corridor',
+    cells: [
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.6,
+    category: 'structural',
+    connectivity: 'wall-chain',
+    biomeAffinity: ['castle', 'cave'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'feature' },
+    ],
+  },
+
+  // --- Sandy patch (sand terrain zone - used for beaches/desert) ---
+  {
+    name: 'sandy_patch',
+    cells: [
+      ['grass', 'grass', 'sand', 'grass', 'grass'],
+      ['grass', 'sand', 'sand', 'sand', 'grass'],
+      ['sand', 'sand', 'sand', 'sand', 'sand'],
+      ['grass', 'sand', 'sand', 'sand', 'grass'],
+      ['grass', 'grass', 'sand', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'item' },
+      { x: 1, y: 1, role: 'decoration' },
+      { x: 3, y: 3, role: 'decoration' },
+    ],
+  },
+
+  // --- Mixed terrain (grass/dirt natural variation) ---
+  {
+    name: 'mixed_terrain',
+    cells: [
+      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
+      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
+      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'decoration' },
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -914,14 +1156,17 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    meadow_base: 0.30,
-    dirt_clearing: 0.12,
-    dirt_path_ns: 0.08,
-    dirt_path_ew: 0.08,
-    path_bend_ne: 0.04,
-    path_t_junction: 0.03,
-    path_crossroads: 0.02,
-    path_dead_end: 0.03,
+    meadow_base: 0.22,
+    dirt_clearing: 0.10,
+    mixed_terrain: 0.06,
+    sandy_patch: 0.04,
+    forest_clearing: 0.04,
+    dirt_path_ns: 0.07,
+    dirt_path_ew: 0.07,
+    path_bend_ne: 0.03,
+    path_t_junction: 0.02,
+    path_crossroads: 0.01,
+    path_dead_end: 0.02,
     river_straight_ns: 0.04,
     river_straight_ew: 0.04,
     river_bend_ne: 0.02,
@@ -929,74 +1174,86 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     river_end_pond: 0.03,
     river_t_junction: 0.01,
     river_crossroads: 0.005,
+    shore_n: 0.02,
+    shore_corner_ne: 0.01,
     bridge_ns: 0.02,
     bridge_ew: 0.02,
-    fence_enclosure: 0.08,
-    rocky_outcrop: 0.05,
-    wall_gate: 0.02,
+    fence_enclosure: 0.06,
+    rocky_outcrop: 0.04,
+    wall_gate: 0.01,
     wall_segment: 0.01,
-    wall_corner: 0.01,
-    wall_end: 0.01,
+    wall_corner: 0.005,
+    wall_end: 0.005,
   },
   forest: {
-    meadow_base: 0.14,
-    dirt_clearing: 0.08,
-    rocky_outcrop: 0.10,
-    rock_cluster: 0.08,
-    dirt_path_ns: 0.07,
-    dirt_path_ew: 0.07,
-    path_bend_ne: 0.05,
+    meadow_base: 0.08,
+    dirt_clearing: 0.06,
+    forest_clearing: 0.12,
+    mixed_terrain: 0.06,
+    rocky_outcrop: 0.08,
+    rock_cluster: 0.06,
+    dirt_path_ns: 0.06,
+    dirt_path_ew: 0.06,
+    path_bend_ne: 0.04,
     path_t_junction: 0.03,
     path_crossroads: 0.02,
     path_dead_end: 0.04,
     river_straight_ns: 0.05,
     river_straight_ew: 0.05,
-    river_bend_ne: 0.04,
-    river_bend_nw: 0.04,
+    river_bend_ne: 0.03,
+    river_bend_nw: 0.03,
     river_end_pond: 0.04,
     river_t_junction: 0.02,
+    shore_n: 0.02,
+    shore_corner_ne: 0.01,
     bridge_ns: 0.03,
     bridge_ew: 0.03,
-    wall_segment: 0.04,
-    wall_gate: 0.04,
-    fence_enclosure: 0.06,
+    wall_segment: 0.02,
+    wall_gate: 0.02,
+    fence_enclosure: 0.04,
   },
   cave: {
-    rock_cluster: 0.13,
-    rocky_outcrop: 0.10,
-    wall_segment: 0.14,
-    wall_gate: 0.09,
-    wall_corner: 0.07,
-    wall_end: 0.05,
+    rock_cluster: 0.09,
+    rocky_outcrop: 0.07,
+    cave_tunnel_ns: 0.12,
+    cave_chamber: 0.10,
+    castle_corridor: 0.06,
+    wall_segment: 0.10,
+    wall_gate: 0.07,
+    wall_corner: 0.06,
+    wall_end: 0.04,
     guard_tower: 0.06,
-    river_straight_ns: 0.05,
-    river_straight_ew: 0.05,
-    river_end_pond: 0.04,
-    bridge_ns: 0.03,
-    bridge_ew: 0.03,
-    dirt_path_ns: 0.04,
-    dirt_path_ew: 0.04,
-    path_bend_ne: 0.03,
-    path_t_junction: 0.02,
-    path_dead_end: 0.03,
+    river_straight_ns: 0.04,
+    river_straight_ew: 0.04,
+    river_end_pond: 0.03,
+    bridge_ns: 0.02,
+    bridge_ew: 0.02,
+    dirt_path_ns: 0.03,
+    dirt_path_ew: 0.03,
+    path_bend_ne: 0.02,
+    path_dead_end: 0.02,
   },
   castle: {
-    wall_segment: 0.16,
-    wall_gate: 0.12,
-    wall_corner: 0.09,
-    wall_end: 0.05,
-    guard_tower: 0.09,
-    fence_enclosure: 0.07,
-    dirt_clearing: 0.06,
+    wall_segment: 0.11,
+    wall_gate: 0.09,
+    wall_corner: 0.07,
+    wall_end: 0.04,
+    guard_tower: 0.08,
+    castle_courtyard: 0.09,
+    castle_corridor: 0.08,
+    fence_enclosure: 0.05,
+    dirt_clearing: 0.04,
+    cave_chamber: 0.03,
     dirt_path_ns: 0.05,
     dirt_path_ew: 0.05,
     path_bend_ne: 0.03,
     path_t_junction: 0.02,
     path_crossroads: 0.01,
     path_dead_end: 0.03,
-    rocky_outcrop: 0.04,
-    river_straight_ns: 0.03,
-    river_straight_ew: 0.03,
+    rocky_outcrop: 0.03,
+    river_straight_ns: 0.02,
+    river_straight_ew: 0.02,
+    shore_n: 0.01,
   },
 };
 
