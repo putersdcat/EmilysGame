@@ -2,12 +2,49 @@
  * quiz.ts - Quiz overlay system.
  * Manages quiz flow: pick question, present choices, verify answer,
  * optionally rephrase via LLM.
+ * Difficulty scales with player distance from spawn (Doc 05 §9.1).
  * TODO: DOC - quiz flow diagram
  */
 
 import { getQuestions, type QuizQuestion, type QuizDifficulty } from './config/quiz.config';
+import { WORLD_CONFIG } from './config/game.config';
 import { rephraseQuizQuestion } from './llm';
 import { shuffle } from './utils';
+
+// ─── Difficulty Scaling ──────────────────────────────────────
+
+const DIFFICULTY_ORDER: QuizDifficulty[] = ['easy', 'medium', 'hard'];
+
+/**
+ * Map chunk Manhattan distance from spawn to a base difficulty.
+ * dist 0-2: easy, dist 3-5: medium, dist 6+: hard
+ * TODO: DOC - distance-based difficulty thresholds
+ */
+export function getDifficultyForDistance(chunkDist: number): QuizDifficulty {
+  if (chunkDist <= 2) return 'easy';
+  if (chunkDist <= 5) return 'medium';
+  return 'hard';
+}
+
+/**
+ * Compute difficulty from player world-space position.
+ * Uses Manhattan chunk distance from origin.
+ */
+export function getDifficultyForPosition(playerX: number, playerY: number): QuizDifficulty {
+  const size = WORLD_CONFIG.chunkSize;
+  const chunkDist = Math.abs(Math.floor(playerX / size)) + Math.abs(Math.floor(playerY / size));
+  return getDifficultyForDistance(chunkDist);
+}
+
+/**
+ * Blend NPC's preferred difficulty with distance-based difficulty.
+ * Takes the harder of the two (Doc 05 §9.1 - distance never lowers difficulty).
+ */
+export function blendDifficulty(npcPref: QuizDifficulty, distDiff: QuizDifficulty): QuizDifficulty {
+  const npcIdx = DIFFICULTY_ORDER.indexOf(npcPref);
+  const distIdx = DIFFICULTY_ORDER.indexOf(distDiff);
+  return DIFFICULTY_ORDER[Math.max(npcIdx, distIdx)];
+}
 
 // ─── Types ───────────────────────────────────────────────────
 
