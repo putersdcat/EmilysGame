@@ -394,6 +394,187 @@
       padding: 1px 6px; margin: 1px 0;
     }
 
+    /* ── Subject Selection Overlay ── */
+    #subjectOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; justify-content: center; align-items: center;
+      z-index: 100;
+    }
+    .subject-modal {
+      background: linear-gradient(135deg, #1a1632 0%, #2a2045 100%);
+      border: 2px solid #6688cc; border-radius: 12px;
+      padding: 24px 28px; width: 440px; max-width: 90vw;
+      color: #e0e0e0;
+    }
+    .subject-modal h3 {
+      color: #ffdd88; font: bold 18px monospace; text-align: center;
+      margin-bottom: 4px;
+    }
+    .subject-modal .subtitle {
+      color: #aaa; font: 12px monospace; text-align: center;
+      margin-bottom: 16px;
+    }
+    .subject-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; margin: 4px 0;
+      border: 1px solid rgba(100,100,140,0.3); border-radius: 6px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .subject-option:hover { background: rgba(100,130,200,0.15); }
+    .subject-option.selected {
+      background: rgba(100,130,200,0.25);
+      border-color: rgba(100,130,200,0.6);
+    }
+    .subject-check { font-size: 18px; width: 24px; text-align: center; }
+    .subject-icon { font-size: 22px; }
+    .subject-info { display: flex; flex-direction: column; }
+    .subject-name { font: bold 13px monospace; color: #fff; }
+    .subject-desc { font: 11px monospace; color: #999; }
+    .subject-confirm-btn {
+      display: block; margin: 16px auto 0; padding: 8px 28px;
+      background: #4a7fcc; border: none; border-radius: 6px;
+      color: #fff; font: bold 13px monospace; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .subject-confirm-btn:hover { background: #5a9fdd; }
+
+    /* ── Book of Knowledge Overlay ── */
+    #bookOverlay {
+      position: absolute; inset: 20px;
+      background: rgba(15,12,28,0.96);
+      border: 2px solid #8866aa; border-radius: 10px;
+      display: none; flex-direction: column;
+      z-index: 18; pointer-events: auto;
+      overflow: hidden;
+    }
+    .book-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid rgba(100,100,140,0.3);
+      flex-shrink: 0;
+    }
+    .book-title {
+      color: #ffdd88; font: bold 16px monospace;
+    }
+    .book-close {
+      color: #aaa; font: 18px monospace; cursor: pointer;
+      padding: 2px 8px; border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .book-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .book-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid rgba(100,100,140,0.3);
+      flex-shrink: 0;
+    }
+    .book-tab {
+      flex: 1; padding: 8px; text-align: center;
+      font: 12px monospace; color: #888; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .book-tab:hover { color: #ccc; background: rgba(100,130,200,0.1); }
+    .book-tab.active {
+      color: #ffdd88; border-bottom-color: #ffdd88;
+    }
+    #bookContent {
+      flex: 1; overflow-y: auto; padding: 12px 16px;
+      scrollbar-width: thin; scrollbar-color: #555 transparent;
+    }
+    #bookContent::-webkit-scrollbar { width: 6px; }
+    #bookContent::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+    /* Book content styles */
+    .book-points {
+      text-align: right; font: 11px monospace; color: #ffaa44;
+      margin-bottom: 10px;
+    }
+    .book-subject-group { margin-bottom: 14px; }
+    .book-subject-header {
+      font: bold 13px monospace; margin-bottom: 6px;
+      padding-bottom: 3px; border-bottom: 1px solid rgba(100,100,140,0.2);
+    }
+    .book-article-card {
+      padding: 6px 10px; margin: 3px 0;
+      border: 1px solid rgba(100,100,140,0.2); border-radius: 5px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .book-article-card:hover {
+      background: rgba(100,130,200,0.15);
+      border-color: rgba(100,130,200,0.4);
+    }
+    .book-article-card.read { opacity: 0.7; }
+    .book-article-title { font: bold 12px monospace; color: #e0e0e0; }
+    .book-article-summary { font: 11px monospace; color: #999; margin-top: 2px; }
+    .book-empty {
+      text-align: center; color: #888; font: 13px monospace;
+      padding: 30px 10px;
+    }
+    /* Article view */
+    .book-back {
+      color: #88ccff; font: 12px monospace; cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .book-back:hover { text-decoration: underline; }
+    .book-article-header {
+      font: bold 16px monospace; color: #fff;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .book-article-body {
+      font: 13px/1.6 monospace; color: #d0d0d0;
+      margin-bottom: 14px;
+    }
+    .book-article-body strong { color: #ffdd88; }
+    .book-key-terms {
+      padding: 8px 10px; background: rgba(100,100,140,0.1);
+      border-radius: 5px; margin-bottom: 8px;
+    }
+    .book-terms-label {
+      font: bold 11px monospace; color: #88ccff;
+      display: block; margin-bottom: 4px;
+    }
+    .book-term {
+      display: inline-block; padding: 2px 8px; margin: 2px;
+      background: rgba(100,130,200,0.2); border-radius: 3px;
+      font: 11px monospace; color: #ccc; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .book-term:hover { background: rgba(100,130,200,0.4); }
+    .book-term.saved { color: #4caf50; cursor: default; }
+    .book-related { margin-top: 8px; }
+    .book-related-label { font: bold 11px monospace; color: #88ccff; }
+    .book-related-link {
+      display: inline-block; padding: 2px 8px; margin: 2px;
+      background: rgba(100,130,200,0.15); border-radius: 3px;
+      font: 11px monospace; color: #88ccff; cursor: pointer;
+    }
+    .book-related-link:hover { background: rgba(100,130,200,0.3); }
+    /* Word bag styles */
+    .wordbag-count {
+      font: 11px monospace; color: #aaa; margin-bottom: 8px;
+    }
+    .wordbag-entry {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 8px; margin: 2px 0;
+      border: 1px solid rgba(100,100,140,0.2); border-radius: 4px;
+    }
+    .wordbag-term { font: 13px monospace; color: #e0e0e0; }
+    .wordbag-actions { display: flex; gap: 8px; }
+    .wordbag-lookup, .wordbag-remove {
+      cursor: pointer; font-size: 14px; opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .wordbag-lookup:hover, .wordbag-remove:hover { opacity: 1; }
+    .wordbag-lookup.looked-up { opacity: 0.4; }
+    /* Search */
+    .book-search-box { margin-bottom: 12px; }
+    .book-search-input {
+      width: 100%; padding: 6px 10px;
+      background: rgba(100,100,140,0.15); border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 5px; color: #e0e0e0; font: 13px monospace;
+      outline: none;
+    }
+    .book-search-input:focus { border-color: rgba(100,130,200,0.6); }
+
     .controls {
       color: #aaa; font-size: 11px; flex-shrink: 0; padding: 2px 1rem;
     }
@@ -411,6 +592,16 @@
   </div>
 
   <h1>🌿 Emily's Game</h1>
+
+  <!-- Subject Selection Overlay (shown on new game) -->
+  <div id="subjectOverlay">
+    <div class="subject-modal">
+      <h3>📚 Choose Your Subjects</h3>
+      <div class="subtitle">Pick the topics you want to learn about! (or skip for all)</div>
+      <div id="subjectList"></div>
+      <button id="subjectConfirm" class="subject-confirm-btn">Start Adventure! 🎮</button>
+    </div>
+  </div>
 
   <div id="gameWrapper">
     <div id="gameContainer">
@@ -438,6 +629,20 @@
         </div>
       </div>
 
+      <!-- Book of Knowledge overlay -->
+      <div id="bookOverlay">
+        <div class="book-header">
+          <span class="book-title">📖 Book of Knowledge</span>
+          <span class="book-close" id="bookClose">✕</span>
+        </div>
+        <div class="book-tabs">
+          <div class="book-tab active" data-tab="browse">📚 Browse</div>
+          <div class="book-tab" data-tab="wordbag">🎒 Word Bag</div>
+          <div class="book-tab" data-tab="search">🔍 Search</div>
+        </div>
+        <div id="bookContent"></div>
+      </div>
+
       <!-- Bottom HUD -->
       <div id="hudOverlay">
         <div id="hudBar">
@@ -445,6 +650,7 @@
           <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
           <div class="hud-spacer"></div>
           <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
+          <button class="hud-btn" id="btnBook" title="Book of Knowledge (B)">📖</button>
           <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
           <button class="hud-btn" id="btnSave" title="Save game">💾</button>
           <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
@@ -527,7 +733,7 @@
   </div>
 
   <div class="controls">
-    <p><strong>Controls:</strong> WASD / Arrows = Move &nbsp;|&nbsp; Space = Interact &nbsp;|&nbsp; I = Inventory &nbsp;|&nbsp; F3 = Debug</p>
+    <p><strong>Controls:</strong> WASD / Arrows = Move &nbsp;|&nbsp; Space = Interact &nbsp;|&nbsp; B = Book &nbsp;|&nbsp; I = Inventory &nbsp;|&nbsp; F3 = Debug</p>
   </div>
   <script type="module" src="/main.ts"></script>
 </body>

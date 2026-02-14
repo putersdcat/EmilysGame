@@ -24,6 +24,14 @@ export interface SaveData {
     correct: number;
   };
   wordlistSeed: string;        // First word pair (for deterministic replay)
+  /** Book of Knowledge: selected subjects */
+  selectedSubjects?: string[];
+  /** Book of Knowledge: saved words */
+  wordBag?: { term: string; sourceArticleId?: string; savedAt: number; lookedUp: boolean }[];
+  /** Book of Knowledge: read article ids */
+  readArticles?: string[];
+  /** Book of Knowledge: discovery points */
+  discoveryPoints?: number;
 }
 
 export interface ResolvedCell {
