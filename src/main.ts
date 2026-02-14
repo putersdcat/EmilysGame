@@ -23,6 +23,7 @@ import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from '
 import { clearTerrainCache, tickWaterAnimation } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
+import { initMinimap, renderMinimap } from './minimap';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -232,6 +233,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
   preloadEmojiSprites();
+
+  // Initialize minimap canvas
+  initMinimap();
 
   // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
   const wasmOk = await initWasmRenderer();
@@ -575,6 +579,9 @@ function renderFrame(
       biomeName,
     );
   }
+
+  // Minimap (self-throttling to ~6fps)
+  renderMinimap(state.chunks, state.player.x, state.player.y);
 }
 
 // ─── Game Loop ───────────────────────────────────────────────
