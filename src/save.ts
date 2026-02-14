@@ -32,6 +32,8 @@ export interface SaveData {
   readArticles?: string[];
   /** Book of Knowledge: discovery points */
   discoveryPoints?: number;
+  /** Player sprite customization */
+  playerVariation?: { hairColor: string; hairStyle: string; dressColor: string; skinTone: string };
 }
 
 export interface ResolvedCell {

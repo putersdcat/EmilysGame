@@ -198,6 +198,18 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
 export const spriteCache: Map<string, HTMLImageElement> = new Map();
 
 /**
+ * Clear cached sprites for a specific variation name (e.g. 'custom').
+ * Called when player changes appearance via customizer.
+ */
+export function clearVariationCache(variationName: string): void {
+  for (const key of spriteCache.keys()) {
+    if (key.startsWith(variationName + '_')) {
+      spriteCache.delete(key);
+    }
+  }
+}
+
+/**
  * Load a character sprite SVG asynchronously as an image element.
  * Caches results to avoid regeneration.
  * For compatibility, we return a simple placeholder until async loading completes.
