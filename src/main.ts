@@ -116,6 +116,8 @@ function maybeLoadChunks(state: GameState): void {
     state.lastChunkX = pcx;
     state.lastChunkY = pcy;
     ensureChunksAround(state);
+    // Auto-save on chunk exit
+    doSave(state);
   }
 }
 
