@@ -1,7 +1,12 @@
 /**
  * sprites.ts - Programmable SVG character sprite system.
  * Creates animated character variations based on color/appearance parameters.
+ * Supports 3 facing poses: front (default), back, and side (with flip for left/right).
+ * TODO: DOC - facing direction sprite system
  */
+
+/** Player facing direction for sprite selection */
+export type FacingPose = 'front' | 'back';
 
 export interface CharacterVariation {
   name: string;
@@ -192,6 +197,131 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
   `;
 }
 
+// ─── Back-Facing Sprites (player moving away from camera) ────
+
+/**
+ * Generate back-facing hair SVG based on style.
+ * Back view shows fuller hair coverage (no face visible).
+ */
+function getBackHairSVG(hairStyle: string, hairColor: string): string {
+  if (hairStyle === 'pigtails') {
+    return `
+      <!-- Back pigtails - visible from behind -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <ellipse cx="18" cy="28" rx="7" ry="10" fill="${hairColor}"/>
+      <ellipse cx="46" cy="28" rx="7" ry="10" fill="${hairColor}"/>
+    `;
+  } else if (hairStyle === 'straight') {
+    return `
+      <!-- Back straight hair - flows down -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <rect x="18" y="24" width="28" height="20" rx="4" fill="${hairColor}"/>
+    `;
+  } else {
+    // wavy
+    return `
+      <!-- Back wavy hair - flowing waves -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <path d="M 18 28 Q 20 38 18 44 M 25 30 Q 27 40 25 46 M 32 30 Q 34 42 32 48 M 39 30 Q 41 40 39 46 M 46 28 Q 44 38 46 44" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <rect x="18" y="24" width="28" height="18" rx="4" fill="${hairColor}"/>
+    `;
+  }
+}
+
+/**
+ * Generate SVG for idle back-facing character.
+ * Shows back of head (hair), dress from behind, no face features.
+ */
+export function generateBackIdleCharacterSVG(variation: CharacterVariation): string {
+  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+  const backHair = getBackHairSVG(hairStyle, hairColor);
+
+  return `
+    <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hair (back of head) -->
+      ${backHair}
+
+      <!-- Neck/skin peek -->
+      <rect x="28" y="38" width="8" height="6" fill="${skinTone}"/>
+
+      <!-- Body - Dress (back, with center seam) -->
+      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+      <line x1="32" y1="44" x2="32" y2="68" stroke="#000" stroke-width="0.5" opacity="0.15"/>
+
+      <!-- Dress trim (back) -->
+      <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.4"/>
+
+      <!-- Arms (back view — slightly inward) -->
+      <rect x="16" y="44" width="7" height="20" rx="2" fill="${skinTone}"/>
+      <rect x="41" y="44" width="7" height="20" rx="2" fill="${skinTone}"/>
+
+      <!-- Legs -->
+      <rect x="26" y="70" width="5" height="20" fill="${skinTone}"/>
+      <rect x="33" y="70" width="5" height="20" fill="${skinTone}"/>
+
+      <!-- Shoes -->
+      <ellipse cx="28.5" cy="90" rx="3" ry="4" fill="#333"/>
+      <ellipse cx="35.5" cy="90" rx="3" ry="4" fill="#333"/>
+    </svg>
+  `;
+}
+
+/**
+ * Generate SVG for back-facing walking animation.
+ * Same leg/arm cycle as front, but shows back of character.
+ */
+export function generateBackWalkingCharacterSVG(variation: CharacterVariation, frame: number): string {
+  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+  const backHair = getBackHairSVG(hairStyle, hairColor);
+
+  const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
+  const otherLegOffset = [0, 4, 6, 4, 0, -4][frame] || 0;
+  const armSwing = [0, -3, -5, -3, 0, 3][frame] || 0;
+  const bodyBounce = [0, -1, -2, -1, 0, -1][frame] || 0;
+
+  return `
+    <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      <!-- Upper body with bounce -->
+      <g transform="translate(0, ${bodyBounce})">
+        <!-- Hair (back of head) -->
+        ${backHair}
+
+        <!-- Neck/skin peek -->
+        <rect x="28" y="38" width="8" height="6" fill="${skinTone}"/>
+
+        <!-- Body - Dress (back) -->
+        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+        <line x1="32" y1="44" x2="32" y2="68" stroke="#000" stroke-width="0.5" opacity="0.15"/>
+
+        <!-- Dress trim -->
+        <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.4"/>
+
+        <!-- Left arm (swinging from shoulder) -->
+        <g transform="translate(23, 44)">
+          <rect x="-7" y="0" width="7" height="20" rx="2" fill="${skinTone}" transform="rotate(${armSwing})"/>
+        </g>
+
+        <!-- Right arm (opposite swing) -->
+        <g transform="translate(41, 44)">
+          <rect x="0" y="0" width="7" height="20" rx="2" fill="${skinTone}" transform="rotate(${-armSwing})"/>
+        </g>
+      </g>
+
+      <!-- Left leg (marching) -->
+      <g transform="translate(26, 70)">
+        <rect x="0" y="${legOffset}" width="5" height="20" fill="${skinTone}"/>
+        <ellipse cx="2.5" cy="${20 + legOffset}" rx="3" ry="4" fill="#333"/>
+      </g>
+
+      <!-- Right leg (opposite march) -->
+      <g transform="translate(33, 70)">
+        <rect x="0" y="${otherLegOffset}" width="5" height="20" fill="${skinTone}"/>
+        <ellipse cx="2.5" cy="${20 + otherLegOffset}" rx="3" ry="4" fill="#333"/>
+      </g>
+    </svg>
+  `;
+}
+
 /**
  * Cache for generated SVG images.
  */
@@ -209,25 +339,41 @@ export function clearVariationCache(variationName: string): void {
   }
 }
 
+/** Select the correct SVG generator based on pose and state */
+function getSVGForPose(
+  variation: CharacterVariation,
+  frame: number,
+  isWalking: boolean,
+  pose: FacingPose,
+): string {
+  if (pose === 'back') {
+    return isWalking
+      ? generateBackWalkingCharacterSVG(variation, frame)
+      : generateBackIdleCharacterSVG(variation);
+  }
+  // 'front' pose (default) — also used for side view with flipX in renderer
+  return isWalking
+    ? generateWalkingCharacterSVG(variation, frame)
+    : generateIdleCharacterSVG(variation);
+}
+
 /**
  * Load a character sprite SVG asynchronously as an image element.
  * Caches results to avoid regeneration.
- * For compatibility, we return a simple placeholder until async loading completes.
  */
 export async function loadCharacterSpriteAsync(
   variation: CharacterVariation,
   frame: number = 0,
-  isWalking: boolean = false
+  isWalking: boolean = false,
+  pose: FacingPose = 'front',
 ): Promise<HTMLImageElement> {
-  const cacheKey = `${variation.name}_f${frame}_${isWalking ? 'walk' : 'idle'}`;
+  const cacheKey = `${variation.name}_f${frame}_${isWalking ? 'walk' : 'idle'}_${pose}`;
 
   if (spriteCache.has(cacheKey)) {
     return spriteCache.get(cacheKey)!;
   }
 
-  const svgString = isWalking
-    ? generateWalkingCharacterSVG(variation, frame)
-    : generateIdleCharacterSVG(variation);
+  const svgString = getSVGForPose(variation, frame, isWalking, pose);
 
   const svg = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(svg);
@@ -250,21 +396,21 @@ export async function loadCharacterSpriteAsync(
 /**
  * Load a character sprite SVG synchronously (for immediate use).
  * Note: Image will load asynchronously in background.
+ * @param pose - 'front' (default/side view) or 'back' (walking away from camera)
  */
 export function loadCharacterSprite(
   variation: CharacterVariation,
   frame: number = 0,
-  isWalking: boolean = false
+  isWalking: boolean = false,
+  pose: FacingPose = 'front',
 ): HTMLImageElement {
-  const cacheKey = `${variation.name}_f${frame}_${isWalking ? 'walk' : 'idle'}`;
+  const cacheKey = `${variation.name}_f${frame}_${isWalking ? 'walk' : 'idle'}_${pose}`;
 
   if (spriteCache.has(cacheKey)) {
     return spriteCache.get(cacheKey)!;
   }
 
-  const svgString = isWalking
-    ? generateWalkingCharacterSVG(variation, frame)
-    : generateIdleCharacterSVG(variation);
+  const svgString = getSVGForPose(variation, frame, isWalking, pose);
 
   const svg = new Blob([svgString], { type: 'image/svg+xml' });
   const url = URL.createObjectURL(svg);
