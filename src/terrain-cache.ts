@@ -12,7 +12,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
-import { getIsoTile, getGrassVariant } from './tiles';
+import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant } from './tiles';
 import { getEmojiSprite } from './emoji-cache';
 import type { ChunkData } from './gen';
 
@@ -76,10 +76,19 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
       if (def.tileType) {
-        // Use grass variants for visual variety
-        const tileCanvas = def.tileType === 'grass'
-          ? getGrassVariant(chunk.chunkX * SIZE + cx, chunk.chunkY * SIZE + cy)
-          : getIsoTile(def.tileType);
+        // Use tile variants for visual variety (grass/dirt/rock have multiple patterns)
+        let tileCanvas: HTMLCanvasElement | undefined;
+        const globalCX = chunk.chunkX * SIZE + cx;
+        const globalCY = chunk.chunkY * SIZE + cy;
+        if (def.tileType === 'grass') {
+          tileCanvas = getGrassVariant(globalCX, globalCY);
+        } else if (def.tileType === 'dirt') {
+          tileCanvas = getDirtVariant(globalCX, globalCY);
+        } else if (def.tileType === 'rock') {
+          tileCanvas = getRockVariant(globalCX, globalCY);
+        } else {
+          tileCanvas = getIsoTile(def.tileType);
+        }
         if (tileCanvas) {
           ctx.drawImage(tileCanvas, lsx - 32, lsy - 16);
         }

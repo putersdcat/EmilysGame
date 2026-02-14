@@ -295,12 +295,13 @@ export class IsometricRenderer {
           }
 
           // Draw collectible overlay if present (on any cell layer)
+          // Items sit ON the ground (no vertical lift) — prevents floating appearance
           if (cell.itemId) {
             const itemDef = ASSET_DEFS[cell.itemId];
             if (itemDef) {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
-              cmd.sx = sx; cmd.sy = sy - 8; cmd.scale = itemDef.scale * 0.8; cmd.tint = 0;
+              cmd.sx = sx; cmd.sy = sy - 2; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
             }
           }
         }
