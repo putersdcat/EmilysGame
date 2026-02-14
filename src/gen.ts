@@ -310,6 +310,7 @@ function generateGridChunk(
   populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200));
   clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist);
   scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist);
+  layCoinTrails(cells, size, seededRandom(featureSeed + 450));
 
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
@@ -1018,21 +1019,28 @@ const BIOME_ANCHOR_DECORATIONS: Record<string, string[]> = {
   castle:  ['wall', 'rock', 'tall_plant'],
 };
 
-/** Biome-specific NPC pools for anchor roles */
+/** Biome-specific NPC pools for anchor roles — includes biome-specific NPCs (Doc 05 §4.2) */
 const BIOME_NPC_POOL: Record<string, string[]> = {
-  meadow:  ['npc_villager', 'npc_merchant', 'npc_cat', 'npc_cat', 'npc_black_cat'],
-  forest:  ['npc_villager', 'npc_merchant', 'npc_cat', 'npc_black_cat', 'npc_black_cat'],
-  cave:    ['npc_guardian', 'npc_merchant', 'npc_black_cat'],
-  castle:  ['npc_guardian', 'npc_guardian', 'npc_merchant', 'npc_cat'],
+  meadow:  ['npc_villager', 'npc_merchant', 'npc_farmer', 'npc_beekeeper', 'npc_cat', 'npc_cat'],
+  forest:  ['npc_villager', 'npc_merchant', 'npc_ranger', 'npc_hermit', 'npc_cat', 'npc_black_cat'],
+  cave:    ['npc_guardian', 'npc_merchant', 'npc_miner', 'npc_miner', 'npc_black_cat'],
+  castle:  ['npc_guardian', 'npc_guardian', 'npc_merchant', 'npc_knight', 'npc_ghost', 'npc_cat'],
 };
 
-/** NPC id mapping by asset key */
+/** NPC id mapping by asset key — default persona fallbacks */
 const NPC_ID_MAP: Record<string, string> = {
   npc_merchant: 'merchant_default',
   npc_villager: 'villager_default',
   npc_guardian: 'guardian_default',
   npc_cat: 'cat_default',
   npc_black_cat: 'black_cat_default',
+  npc_farmer: 'farmer_meadow',
+  npc_beekeeper: 'beekeeper_meadow',
+  npc_ranger: 'ranger_forest',
+  npc_hermit: 'hermit_forest',
+  npc_miner: 'miner_cave',
+  npc_ghost: 'ghost_castle',
+  npc_knight: 'knight_castle',
 };
 
 /**
@@ -1396,6 +1404,107 @@ export function scatterCollectibles(
       }
     }
   }
+}
+
+/**
+ * Phase 5d: Lay coin trails along corridors toward features (Doc 05 §5.2).
+ * Creates breadcrumb trails of coins (spaced 4-6 cells apart) leading
+ * toward chests, NPCs, and gates — guiding exploration naturally.
+ * TODO: DOC - coin trail pathfinding algorithm
+ */
+export function layCoinTrails(
+  cells: CellData[][],
+  size: number,
+  rng: () => number,
+): void {
+  // Find feature targets (chests, signs, NPCs)
+  const targets: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = cells[y][x];
+      if (cell.assetKey === 'chest' || cell.assetKey === 'sign' ||
+          cell.npcId || cell.assetKey === 'door_locked' ||
+          cell.assetKey === 'toll_gate') {
+        targets.push({ x, y });
+      }
+    }
+  }
+
+  if (targets.length === 0) return;
+
+  // Pick up to 3 targets to trail toward (avoid over-saturation)
+  const trailTargets = targets.slice(0, Math.min(3, targets.length));
+
+  for (const target of trailTargets) {
+    // BFS backward from target to find walkable corridor path
+    const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
+    const path = findPathBFS(cells, size, center, target);
+    if (!path || path.length < 8) continue; // Too short to trail
+
+    // Place coins along path at spacing 4-6 cells, skip last 2 cells near target
+    const spacing = 4 + Math.floor(rng() * 3); // 4-6
+    for (let i = spacing; i < path.length - 2; i += spacing) {
+      const { x, y } = path[i];
+      const cell = cells[y][x];
+      if (!cell.walkable || cell.itemId || cell.npcId) continue;
+      // Only on base walkable terrain
+      if (cell.assetKey !== 'grass' && cell.assetKey !== 'dirt' &&
+          cell.assetKey !== 'sand' && cell.assetKey !== 'flower' &&
+          cell.assetKey !== 'stone_floor') continue;
+      // 70% chance per trail point (some natural gaps)
+      if (rng() < 0.7) {
+        cell.itemId = 'coin';
+      }
+    }
+  }
+}
+
+/**
+ * Simple BFS pathfinding between two points.
+ * Returns path as array of {x,y} from start to end, or null if unreachable.
+ */
+function findPathBFS(
+  cells: CellData[][],
+  size: number,
+  start: { x: number; y: number },
+  end: { x: number; y: number },
+): Array<{ x: number; y: number }> | null {
+  if (start.x === end.x && start.y === end.y) return [start];
+
+  const visited = new Set<string>();
+  const parent = new Map<string, string>();
+  const queue: Array<{ x: number; y: number }> = [start];
+  visited.add(`${start.x},${start.y}`);
+
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+      const nx = curr.x + dx;
+      const ny = curr.y + dy;
+      const key = `${nx},${ny}`;
+      if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+      if (visited.has(key)) continue;
+      // Allow walking through anything for path tracing (coins go on walkable cells)
+      const cell = cells[ny][nx];
+      if (!cell.walkable && nx !== end.x && ny !== end.y) continue;
+      visited.add(key);
+      parent.set(key, `${curr.x},${curr.y}`);
+
+      if (nx === end.x && ny === end.y) {
+        // Reconstruct path
+        const path: Array<{ x: number; y: number }> = [];
+        let k = key;
+        while (k) {
+          const [px, py] = k.split(',').map(Number);
+          path.unshift({ x: px, y: py });
+          k = parent.get(k)!;
+        }
+        return path;
+      }
+      queue.push({ x: nx, y: ny });
+    }
+  }
+  return null; // Unreachable
 }
 
 /**
