@@ -8,8 +8,10 @@ test-results/
 .env.local
 .env.*.local
 
-.env.local
+# Temporary migration file
 MigrateToGitHubNativeProjectWork.md
 # WASM build artifacts
 public/wasm/
 game-*.png
+
+# Note: docs/ directory is committed (contains game-screenshot.png for README)
