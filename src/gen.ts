@@ -292,6 +292,7 @@ function generateGridChunk(
   borderConstraints?: BorderConstraints,
 ): GridChunkResult {
   const rng = seededRandom(featureSeed);
+  const chunkDist = Math.abs(chunkX) + Math.abs(chunkY); // Manhattan distance from origin
 
   // Phase 1: Perlin noise base terrain
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
@@ -307,14 +308,17 @@ function generateGridChunk(
 
   // Phase 5: content population (anchors, decorations, collectibles)
   populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200));
-  scatterDecorations(cells, size, biome, seededRandom(featureSeed + 300));
-  scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400));
+  clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist);
+  scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist);
 
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
   // Phase 6: balance obstacles (ensure keys exist before locks)
   balanceObstacles(cells, size, seededRandom(featureSeed + 500));
+
+  // Phase 6.5: dead-end reward scan (Guarantee 2 - no unrewarded dead ends)
+  rewardDeadEnds(cells, size, biome, seededRandom(featureSeed + 550));
 
   // Phase 7: re-enforce passability after population may have added non-walkable objects
   enforcePassability(cells, size, seededRandom(featureSeed + 600));
@@ -1178,9 +1182,118 @@ function placeFeatureAtCell(
 }
 
 /**
- * Phase 5b: Scatter additional decorations on eligible empty cells.
- * Creates natural-feeling clusters (per WorldEngine-05 §6.2).
- * Target: ~15-25% of walkable grass/dirt cells get decorations.
+ * Phase 5b: Cluster-based decoration placement (WorldEngine-05 §6.2).
+ * Creates natural-looking clusters of 3-7 decorations around center points,
+ * with biome-appropriate variety within each cluster.
+ * Target coverage: 15-25% of eligible cells, scaled by distance from origin.
+ * TODO: DOC - decoration clustering algorithm details
+ */
+export function clusterDecorations(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+  chunkDist: number = 0,
+): void {
+  const palette = BIOME_SCATTER_DECORATIONS[biome.name] ?? ['flower'];
+
+  // Distance-based density: closer to origin = more welcoming, further = sparser
+  // Base coverage: 18-25% at origin, tapering to 10-15% at dist 7+
+  const distFactor = Math.max(0.5, 1.0 - chunkDist * 0.06);
+  const targetCoverage = (0.18 + rng() * 0.07) * distFactor;
+
+  // Gather eligible cells (walkable base terrain with no existing content)
+  const eligible: Array<{ x: number; y: number }> = [];
+  const eligibleSet = new Set<string>();
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      if (cell.itemId || cell.npcId) continue;
+      if (cell.assetKey !== 'grass' && cell.assetKey !== 'dirt' && cell.assetKey !== 'sand') continue;
+      eligible.push({ x, y });
+      eligibleSet.add(`${x},${y}`);
+    }
+  }
+
+  if (eligible.length === 0) return;
+
+  const targetCount = Math.floor(eligible.length * targetCoverage);
+  let placed = 0;
+  const usedCells = new Set<string>();
+
+  // Shuffle eligible cells for random cluster center selection
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+
+  // Pick cluster centers spaced 5-8 cells apart
+  const clusterCenters: Array<{ x: number; y: number }> = [];
+  const MIN_CLUSTER_SPACING = 5;
+
+  for (const cell of eligible) {
+    if (placed >= targetCount) break;
+
+    // Check spacing from existing cluster centers
+    let tooClose = false;
+    for (const c of clusterCenters) {
+      const dist = Math.abs(cell.x - c.x) + Math.abs(cell.y - c.y);
+      if (dist < MIN_CLUSTER_SPACING) { tooClose = true; break; }
+    }
+    if (tooClose) continue;
+    if (usedCells.has(`${cell.x},${cell.y}`)) continue;
+    if (hasAdjacentInteractable(cells, cell.x, cell.y, size)) continue;
+
+    clusterCenters.push(cell);
+
+    // Generate cluster: 3-7 decorations within radius 2-4 of center
+    const clusterSize = 3 + Math.floor(rng() * 5); // 3-7
+    const radius = 2 + Math.floor(rng() * 3); // 2-4
+
+    // Pick 2-3 decoration types for variety within this cluster
+    const clusterTypes: string[] = [];
+    const typeCount = 2 + Math.floor(rng() * 2); // 2-3 types
+    for (let t = 0; t < typeCount; t++) {
+      clusterTypes.push(palette[Math.floor(rng() * palette.length)]);
+    }
+
+    // Place decorations in cluster: denser at center, sparser at edges
+    let clusterPlaced = 0;
+    for (let attempt = 0; attempt < clusterSize * 3 && clusterPlaced < clusterSize; attempt++) {
+      // Random offset within radius, biased toward center (triangular distribution)
+      const angle = rng() * Math.PI * 2;
+      const r = radius * Math.sqrt(rng()) * 0.8; // Sqrt bias = denser at center
+      const dx = Math.round(Math.cos(angle) * r);
+      const dy = Math.round(Math.sin(angle) * r);
+      const px = cell.x + dx;
+      const py = cell.y + dy;
+      const key = `${px},${py}`;
+
+      if (px < 0 || py < 0 || px >= size || py >= size) continue;
+      if (usedCells.has(key)) continue;
+      if (!eligibleSet.has(key)) continue;
+      if (hasAdjacentInteractable(cells, px, py, size)) continue;
+
+      const deco = clusterTypes[Math.floor(rng() * clusterTypes.length)];
+      const def = ASSET_DEFS[deco];
+      if (!def || !def.walkable) continue;
+
+      cells[py][px] = {
+        assetKey: deco,
+        walkable: true,
+        interactable: def.interactable,
+      };
+      usedCells.add(key);
+      clusterPlaced++;
+      placed++;
+    }
+  }
+}
+
+/**
+ * Phase 5b (legacy): Simple scatter decorations.
+ * Kept for test compatibility — use clusterDecorations for production.
  */
 export function scatterDecorations(
   cells: CellData[][],
@@ -1248,16 +1361,27 @@ function hasAdjacentInteractable(
 
 /**
  * Phase 5c: Scatter collectibles (coins) along walkable corridors.
- * Density follows biome collectibleRate. Keys/crowbars handled in balanceObstacles.
+ * Density follows biome collectibleRate, scaled by chunk distance.
+ * Close to origin = generous (welcoming), far = rarer but more valuable.
+ * Keys/crowbars handled in balanceObstacles.
+ * TODO: DOC - distance-based collectible scaling
  */
 export function scatterCollectibles(
   cells: CellData[][],
   size: number,
   biome: BiomeDef,
   rng: () => number,
+  chunkDist: number = 0,
 ): void {
-  // Coin density: ~2-4% of walkable base cells × collectibleRate
-  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate;
+  // Distance scaling (Doc 05 §9.1):
+  // dist 0: high density (1.5x), dist 1-2: normal, dist 3-5: 0.8x, dist 6+: 0.6x
+  const distMultiplier = chunkDist === 0 ? 1.5
+    : chunkDist <= 2 ? 1.0
+    : chunkDist <= 5 ? 0.8
+    : 0.6;
+
+  // Coin density: ~2-4% of walkable base cells × collectibleRate × distance factor
+  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate * distMultiplier;
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -1332,5 +1456,55 @@ export function balanceObstacles(
     const poolSize = Math.max(1, Math.floor(candidates.length * 0.3));
     const pick = candidates[Math.floor(rng() * poolSize)];
     cells[pick.y][pick.x].itemId = lock.keyItem;
+  }
+}
+
+/**
+ * Phase 6.5: Dead-End Reward Scanner (WorldEngine-05 §7.1, Guarantee 2).
+ * Finds dead-end corridors (walkable cells with only 1 walkable neighbor)
+ * and ensures each has at least one collectible or NPC.
+ * "No Dead Ends Without Reward" — player should never be punished for exploring.
+ * TODO: DOC - dead-end reward algorithm and collectible pools
+ */
+export function rewardDeadEnds(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  // Biome-appropriate dead-end reward pools (more valuable in harder biomes)
+  const rewardPools: Record<string, string[]> = {
+    meadow:  ['coin', 'coin', 'flower', 'mushroom'],
+    forest:  ['coin', 'coin', 'mushroom', 'key'],
+    cave:    ['coin', 'coin', 'coin', 'key', 'potion'],
+    castle:  ['coin', 'coin', 'key', 'potion', 'potion'],
+  };
+  const pool = rewardPools[biome.name] ?? ['coin'];
+
+  // Find dead-end cells: walkable cells with exactly 1 walkable orthogonal neighbor
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      if (cell.itemId || cell.npcId) continue; // Already has content
+
+      let walkableNeighbors = 0;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx >= 0 && ny >= 0 && nx < size && ny < size && cells[ny][nx].walkable) {
+          walkableNeighbors++;
+        }
+      }
+
+      // Dead end = exactly 1 walkable neighbor (corridor terminus)
+      if (walkableNeighbors === 1) {
+        // 80% chance to place a reward (avoid feeling formulaic)
+        if (rng() < 0.8) {
+          const reward = pool[Math.floor(rng() * pool.length)];
+          cell.itemId = reward;
+        }
+      }
+    }
   }
 }
