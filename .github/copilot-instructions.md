@@ -69,6 +69,7 @@ Emily's Game is an isometric browser-based procedural adventure game with LLM-dr
 - Use `POST /v1/chat/completions` for entropy/NPC chat
 - Fallback to TypeScript RNG if LLM inference >1-2s
 - Configuration must be flexible (local/remote, configurable URL)
+- See Docs\LocalBitNet_Integration_Readme.md for details
 
 ### Testing
 - E2E tests via Playwright in `tests/` directory

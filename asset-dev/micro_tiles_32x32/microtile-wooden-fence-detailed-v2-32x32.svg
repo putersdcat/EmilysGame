@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="woodGrad" x1="0" y1="0" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8B4513" />
+      <stop offset="1" stop-color="#A0522D" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="transparent" />
+  <path d="M0 4 H32 M0 12 H32 M0 20 H32 M0 28 H32" stroke="url(#woodGrad)" stroke-width="4" />
+  <path d="M4 0 V32 M12 0 V32 M20 0 V32 M28 0 V32" stroke="#A0522D" stroke-width="2" />
+  <path d="M6 8 L6 10 M14 16 L14 18 M22 24 L22 26" stroke="#654321" stroke-width="1" /> <!-- Grain lines -->
+  <circle cx="8" cy="6" r="1" fill="#696969" /> <!-- Nails -->
+  <circle cx="16" cy="14" r="1" fill="#696969" />
+  <circle cx="24" cy="22" r="1" fill="#696969" />
+  <rect x="0" y="28" width="32" height="4" fill="#000000" opacity="0.1" /> <!-- Shadow -->
+</svg>

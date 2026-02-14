@@ -118,6 +118,8 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
   const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
   const otherLegOffset = [0, 4, 6, 4, 0, -4][frame] || 0;
   const armSwing = [0, -3, -5, -3, 0, 3][frame] || 0;
+  // Subtle vertical bounce for natural walking motion (1-2px)
+  const bodyBounce = [0, -1, -2, -1, 0, -1][frame] || 0;
 
   // Hair positioning based on style
   let hairSVG = '';
@@ -143,33 +145,36 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
-      <!-- Head -->
-      ${hairSVG}
-      
-      <!-- Face -->
-      <circle cx="32" cy="32" r="10" fill="${skinTone}"/>
-      
-      <!-- Eyes (with movement for walking) -->
-      <circle cx="28" cy="30" r="1.5" fill="#0066CC"/>
-      <circle cx="36" cy="30" r="1.5" fill="#0066CC"/>
-      
-      <!-- Mouth -->
-      <path d="M 28 34 Q 32 36, 36 34" stroke="#CC6699" stroke-width="1" fill="none" stroke-linecap="round"/>
-      
-      <!-- Body - Dress -->
-      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
-      
-      <!-- Dress trim -->
-      <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.6"/>
-      
-      <!-- Left arm (swinging back/forward) -->
-      <g transform="translate(15, 48)">
-        <rect x="0" y="0" width="8" height="20" rx="2" fill="${skinTone}" transform="rotate(${armSwing})"/>
-      </g>
-      
-      <!-- Right arm (opposite swing) -->
-      <g transform="translate(49, 48)">
-        <rect x="0" y="0" width="8" height="20" rx="2" fill="${skinTone}" transform="rotate(${-armSwing})"/>
+      <!-- Upper body group with walking bounce -->
+      <g transform="translate(0, ${bodyBounce})">
+        <!-- Head -->
+        ${hairSVG}
+        
+        <!-- Face -->
+        <circle cx="32" cy="32" r="10" fill="${skinTone}"/>
+        
+        <!-- Eyes (with movement for walking) -->
+        <circle cx="28" cy="30" r="1.5" fill="#0066CC"/>
+        <circle cx="36" cy="30" r="1.5" fill="#0066CC"/>
+        
+        <!-- Mouth -->
+        <path d="M 28 34 Q 32 36, 36 34" stroke="#CC6699" stroke-width="1" fill="none" stroke-linecap="round"/>
+        
+        <!-- Body - Dress -->
+        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+        
+        <!-- Dress trim -->
+        <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.6"/>
+        
+        <!-- Left arm (swinging - pivots from shoulder at body edge) -->
+        <g transform="translate(23, 44)">
+          <rect x="-8" y="0" width="8" height="20" rx="2" fill="${skinTone}" transform="rotate(${armSwing})"/>
+        </g>
+        
+        <!-- Right arm (opposite swing - pivots from shoulder at body edge) -->
+        <g transform="translate(41, 44)">
+          <rect x="0" y="0" width="8" height="20" rx="2" fill="${skinTone}" transform="rotate(${-armSwing})"/>
+        </g>
       </g>
       
       <!-- Left leg (marching) -->
@@ -191,6 +196,18 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
  * Cache for generated SVG images.
  */
 export const spriteCache: Map<string, HTMLImageElement> = new Map();
+
+/**
+ * Clear cached sprites for a specific variation name (e.g. 'custom').
+ * Called when player changes appearance via customizer.
+ */
+export function clearVariationCache(variationName: string): void {
+  for (const key of spriteCache.keys()) {
+    if (key.startsWith(variationName + '_')) {
+      spriteCache.delete(key);
+    }
+  }
+}
 
 /**
  * Load a character sprite SVG asynchronously as an image element.

@@ -8,6 +8,8 @@
 
 // ─── Types ───────────────────────────────────────────────────
 
+import type { TileType } from '../tiles';
+
 export type ObjectCategory = 'terrain' | 'plant' | 'obstacle' | 'interactive' | 'collectible' | 'npc' | 'ego';
 export type DrawLayer = 'base' | 'mid' | 'high' | 'overlay';
 
@@ -21,6 +23,7 @@ export interface AssetDef {
   walkable: boolean;        // Can the player walk through this?
   interactable: boolean;    // Can the player interact (Space)?
   description: string;      // Short tooltip / dev reference
+  tileType?: TileType;      // SVG tile type for ground rendering (if available)
 }
 
 // ─── Master Asset Library ────────────────────────────────────
@@ -31,27 +34,27 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   grass: {
     emoji: '🌱', category: 'terrain', height: 0, layer: 'base',
     scale: 0.7, shadow: false, walkable: true, interactable: false,
-    description: 'Short grass patch',
+    description: 'Short grass patch', tileType: 'grass',
   },
   dirt: {
     emoji: '🟫', category: 'terrain', height: 0, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Dirt path tile',
+    description: 'Dirt path tile', tileType: 'dirt',
   },
   sand: {
     emoji: '🟨', category: 'terrain', height: 0, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Sandy ground',
+    description: 'Sandy ground', tileType: 'sand',
   },
   water: {
     emoji: '🌊', category: 'terrain', height: 0, layer: 'base',
     scale: 0.8, shadow: false, walkable: false, interactable: false,
-    description: 'Water (impassable without bridge)',
+    description: 'Water (impassable without bridge)', tileType: 'water',
   },
   stone_floor: {
     emoji: '⬜', category: 'terrain', height: 0, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Stone floor (cave/castle)',
+    description: 'Stone floor (cave/castle)', tileType: 'stone_wall',
   },
 
   // --- Plants (decorative, mostly walkable) ---
@@ -60,6 +63,21 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.6, shadow: false, walkable: true, interactable: false,
     description: 'Wildflower',
   },
+  flower_pink: {
+    emoji: '🌸', category: 'plant', height: 1, layer: 'base',
+    scale: 0.55, shadow: false, walkable: true, interactable: false,
+    description: 'Cherry blossom',
+  },
+  flower_red: {
+    emoji: '🌺', category: 'plant', height: 1, layer: 'base',
+    scale: 0.6, shadow: false, walkable: true, interactable: false,
+    description: 'Red hibiscus',
+  },
+  sunflower: {
+    emoji: '🌻', category: 'plant', height: 2, layer: 'base',
+    scale: 0.65, shadow: false, walkable: true, interactable: false,
+    description: 'Sunflower',
+  },
   bush: {
     emoji: '🌿', category: 'plant', height: 3, layer: 'mid',
     scale: 0.9, shadow: true, walkable: false, interactable: false,
@@ -67,35 +85,55 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   },
   tree: {
     emoji: '🌳', category: 'plant', height: 8, layer: 'high',
-    scale: 1.2, shadow: true, walkable: false, interactable: false,
-    description: 'Large tree',
+    scale: 1.6, shadow: true, walkable: false, interactable: false,
+    description: 'Large deciduous tree',
+  },
+  tree_pine: {
+    emoji: '🌲', category: 'plant', height: 9, layer: 'high',
+    scale: 1.8, shadow: true, walkable: false, interactable: false,
+    description: 'Tall pine tree',
+  },
+  tree_palm: {
+    emoji: '🌴', category: 'plant', height: 7, layer: 'high',
+    scale: 1.5, shadow: true, walkable: false, interactable: false,
+    description: 'Palm tree',
+  },
+  tall_plant: {
+    emoji: '🪾', category: 'plant', height: 3, layer: 'mid',
+    scale: 0.7, shadow: false, walkable: true, interactable: false,
+    description: 'Tall ornamental plant',
+  },
+  stump: {
+    emoji: '🪵', category: 'plant', height: 1, layer: 'base',
+    scale: 0.5, shadow: false, walkable: true, interactable: false,
+    description: 'Tree stump',
   },
   mushroom: {
-    emoji: '🍄', category: 'plant', height: 2, layer: 'mid',
-    scale: 0.8, shadow: true, walkable: true, interactable: true,
-    description: 'Collectible mushroom',
+    emoji: '🍄', category: 'plant', height: 0, layer: 'base',
+    scale: 0.35, shadow: false, walkable: true, interactable: true,
+    description: 'Tiny mushroom cluster',
   },
 
   // --- Obstacles (block movement, may require items) ---
   rock: {
     emoji: '🪨', category: 'obstacle', height: 2, layer: 'mid',
     scale: 0.8, shadow: true, walkable: false, interactable: false,
-    description: 'Boulder',
+    description: 'Boulder', tileType: 'rock',
   },
   wall: {
     emoji: '🧱', category: 'obstacle', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: false, interactable: false,
-    description: 'Brick wall segment',
+    description: 'Brick wall segment', tileType: 'stone_wall',
   },
   door_locked: {
     emoji: '🔒', category: 'obstacle', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
-    description: 'Locked door (needs key)',
+    description: 'Locked door (needs key)', tileType: 'door_gate',
   },
   barricade: {
     emoji: '🪵', category: 'obstacle', height: 3, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
-    description: 'Wooden barricade (needs crowbar)',
+    description: 'Wooden barricade (needs crowbar)', tileType: 'wooden_fence',
   },
   toll_gate: {
     emoji: '🚧', category: 'obstacle', height: 4, layer: 'mid',
@@ -117,7 +155,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   bridge: {
     emoji: '🌉', category: 'interactive', height: 1, layer: 'base',
     scale: 1.0, shadow: false, walkable: true, interactable: false,
-    description: 'Bridge over water',
+    description: 'Bridge over water', tileType: 'bridge',
   },
   door_open: {
     emoji: '🚪', category: 'interactive', height: 5, layer: 'high',
@@ -150,18 +188,28 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   // --- NPCs ---
   npc_merchant: {
     emoji: '🧙', category: 'npc', height: 4, layer: 'mid',
-    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
     description: 'Merchant NPC',
   },
   npc_villager: {
     emoji: '👤', category: 'npc', height: 4, layer: 'mid',
-    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    scale: 0.85, shadow: true, walkable: false, interactable: true,
     description: 'Villager NPC (hints/quizzes)',
   },
   npc_guardian: {
     emoji: '🛡️', category: 'npc', height: 5, layer: 'high',
-    scale: 1.1, shadow: true, walkable: false, interactable: true,
+    scale: 0.9, shadow: true, walkable: false, interactable: true,
     description: 'Guardian NPC (quiz gate)',
+  },
+  npc_cat: {
+    emoji: '🐈', category: 'npc', height: 2, layer: 'mid',
+    scale: 0.65, shadow: true, walkable: false, interactable: true,
+    description: 'Friendly cat (pet me!)',
+  },
+  npc_black_cat: {
+    emoji: '🐈\u200D⬛', category: 'npc', height: 2, layer: 'mid',
+    scale: 0.65, shadow: true, walkable: false, interactable: true,
+    description: 'Mysterious black cat',
   },
 };
 

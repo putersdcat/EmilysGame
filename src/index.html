@@ -11,24 +11,237 @@
       font-family: Arial, sans-serif;
       background: #1a1a1a;
       display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      min-height: 100vh; gap: 0.5rem;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-    h1 { color: #fff; margin-top: 0.5rem; font-size: 1.2rem; }
+    h1 { color: #fff; font-size: 1rem; flex-shrink: 0; margin: 2px 0; line-height: 1.2; }
 
-    /* ── Game wrapper (relative for overlay positioning) ── */
+    /* ── Game wrapper fills viewport ── */
     #gameWrapper {
       position: relative;
-      width: 800px; height: 600px;
+      flex: 1;
+      width: 100%;
+      min-height: 0;
       background: #000;
-      border: 3px solid #444;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      overflow: hidden;
+      display: flex;
+      flex-direction: row;
+    }
+    #gameContainer {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
     }
     canvas {
       display: block;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
       width: 100%; height: 100%;
+    }
+
+    /* ── Right Sidebar ── */
+    #sidebar {
+      width: 240px;
+      min-width: 240px;
+      max-width: 240px;
+      background: linear-gradient(180deg, #1a1632 0%, #12101e 100%);
+      border-left: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease, border-width 0.25s;
+      scrollbar-width: thin;
+      scrollbar-color: #555 transparent;
+      z-index: 20;
+    }
+    #sidebar::-webkit-scrollbar { width: 5px; }
+    #sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+    #sidebar.collapsed {
+      width: 0;
+      min-width: 0;
+      max-width: 0;
+      border-left-width: 0;
+      overflow: hidden;
+    }
+
+    .sb-section {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(100,100,140,0.2);
+    }
+    .sb-header {
+      color: #88ccff;
+      font: bold 11px monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sb-header .icon { font-size: 13px; }
+
+    /* Player stats */
+    .sb-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font: 12px monospace;
+      color: #ccc;
+      padding: 2px 0;
+    }
+    .sb-stat-row .val { color: #ffd700; font-weight: bold; }
+    .sb-stat-row .val.green { color: #4caf50; }
+
+    /* Sidebar inventory */
+    .sb-inv-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+    }
+    .sb-inv-slot {
+      aspect-ratio: 1;
+      background: rgba(40,35,60,0.7);
+      border: 1px solid rgba(100,100,140,0.25);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+    .sb-inv-slot:hover { border-color: #88ccff; }
+
+    /* Minimap */
+    .minimap-canvas {
+      width: 100%;
+      height: 140px;
+      background: #0d0d14;
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 4px;
+      image-rendering: pixelated;
+      image-rendering: -webkit-optimize-contrast;
+    }
+
+    .sb-inv-slot .qty {
+      position: absolute;
+      bottom: 1px;
+      right: 3px;
+      font: bold 9px monospace;
+      color: #ffd700;
+    }
+    .sb-inv-slot.empty {
+      background: rgba(30,25,45,0.4);
+      border-style: dashed;
+    }
+
+    /* Save slots */
+    .sb-save-slot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font: 11px monospace;
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sb-save-slot:hover { background: rgba(80,70,120,0.4); }
+    .sb-save-slot .slot-icon { font-size: 14px; }
+    .sb-save-slot .slot-meta { color: #666; font-size: 10px; flex: 1; }
+    .sb-save-slot.has-data .slot-meta { color: #88ccff; }
+    .slot-btn {
+      background: rgba(60,50,90,0.6);
+      border: 1px solid rgba(100,90,160,0.4);
+      border-radius: 3px;
+      color: #ccc;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 1px 5px;
+      line-height: 1.2;
+      transition: background 0.15s, color 0.15s;
+    }
+    .slot-btn:hover { background: rgba(100,90,160,0.7); color: #fff; }
+    .slot-load:hover { background: rgba(60,120,200,0.6); }
+    .slot-del:hover { background: rgba(200,60,60,0.6); }
+    .slot-save:hover { background: rgba(60,160,80,0.6); }
+    .sb-save-btns {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .sb-save-btns button {
+      flex: 1;
+      padding: 4px;
+      background: rgba(40,35,60,0.8);
+      border: 1px solid #555;
+      border-radius: 3px;
+      color: #ccc;
+      font: 10px monospace;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .sb-save-btns button:hover { background: rgba(60,55,90,0.9); border-color: #88ccff; }
+
+    /* LLM config inputs */
+    .sb-config-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .sb-config-row label {
+      font-size: 0.72rem;
+      color: #aaa;
+      min-width: 45px;
+    }
+    .sb-input {
+      flex: 1;
+      padding: 3px 5px;
+      background: rgba(20,18,35,0.8);
+      border: 1px solid #444;
+      border-radius: 3px;
+      color: #ddd;
+      font: 0.72rem monospace;
+    }
+    .sb-input:focus { border-color: #88ccff; outline: none; }
+    select.sb-input { cursor: pointer; }
+    #llmApply {
+      padding: 3px 10px;
+      font-size: 0.75rem;
+    }
+
+    /* Sidebar toggle button (on left edge of sidebar) */
+    #sidebarToggle {
+      position: absolute;
+      top: 50%;
+      right: 240px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 48px;
+      background: rgba(30,25,50,0.9);
+      border: 1px solid #555;
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+      color: #aaa;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 21;
+      transition: right 0.25s ease, background 0.15s;
+    }
+    #sidebarToggle:hover { background: rgba(50,45,80,0.95); color: #88ccff; }
+    #sidebar.collapsed ~ #sidebarToggle,
+    #gameWrapper:has(#sidebar.collapsed) #sidebarToggle {
+      right: 0;
     }
 
     /* ── LLM Splash ── */
@@ -165,6 +378,7 @@
     .quiz-choice.selected { background: rgba(100,130,200,0.3); color: #fff; }
     .quiz-choice.correct { color: #4caf50; }
     .quiz-choice.wrong { color: #f44336; }
+    .quiz-choice.idk { color: #ce93d8; }
     #quizResult { text-align: center; margin-top: 10px; font-weight: bold; font-size: 16px; }
     #quizHint { color: #ffaa44; font-style: italic; margin-top: 6px; font-size: 12px; }
     #quizNav { color: #aaa; font-size: 12px; margin-top: 8px; }
@@ -181,10 +395,288 @@
       padding: 1px 6px; margin: 1px 0;
     }
 
-    .controls {
-      color: #aaa; font-size: 12px; max-width: 800px; padding: 0 1rem;
+    /* ── Character Customizer Overlay ── */
+    #customizerOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: none; justify-content: center; align-items: center;
+      z-index: 101;
     }
-    .controls p { margin-bottom: 0.3rem; }
+    .cust-modal {
+      background: linear-gradient(135deg, #1a1632 0%, #2a2045 100%);
+      border: 2px solid #cc88dd; border-radius: 12px;
+      padding: 20px 24px; width: 480px; max-width: 94vw;
+      max-height: 90vh; overflow-y: auto;
+      color: #e0e0e0;
+      scrollbar-width: thin; scrollbar-color: #555 transparent;
+    }
+    .cust-modal::-webkit-scrollbar { width: 5px; }
+    .cust-modal::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+    .cust-modal h3 {
+      color: #ffdd88; font: bold 18px monospace; text-align: center;
+      margin-bottom: 4px;
+    }
+    .cust-subtitle {
+      color: #aaa; font: 12px monospace; text-align: center;
+      margin-bottom: 14px;
+    }
+    /* Preview area */
+    #customizerPreview {
+      text-align: center; margin-bottom: 14px;
+    }
+    .cust-preview-pair {
+      display: flex; justify-content: center; gap: 24px;
+    }
+    .cust-preview-sprite {
+      width: 80px; height: 120px;
+      background: rgba(255,255,255,0.04); border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cust-preview-sprite svg { width: 64px; height: 96px; }
+    .cust-preview-labels {
+      display: flex; justify-content: center; gap: 56px;
+      font: 11px monospace; color: #888; margin-top: 4px;
+    }
+    /* Sections */
+    .cust-section {
+      margin-bottom: 12px;
+    }
+    .cust-section-label {
+      font: bold 12px monospace; color: #88ccff;
+      margin-bottom: 6px;
+    }
+    /* Color swatches */
+    .cust-swatch-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .cust-swatch {
+      width: 32px; height: 32px; border-radius: 50%;
+      border: 2px solid transparent; cursor: pointer;
+      font-size: 14px; color: #fff; text-align: center; line-height: 28px;
+      transition: all 0.15s;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    }
+    .cust-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
+    .cust-swatch.selected { border-color: #ffdd88; box-shadow: 0 0 8px rgba(255,221,136,0.5); }
+    /* Hair style buttons */
+    .cust-style-row {
+      display: flex; gap: 8px;
+    }
+    .cust-style-btn {
+      flex: 1; padding: 8px 6px; border-radius: 6px;
+      border: 1px solid rgba(100,100,140,0.3);
+      background: rgba(100,130,200,0.1); color: #ccc;
+      font: 12px monospace; cursor: pointer;
+      transition: all 0.15s; text-align: center;
+    }
+    .cust-style-btn:hover { background: rgba(100,130,200,0.25); color: #fff; }
+    .cust-style-btn.selected {
+      background: rgba(100,130,200,0.4); border-color: #88ccff; color: #fff;
+    }
+    /* Buttons */
+    .cust-btn-row {
+      display: flex; gap: 10px; justify-content: center; margin-top: 16px;
+    }
+    .cust-confirm-btn {
+      padding: 10px 32px;
+      background: #4a7fcc; border: none; border-radius: 6px;
+      color: #fff; font: bold 14px monospace; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .cust-confirm-btn:hover { background: #5a9fdd; }
+    .cust-random-btn {
+      padding: 10px 18px;
+      background: rgba(200,100,200,0.3); border: 1px solid #aa66cc; border-radius: 6px;
+      color: #dda0dd; font: bold 13px monospace; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .cust-random-btn:hover { background: rgba(200,100,200,0.5); }
+
+    /* ── Subject Selection Overlay ── */
+    #subjectOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; justify-content: center; align-items: center;
+      z-index: 100;
+    }
+    .subject-modal {
+      background: linear-gradient(135deg, #1a1632 0%, #2a2045 100%);
+      border: 2px solid #6688cc; border-radius: 12px;
+      padding: 24px 28px; width: 440px; max-width: 90vw;
+      color: #e0e0e0;
+    }
+    .subject-modal h3 {
+      color: #ffdd88; font: bold 18px monospace; text-align: center;
+      margin-bottom: 4px;
+    }
+    .subject-modal .subtitle {
+      color: #aaa; font: 12px monospace; text-align: center;
+      margin-bottom: 16px;
+    }
+    .subject-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; margin: 4px 0;
+      border: 1px solid rgba(100,100,140,0.3); border-radius: 6px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .subject-option:hover { background: rgba(100,130,200,0.15); }
+    .subject-option.selected {
+      background: rgba(100,130,200,0.25);
+      border-color: rgba(100,130,200,0.6);
+    }
+    .subject-check { font-size: 18px; width: 24px; text-align: center; }
+    .subject-icon { font-size: 22px; }
+    .subject-info { display: flex; flex-direction: column; }
+    .subject-name { font: bold 13px monospace; color: #fff; }
+    .subject-desc { font: 11px monospace; color: #999; }
+    .subject-confirm-btn {
+      display: block; margin: 16px auto 0; padding: 8px 28px;
+      background: #4a7fcc; border: none; border-radius: 6px;
+      color: #fff; font: bold 13px monospace; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .subject-confirm-btn:hover { background: #5a9fdd; }
+
+    /* ── Book of Knowledge Overlay ── */
+    #bookOverlay {
+      position: absolute; inset: 20px;
+      background: rgba(15,12,28,0.96);
+      border: 2px solid #8866aa; border-radius: 10px;
+      display: none; flex-direction: column;
+      z-index: 18; pointer-events: auto;
+      overflow: hidden;
+    }
+    .book-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid rgba(100,100,140,0.3);
+      flex-shrink: 0;
+    }
+    .book-title {
+      color: #ffdd88; font: bold 16px monospace;
+    }
+    .book-close {
+      color: #aaa; font: 18px monospace; cursor: pointer;
+      padding: 2px 8px; border-radius: 4px;
+      transition: all 0.15s;
+    }
+    .book-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .book-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid rgba(100,100,140,0.3);
+      flex-shrink: 0;
+    }
+    .book-tab {
+      flex: 1; padding: 8px; text-align: center;
+      font: 12px monospace; color: #888; cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .book-tab:hover { color: #ccc; background: rgba(100,130,200,0.1); }
+    .book-tab.active {
+      color: #ffdd88; border-bottom-color: #ffdd88;
+    }
+    #bookContent {
+      flex: 1; overflow-y: auto; padding: 12px 16px;
+      scrollbar-width: thin; scrollbar-color: #555 transparent;
+    }
+    #bookContent::-webkit-scrollbar { width: 6px; }
+    #bookContent::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+    /* Book content styles */
+    .book-points {
+      text-align: right; font: 11px monospace; color: #ffaa44;
+      margin-bottom: 10px;
+    }
+    .book-subject-group { margin-bottom: 14px; }
+    .book-subject-header {
+      font: bold 13px monospace; margin-bottom: 6px;
+      padding-bottom: 3px; border-bottom: 1px solid rgba(100,100,140,0.2);
+    }
+    .book-article-card {
+      padding: 6px 10px; margin: 3px 0;
+      border: 1px solid rgba(100,100,140,0.2); border-radius: 5px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .book-article-card:hover {
+      background: rgba(100,130,200,0.15);
+      border-color: rgba(100,130,200,0.4);
+    }
+    .book-article-card.read { opacity: 0.7; }
+    .book-article-title { font: bold 12px monospace; color: #e0e0e0; }
+    .book-article-summary { font: 11px monospace; color: #999; margin-top: 2px; }
+    .book-empty {
+      text-align: center; color: #888; font: 13px monospace;
+      padding: 30px 10px;
+    }
+    /* Article view */
+    .book-back {
+      color: #88ccff; font: 12px monospace; cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .book-back:hover { text-decoration: underline; }
+    .book-article-header {
+      font: bold 16px monospace; color: #fff;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .book-article-body {
+      font: 13px/1.6 monospace; color: #d0d0d0;
+      margin-bottom: 14px;
+    }
+    .book-article-body strong { color: #ffdd88; }
+    .book-key-terms {
+      padding: 8px 10px; background: rgba(100,100,140,0.1);
+      border-radius: 5px; margin-bottom: 8px;
+    }
+    .book-terms-label {
+      font: bold 11px monospace; color: #88ccff;
+      display: block; margin-bottom: 4px;
+    }
+    .book-term {
+      display: inline-block; padding: 2px 8px; margin: 2px;
+      background: rgba(100,130,200,0.2); border-radius: 3px;
+      font: 11px monospace; color: #ccc; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .book-term:hover { background: rgba(100,130,200,0.4); }
+    .book-term.saved { color: #4caf50; cursor: default; }
+    .book-related { margin-top: 8px; }
+    .book-related-label { font: bold 11px monospace; color: #88ccff; }
+    .book-related-link {
+      display: inline-block; padding: 2px 8px; margin: 2px;
+      background: rgba(100,130,200,0.15); border-radius: 3px;
+      font: 11px monospace; color: #88ccff; cursor: pointer;
+    }
+    .book-related-link:hover { background: rgba(100,130,200,0.3); }
+    /* Word bag styles */
+    .wordbag-count {
+      font: 11px monospace; color: #aaa; margin-bottom: 8px;
+    }
+    .wordbag-entry {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 8px; margin: 2px 0;
+      border: 1px solid rgba(100,100,140,0.2); border-radius: 4px;
+    }
+    .wordbag-term { font: 13px monospace; color: #e0e0e0; }
+    .wordbag-actions { display: flex; gap: 8px; }
+    .wordbag-lookup, .wordbag-remove {
+      cursor: pointer; font-size: 14px; opacity: 0.7;
+      transition: opacity 0.15s;
+    }
+    .wordbag-lookup:hover, .wordbag-remove:hover { opacity: 1; }
+    .wordbag-lookup.looked-up { opacity: 0.4; }
+    /* Search */
+    .book-search-box { margin-bottom: 12px; }
+    .book-search-input {
+      width: 100%; padding: 6px 10px;
+      background: rgba(100,100,140,0.15); border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 5px; color: #e0e0e0; font: 13px monospace;
+      outline: none;
+    }
+    .book-search-input:focus { border-color: rgba(100,130,200,0.6); }
+
+    .controls {
+      color: #aaa; font-size: 11px; flex-shrink: 0; padding: 2px 1rem;
+    }
+    .controls p { margin-bottom: 0; }
     .controls strong { color: #fff; }
   </style>
 </head>
@@ -199,53 +691,183 @@
 
   <h1>🌿 Emily's Game</h1>
 
-  <div id="gameWrapper">
-    <div id="gameContainer"></div>
+  <!-- Character Customizer Overlay (shown on new game, before subject selection) -->
+  <div id="customizerOverlay">
+    <div class="cust-modal">
+      <h3>🎨 Create Your Character</h3>
+      <div class="cust-subtitle">Choose how you look in the world!</div>
 
-    <!-- Debug info (toggle with F3) -->
-    <div id="debugOverlay" style="display:none"></div>
+      <div id="customizerPreview"></div>
 
-    <!-- Toast notifications -->
-    <div id="toastContainer"></div>
-
-    <!-- Dialog box -->
-    <div id="dialogOverlay">
-      <div class="npc-name" id="dialogName"></div>
-      <div class="npc-text" id="dialogText"></div>
-      <div class="npc-hint" id="dialogHint"></div>
-    </div>
-
-    <!-- Quiz modal -->
-    <div id="quizOverlay">
-      <div id="quizBox">
-        <div id="quizQuestion"></div>
-        <div id="quizChoices"></div>
-        <div id="quizResult"></div>
-        <div id="quizHint"></div>
-        <div id="quizNav"></div>
+      <div class="cust-section">
+        <div class="cust-section-label">💇 Hair Style</div>
+        <div class="cust-style-row" id="custHairStyles"></div>
       </div>
-    </div>
 
-    <!-- Bottom HUD -->
-    <div id="hudOverlay">
-      <div id="hudBar">
-        <span class="hud-stat" id="coinStat" title="Gold coins collected">💰 0</span>
-        <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
-        <div class="hud-spacer"></div>
-        <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
-        <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
-        <button class="hud-btn" id="btnSave" title="Save game">💾</button>
-        <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
-        <div id="llmDot" title="LLM connection status"></div>
+      <div class="cust-section">
+        <div class="cust-section-label">🎨 Hair Color</div>
+        <div class="cust-swatch-row" id="custHairColors"></div>
       </div>
-      <div id="hudTray">
-        <div id="invList"></div>
+
+      <div class="cust-section">
+        <div class="cust-section-label">👗 Outfit Color</div>
+        <div class="cust-swatch-row" id="custOutfitColors"></div>
+      </div>
+
+      <div class="cust-section">
+        <div class="cust-section-label">🧑 Skin Tone</div>
+        <div class="cust-swatch-row" id="custSkinTones"></div>
+      </div>
+
+      <div class="cust-btn-row">
+        <button id="customizerRandom" class="cust-random-btn">🎲 Randomize</button>
+        <button id="customizerConfirm" class="cust-confirm-btn">Let's Go! ✨</button>
       </div>
     </div>
   </div>
 
+  <!-- Subject Selection Overlay (shown on new game) -->
+  <div id="subjectOverlay">
+    <div class="subject-modal">
+      <h3>📚 Choose Your Subjects</h3>
+      <div class="subtitle">Pick the topics you want to learn about! (or skip for all)</div>
+      <div id="subjectList"></div>
+      <button id="subjectConfirm" class="subject-confirm-btn">Start Adventure! 🎮</button>
+    </div>
+  </div>
+
+  <div id="gameWrapper">
+    <div id="gameContainer">
+      <!-- Debug info (toggle with F3) -->
+      <div id="debugOverlay" style="display:none"></div>
+
+      <!-- Toast notifications -->
+      <div id="toastContainer"></div>
+
+      <!-- Dialog box -->
+      <div id="dialogOverlay">
+        <div class="npc-name" id="dialogName"></div>
+        <div class="npc-text" id="dialogText"></div>
+        <div class="npc-hint" id="dialogHint"></div>
+      </div>
+
+      <!-- Quiz modal -->
+      <div id="quizOverlay">
+        <div id="quizBox">
+          <div id="quizQuestion"></div>
+          <div id="quizChoices"></div>
+          <div id="quizResult"></div>
+          <div id="quizHint"></div>
+          <div id="quizNav"></div>
+        </div>
+      </div>
+
+      <!-- Book of Knowledge overlay -->
+      <div id="bookOverlay">
+        <div class="book-header">
+          <span class="book-title">📖 Book of Knowledge</span>
+          <span class="book-close" id="bookClose">✕</span>
+        </div>
+        <div class="book-tabs">
+          <div class="book-tab active" data-tab="browse">📚 Browse</div>
+          <div class="book-tab" data-tab="wordbag">🎒 Word Bag</div>
+          <div class="book-tab" data-tab="search">🔍 Search</div>
+        </div>
+        <div id="bookContent"></div>
+      </div>
+
+      <!-- Bottom HUD -->
+      <div id="hudOverlay">
+        <div id="hudBar">
+          <span class="hud-stat" id="coinStat" title="Gold coins collected">💰 0</span>
+          <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
+          <div class="hud-spacer"></div>
+          <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
+          <button class="hud-btn" id="btnBook" title="Book of Knowledge (B)">📖</button>
+          <button class="hud-btn" id="btnCustomize" title="Customize character (C)">🎨</button>
+          <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
+          <button class="hud-btn" id="btnSave" title="Save game">💾</button>
+          <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
+          <div id="llmDot" title="LLM connection status"></div>
+        </div>
+        <div id="hudTray">
+          <div id="invList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div id="sidebar">
+      <!-- Player Stats -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">👤</span> Player</div>
+        <div class="sb-stat-row"><span>Coins</span><span class="val" id="sbCoins">0</span></div>
+        <div class="sb-stat-row"><span>Keys</span><span class="val" id="sbKeys">0</span></div>
+        <div class="sb-stat-row"><span>Crowbars</span><span class="val" id="sbCrowbars">0</span></div>
+        <div class="sb-stat-row"><span>Potions</span><span class="val" id="sbPotions">0</span></div>
+      </div>
+      <!-- Quiz Stats -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">📝</span> Quizzes</div>
+        <div class="sb-stat-row"><span>Answered</span><span class="val" id="sbQuizAnswered">0</span></div>
+        <div class="sb-stat-row"><span>Correct</span><span class="val green" id="sbQuizCorrect">0</span></div>
+        <div class="sb-stat-row"><span>Accuracy</span><span class="val" id="sbQuizAccuracy">—</span></div>
+      </div>
+      <!-- Inventory Grid -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
+        <div class="sb-inv-grid" id="sbInvGrid"></div>
+      </div>
+      <!-- Save/Load -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">💾</span> Save Slots</div>
+        <div id="sbSaveSlots"></div>
+      </div>
+      <!-- Minimap -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">🗺️</span> Map</div>
+        <canvas id="minimapCanvas" class="minimap-canvas" width="200" height="140"></canvas>
+      </div>
+      <!-- Position/Debug -->
+      <div class="sb-section" id="sbDebugSection" style="display:none">
+        <div class="sb-header"><span class="icon">🐛</span> Debug</div>
+        <div class="sb-stat-row"><span>Position</span><span class="val" id="sbPos">—</span></div>
+        <div class="sb-stat-row"><span>Chunk</span><span class="val" id="sbChunk">—</span></div>
+        <div class="sb-stat-row"><span>Biome</span><span class="val" id="sbBiome">—</span></div>
+        <div class="sb-stat-row"><span>FPS</span><span class="val" id="sbFps">—</span></div>
+        <div class="sb-stat-row"><span>Cache</span><span class="val" id="sbCache">—</span></div>
+      </div>
+      <!-- LLM Settings -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">🤖</span> LLM Config</div>
+        <div class="sb-config-row">
+          <label for="llmMode">Mode</label>
+          <select id="llmMode" class="sb-input" title="LLM connection mode">
+            <option value="local">Local</option>
+            <option value="remote">Remote</option>
+            <option value="off">Off (RNG only)</option>
+          </select>
+        </div>
+        <div class="sb-config-row">
+          <label for="llmUrl">URL</label>
+          <input id="llmUrl" class="sb-input" type="text" placeholder="http://127.0.0.1:8000" title="LLM API endpoint URL" />
+        </div>
+        <div class="sb-config-row">
+          <label for="llmApiKey">API Key</label>
+          <input id="llmApiKey" class="sb-input" type="password" placeholder="local-secret" title="Bearer token for LLM API" />
+        </div>
+        <div class="sb-config-row" style="justify-content:flex-end;margin-top:4px">
+          <button id="llmApply" class="slot-btn" style="padding:3px 10px;font-size:0.75rem" title="Apply LLM configuration changes">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar toggle tab -->
+    <button id="sidebarToggle" title="Toggle sidebar">◀</button>
+  </div>
+
   <div class="controls">
-    <p><strong>Controls:</strong> WASD / Arrows = Move &nbsp;|&nbsp; Space = Interact &nbsp;|&nbsp; I = Inventory &nbsp;|&nbsp; F3 = Debug</p>
+    <p><strong>Controls:</strong> WASD / Arrows = Move &nbsp;|&nbsp; Space = Interact &nbsp;|&nbsp; B = Book &nbsp;|&nbsp; I = Inventory &nbsp;|&nbsp; F3 = Debug</p>
   </div>
   <script type="module" src="/main.ts"></script>
 </body>

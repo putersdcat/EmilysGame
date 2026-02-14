@@ -10,6 +10,7 @@ import { NPC_DEFS } from './config/npc.config';
 import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';
+import { invalidateObjectCache } from './render';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -99,6 +100,7 @@ export function interact(
     const chunk = chunks.get(chunkKey)!;
     chunk.cells[ly][lx].itemId = undefined;
     chunk.cells[ly][lx].interactable = chunk.cells[ly][lx].assetKey !== 'grass';
+    invalidateObjectCache(chunkKey);
     return {
       type: 'collect',
       itemId: id,
@@ -130,6 +132,7 @@ export function interact(
       walkable: true,
       interactable: false,
     };
+    invalidateObjectCache(chunkKey);
     return { type: 'chest', items: loot, message: 'Opened chest! Found coins and a potion!' };
   }
 
@@ -157,6 +160,7 @@ export function interact(
         interactable: false,
         resolved: true,
       };
+      invalidateObjectCache(chunkKey);
       return {
         type: 'obstacle',
         template,
@@ -197,6 +201,7 @@ export function autoCollect(
   const id = hit.cell.itemId;
   const chunk = chunks.get(hit.chunkKey)!;
   chunk.cells[hit.ly][hit.lx].itemId = undefined;
+  invalidateObjectCache(hit.chunkKey);
   inventory.addItem(id, 1);
 
   return {

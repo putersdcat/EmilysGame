@@ -22,6 +22,7 @@ export interface Inventory {
   countItem(itemId: string): number;
   getSlot(itemId: string): InventorySlot | undefined;
   serialize(): InventorySlot[];
+  deserialize(data: InventorySlot[]): void;
 }
 
 // ─── Implementation ──────────────────────────────────────────
@@ -84,6 +85,13 @@ export function createInventory(maxSlots = 20): Inventory {
     return slots.map((s) => ({ ...s }));
   }
 
+  function deserialize(data: InventorySlot[]): void {
+    slots.length = 0;
+    for (const s of data) {
+      slots.push({ itemId: s.itemId, quantity: s.quantity });
+    }
+  }
+
   return {
     slots,
     maxSlots,
@@ -93,5 +101,6 @@ export function createInventory(maxSlots = 20): Inventory {
     countItem,
     getSlot,
     serialize,
+    deserialize,
   };
 }

@@ -24,6 +24,18 @@ export interface SaveData {
     correct: number;
   };
   wordlistSeed: string;        // First word pair (for deterministic replay)
+  /** Entropy buffer for LLM entropy system (#4) */
+  entropyBuffer?: string;
+  /** Book of Knowledge: selected subjects */
+  selectedSubjects?: string[];
+  /** Book of Knowledge: saved words */
+  wordBag?: { term: string; sourceArticleId?: string; savedAt: number; lookedUp: boolean }[];
+  /** Book of Knowledge: read article ids */
+  readArticles?: string[];
+  /** Book of Knowledge: discovery points */
+  discoveryPoints?: number;
+  /** Player sprite customization */
+  playerVariation?: { hairColor: string; hairStyle: string; dressColor: string; skinTone: string };
 }
 
 export interface ResolvedCell {
@@ -34,6 +46,8 @@ export interface ResolvedCell {
 }
 
 const SAVE_KEY = 'emilys_game_save';
+const SAVE_SLOT_PREFIX = 'emilys_game_slot_';
+const MAX_SLOTS = 4;
 
 // ─── Save / Load ─────────────────────────────────────────────
 
@@ -65,3 +79,58 @@ export function hasSave(): boolean {
 export function deleteSave(): void {
   localStorage.removeItem(SAVE_KEY);
 }
+
+// ─── Slot-based Save/Load ────────────────────────────────────
+
+export function saveToSlot(slot: number, data: SaveData): void {
+  if (slot < 0 || slot >= MAX_SLOTS) return;
+  try {
+    localStorage.setItem(SAVE_SLOT_PREFIX + slot, JSON.stringify(data));
+    console.log(`[Save] Saved to slot ${slot}`);
+  } catch (err) {
+    console.warn(`[Save] Slot ${slot} save failed:`, err);
+  }
+}
+
+export function loadFromSlot(slot: number): SaveData | null {
+  if (slot < 0 || slot >= MAX_SLOTS) return null;
+  try {
+    const raw = localStorage.getItem(SAVE_SLOT_PREFIX + slot);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as SaveData;
+    if (data.version !== 1) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+export function hasSlotSave(slot: number): boolean {
+  return localStorage.getItem(SAVE_SLOT_PREFIX + slot) !== null;
+}
+
+export function deleteSlot(slot: number): void {
+  if (slot < 0 || slot >= MAX_SLOTS) return;
+  localStorage.removeItem(SAVE_SLOT_PREFIX + slot);
+}
+
+export interface SlotInfo {
+  slot: number;
+  hasData: boolean;
+  timestamp: number | null;
+}
+
+export function getAllSlotInfo(): SlotInfo[] {
+  const slots: SlotInfo[] = [];
+  for (let i = 0; i < MAX_SLOTS; i++) {
+    const data = loadFromSlot(i);
+    slots.push({
+      slot: i,
+      hasData: data !== null,
+      timestamp: data?.timestamp ?? null,
+    });
+  }
+  return slots;
+}
+
+export { MAX_SLOTS };

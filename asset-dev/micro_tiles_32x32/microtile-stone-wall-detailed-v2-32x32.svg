@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brickGrad" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#C0C0C0" />
+      <stop offset="1" stop-color="#A9A9A9" />
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#brickGrad)" />
+  <path d="M0 0 L32 0 M0 8 L32 8 M0 16 L32 16 M0 24 L32 24 M0 32 L32 32" stroke="#808080" stroke-width="1" />
+  <path d="M4 0 V32 M12 0 V32 M20 0 V32 M28 0 V32" stroke="#808080" stroke-width="1" />
+  <path d="M0 4 H32 M0 12 H32 M0 20 H32 M0 28 H32" stroke="#696969" stroke-width="0.5" opacity="0.8" /> <!-- Mortar details -->
+  <rect x="0" y="28" width="32" height="4" fill="#000000" opacity="0.15" /> <!-- Shadow -->
+</svg>
