@@ -26,8 +26,10 @@ import { preloadEmojiSprites } from './emoji-cache';
 import { initMinimap, renderMinimap } from './minimap';
 import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
+  getQuizBias, openArticle,
   type KnowledgeState,
 } from './knowledge';
+import { searchArticles } from './config/knowledge.config';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -355,10 +357,29 @@ function update(state: GameState, input: InputManager): void {
           for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
           addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
           state.quizStats.correct++;
+        } else if (state.quiz.result === 'idk') {
+          // "I don't know" → open Book to related article
+          const category = state.quiz.question?.category || '';
+          const questionText = state.quiz.question?.question || '';
+          // Search for articles related to the quiz category or question
+          const related = searchArticles(category) || searchArticles(questionText);
+          if (related.length > 0) {
+            openArticle(state.knowledge, related[0].id);
+            state.knowledge.bookOpen = true;
+            state.knowledge.activeTab = 'browse';
+            addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
+          } else {
+            state.knowledge.bookOpen = true;
+            state.knowledge.activeTab = 'browse';
+            addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
+          }
+          // Don't count "I don't know" as answered
         }
-        state.quizStats.answered++;
+        if (state.quiz.result !== 'idk') {
+          state.quizStats.answered++;
+        }
         quizClose(state.quiz);
-        state.paused = false;
+        state.paused = state.knowledge.bookOpen;
       } else {
         quizSubmit(state.quiz);
       }
@@ -509,10 +530,10 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       // If NPC can quiz, start quiz after dialog
       if (persona?.canQuiz) {
         // Quiz starts on dialog close (handled in update loop)
-        // For now, store pending quiz
+        const bias = getQuizBias(state.knowledge);
         setTimeout(() => {
           if (!state.quiz.active) {
-            startQuiz(state.quiz, persona.quizDifficulty, result.npcId);
+            startQuiz(state.quiz, persona.quizDifficulty, result.npcId, bias);
             state.paused = true;
           }
         }, 100);
