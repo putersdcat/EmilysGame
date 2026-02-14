@@ -615,7 +615,57 @@ function getArcsAffectedBy(
   return allArcs.filter(a => a.toY === gy && a.toX === gx);
 }
 
-// --- MRV Collapse with Propagation ---
+// --- Slot Selection Priority ---
+// Improved filling order: boundary-first → chain-continuation → MRV
+// This ensures border consistency with neighbors, then extends chain features,
+// then fills remaining slots by most-constrained heuristic.
+
+/** Score a slot for collapse priority. Lower = collapse sooner. */
+function slotPriority(gy: number, gx: number, slots: SlotState[][]): number {
+  const slot = slots[gy][gx];
+  if (slot.collapsed) return Infinity;
+  const candidateCount = slot.candidates.length;
+  if (candidateCount === 0) return -1; // Contradictions first (to degrade quickly)
+
+  const isBorder = gy === 0 || gy === GRID_DIM - 1 || gx === 0 || gx === GRID_DIM - 1;
+  const isCorner = (gy === 0 || gy === GRID_DIM - 1) && (gx === 0 || gx === GRID_DIM - 1);
+
+  // Check if adjacent to an already-collapsed chain feature
+  let adjacentToChain = false;
+  const dirs: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  for (const [dy, dx] of dirs) {
+    const ny = gy + dy, nx = gx + dx;
+    if (ny >= 0 && ny < GRID_DIM && nx >= 0 && nx < GRID_DIM) {
+      const neighbor = slots[ny][nx];
+      if (neighbor.collapsed) {
+        // Check if neighbor has non-open edges facing us (chain connection)
+        const nEdges = neighbor.collapsed.edgeTags;
+        const facing = dy === -1 ? 'n' : dy === 1 ? 's' : dx === -1 ? 'w' : 'e';
+        const oppFacing = OPPOSITES[facing];
+        if (nEdges[oppFacing] !== 'open') {
+          adjacentToChain = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Priority tiers (lower number = higher priority):
+  // Tier 0: contradictions (candidateCount === 0)  → handled above
+  // Tier 1: corners (most constrained boundary)     → 1000 + MRV
+  // Tier 2: border edges                            → 2000 + MRV
+  // Tier 3: chain continuation (adjacent to chain)  → 3000 + MRV
+  // Tier 4: interior MRV                            → 4000 + MRV
+  let tier: number;
+  if (isCorner) tier = 1000;
+  else if (isBorder) tier = 2000;
+  else if (adjacentToChain) tier = 3000;
+  else tier = 4000;
+
+  return tier + candidateCount;
+}
+
+// --- MRV Collapse with Boundary-First Priority ---
 
 function collapseAllMRV(
   slots: SlotState[][],
@@ -626,14 +676,15 @@ function collapseAllMRV(
   const totalSlots = GRID_DIM * GRID_DIM;
 
   for (let step = 0; step < totalSlots; step++) {
-    // Find uncollapsed slot with minimum remaining values (MRV)
-    let bestY = -1, bestX = -1, bestCount = Infinity;
+    // Find uncollapsed slot with best priority (boundary-first, then chain, then MRV)
+    let bestY = -1, bestX = -1, bestPriority = Infinity;
     for (let gy = 0; gy < GRID_DIM; gy++) {
       for (let gx = 0; gx < GRID_DIM; gx++) {
         const slot = slots[gy][gx];
         if (slot.collapsed) continue;
-        if (slot.candidates.length < bestCount) {
-          bestCount = slot.candidates.length;
+        const priority = slotPriority(gy, gx, slots);
+        if (priority < bestPriority) {
+          bestPriority = priority;
           bestY = gy;
           bestX = gx;
         }
@@ -817,6 +868,10 @@ function findTerminator(
   if (baseName.startsWith('wall_') || baseName === 'guard_tower') {
     const wallEndRots = allRotations.get('wall_end');
     if (wallEndRots && wallEndRots.length > 0) return wallEndRots[0];
+  }
+  if (baseName.startsWith('dirt_path') || baseName.startsWith('path_')) {
+    const pathEndRots = allRotations.get('path_dead_end');
+    if (pathEndRots && pathEndRots.length > 0) return pathEndRots[0];
   }
   const meadowRots = allRotations.get('meadow_base');
   if (meadowRots && meadowRots.length > 0) return meadowRots[0];

@@ -11,7 +11,7 @@ import type { TileType } from '../tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 
-export type EdgeTag = 'open' | 'wall' | 'water' | 'fence';
+export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path';
 
 /** Cardinal direction type used for edge queries */
 export type Cardinal = 'n' | 's' | 'e' | 'w';
@@ -134,10 +134,11 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
 // Design doc: Docs/WorldEngine-02-EdgeContracts.md
 
 const EDGE_COMPAT: Record<EdgeTag, Set<EdgeTag>> = {
-  open:  new Set<EdgeTag>(['open', 'fence']),     // open can touch open or fence
-  wall:  new Set<EdgeTag>(['wall', 'open']),       // walls can abut walls or open
-  water: new Set<EdgeTag>(['water', 'open']),      // water can touch water or shore (open)
-  fence: new Set<EdgeTag>(['fence', 'open']),      // fences can touch fences or open
+  open:  new Set<EdgeTag>(['open', 'fence', 'path']), // open can touch open, fence, or path
+  wall:  new Set<EdgeTag>(['wall', 'open']),           // walls can abut walls or open
+  water: new Set<EdgeTag>(['water', 'open']),          // water can touch water or shore (open)
+  fence: new Set<EdgeTag>(['fence', 'open']),          // fences can touch fences or open
+  path:  new Set<EdgeTag>(['path', 'open']),           // paths connect to paths or open ground
 };
 
 /** Check if two edge tags are compatible when placed adjacent */
@@ -183,6 +184,18 @@ export function getMicroEdge(tileType: TileType, side: Cardinal): EdgeTag {
 /** Template category for solver weighting */
 export type TemplateCategory = 'structural' | 'natural' | 'transitional';
 
+/** Connectivity class: how this template participates in feature chains */
+export type ConnectivityClass =
+  | 'standalone'    // No chain connections (meadow, clearing, rocky outcrop)
+  | 'river-chain'   // Connects via water edges (river straight, bend, T-junction)
+  | 'wall-chain'    // Connects via wall edges (wall segment, corner, gate)
+  | 'fence-chain'   // Connects via fence edges (fence enclosure)
+  | 'path-chain'    // Connects via path edges (dirt path, crossroads)
+  | 'terminal'      // Ends a chain (pond, wall end, path dead-end)
+  | 'enclosure'     // Self-contained structure (guard tower, fence enclosure)
+  | 'crossing'      // Bridges between chain types (bridge over river)
+  ;
+
 /** Anchor point within a template for feature/NPC/item placement */
 export interface AnchorPoint {
   x: number;        // Column (0-4) within the 5×5 grid
@@ -201,7 +214,7 @@ export interface WorldUnitTemplate {
   /** Ends a feature chain? (pond, rock pile) */
   terminator: boolean;
   /** Feature chain type for linking */
-  chainType?: 'river' | 'wall' | 'fence';
+  chainType?: 'river' | 'wall' | 'fence' | 'path';
   /** Minimum passability this template leaves (fraction walkable in 5×5) */
   minPassability: number;
   /** Movement channels: lists of {x,y} waypoints that guarantee walkable paths through the unit */
@@ -212,6 +225,8 @@ export interface WorldUnitTemplate {
   biomeAffinity?: string[];
   /** Template category for solver weighting */
   category?: TemplateCategory;
+  /** Connectivity class for chain management */
+  connectivity?: ConnectivityClass;
 }
 
 /** A concrete rotation of a template, pre-computed at load time */
@@ -299,6 +314,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     terminator: false,
     minPassability: 1.0,
     category: 'natural',
+    connectivity: 'standalone',
     movementChannels: [
       [{ x: 2, y: 0 }, { x: 2, y: 4 }],  // N-S through center
       [{ x: 0, y: 2 }, { x: 4, y: 2 }],  // E-W through center
@@ -326,6 +342,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.8,
     category: 'natural',
+    connectivity: 'river-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 0, y: 4 }],  // W-side walkable corridor
       [{ x: 4, y: 0 }, { x: 4, y: 4 }],  // E-side walkable corridor
@@ -352,6 +369,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.8,
     category: 'natural',
+    connectivity: 'river-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 4, y: 0 }],  // N-side walkable corridor
       [{ x: 0, y: 4 }, { x: 4, y: 4 }],  // S-side walkable corridor
@@ -374,6 +392,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.72,
     category: 'natural',
+    connectivity: 'river-chain',
   },
 
   // --- River bend NW (water bends from N to W) ---
@@ -392,6 +411,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.72,
     category: 'natural',
+    connectivity: 'river-chain',
   },
 
   // --- River end / Pond (terminates a river) ---
@@ -410,6 +430,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.52,
     category: 'natural',
+    connectivity: 'terminal',
     anchors: [{ x: 2, y: 2, role: 'feature' }],
   },
 
@@ -429,6 +450,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'wall',
     minPassability: 0.8,
     category: 'structural',
+    connectivity: 'wall-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 4, y: 0 }],  // N-side corridor
       [{ x: 0, y: 4 }, { x: 4, y: 4 }],  // S-side corridor
@@ -451,6 +473,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'wall',
     minPassability: 0.8,
     category: 'structural',
+    connectivity: 'wall-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 4, y: 0 }],  // N-side
       [{ x: 0, y: 4 }, { x: 4, y: 4 }],  // S-side
@@ -475,6 +498,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.84,
     category: 'transitional',
+    connectivity: 'crossing',
     movementChannels: [
       [{ x: 2, y: 0 }, { x: 2, y: 2 }, { x: 2, y: 4 }],  // Through bridge N-S
     ],
@@ -496,6 +520,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.84,
     category: 'transitional',
+    connectivity: 'crossing',
     movementChannels: [
       [{ x: 0, y: 2 }, { x: 2, y: 2 }, { x: 4, y: 2 }],  // Through bridge E-W
     ],
@@ -517,8 +542,8 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'fence',
     minPassability: 0.36,
     category: 'structural',
+    connectivity: 'enclosure',
     movementChannels: [
-      [{ x: 2, y: 0 }, { x: 2, y: 2 }],  // Enter through N opening
     ],
     anchors: [
       { x: 2, y: 2, role: 'npc' },
@@ -544,6 +569,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     terminator: false,
     minPassability: 1.0,
     category: 'natural',
+    connectivity: 'standalone',
     movementChannels: [
       [{ x: 2, y: 0 }, { x: 2, y: 4 }],
       [{ x: 0, y: 2 }, { x: 4, y: 2 }],
@@ -570,6 +596,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     terminator: false,
     minPassability: 0.8,
     category: 'natural',
+    connectivity: 'standalone',
     movementChannels: [
       [{ x: 2, y: 0 }, { x: 2, y: 4 }],
       [{ x: 0, y: 2 }, { x: 4, y: 2 }],
@@ -589,11 +616,13 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       ['grass', 'grass', 'dirt', 'grass', 'grass'],
       ['grass', 'grass', 'dirt', 'grass', 'grass'],
     ],
-    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    edgeTags: { n: 'path', s: 'path', e: 'open', w: 'open' },
     rotatable: true,
     terminator: false,
+    chainType: 'path',
     minPassability: 1.0,
     category: 'natural',
+    connectivity: 'path-chain',
     movementChannels: [
       [{ x: 2, y: 0 }, { x: 2, y: 4 }],
     ],
@@ -613,13 +642,124 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       ['grass', 'grass', 'grass', 'grass', 'grass'],
       ['grass', 'grass', 'grass', 'grass', 'grass'],
     ],
-    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    edgeTags: { n: 'open', s: 'open', e: 'path', w: 'path' },
     rotatable: true,
     terminator: false,
+    chainType: 'path',
     minPassability: 1.0,
     category: 'natural',
+    connectivity: 'path-chain',
     movementChannels: [
       [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+  },
+
+  // --- Path bend NE (dirt bends from N to E) ---
+  {
+    name: 'path_bend_ne',
+    cells: [
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'path', s: 'open', e: 'path', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'path',
+    minPassability: 0.88,
+    category: 'natural',
+    connectivity: 'path-chain',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 0, y: 0, role: 'decoration' },
+      { x: 4, y: 4, role: 'decoration' },
+    ],
+  },
+
+  // --- Path T-junction (dirt from N, S, and E) ---
+  {
+    name: 'path_t_junction',
+    cells: [
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'path', s: 'path', e: 'path', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'path',
+    minPassability: 0.84,
+    category: 'natural',
+    connectivity: 'path-chain',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 2, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 0, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- Path crossroads (4-way dirt intersection) ---
+  {
+    name: 'path_crossroads',
+    cells: [
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'path', s: 'path', e: 'path', w: 'path' },
+    rotatable: false,
+    terminator: false,
+    chainType: 'path',
+    minPassability: 0.84,
+    category: 'natural',
+    connectivity: 'path-chain',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 0, y: 0, role: 'decoration' },
+      { x: 4, y: 0, role: 'decoration' },
+      { x: 0, y: 4, role: 'decoration' },
+      { x: 4, y: 4, role: 'decoration' },
+      { x: 2, y: 2, role: 'item' },
+    ],
+  },
+
+  // --- Path dead-end (terminates a path with a small clearing) ---
+  {
+    name: 'path_dead_end',
+    cells: [
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'path', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'path',
+    minPassability: 0.84,
+    category: 'natural',
+    connectivity: 'terminal',
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'item' },
+      { x: 1, y: 1, role: 'decoration' },
+      { x: 3, y: 1, role: 'decoration' },
     ],
   },
 
@@ -639,6 +779,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.68,
     category: 'natural',
+    connectivity: 'river-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 0, y: 4 }],  // W-side walkable
     ],
@@ -660,6 +801,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'river',
     minPassability: 0.64,
     category: 'natural',
+    connectivity: 'river-chain',
     anchors: [
       { x: 0, y: 0, role: 'decoration' },
       { x: 4, y: 0, role: 'decoration' },
@@ -684,6 +826,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'wall',
     minPassability: 0.76,
     category: 'structural',
+    connectivity: 'wall-chain',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 4, y: 0 }],  // N corridor
       [{ x: 0, y: 4 }, { x: 0, y: 0 }],  // W corridor
@@ -706,6 +849,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'wall',
     minPassability: 0.88,
     category: 'structural',
+    connectivity: 'terminal',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 4, y: 0 }],
       [{ x: 0, y: 4 }, { x: 4, y: 4 }],
@@ -728,6 +872,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     chainType: 'wall',
     minPassability: 0.36,
     category: 'structural',
+    connectivity: 'enclosure',
     movementChannels: [
       [{ x: 2, y: 4 }, { x: 2, y: 2 }],  // Enter through door
     ],
@@ -753,6 +898,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     terminator: false,
     minPassability: 0.64,
     category: 'natural',
+    connectivity: 'standalone',
     movementChannels: [
       [{ x: 0, y: 0 }, { x: 0, y: 4 }],
       [{ x: 4, y: 0 }, { x: 4, y: 4 }],
@@ -768,10 +914,14 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    meadow_base: 0.40,
-    dirt_clearing: 0.15,
-    dirt_path_ns: 0.10,
-    dirt_path_ew: 0.10,
+    meadow_base: 0.30,
+    dirt_clearing: 0.12,
+    dirt_path_ns: 0.08,
+    dirt_path_ew: 0.08,
+    path_bend_ne: 0.04,
+    path_t_junction: 0.03,
+    path_crossroads: 0.02,
+    path_dead_end: 0.03,
     river_straight_ns: 0.04,
     river_straight_ew: 0.04,
     river_bend_ne: 0.02,
@@ -781,20 +931,24 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     river_crossroads: 0.005,
     bridge_ns: 0.02,
     bridge_ew: 0.02,
-    fence_enclosure: 0.10,
-    rocky_outcrop: 0.06,
+    fence_enclosure: 0.08,
+    rocky_outcrop: 0.05,
     wall_gate: 0.02,
     wall_segment: 0.01,
     wall_corner: 0.01,
     wall_end: 0.01,
   },
   forest: {
-    meadow_base: 0.18,
-    dirt_clearing: 0.10,
-    rocky_outcrop: 0.12,
-    rock_cluster: 0.10,
-    dirt_path_ns: 0.08,
-    dirt_path_ew: 0.08,
+    meadow_base: 0.14,
+    dirt_clearing: 0.08,
+    rocky_outcrop: 0.10,
+    rock_cluster: 0.08,
+    dirt_path_ns: 0.07,
+    dirt_path_ew: 0.07,
+    path_bend_ne: 0.05,
+    path_t_junction: 0.03,
+    path_crossroads: 0.02,
+    path_dead_end: 0.04,
     river_straight_ns: 0.05,
     river_straight_ew: 0.05,
     river_bend_ne: 0.04,
@@ -808,31 +962,38 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     fence_enclosure: 0.06,
   },
   cave: {
-    rock_cluster: 0.15,
-    rocky_outcrop: 0.12,
-    wall_segment: 0.15,
-    wall_gate: 0.1,
-    wall_corner: 0.08,
+    rock_cluster: 0.13,
+    rocky_outcrop: 0.10,
+    wall_segment: 0.14,
+    wall_gate: 0.09,
+    wall_corner: 0.07,
     wall_end: 0.05,
     guard_tower: 0.06,
-    river_straight_ns: 0.06,
-    river_straight_ew: 0.06,
+    river_straight_ns: 0.05,
+    river_straight_ew: 0.05,
     river_end_pond: 0.04,
     bridge_ns: 0.03,
     bridge_ew: 0.03,
     dirt_path_ns: 0.04,
     dirt_path_ew: 0.04,
+    path_bend_ne: 0.03,
+    path_t_junction: 0.02,
+    path_dead_end: 0.03,
   },
   castle: {
-    wall_segment: 0.18,
-    wall_gate: 0.14,
-    wall_corner: 0.1,
-    wall_end: 0.06,
-    guard_tower: 0.1,
-    fence_enclosure: 0.08,
+    wall_segment: 0.16,
+    wall_gate: 0.12,
+    wall_corner: 0.09,
+    wall_end: 0.05,
+    guard_tower: 0.09,
+    fence_enclosure: 0.07,
     dirt_clearing: 0.06,
     dirt_path_ns: 0.05,
     dirt_path_ew: 0.05,
+    path_bend_ne: 0.03,
+    path_t_junction: 0.02,
+    path_crossroads: 0.01,
+    path_dead_end: 0.03,
     rocky_outcrop: 0.04,
     river_straight_ns: 0.03,
     river_straight_ew: 0.03,
