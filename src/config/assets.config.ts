@@ -54,7 +54,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   stone_floor: {
     emoji: '⬜', category: 'terrain', height: 0, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Stone floor (cave/castle)', tileType: 'stone_wall',
+    description: 'Stone floor (cave/castle)', tileType: 'stone_floor',
   },
 
   // --- Plants (decorative, mostly walkable) ---

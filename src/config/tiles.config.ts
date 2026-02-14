@@ -135,6 +135,14 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     variationFamily: 'gate', variationIndex: 1,
     description: 'Quiz gate — answer a question to pass',
   },
+  stone_floor: {
+    type: 'stone_floor', walkable: true, edgeTag: 'open',
+    edges: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    traversal: 'open', surface: 'stone', height: 0,
+    connectable: false, decorationEligible: true,
+    variationFamily: 'stone_floor', variationIndex: 0,
+    description: 'Stone flagstone floor',
+  },
 };
 
 // ─── Edge Compatibility ──────────────────────────────────────
@@ -1394,6 +1402,258 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 3, y: 3, role: 'item' },
     ],
   },
+
+  // ─────────── New Templates (#44: World Unit Library Expansion) ───────────
+
+  // --- Treasure Alcove (small stone room with loot anchors) ---
+  {
+    name: 'treasure_alcove',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'dirt', 'stone_wall', 'stone_wall'],
+      [null, null, null, null, null],
+    ],
+    edgeTags: { n: 'wall', s: 'open', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.24,
+    category: 'structural',
+    connectivity: 'terminal',
+    biomeAffinity: ['cave', 'castle'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 3 }, { x: 2, y: 1 }],
+    ],
+    anchors: [
+      { x: 1, y: 1, role: 'item' },
+      { x: 2, y: 1, role: 'feature' },
+      { x: 3, y: 1, role: 'item' },
+      { x: 2, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- Market Square (open stone plaza with NPC spots) ---
+  {
+    name: 'market_square',
+    cells: [
+      ['dirt', 'dirt', 'stone_floor', 'dirt', 'dirt'],
+      ['dirt', 'stone_floor', 'stone_floor', 'stone_floor', 'dirt'],
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+      ['dirt', 'stone_floor', 'stone_floor', 'stone_floor', 'dirt'],
+      ['dirt', 'dirt', 'stone_floor', 'dirt', 'dirt'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'castle'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 1, y: 1, role: 'npc' },
+      { x: 3, y: 1, role: 'npc' },
+      { x: 2, y: 2, role: 'feature' },
+      { x: 1, y: 3, role: 'decoration' },
+      { x: 3, y: 3, role: 'decoration' },
+    ],
+  },
+
+  // --- Spiral Path (winding trail for exploration) ---
+  {
+    name: 'spiral_path',
+    cells: [
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'grass', 'grass', 'dirt', 'grass'],
+      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['grass', 'dirt', 'grass', 'grass', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 1, y: 0 }, { x: 3, y: 0 }, { x: 3, y: 2 }, { x: 1, y: 2 }, { x: 1, y: 4 }, { x: 3, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'item' },
+      { x: 1, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- River Island (grass island surrounded by water) ---
+  {
+    name: 'river_island',
+    cells: [
+      ['water', 'water', 'water', 'water', 'water'],
+      ['water', 'sand', 'grass', 'sand', 'water'],
+      ['water', 'grass', 'grass', 'grass', 'water'],
+      ['water', 'sand', 'grass', 'sand', 'water'],
+      ['water', 'water', 'water', 'water', 'water'],
+    ],
+    edgeTags: { n: 'water', s: 'water', e: 'water', w: 'water' },
+    rotatable: false,
+    terminator: true,
+    chainType: 'river',
+    minPassability: 0.28,
+    category: 'natural',
+    connectivity: 'terminal',
+    anchors: [
+      { x: 2, y: 2, role: 'feature' },
+      { x: 1, y: 2, role: 'item' },
+      { x: 3, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- Wall T-junction (wall branching into T-shape) ---
+  {
+    name: 'wall_t_junction',
+    cells: [
+      [null, null, 'stone_wall', null, null],
+      [null, null, 'stone_wall', null, null],
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      [null, null, null, null, null],
+      [null, null, null, null, null],
+    ],
+    edgeTags: { n: 'wall', s: 'open', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.72,
+    category: 'structural',
+    connectivity: 'wall-chain',
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 0, y: 4 }],  // W corridor
+      [{ x: 4, y: 0 }, { x: 4, y: 4 }],  // E corridor
+      [{ x: 0, y: 4 }, { x: 4, y: 4 }],  // S corridor
+    ],
+  },
+
+  // --- Stone Plaza (formal stone tile area) ---
+  {
+    name: 'stone_plaza',
+    cells: [
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+      ['stone_floor', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_floor'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['castle', 'cave'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 0, y: 0, role: 'decoration' },
+      { x: 4, y: 0, role: 'decoration' },
+      { x: 0, y: 4, role: 'decoration' },
+      { x: 4, y: 4, role: 'decoration' },
+    ],
+  },
+
+  // --- Water Garden (pond with landscape) ---
+  {
+    name: 'water_garden',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'sand', 'sand', 'sand', 'grass'],
+      ['grass', 'sand', 'water', 'sand', 'grass'],
+      ['grass', 'sand', 'sand', 'sand', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 0.96,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 0, y: 4 }],
+      [{ x: 4, y: 0 }, { x: 4, y: 4 }],
+      [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+      [{ x: 0, y: 4 }, { x: 4, y: 4 }],
+    ],
+    anchors: [
+      { x: 0, y: 0, role: 'decoration' },
+      { x: 4, y: 0, role: 'decoration' },
+      { x: 0, y: 4, role: 'decoration' },
+      { x: 4, y: 4, role: 'decoration' },
+    ],
+  },
+
+  // --- Cave Fork (tunnel that branches) ---
+  {
+    name: 'cave_fork',
+    cells: [
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['rock', 'dirt', 'dirt', 'dirt', 'rock'],
+      ['rock', 'rock', 'dirt', 'rock', 'rock'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'wall' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.48,
+    category: 'structural',
+    connectivity: 'wall-chain',
+    biomeAffinity: ['cave'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+      [{ x: 2, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'item' },
+    ],
+  },
+
+  // --- Castle Throne Room (grand stone room with throne spot) ---
+  {
+    name: 'castle_throne',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_floor', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+    ],
+    edgeTags: { n: 'wall', s: 'gate', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'enclosure',
+    biomeAffinity: ['castle'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 1 }],
+    ],
+    anchors: [
+      { x: 2, y: 1, role: 'npc' },
+      { x: 1, y: 2, role: 'decoration' },
+      { x: 3, y: 2, role: 'decoration' },
+      { x: 2, y: 3, role: 'item' },
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -1432,6 +1692,9 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_corner: 0.005,
     wall_end: 0.005,
     fenced_yard: 0.04,
+    market_square: 0.04,
+    spiral_path: 0.03,
+    water_garden: 0.03,
   },
   forest: {
     meadow_base: 0.06,
@@ -1463,6 +1726,9 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_gate: 0.02,
     fence_enclosure: 0.03,
     fenced_yard: 0.02,
+    spiral_path: 0.03,
+    water_garden: 0.03,
+    river_island: 0.02,
   },
   cave: {
     rock_cluster: 0.08,
@@ -1489,6 +1755,10 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     path_dead_end: 0.02,
     gatehouse: 0.05,
     fortified_passage: 0.04,
+    treasure_alcove: 0.05,
+    stone_plaza: 0.04,
+    cave_fork: 0.05,
+    wall_t_junction: 0.03,
   },
   castle: {
     wall_segment: 0.10,
@@ -1516,6 +1786,11 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     shore_n: 0.01,
     gatehouse: 0.06,
     fortified_passage: 0.05,
+    treasure_alcove: 0.04,
+    stone_plaza: 0.05,
+    market_square: 0.03,
+    castle_throne: 0.05,
+    wall_t_junction: 0.03,
   },
 };
 

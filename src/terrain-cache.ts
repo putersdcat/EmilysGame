@@ -12,7 +12,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
-import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant } from './tiles';
+import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getStoneFloorVariant } from './tiles';
 import { getEmojiSprite } from './emoji-cache';
 import type { ChunkData } from './gen';
 
@@ -90,6 +90,8 @@ export function getCachedTerrain(
           tileCanvas = getDirtVariant(globalCX, globalCY);
         } else if (def.tileType === 'rock') {
           tileCanvas = getRockVariant(globalCX, globalCY);
+        } else if (def.tileType === 'stone_floor') {
+          tileCanvas = getStoneFloorVariant(globalCX, globalCY);
         } else {
           tileCanvas = getIsoTile(def.tileType);
         }
@@ -280,6 +282,7 @@ const TILE_DOMINANT_COLORS: Record<string, string> = {
   water: '#2E6ECC',
   sand: '#D2B48C',
   stone_wall: '#909090',
+  stone_floor: '#9A9080',
   bridge: '#8B4513',
   door_gate: '#8B4513',
   wooden_fence: '#A0522D',
