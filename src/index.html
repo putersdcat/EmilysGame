@@ -300,6 +300,13 @@
       padding: 0 8px;
       white-space: nowrap;
     }
+    /* Difficulty badge color classes */
+    #difficultyBadge { font-size: 12px; border-radius: 6px; padding: 1px 8px; }
+    #difficultyBadge.tier-safe    { color: #4caf50; }
+    #difficultyBadge.tier-easy    { color: #8bc34a; }
+    #difficultyBadge.tier-medium  { color: #ffc107; }
+    #difficultyBadge.tier-hard    { color: #ff9800; }
+    #difficultyBadge.tier-extreme { color: #f44336; }
     .hud-spacer { flex: 1; }
     #llmDot {
       width: 10px; height: 10px;
@@ -781,6 +788,7 @@
         <div id="hudBar">
           <span class="hud-stat" id="coinStat" title="Gold coins collected">💰 0</span>
           <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
+          <span class="hud-stat" id="difficultyBadge" title="Current zone difficulty">🟢 Safe</span>
           <div class="hud-spacer"></div>
           <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
           <button class="hud-btn" id="btnBook" title="Book of Knowledge (B)">📖</button>

@@ -7,7 +7,7 @@
 
 import { ASSET_DEFS } from './config/assets.config';
 import { ITEM_DEFS } from './config/items.config';
-import { WORLD_CONFIG, LLM_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getEntropyStats } from './gen';
@@ -105,7 +105,7 @@ export function renderUI(
   biomeName?: string,
 ): void {
   pruneToasts(ui);
-  syncHUD(inventory);
+  syncHUD(inventory, playerPos);
   syncDialog(ui.dialog);
   syncQuiz(quiz);
   syncDebug(ui.showDebug, playerPos, fps);
@@ -113,14 +113,29 @@ export function renderUI(
   syncSidebar(inventory, playerPos, fps, quizStats, biomeName);
 }
 
-// --- HUD bar (coins, keys, LLM dot) ---
+// --- HUD bar (coins, keys, difficulty, LLM dot) ---
 
-function syncHUD(inv: Inventory): void {
+const TIER_EMOJI: Record<number, string> = { 0: '🟢', 1: '🟡', 2: '🟠', 3: '🔴', 4: '💀' };
+const TIER_CLASS: Record<number, string> = { 0: 'tier-safe', 1: 'tier-easy', 2: 'tier-medium', 3: 'tier-hard', 4: 'tier-extreme' };
+
+function syncHUD(inv: Inventory, playerPos: { x: number; y: number }): void {
   const coinEl = document.getElementById('coinStat');
   const keyEl = document.getElementById('keyStat');
   const llmDot = document.getElementById('llmDot');
+  const diffEl = document.getElementById('difficultyBadge');
   if (coinEl) coinEl.textContent = `💰 ${inv.countItem('coin')}`;
   if (keyEl) keyEl.textContent = `🔑 ${inv.countItem('key')}`;
+  if (diffEl) {
+    const chunkSize = WORLD_CONFIG.chunkSize;
+    const cx = Math.floor(playerPos.x / chunkSize);
+    const cy = Math.floor(playerPos.y / chunkSize);
+    const dist = Math.abs(cx) + Math.abs(cy);
+    const diff = getDifficulty(dist);
+    const emoji = TIER_EMOJI[diff.tier] ?? '🟢';
+    const cls = TIER_CLASS[diff.tier] ?? 'tier-safe';
+    diffEl.textContent = `${emoji} ${diff.tierName}`;
+    diffEl.className = `hud-stat ${cls}`;
+  }
   if (llmDot) {
     const ok = isLlmAvailable();
     llmDot.className = ok ? '' : 'off';

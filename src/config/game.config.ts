@@ -124,3 +124,47 @@ export const SAVE_CONFIG = {
   storageKey: 'emilys_game_save',
   autoSaveOnChunkExit: true,
 } as const;
+
+// ─── Difficulty Scaling ──────────────────────────────────────
+// Distance-based difficulty increases as the player explores outward.
+// Each multiplier scales the base biome value for that category.
+// TODO: DOC — difficulty tiers and scaling formulas (WorldEngine-03 §4)
+
+export interface DifficultyProfile {
+  /** Tier name for UI display */
+  tierName: string;
+  /** Tier index (0=safe, 1=easy, 2=medium, 3=hard, 4=extreme) */
+  tier: number;
+  /** Obstacle density multiplier (1.0 = normal biome value) */
+  obstacleDensity: number;
+  /** Quiz gate frequency multiplier */
+  quizGateFrequency: number;
+  /** Collectible spawn rate multiplier (lower = scarcer) */
+  collectibleRate: number;
+  /** NPC guardian ratio (0-1, higher = more guardians vs merchants) */
+  guardianRatio: number;
+  /** Key spawn rate multiplier (higher = more keys for more locks) */
+  keyRate: number;
+  /** Extra obstacles added per chunk (beyond template and Perlin gen) */
+  extraObstacles: number;
+}
+
+const DIFFICULTY_TIERS: DifficultyProfile[] = [
+  { tierName: 'Safe Zone',  tier: 0, obstacleDensity: 0.6, quizGateFrequency: 0.0, collectibleRate: 1.5, guardianRatio: 0.0, keyRate: 0.5, extraObstacles: 0 },
+  { tierName: 'Easy',       tier: 1, obstacleDensity: 0.8, quizGateFrequency: 0.6, collectibleRate: 1.2, guardianRatio: 0.2, keyRate: 0.8, extraObstacles: 0 },
+  { tierName: 'Medium',     tier: 2, obstacleDensity: 1.0, quizGateFrequency: 1.0, collectibleRate: 1.0, guardianRatio: 0.4, keyRate: 1.0, extraObstacles: 2 },
+  { tierName: 'Hard',       tier: 3, obstacleDensity: 1.3, quizGateFrequency: 1.4, collectibleRate: 0.8, guardianRatio: 0.6, keyRate: 1.2, extraObstacles: 4 },
+  { tierName: 'Extreme',    tier: 4, obstacleDensity: 1.6, quizGateFrequency: 1.8, collectibleRate: 0.6, guardianRatio: 0.8, keyRate: 1.5, extraObstacles: 6 },
+];
+
+/**
+ * Get difficulty profile based on chunk distance from origin.
+ * Distance tiers: 0-1 = Safe, 2-3 = Easy, 4-5 = Medium, 6-8 = Hard, 9+ = Extreme
+ */
+export function getDifficulty(chunkDist: number): DifficultyProfile {
+  if (chunkDist <= 1) return DIFFICULTY_TIERS[0];
+  if (chunkDist <= 3) return DIFFICULTY_TIERS[1];
+  if (chunkDist <= 5) return DIFFICULTY_TIERS[2];
+  if (chunkDist <= 8) return DIFFICULTY_TIERS[3];
+  return DIFFICULTY_TIERS[4];
+}

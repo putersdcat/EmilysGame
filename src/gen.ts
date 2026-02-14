@@ -11,7 +11,7 @@
  * TODO: DOC — document the grid solver algorithm and chain integrity rules
  */
 
-import { WORLD_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, getDifficulty, type DifficultyProfile } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome, type BiomeDef } from './config/biomes.config';
 import {
@@ -293,6 +293,7 @@ function generateGridChunk(
 ): GridChunkResult {
   const rng = seededRandom(featureSeed);
   const chunkDist = Math.abs(chunkX) + Math.abs(chunkY); // Manhattan distance from origin
+  const difficulty = getDifficulty(chunkDist);
 
   // Phase 1: Perlin noise base terrain
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
@@ -307,16 +308,21 @@ function generateGridChunk(
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
 
   // Phase 5: content population (anchors, decorations, collectibles)
-  populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200));
-  clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist);
-  scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist);
+  populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200), difficulty);
+  clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist, difficulty);
+  scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist, difficulty);
   layCoinTrails(cells, size, seededRandom(featureSeed + 450));
 
   // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
-  placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470));
+  placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
 
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
+
+  // Phase 5.6: difficulty-scaled extra obstacles (#46)
+  if (difficulty.extraObstacles > 0) {
+    addExtraObstacles(cells, size, biome, seededRandom(featureSeed + 480), difficulty);
+  }
 
   // Phase 6: balance obstacles (ensure keys exist before locks)
   balanceObstacles(cells, size, seededRandom(featureSeed + 500));
@@ -1059,6 +1065,7 @@ export function populateAnchors(
   grid: (RotatedTemplate | null)[][],
   biome: BiomeDef,
   rng: () => number,
+  difficulty?: DifficultyProfile,
 ): void {
   for (let gy = 0; gy < GRID_DIM; gy++) {
     for (let gx = 0; gx < GRID_DIM; gx++) {
@@ -1079,7 +1086,7 @@ export function populateAnchors(
 
         switch (anchor.role) {
           case 'npc':
-            placeNpcAtCell(cells, cx, cy, biome, rng);
+            placeNpcAtCell(cells, cx, cy, biome, rng, difficulty);
             break;
           case 'item':
             placeItemAtCell(cells, cx, cy, biome, rng);
@@ -1099,6 +1106,7 @@ export function populateAnchors(
 function placeNpcAtCell(
   cells: CellData[][], cx: number, cy: number,
   biome: BiomeDef, rng: () => number,
+  difficulty?: DifficultyProfile,
 ): void {
   // Respect biome NPC rate (skip some NPCs at random)
   if (rng() > biome.npcRate * 0.3) return; // ~30% chance per anchor × npcRate
@@ -1110,14 +1118,21 @@ function placeNpcAtCell(
   const walkableNeighbors = countWalkableNeighbors(cells, cx, cy, size);
   if (walkableNeighbors < 2) return;
 
+  // Difficulty-aware NPC selection: higher guardianRatio biases toward guardians
+  const guardianRatio = difficulty?.guardianRatio ?? 0.1;
+
   // Context-aware NPC selection (Doc 05 §4.1):
-  // 1. Near gate/door → guardian
-  // 2. At junction (3+ walkable neighbors) → merchant
-  // 3. Otherwise → biome pool
+  // 1. Near gate/door → guardian (always)
+  // 2. Random roll < guardianRatio → guardian (difficulty-scaled)
+  // 3. At junction (3+ walkable neighbors) → merchant
+  // 4. Otherwise → biome pool
   let npcAsset: string;
 
   if (isNearGate(cells, cx, cy, size)) {
-    // Guards at gates
+    // Guards at gates — always
+    npcAsset = 'npc_guardian';
+  } else if (rng() < guardianRatio) {
+    // Difficulty-scaled guardian spawn — more guardians at higher difficulty
     npcAsset = 'npc_guardian';
   } else if (walkableNeighbors >= 3) {
     // Merchants at junctions (3+ passable directions = junction)
@@ -1257,6 +1272,59 @@ function placeFeatureAtCell(
 }
 
 /**
+ * Phase 5.6: Difficulty-Scaled Extra Obstacles (#46)
+ * Adds extraObstacles count of additional obstacle cells in walkable areas.
+ * Uses biome obstacle weights for asset selection.
+ * Protects passability by only placing in cells with 3+ walkable neighbors.
+ */
+function addExtraObstacles(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+  difficulty: DifficultyProfile,
+): void {
+  const targetCount = difficulty.extraObstacles;
+  if (targetCount <= 0) return;
+
+  // Collect eligible walkable cells with enough clearance
+  const eligible: Array<{ x: number; y: number }> = [];
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      if (cell.itemId || cell.npcId) continue;
+      // Only base terrain
+      if (!['grass', 'dirt', 'sand', 'stone_floor'].includes(cell.assetKey)) continue;
+      // Must have 3+ walkable neighbors so placing an obstacle won't block passage
+      if (countWalkableNeighbors(cells, x, y, size) < 3) continue;
+      eligible.push({ x, y });
+    }
+  }
+
+  // Shuffle and place
+  for (let i = eligible.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [eligible[i], eligible[j]] = [eligible[j], eligible[i]];
+  }
+
+  let placed = 0;
+  for (const spot of eligible) {
+    if (placed >= targetCount) break;
+    const assetKey = weightedPick(biome.obstacleWeights, rng());
+    // Skip quiz_gate — those are placed in placeQuizGates
+    if (assetKey === 'quiz_gate') continue;
+    const def = ASSET_DEFS[assetKey];
+    cells[spot.y][spot.x] = {
+      assetKey,
+      walkable: def?.walkable ?? false,
+      interactable: def?.interactable ?? false,
+    };
+    placed++;
+  }
+}
+
+/**
  * Phase 5.4: Quiz Gate Placement (#43)
  * Templates produce door_gate / door_locked / toll_gate cells, but never quiz_gate.
  * This phase converts some existing gate cells to quiz_gate based on biome weight,
@@ -1268,9 +1336,14 @@ function placeQuizGates(
   size: number,
   biome: BiomeDef,
   rng: () => number,
+  difficulty?: DifficultyProfile,
 ): void {
   const weight = biome.obstacleWeights['quiz_gate'] ?? 0;
   if (weight <= 0) return; // e.g. meadow has no quiz gates
+
+  // Difficulty-scaled quiz frequency: at higher difficulty, spawn more quiz gates
+  const quizFreqMult = difficulty?.quizGateFrequency ?? 1.0;
+  const effectiveWeight = weight * quizFreqMult; // scale weight by difficulty tier
 
   // --- Strategy 1: Convert some existing gate-type obstacles to quiz_gate ---
   const CONVERTIBLE_GATES = ['door_gate', 'door_locked', 'toll_gate'];
@@ -1284,11 +1357,11 @@ function placeQuizGates(
   }
 
   // Convert a proportion of existing gates to quiz gates.
-  // Conversion rate = quiz_gate weight / total gate-type weight (capped at 50%)
+  // Conversion rate = quiz_gate effectiveWeight / total gate-type weight (capped at 60%)
   const totalGateWeight = CONVERTIBLE_GATES.reduce(
     (s, k) => s + (biome.obstacleWeights[k] ?? 0), 0
-  ) + weight;
-  const conversionRate = Math.min(0.5, weight / Math.max(totalGateWeight, 0.01));
+  ) + effectiveWeight;
+  const conversionRate = Math.min(0.6, effectiveWeight / Math.max(totalGateWeight, 0.01));
 
   // Shuffle existing gates and convert first N
   for (let i = existingGates.length - 1; i > 0; i--) {
@@ -1307,8 +1380,9 @@ function placeQuizGates(
 
   // --- Strategy 2: Place standalone quiz gates at chokepoints ---
   // Target: ~1-2 quiz gates per chunk in forest, ~2-3 in cave, ~3-4 in castle
+  // Difficulty-scaled: higher quizFrequency increases target count
   const alreadyPlaced = numToConvert;
-  const targetTotal = Math.round(weight * 30); // e.g. 0.05→1.5, 0.08→2.4, 0.15→4.5
+  const targetTotal = Math.round(effectiveWeight * 30); // e.g. 0.05→1.5, 0.08→2.4, 0.15→4.5
   const remaining = Math.max(0, targetTotal - alreadyPlaced);
   if (remaining <= 0) return;
 
@@ -1370,13 +1444,17 @@ export function clusterDecorations(
   biome: BiomeDef,
   rng: () => number,
   chunkDist: number = 0,
+  difficulty?: DifficultyProfile,
 ): void {
   const palette = BIOME_SCATTER_DECORATIONS[biome.name] ?? ['flower'];
 
   // Distance-based density: closer to origin = more welcoming, further = sparser
   // Base coverage: 18-25% at origin, tapering to 10-15% at dist 7+
   const distFactor = Math.max(0.5, 1.0 - chunkDist * 0.06);
-  const targetCoverage = (0.18 + rng() * 0.07) * distFactor;
+  // At high difficulty, obstacle density slightly increases decoration density
+  // (more obstacles = more visual clutter = more challenging navigation)
+  const obstacleMult = difficulty?.obstacleDensity ?? 1.0;
+  const targetCoverage = (0.18 + rng() * 0.07) * distFactor * Math.min(obstacleMult, 1.5);
 
   // Gather eligible cells (walkable base terrain with no existing content)
   const eligible: Array<{ x: number; y: number }> = [];
@@ -1549,6 +1627,7 @@ export function scatterCollectibles(
   biome: BiomeDef,
   rng: () => number,
   chunkDist: number = 0,
+  difficulty?: DifficultyProfile,
 ): void {
   // Distance scaling (Doc 05 §9.1):
   // dist 0: high density (1.5x), dist 1-2: normal, dist 3-5: 0.8x, dist 6+: 0.6x
@@ -1557,8 +1636,12 @@ export function scatterCollectibles(
     : chunkDist <= 5 ? 0.8
     : 0.6;
 
+  // Apply difficulty collectible rate if available (stacks with distance curve)
+  const diffMult = difficulty?.collectibleRate ?? 1.0;
+  const effectiveMultiplier = distMultiplier * diffMult;
+
   // Coin density: ~2-4% of walkable base cells × collectibleRate × distance factor
-  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate * distMultiplier;
+  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate * effectiveMultiplier;
 
   // Minimum spacing: 3 cells between same-type collectibles (Doc 05 §5.1)
   const MIN_SPACING = 3;
