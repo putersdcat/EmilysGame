@@ -5,7 +5,7 @@
  * TODO: DOC - interaction flowchart
  */
 
-import { ASSET_DEFS, OBSTACLE_TEMPLATES, type ObstacleTemplate } from './config/assets.config';
+import { ASSET_DEFS, OBSTACLE_TEMPLATES, QUIZ_GATE_ASSET, type ObstacleTemplate } from './config/assets.config';
 import { NPC_DEFS } from './config/npc.config';
 import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG } from './config/game.config';
@@ -20,7 +20,8 @@ export type InteractionResult =
   | { type: 'obstacle'; template: ObstacleTemplate; resolved: boolean; message: string }
   | { type: 'npc'; npcId: string; greeting: string }
   | { type: 'sign'; message: string }
-  | { type: 'chest'; items: string[]; message: string };
+  | { type: 'chest'; items: string[]; message: string }
+  | { type: 'quiz_gate'; chunkKey: string; lx: number; ly: number; message: string };
 
 // ─── Collision Check ─────────────────────────────────────────
 
@@ -136,6 +137,17 @@ export function interact(
     return { type: 'chest', items: loot, message: 'Opened chest! Found coins and a potion!' };
   }
 
+  // --- Quiz Gate (knowledge-based obstacle, Doc 05 §3.5) ---
+  if (cell.assetKey === QUIZ_GATE_ASSET) {
+    return {
+      type: 'quiz_gate',
+      chunkKey,
+      lx,
+      ly,
+      message: 'A mystical barrier blocks your path. Answer a question to pass!',
+    };
+  }
+
   // --- Obstacle (door/barricade/toll) ---
   const template = OBSTACLE_TEMPLATES.find((t) => t.obstacleAsset === cell.assetKey);
   if (template) {
@@ -209,4 +221,28 @@ export function autoCollect(
     itemId: id,
     message: `+1 ${def.description || id}`,
   };
+}
+
+/**
+ * Resolve a quiz gate after the player answers correctly.
+ * Transforms the gate cell into an open door.
+ * TODO: DOC - quiz gate resolution flow
+ */
+export function resolveQuizGate(
+  chunkKeyStr: string,
+  lx: number,
+  ly: number,
+  chunks: Map<string, ChunkData>,
+): void {
+  const chunk = chunks.get(chunkKeyStr);
+  if (!chunk) return;
+  const resolvedAsset = 'door_open';
+  const def = ASSET_DEFS[resolvedAsset];
+  chunk.cells[ly][lx] = {
+    assetKey: resolvedAsset,
+    walkable: def?.walkable ?? true,
+    interactable: false,
+    resolved: true,
+  };
+  invalidateObjectCache(chunkKeyStr);
 }

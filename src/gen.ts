@@ -312,6 +312,9 @@ function generateGridChunk(
   scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist);
   layCoinTrails(cells, size, seededRandom(featureSeed + 450));
 
+  // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
+  placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470));
+
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
@@ -1161,7 +1164,7 @@ function countWalkableNeighbors(
 function isNearGate(
   cells: CellData[][], cx: number, cy: number, size: number,
 ): boolean {
-  const GATE_ASSETS = ['door_locked', 'toll_gate', 'door_gate'];
+  const GATE_ASSETS = ['door_locked', 'toll_gate', 'door_gate', 'quiz_gate'];
   const RANGE = 2;
   for (let dy = -RANGE; dy <= RANGE; dy++) {
     for (let dx = -RANGE; dx <= RANGE; dx++) {
@@ -1251,6 +1254,107 @@ function placeFeatureAtCell(
     };
   }
   // else: leave cell as-is (not every feature anchor gets content)
+}
+
+/**
+ * Phase 5.4: Quiz Gate Placement (#43)
+ * Templates produce door_gate / door_locked / toll_gate cells, but never quiz_gate.
+ * This phase converts some existing gate cells to quiz_gate based on biome weight,
+ * AND places standalone quiz gates at chokepoints when biome config warrants it.
+ * Runs after anchor population so it can see the full gate picture.
+ */
+function placeQuizGates(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  const weight = biome.obstacleWeights['quiz_gate'] ?? 0;
+  if (weight <= 0) return; // e.g. meadow has no quiz gates
+
+  // --- Strategy 1: Convert some existing gate-type obstacles to quiz_gate ---
+  const CONVERTIBLE_GATES = ['door_gate', 'door_locked', 'toll_gate'];
+  const existingGates: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (CONVERTIBLE_GATES.includes(cells[y][x].assetKey)) {
+        existingGates.push({ x, y });
+      }
+    }
+  }
+
+  // Convert a proportion of existing gates to quiz gates.
+  // Conversion rate = quiz_gate weight / total gate-type weight (capped at 50%)
+  const totalGateWeight = CONVERTIBLE_GATES.reduce(
+    (s, k) => s + (biome.obstacleWeights[k] ?? 0), 0
+  ) + weight;
+  const conversionRate = Math.min(0.5, weight / Math.max(totalGateWeight, 0.01));
+
+  // Shuffle existing gates and convert first N
+  for (let i = existingGates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [existingGates[i], existingGates[j]] = [existingGates[j], existingGates[i]];
+  }
+  const numToConvert = Math.max(0, Math.round(existingGates.length * conversionRate));
+  for (let i = 0; i < numToConvert; i++) {
+    const g = existingGates[i];
+    cells[g.y][g.x] = {
+      assetKey: 'quiz_gate',
+      walkable: false,
+      interactable: true,
+    };
+  }
+
+  // --- Strategy 2: Place standalone quiz gates at chokepoints ---
+  // Target: ~1-2 quiz gates per chunk in forest, ~2-3 in cave, ~3-4 in castle
+  const alreadyPlaced = numToConvert;
+  const targetTotal = Math.round(weight * 30); // e.g. 0.05→1.5, 0.08→2.4, 0.15→4.5
+  const remaining = Math.max(0, targetTotal - alreadyPlaced);
+  if (remaining <= 0) return;
+
+  // Find chokepoint candidates: walkable cells with ≤ 2 walkable neighbors
+  // and at least 1 non-walkable neighbor (natural bottleneck)
+  const candidates: Array<{ x: number; y: number; score: number }> = [];
+  for (let y = 1; y < size - 1; y++) {
+    for (let x = 1; x < size - 1; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      if (cell.itemId || cell.npcId) continue;
+      // Only place on simple terrain (grass, dirt, sand, stone_floor)
+      if (!['grass', 'dirt', 'sand', 'stone_floor'].includes(cell.assetKey)) continue;
+
+      const walkable = countWalkableNeighbors(cells, x, y, size);
+      if (walkable < 2 || walkable > 3) continue; // 2-3 = corridor/chokepoint
+
+      // Score: prefer cells at corridor ends (fewer walkable neighbors = better gate spot)
+      candidates.push({ x, y, score: 4 - walkable + rng() * 0.5 });
+    }
+  }
+
+  // Sort by score descending, place quiz gates at best spots
+  candidates.sort((a, b) => b.score - a.score);
+  let placed = 0;
+  for (const c of candidates) {
+    if (placed >= remaining) break;
+    // Don't place too close to another quiz gate (min 4 cells apart)
+    let tooClose = false;
+    for (let dy = -4; dy <= 4 && !tooClose; dy++) {
+      for (let dx = -4; dx <= 4 && !tooClose; dx++) {
+        const nx = c.x + dx, ny = c.y + dy;
+        if (nx >= 0 && ny >= 0 && nx < size && ny < size) {
+          if (cells[ny][nx].assetKey === 'quiz_gate') tooClose = true;
+        }
+      }
+    }
+    if (tooClose) continue;
+
+    cells[c.y][c.x] = {
+      assetKey: 'quiz_gate',
+      walkable: false,
+      interactable: true,
+    };
+    placed++;
+  }
 }
 
 /**

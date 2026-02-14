@@ -140,6 +140,11 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 1.0, shadow: true, walkable: false, interactable: true,
     description: 'Toll gate (pay coins to pass)',
   },
+  quiz_gate: {
+    emoji: '❓', category: 'obstacle', height: 4, layer: 'mid',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Quiz gate (answer a question to pass)', tileType: 'quiz_gate',
+  },
 
   // --- Interactive objects ---
   chest: {
@@ -282,3 +287,8 @@ export const OBSTACLE_TEMPLATES: ObstacleTemplate[] = [
     description: 'Pay 10 coins to pass toll',
   },
 ];
+
+// Quiz gate asset key — resolved via quiz, not inventory items.
+// Handled separately from OBSTACLE_TEMPLATES in mechanics.ts.
+export const QUIZ_GATE_ASSET = 'quiz_gate';
+export const QUIZ_GATE_RESOLVED = 'door_open';
