@@ -24,6 +24,8 @@ export interface SaveData {
     correct: number;
   };
   wordlistSeed: string;        // First word pair (for deterministic replay)
+  /** Entropy buffer for LLM entropy system (#4) */
+  entropyBuffer?: string;
   /** Book of Knowledge: selected subjects */
   selectedSubjects?: string[];
   /** Book of Knowledge: saved words */

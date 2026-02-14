@@ -10,6 +10,7 @@ import { ITEM_DEFS } from './config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
+import { getEntropyStats } from './gen';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
@@ -284,6 +285,9 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     ? `LLM TPS: ${tps}${cutover ? ' ⚠ CUTOVER' : ''}`
     : 'LLM TPS: —';
 
+  const entropy = getEntropyStats();
+  const entropyLabel = `Entropy: ${entropy.poolSize}ch/${entropy.feedCount}feeds`;
+
   el.innerHTML = [
     `FPS: ${fps}`,
     `Pos: ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}`,
@@ -291,6 +295,7 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     `WU: ${wux},${wuy}`,
     `Cache: ${getTerrainCacheSize()} chunks`,
     tpsLabel,
+    entropyLabel,
   ].map((l) => `<span>${l}</span>`).join('');
 }
 
