@@ -17,8 +17,6 @@ import { getBiome, type BiomeDef } from './config/biomes.config';
 import {
   sha256,
   fastHash,
-  hexToInt,
-  asciiModulo,
   seededRandom,
   PerlinNoise,
   bfsFloodFill,
@@ -68,6 +66,8 @@ export interface ChunkData {
   chunkX: number;
   chunkY: number;
   biomeId: number;
+  /** Biome name for cross-chunk coherence queries */
+  biomeName: string;
   cells: CellData[][];
   seed: string;
   generated: boolean;
@@ -135,33 +135,73 @@ export function getDirectionPair(direction: string, rng: () => number): string {
 }
 
 /**
- * Distance-based biome selection.
- * Closer chunks = easier biomes. Progression:
- *   dist 0-2: meadow only (safe start)
- *   dist 3-4: meadow/forest (70/30)
- *   dist 5-6: forest/meadow/cave (50/30/20)
- *   dist 7+:  all biomes weighted by distance
- * Uses seedVal for deterministic per-chunk variation.
+ * Distance-based biome selection with spatial coherence via Perlin noise.
+ * Uses a low-frequency Perlin noise field to create contiguous biome regions
+ * instead of per-chunk random selection.
+ *
+ * The noise value selects from biomes available at the current distance tier,
+ * producing smooth biome boundaries that feel natural.
+ * TODO: DOC — biome coherence via Perlin noise field (WorldEngine-03 §4)
  */
-function selectBiomeByDistance(chunkX: number, chunkY: number, seedVal: number): BiomeDef {
-  const dist = Math.max(Math.abs(chunkX), Math.abs(chunkY));
-  const roll = (seedVal % 100) / 100; // 0-1 deterministic roll
 
-  if (dist <= 2) {
-    return getBiome(0); // meadow
-  } else if (dist <= 4) {
-    return getBiome(roll < 0.7 ? 0 : 1); // 70% meadow, 30% forest
-  } else if (dist <= 6) {
-    if (roll < 0.3) return getBiome(0);      // 30% meadow
-    else if (roll < 0.8) return getBiome(1); // 50% forest
-    else return getBiome(2);                  // 20% cave
-  } else {
-    // dist 7+: progressive unlock
-    if (roll < 0.15) return getBiome(0);      // 15% meadow
-    else if (roll < 0.45) return getBiome(1); // 30% forest
-    else if (roll < 0.75) return getBiome(2); // 30% cave
-    else return getBiome(3);                  // 25% castle
+// Global biome noise - seeded once per session for consistent spatial biome map.
+// Uses a very low frequency (0.015) so biome regions span many chunks.
+let _biomeNoise: PerlinNoise | null = null;
+let _biomeNoiseSeed = 42;
+
+/** Set seed for biome noise field (called at game start for session consistency) */
+export function setBiomeNoiseSeed(seed: number): void {
+  _biomeNoiseSeed = seed;
+  _biomeNoise = null; // Reset so it reconstructs on next use
+}
+
+function getBiomeNoise(): PerlinNoise {
+  if (!_biomeNoise) {
+    _biomeNoise = new PerlinNoise(_biomeNoiseSeed);
   }
+  return _biomeNoise;
+}
+
+/**
+ * Biome selection with spatial coherence.
+ * - Low-frequency Perlin noise creates spatially coherent biome regions.
+ * - Distance from origin gates which biomes are available (progression).
+ * - Two noise channels (biome type + variation) create organic shapes.
+ */
+function selectBiomeCoherent(chunkX: number, chunkY: number): BiomeDef {
+  const dist = Math.max(Math.abs(chunkX), Math.abs(chunkY));
+  const noise = getBiomeNoise();
+
+  // Two noise channels at different frequencies for organic boundaries
+  const biomeVal = (noise.noise(chunkX * 0.08, chunkY * 0.08) + 1) / 2; // 0-1
+  const subVal = (noise.noise(chunkX * 0.15 + 100, chunkY * 0.15 + 100) + 1) / 2; // 0-1
+
+  // Build available biome pool based on distance (progression gating)
+  if (dist <= 2) {
+    // Safe zone: meadow only
+    return getBiome(0);
+  }
+
+  if (dist <= 4) {
+    // Meadow + forest transition zone
+    // Use noise to create coherent meadow/forest boundary
+    return getBiome(biomeVal < 0.65 ? 0 : 1);
+  }
+
+  if (dist <= 6) {
+    // Meadow + forest + cave emerges
+    if (biomeVal < 0.35) return getBiome(0);       // meadow
+    if (biomeVal < 0.70) return getBiome(1);        // forest
+    return getBiome(2);                              // cave
+  }
+
+  // dist 7+: all biomes, noise-driven regions
+  // Primary noise selects major biome, sub-noise adds variation at boundaries
+  const combined = biomeVal * 0.7 + subVal * 0.3;
+  if (combined < 0.20) return getBiome(0);       // meadow (~20%)
+  if (combined < 0.50) return getBiome(1);        // forest (~30%)
+  if (combined < 0.75) return getBiome(2);        // cave (~25%)
+  return getBiome(3);                              // castle (~25%)
 }
 
 // --- World Unit Grid Constants ---
@@ -185,16 +225,16 @@ export async function generateChunk(
   entropyBuffer += entropyText;
 
   const hashHex = await sha256(entropyText);
-  const biomeSeed = hexToInt(hashHex.slice(0, 8), WORLD_CONFIG.biomeCount - 1);
   const noiseSeed = fastHash(hashHex.slice(8, 16));
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
-  const biome = selectBiomeByDistance(chunkX, chunkY, biomeSeed);
+  const biome = selectBiomeCoherent(chunkX, chunkY);
   const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
     chunkX, chunkY,
     biomeId: biome.id,
+    biomeName: biome.name,
     cells, seed: entropyText, generated: true,
     borderEdges,
   };
@@ -220,8 +260,7 @@ export function generateChunkSync(
 
   const noiseSeed = fastHash(seedText);
   const featureSeed = fastHash(seedText + '_features');
-  const biomeSeed = asciiModulo(pair, 100); // seed for distance-based selection
-  const biome = selectBiomeByDistance(chunkX, chunkY, biomeSeed);
+  const biome = selectBiomeCoherent(chunkX, chunkY);
 
   const { cells, borderEdges } = generateGridChunk(
     size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints,
@@ -230,6 +269,7 @@ export function generateChunkSync(
   return {
     chunkX, chunkY,
     biomeId: biome.id,
+    biomeName: biome.name,
     cells, seed: seedText, generated: true,
     borderEdges,
   };
