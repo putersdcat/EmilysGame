@@ -11,7 +11,7 @@ import type { TileType } from '../tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 
-export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore' | 'gate';
+export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore' | 'gate' | 'wall-cap' | 'fence-post';
 
 /** Cardinal direction type used for edge queries */
 export type Cardinal = 'n' | 's' | 'e' | 'w';
@@ -150,13 +150,15 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
 // Design doc: Docs/WorldEngine-02-EdgeContracts.md
 
 const EDGE_COMPAT: Record<EdgeTag, Set<EdgeTag>> = {
-  open:  new Set<EdgeTag>(['open', 'fence', 'path', 'shore', 'gate']), // open touches open, fence, path, shore, or gate
-  wall:  new Set<EdgeTag>(['wall', 'open', 'gate']),   // walls can abut walls, open, or gates
-  water: new Set<EdgeTag>(['water', 'shore']),         // water touches water or shore transitions
-  fence: new Set<EdgeTag>(['fence', 'open']),          // fences can touch fences or open
-  path:  new Set<EdgeTag>(['path', 'open', 'gate']),   // paths connect to paths, open, or gate openings
-  shore: new Set<EdgeTag>(['shore', 'water', 'open']), // shore transitions between water and land
-  gate:  new Set<EdgeTag>(['gate', 'wall', 'open', 'path']), // gates connect to walls, open, paths, or other gates
+  open:  new Set<EdgeTag>(['open', 'fence', 'path', 'shore', 'gate', 'wall-cap', 'fence-post']),
+  wall:  new Set<EdgeTag>(['wall', 'open', 'gate', 'wall-cap']),
+  water: new Set<EdgeTag>(['water', 'shore']),
+  fence: new Set<EdgeTag>(['fence', 'open', 'fence-post']),
+  path:  new Set<EdgeTag>(['path', 'open', 'gate']),
+  shore: new Set<EdgeTag>(['shore', 'water', 'open']),
+  gate:  new Set<EdgeTag>(['gate', 'wall', 'open', 'path']),
+  'wall-cap':   new Set<EdgeTag>(['wall-cap', 'open', 'wall', 'gate']),
+  'fence-post': new Set<EdgeTag>(['fence-post', 'open', 'fence']),
 };
 
 /** Check if two edge tags are compatible when placed adjacent */
@@ -1654,6 +1656,172 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 2, y: 3, role: 'item' },
     ],
   },
+
+  // ─────────── Wall Termination Templates (wall-cap edges) ────
+
+  // --- Wall Bastion (wall terminates with room, opens south) ---
+  {
+    name: 'wall_bastion',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'stone_wall'],
+      ['grass', 'stone_floor', 'stone_floor', 'stone_floor', 'grass'],
+      ['grass', 'grass', 'stone_floor', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'wall', s: 'open', e: 'wall-cap', w: 'wall-cap' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.48,
+    category: 'structural',
+    connectivity: 'terminal',
+    biomeAffinity: ['castle', 'cave'],
+    movementChannels: [
+      [{ x: 2, y: 2 }, { x: 2, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 1, role: 'decoration' },
+    ],
+  },
+
+  // --- Wall Corner Capped (L-shaped wall with capped ends) ---
+  {
+    name: 'wall_corner_capped',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'grass', 'grass'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'grass', 'grass'],
+      ['stone_wall', 'stone_floor', 'stone_floor', 'stone_floor', 'grass'],
+      ['grass', 'grass', 'stone_floor', 'stone_floor', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'wall-cap', s: 'open', e: 'open', w: 'wall-cap' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.52,
+    category: 'structural',
+    connectivity: 'terminal',
+    biomeAffinity: ['castle', 'cave', 'forest'],
+    movementChannels: [
+      [{ x: 2, y: 2 }, { x: 2, y: 4 }],
+      [{ x: 2, y: 2 }, { x: 4, y: 2 }],
+    ],
+    anchors: [
+      { x: 1, y: 1, role: 'decoration' },
+      { x: 3, y: 3, role: 'item' },
+    ],
+  },
+
+  // ─────────── Fence Templates (fence-post edges) ─────────────
+
+  // --- Fenced Garden (enclosed by fences with post termination) ---
+  {
+    name: 'fenced_garden',
+    cells: [
+      ['grass', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'grass'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['grass', 'wooden_fence', 'grass', 'wooden_fence', 'grass'],
+    ],
+    edgeTags: { n: 'fence-post', s: 'fence-post', e: 'fence-post', w: 'fence-post' },
+    rotatable: false,
+    terminator: true,
+    chainType: 'fence',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'enclosure',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 1 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'feature' },
+      { x: 1, y: 2, role: 'decoration' },
+      { x: 3, y: 2, role: 'decoration' },
+    ],
+  },
+
+  // --- Fence Row (fence line with post terminators at ends) ---
+  {
+    name: 'fence_row',
+    cells: [
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+      ['grass', 'grass', 'grass', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'fence-post', w: 'fence-post' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'fence',
+    minPassability: 0.8,
+    category: 'structural',
+    connectivity: 'fence-chain',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 0, y: 0 }, { x: 4, y: 0 }],
+      [{ x: 0, y: 4 }, { x: 4, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 0, role: 'decoration' },
+      { x: 2, y: 4, role: 'decoration' },
+    ],
+  },
+
+  // --- Beach Cove (sand + water + shore transition) ---
+  {
+    name: 'beach_cove',
+    cells: [
+      ['grass', 'grass', 'sand', 'sand', 'sand'],
+      ['grass', 'sand', 'sand', 'sand', 'water'],
+      ['sand', 'sand', 'sand', 'water', 'water'],
+      ['sand', 'sand', 'water', 'water', 'water'],
+      ['sand', 'water', 'water', 'water', 'water'],
+    ],
+    edgeTags: { n: 'shore', s: 'water', e: 'water', w: 'shore' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'river',
+    minPassability: 0.4,
+    category: 'transitional',
+    connectivity: 'river-chain',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 0, y: 2 }, { x: 2, y: 0 }],
+    ],
+    anchors: [
+      { x: 1, y: 1, role: 'decoration' },
+      { x: 2, y: 1, role: 'item' },
+    ],
+  },
+
+  // --- Sand Path (sandy trail through grass) ---
+  {
+    name: 'sand_path',
+    cells: [
+      ['grass', 'grass', 'sand', 'grass', 'grass'],
+      ['grass', 'sand', 'sand', 'sand', 'grass'],
+      ['grass', 'sand', 'sand', 'grass', 'grass'],
+      ['grass', 'grass', 'sand', 'sand', 'grass'],
+      ['grass', 'grass', 'sand', 'grass', 'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'natural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'decoration' },
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -1695,6 +1863,12 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     market_square: 0.04,
     spiral_path: 0.03,
     water_garden: 0.03,
+    wall_bastion: 0.02,
+    wall_corner_capped: 0.02,
+    fenced_garden: 0.04,
+    fence_row: 0.03,
+    beach_cove: 0.02,
+    sand_path: 0.03,
   },
   forest: {
     meadow_base: 0.06,
@@ -1729,6 +1903,11 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     spiral_path: 0.03,
     water_garden: 0.03,
     river_island: 0.02,
+    wall_bastion: 0.02,
+    wall_corner_capped: 0.02,
+    fenced_garden: 0.02,
+    fence_row: 0.02,
+    beach_cove: 0.02,
   },
   cave: {
     rock_cluster: 0.08,
@@ -1759,6 +1938,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     stone_plaza: 0.04,
     cave_fork: 0.05,
     wall_t_junction: 0.03,
+    wall_bastion: 0.04,
+    wall_corner_capped: 0.04,
   },
   castle: {
     wall_segment: 0.10,
@@ -1791,6 +1972,9 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     market_square: 0.03,
     castle_throne: 0.05,
     wall_t_junction: 0.03,
+    wall_bastion: 0.05,
+    wall_corner_capped: 0.04,
+    fenced_garden: 0.02,
   },
 };
 

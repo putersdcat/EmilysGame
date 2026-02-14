@@ -12,7 +12,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
-import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getStoneFloorVariant } from './tiles';
+import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
 import { getEmojiSprite } from './emoji-cache';
 import type { ChunkData } from './gen';
 
@@ -90,6 +90,8 @@ export function getCachedTerrain(
           tileCanvas = getDirtVariant(globalCX, globalCY);
         } else if (def.tileType === 'rock') {
           tileCanvas = getRockVariant(globalCX, globalCY);
+        } else if (def.tileType === 'sand') {
+          tileCanvas = getSandVariant(globalCX, globalCY);
         } else if (def.tileType === 'stone_floor') {
           tileCanvas = getStoneFloorVariant(globalCX, globalCY);
         } else {
