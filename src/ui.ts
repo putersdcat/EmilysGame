@@ -12,6 +12,7 @@ import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getTimeOfDay } from './lighting';
 import { getWeatherInfo } from './weather';
+import { isFlashlightOn } from './local-lights';
 import { getEntropyStats } from './gen';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
@@ -154,6 +155,12 @@ function syncHUD(inv: Inventory, playerPos: { x: number; y: number }): void {
   if (weatherEl) {
     const w = getWeatherInfo();
     weatherEl.textContent = `${w.emoji} ${w.label}`;
+  }
+  // Flashlight badge
+  const flashEl = document.getElementById('flashlightBadge');
+  if (flashEl) {
+    flashEl.textContent = isFlashlightOn() ? '🔦 On' : '🔦 Off';
+    flashEl.style.opacity = isFlashlightOn() ? '1' : '0.5';
   }
 }
 

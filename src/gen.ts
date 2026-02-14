@@ -316,6 +316,9 @@ function generateGridChunk(
   // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
   placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
 
+  // Phase 5.45: place bonfires for night-time local lighting (#67)
+  placeBonfires(cells, size, biome, seededRandom(featureSeed + 475));
+
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
@@ -1331,6 +1334,64 @@ function addExtraObstacles(
  * AND places standalone quiz gates at chokepoints when biome config warrants it.
  * Runs after anchor population so it can see the full gate picture.
  */
+/**
+ * Phase 5.45: Place bonfires for night-time local lighting (#67)
+ * 1-3 bonfires per chunk on walkable ground, spaced apart.
+ * Bonfires don't appear in water or on existing non-walkable cells.
+ */
+function placeBonfires(
+  cells: CellData[][],
+  size: number,
+  _biome: BiomeDef,
+  rng: () => number,
+): void {
+  const target = 1 + Math.floor(rng() * 3); // 1-3 per chunk
+  const MIN_SPACING = 6; // Minimum grid distance between bonfires
+  const placed: Array<{ x: number; y: number }> = [];
+
+  // Collect candidate walkable cells away from edges
+  const candidates: Array<{ x: number; y: number }> = [];
+  for (let y = 3; y < size - 3; y++) {
+    for (let x = 3; x < size - 3; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable) continue;
+      // Prefer non-terrain ground (grass/dirt) but allow any walkable
+      if (cell.assetKey === 'water' || cell.assetKey === 'bridge') continue;
+      // Check that surrounding cells have at least 3 walkable neighbors (open area)
+      let walkableNeighbors = 0;
+      for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]] as const) {
+        const nx = x + dx, ny = y + dy;
+        if (ny >= 0 && ny < size && nx >= 0 && nx < size && cells[ny][nx].walkable) {
+          walkableNeighbors++;
+        }
+      }
+      if (walkableNeighbors >= 3) candidates.push({ x, y });
+    }
+  }
+
+  // Shuffle candidates
+  for (let i = candidates.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+  }
+
+  // Place bonfires with spacing constraint
+  for (const c of candidates) {
+    if (placed.length >= target) break;
+    const tooClose = placed.some(p =>
+      Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < MIN_SPACING
+    );
+    if (tooClose) continue;
+
+    cells[c.y][c.x] = {
+      assetKey: 'bonfire',
+      walkable: false,
+      interactable: false,
+    };
+    placed.push(c);
+  }
+}
+
 function placeQuizGates(
   cells: CellData[][],
   size: number,

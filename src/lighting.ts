@@ -103,7 +103,7 @@ function getLightingForTime(t: number): LightingStop {
 export function updateAndRenderLighting(ctx: CanvasRenderingContext2D): void {
   if (!enabled) return;
 
-  gameTime = (gameTime + 1) % CYCLE_LENGTH;
+  tickLighting(); // Advance clock
   const t = gameTime / CYCLE_LENGTH;
   const light = getLightingForTime(t);
 
@@ -131,6 +131,11 @@ export function updateAndRenderLighting(ctx: CanvasRenderingContext2D): void {
   ctx.fillRect(0, 0, cw, ch);
 
   ctx.restore();
+}
+
+/** Advance the lighting clock by one frame. Called separately when local-lights handles rendering. */
+export function tickLighting(): void {
+  gameTime = (gameTime + 1) % CYCLE_LENGTH;
 }
 
 /** Get current time-of-day name for UI display */
@@ -164,4 +169,10 @@ export function isLightingEnabled(): boolean {
 /** Reset cycle to a specific time (0..1) */
 export function setTimeOfDay(t: number): void {
   gameTime = Math.floor((t % 1.0) * CYCLE_LENGTH);
+}
+
+/** Get the current lighting overlay values for external use (local-lights integration). */
+export function getCurrentLighting(): { r: number; g: number; b: number; alpha: number; brightness: number } {
+  const t = gameTime / CYCLE_LENGTH;
+  return getLightingForTime(t);
 }

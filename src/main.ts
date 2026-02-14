@@ -34,8 +34,9 @@ import {
 import { searchArticles } from './config/knowledge.config';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
 import { updateAndRenderParticles, clearParticles } from './particles';
-import { updateAndRenderLighting, setTimeOfDay, getCycleProgress } from './lighting';
+import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight } from './local-lights';
 import type { FacingPose } from './sprites';
 
 
@@ -725,8 +726,27 @@ function renderFrame(
   // Ambient particles (butterflies, sparkles, leaves, birds)
   updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
 
-  // Day/night cycle lighting overlay
-  updateAndRenderLighting(renderer.getCtx());
+  // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
+  tickLighting();
+
+  // Local lights: collect bonfire positions from visible chunks + player flashlight
+  // renderLocalLights also handles the darkness overlay (replaces updateAndRenderLighting rendering)
+  clearLights();
+  const cs = WORLD_CONFIG.chunkSize;
+  for (const [, chunk] of state.chunks) {
+    if (!chunk.generated) continue;
+    const baseGX = chunk.chunkX * cs;
+    const baseGY = chunk.chunkY * cs;
+    for (let cy = 0; cy < cs; cy++) {
+      for (let cx = 0; cx < cs; cx++) {
+        if (chunk.cells[cy][cx].assetKey === 'bonfire') {
+          addPointLight(baseGX + cx, baseGY + cy);
+        }
+      }
+    }
+  }
+  addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
+  renderLocalLights(renderer.getCtx(), state.camera);
 
   // Weather effects (rain, fog, clouds, lightning)
   updateAndRenderWeather(renderer.getCtx());
@@ -822,6 +842,12 @@ function setupExtraKeys(state: GameState): void {
           setWeather(types[(idx + 1) % types.length]);
         }
         break;
+      case 'f':
+      case 'F':
+        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active) {
+          toggleFlashlight();
+        }
+        break;
     }
   });
 }
@@ -860,6 +886,14 @@ async function main(): Promise<void> {
       addToast(state.ui, `Slot ${slot + 1} deleted`, '#ff8844', 1500);
     },
   );
+
+  // Debug hooks for testing (available via window.__gameDebug)
+  (window as any).__gameDebug = {
+    setTimeOfDay,
+    getCycleProgress,
+    toggleFlashlight,
+    state,
+  };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
   if (isTestMode()) {

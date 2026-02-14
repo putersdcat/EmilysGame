@@ -8,6 +8,8 @@ test-results/
 .playwright-mcp/
 test-output.txt
 test-output2.txt
+test-output-weather.txt
+.vscode/
 .env.local
 .env.*.local
 

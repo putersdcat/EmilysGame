@@ -162,6 +162,11 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 1.0, shadow: false, walkable: true, interactable: false,
     description: 'Bridge over water', tileType: 'bridge',
   },
+  bonfire: {
+    emoji: '🔥', category: 'interactive', height: 3, layer: 'mid',
+    scale: 0.9, shadow: true, walkable: false, interactable: false,
+    description: 'Bonfire (emits local light at night)',
+  },
   door_open: {
     emoji: '🚪', category: 'interactive', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: true, interactable: false,
