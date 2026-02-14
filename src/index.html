@@ -25,13 +25,182 @@
       min-height: 0;
       background: #000;
       overflow: hidden;
+      display: flex;
+      flex-direction: row;
     }
-    #gameContainer { position: absolute; inset: 0; }
+    #gameContainer {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
     canvas {
       display: block;
       image-rendering: -webkit-optimize-contrast;
       image-rendering: pixelated;
       width: 100%; height: 100%;
+    }
+
+    /* ── Right Sidebar ── */
+    #sidebar {
+      width: 240px;
+      min-width: 240px;
+      max-width: 240px;
+      background: linear-gradient(180deg, #1a1632 0%, #12101e 100%);
+      border-left: 2px solid #333;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+      transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease, border-width 0.25s;
+      scrollbar-width: thin;
+      scrollbar-color: #555 transparent;
+      z-index: 20;
+    }
+    #sidebar::-webkit-scrollbar { width: 5px; }
+    #sidebar::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+    #sidebar.collapsed {
+      width: 0;
+      min-width: 0;
+      max-width: 0;
+      border-left-width: 0;
+      overflow: hidden;
+    }
+
+    .sb-section {
+      padding: 8px 10px;
+      border-bottom: 1px solid rgba(100,100,140,0.2);
+    }
+    .sb-header {
+      color: #88ccff;
+      font: bold 11px monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sb-header .icon { font-size: 13px; }
+
+    /* Player stats */
+    .sb-stat-row {
+      display: flex;
+      justify-content: space-between;
+      font: 12px monospace;
+      color: #ccc;
+      padding: 2px 0;
+    }
+    .sb-stat-row .val { color: #ffd700; font-weight: bold; }
+    .sb-stat-row .val.green { color: #4caf50; }
+
+    /* Sidebar inventory */
+    .sb-inv-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
+    }
+    .sb-inv-slot {
+      aspect-ratio: 1;
+      background: rgba(40,35,60,0.7);
+      border: 1px solid rgba(100,100,140,0.25);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      position: relative;
+      transition: border-color 0.15s;
+    }
+    .sb-inv-slot:hover { border-color: #88ccff; }
+    .sb-inv-slot .qty {
+      position: absolute;
+      bottom: 1px;
+      right: 3px;
+      font: bold 9px monospace;
+      color: #ffd700;
+    }
+    .sb-inv-slot.empty {
+      background: rgba(30,25,45,0.4);
+      border-style: dashed;
+    }
+
+    /* Save slots */
+    .sb-save-slot {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      font: 11px monospace;
+      color: #aaa;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .sb-save-slot:hover { background: rgba(80,70,120,0.4); }
+    .sb-save-slot .slot-icon { font-size: 14px; }
+    .sb-save-slot .slot-meta { color: #666; font-size: 10px; flex: 1; }
+    .sb-save-slot.has-data .slot-meta { color: #88ccff; }
+    .slot-btn {
+      background: rgba(60,50,90,0.6);
+      border: 1px solid rgba(100,90,160,0.4);
+      border-radius: 3px;
+      color: #ccc;
+      font-size: 11px;
+      cursor: pointer;
+      padding: 1px 5px;
+      line-height: 1.2;
+      transition: background 0.15s, color 0.15s;
+    }
+    .slot-btn:hover { background: rgba(100,90,160,0.7); color: #fff; }
+    .slot-load:hover { background: rgba(60,120,200,0.6); }
+    .slot-del:hover { background: rgba(200,60,60,0.6); }
+    .slot-save:hover { background: rgba(60,160,80,0.6); }
+    .sb-save-btns {
+      display: flex;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .sb-save-btns button {
+      flex: 1;
+      padding: 4px;
+      background: rgba(40,35,60,0.8);
+      border: 1px solid #555;
+      border-radius: 3px;
+      color: #ccc;
+      font: 10px monospace;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .sb-save-btns button:hover { background: rgba(60,55,90,0.9); border-color: #88ccff; }
+
+    /* Sidebar toggle button (on left edge of sidebar) */
+    #sidebarToggle {
+      position: absolute;
+      top: 50%;
+      right: 240px;
+      transform: translateY(-50%);
+      width: 18px;
+      height: 48px;
+      background: rgba(30,25,50,0.9);
+      border: 1px solid #555;
+      border-right: none;
+      border-radius: 6px 0 0 6px;
+      color: #aaa;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 21;
+      transition: right 0.25s ease, background 0.15s;
+    }
+    #sidebarToggle:hover { background: rgba(50,45,80,0.95); color: #88ccff; }
+    #sidebar.collapsed ~ #sidebarToggle,
+    #gameWrapper:has(#sidebar.collapsed) #sidebarToggle {
+      right: 0;
     }
 
     /* ── LLM Splash ── */
@@ -203,48 +372,89 @@
   <h1>🌿 Emily's Game</h1>
 
   <div id="gameWrapper">
-    <div id="gameContainer"></div>
+    <div id="gameContainer">
+      <!-- Debug info (toggle with F3) -->
+      <div id="debugOverlay" style="display:none"></div>
 
-    <!-- Debug info (toggle with F3) -->
-    <div id="debugOverlay" style="display:none"></div>
+      <!-- Toast notifications -->
+      <div id="toastContainer"></div>
 
-    <!-- Toast notifications -->
-    <div id="toastContainer"></div>
+      <!-- Dialog box -->
+      <div id="dialogOverlay">
+        <div class="npc-name" id="dialogName"></div>
+        <div class="npc-text" id="dialogText"></div>
+        <div class="npc-hint" id="dialogHint"></div>
+      </div>
 
-    <!-- Dialog box -->
-    <div id="dialogOverlay">
-      <div class="npc-name" id="dialogName"></div>
-      <div class="npc-text" id="dialogText"></div>
-      <div class="npc-hint" id="dialogHint"></div>
-    </div>
+      <!-- Quiz modal -->
+      <div id="quizOverlay">
+        <div id="quizBox">
+          <div id="quizQuestion"></div>
+          <div id="quizChoices"></div>
+          <div id="quizResult"></div>
+          <div id="quizHint"></div>
+          <div id="quizNav"></div>
+        </div>
+      </div>
 
-    <!-- Quiz modal -->
-    <div id="quizOverlay">
-      <div id="quizBox">
-        <div id="quizQuestion"></div>
-        <div id="quizChoices"></div>
-        <div id="quizResult"></div>
-        <div id="quizHint"></div>
-        <div id="quizNav"></div>
+      <!-- Bottom HUD -->
+      <div id="hudOverlay">
+        <div id="hudBar">
+          <span class="hud-stat" id="coinStat" title="Gold coins collected">💰 0</span>
+          <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
+          <div class="hud-spacer"></div>
+          <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
+          <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
+          <button class="hud-btn" id="btnSave" title="Save game">💾</button>
+          <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
+          <div id="llmDot" title="LLM connection status"></div>
+        </div>
+        <div id="hudTray">
+          <div id="invList"></div>
+        </div>
       </div>
     </div>
 
-    <!-- Bottom HUD -->
-    <div id="hudOverlay">
-      <div id="hudBar">
-        <span class="hud-stat" id="coinStat" title="Gold coins collected">💰 0</span>
-        <span class="hud-stat" id="keyStat" title="Keys collected">🔑 0</span>
-        <div class="hud-spacer"></div>
-        <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
-        <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
-        <button class="hud-btn" id="btnSave" title="Save game">💾</button>
-        <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
-        <div id="llmDot" title="LLM connection status"></div>
+    <!-- Right Sidebar -->
+    <div id="sidebar">
+      <!-- Player Stats -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">👤</span> Player</div>
+        <div class="sb-stat-row"><span>Coins</span><span class="val" id="sbCoins">0</span></div>
+        <div class="sb-stat-row"><span>Keys</span><span class="val" id="sbKeys">0</span></div>
+        <div class="sb-stat-row"><span>Crowbars</span><span class="val" id="sbCrowbars">0</span></div>
+        <div class="sb-stat-row"><span>Potions</span><span class="val" id="sbPotions">0</span></div>
       </div>
-      <div id="hudTray">
-        <div id="invList"></div>
+      <!-- Quiz Stats -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">📝</span> Quizzes</div>
+        <div class="sb-stat-row"><span>Answered</span><span class="val" id="sbQuizAnswered">0</span></div>
+        <div class="sb-stat-row"><span>Correct</span><span class="val green" id="sbQuizCorrect">0</span></div>
+        <div class="sb-stat-row"><span>Accuracy</span><span class="val" id="sbQuizAccuracy">—</span></div>
+      </div>
+      <!-- Inventory Grid -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
+        <div class="sb-inv-grid" id="sbInvGrid"></div>
+      </div>
+      <!-- Save/Load -->
+      <div class="sb-section">
+        <div class="sb-header"><span class="icon">💾</span> Save Slots</div>
+        <div id="sbSaveSlots"></div>
+      </div>
+      <!-- Position/Debug -->
+      <div class="sb-section" id="sbDebugSection" style="display:none">
+        <div class="sb-header"><span class="icon">🐛</span> Debug</div>
+        <div class="sb-stat-row"><span>Position</span><span class="val" id="sbPos">—</span></div>
+        <div class="sb-stat-row"><span>Chunk</span><span class="val" id="sbChunk">—</span></div>
+        <div class="sb-stat-row"><span>Biome</span><span class="val" id="sbBiome">—</span></div>
+        <div class="sb-stat-row"><span>FPS</span><span class="val" id="sbFps">—</span></div>
+        <div class="sb-stat-row"><span>Cache</span><span class="val" id="sbCache">—</span></div>
       </div>
     </div>
+
+    <!-- Sidebar toggle tab -->
+    <button id="sidebarToggle" title="Toggle sidebar">◀</button>
   </div>
 
   <div class="controls">

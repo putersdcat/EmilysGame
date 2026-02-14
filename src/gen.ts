@@ -250,6 +250,9 @@ function buildPerlinBase(
   chunkY: number,
 ): CellData[][] {
   const perlin = new PerlinNoise(noiseSeed);
+  // Second noise channel at lower frequency for spatially coherent terrain type selection.
+  // This replaces Math.random() so nearby cells get the same terrain type → larger patches.
+  const terrainTypeNoise = new PerlinNoise(noiseSeed + 7777);
   const cells: CellData[][] = [];
 
   for (let y = 0; y < size; y++) {
@@ -258,17 +261,21 @@ function buildPerlinBase(
       const gx = chunkX * size + x;
       const gy = chunkY * size + y;
       const density = perlin.noise100(gx * 0.1, gy * 0.1);
-      cells[y][x] = assignTerrainCell(density, biome);
+      // Low-frequency noise (0.04) → large coherent patches of same terrain type
+      const typeNoise = terrainTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
+      cells[y][x] = assignTerrainCell(density, biome, typeNoise);
     }
   }
   return cells;
 }
 
-function assignTerrainCell(density: number, biome: BiomeDef): CellData {
+function assignTerrainCell(density: number, biome: BiomeDef, typeNoise: number): CellData {
   const { terrain, obstacle } = WORLD_CONFIG.density;
 
   if (density <= terrain.max) {
-    const assetKey = weightedPick(biome.terrainWeights, Math.random());
+    // Use spatially coherent noise value (0-1) instead of Math.random()
+    // This creates larger, more natural patches of the same terrain type
+    const assetKey = weightedPick(biome.terrainWeights, typeNoise);
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   } else if (density <= obstacle.max) {
@@ -277,7 +284,7 @@ function assignTerrainCell(density: number, biome: BiomeDef): CellData {
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? false, interactable: def?.interactable ?? false };
   } else {
-    const assetKey = weightedPick(biome.terrainWeights, Math.random());
+    const assetKey = weightedPick(biome.terrainWeights, typeNoise);
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   }

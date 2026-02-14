@@ -67,6 +67,103 @@ const GRASS_VARIANT_SVGS: string[] = [
 </svg>`,
 ];
 
+// ─── Dirt Variants (3 patterns for visual variety) ───────────
+
+const DIRT_VARIANT_SVGS: string[] = [
+  // V0: Cracked earth
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="dV0" cx="16" cy="16" r="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A0522D"/><stop offset="1" stop-color="#654321"/>
+    </radialGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#dV0)"/>
+  <path d="M6 4 L18 14 M18 14 L28 8 M18 14 L12 28 M18 14 L30 24 M2 18 L12 12 M8 26 L16 20" stroke="#4B3621" stroke-width="0.8" opacity="0.55"/>
+  <circle cx="8" cy="8" r="1.2" fill="#654321" opacity="0.4"/>
+  <circle cx="24" cy="20" r="1" fill="#654321" opacity="0.35"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.18"/>
+</svg>`,
+
+  // V1: Pebbly dirt
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dV1" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9B7653"/><stop offset="1" stop-color="#6B4226"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#dV1)"/>
+  <circle cx="5" cy="6" r="2" fill="#7B5B3A" opacity="0.5"/>
+  <circle cx="14" cy="4" r="1.5" fill="#8B6B4A" opacity="0.4"/>
+  <circle cx="26" cy="8" r="2.5" fill="#6B4226" opacity="0.35"/>
+  <circle cx="8" cy="18" r="1.8" fill="#7B5B3A" opacity="0.4"/>
+  <circle cx="20" cy="16" r="1.2" fill="#8B6B4A" opacity="0.35"/>
+  <circle cx="28" cy="22" r="2" fill="#6B4226" opacity="0.45"/>
+  <circle cx="12" cy="26" r="1.5" fill="#7B5B3A" opacity="0.3"/>
+  <circle cx="22" cy="28" r="1" fill="#8B6B4A" opacity="0.35"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.15"/>
+</svg>`,
+
+  // V2: Sandy dirt with footprints
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dV2" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8860B"/><stop offset="1" stop-color="#8B6914"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#dV2)"/>
+  <ellipse cx="10" cy="12" rx="2" ry="3" fill="#9B7653" opacity="0.3"/>
+  <ellipse cx="20" cy="20" rx="2" ry="3" fill="#9B7653" opacity="0.25"/>
+  <path d="M4 8 Q8 6 12 8 M20 14 Q24 12 28 14 M8 24 Q12 22 16 24" stroke="#6B4226" stroke-width="0.6" opacity="0.3"/>
+  <circle cx="6" cy="22" r="0.8" fill="#654321" opacity="0.3"/>
+  <circle cx="26" cy="6" r="0.8" fill="#654321" opacity="0.3"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.12"/>
+</svg>`,
+];
+
+// ─── Rock Variants (3 patterns for visual variety) ───────────
+
+const ROCK_VARIANT_SVGS: string[] = [
+  // V0: Rough granite
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rV0" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B8B8B8"/><stop offset="1" stop-color="#606060"/>
+    </linearGradient>
+  </defs>
+  <path d="M2 5 L8 1 L18 4 L26 1 L30 5 L32 16 L28 26 L18 30 L10 28 L2 30 L0 18 Z" fill="url(#rV0)"/>
+  <path d="M4 8 L14 12 M8 20 L18 16 M20 8 L28 14 M6 26 L14 22" stroke="#505050" stroke-width="0.8" opacity="0.5"/>
+  <path d="M12 6 L16 10 M20 18 L24 22" stroke="#888" stroke-width="0.4" opacity="0.3"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.22"/>
+</svg>`,
+
+  // V1: Mossy stones
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rV1" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A0A0A0"/><stop offset="1" stop-color="#707070"/>
+    </linearGradient>
+  </defs>
+  <path d="M1 4 L10 1 L20 3 L30 1 L32 14 L28 24 L16 30 L4 28 L0 16 Z" fill="url(#rV1)"/>
+  <path d="M2 8 L12 12 M6 22 L16 18 M18 10 L28 14 M10 26 L20 22" stroke="#505050" stroke-width="0.7" opacity="0.45"/>
+  <ellipse cx="8" cy="14" rx="4" ry="3" fill="#4A7A3A" opacity="0.3"/>
+  <ellipse cx="22" cy="22" rx="3" ry="2" fill="#3A6A2A" opacity="0.25"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.2"/>
+</svg>`,
+
+  // V2: Slate layers
+  `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rV2" x1="0" y1="0" x2="32" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9898A0"/><stop offset="1" stop-color="#585868"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#rV2)"/>
+  <path d="M0 6 L32 4 M0 12 L32 10 M0 18 L32 16 M0 24 L32 22 M0 30 L32 28" stroke="#484858" stroke-width="1.2" opacity="0.4"/>
+  <path d="M8 3 L12 5 M20 9 L24 11 M6 15 L10 17 M22 21 L26 23 M14 27 L18 29" stroke="#686878" stroke-width="0.5" opacity="0.3"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.22"/>
+</svg>`,
+];
+
 // ─── SVG Sources (opt-v4 variants, inlined) ──────────────────
 
 const TILE_SVG_SOURCES: Record<TileType, string> = {
@@ -270,6 +367,22 @@ export async function preloadTiles(): Promise<void> {
   for (const canvas of grassResults) {
     grassVariantCache.push(canvas);
   }
+
+  // Pre-render dirt variants
+  const dirtResults = await Promise.all(
+    DIRT_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+  );
+  for (const canvas of dirtResults) {
+    dirtVariantCache.push(canvas);
+  }
+
+  // Pre-render rock variants
+  const rockResults = await Promise.all(
+    ROCK_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+  );
+  for (const canvas of rockResults) {
+    rockVariantCache.push(canvas);
+  }
 }
 
 /**
@@ -291,8 +404,32 @@ export function getGrassVariant(cx: number, cy: number): HTMLCanvasElement | und
   return grassVariantCache[hash % grassVariantCache.length];
 }
 
+/**
+ * Get a deterministic dirt variant tile based on cell position.
+ */
+export function getDirtVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
+  if (dirtVariantCache.length === 0) return isoTileCache.get('dirt');
+  const hash = ((cx * 5413) + (cy * 8291)) & 0x7FFFFFFF;
+  return dirtVariantCache[hash % dirtVariantCache.length];
+}
+
+/**
+ * Get a deterministic rock variant tile based on cell position.
+ */
+export function getRockVariant(cx: number, cy: number): HTMLCanvasElement | undefined {
+  if (rockVariantCache.length === 0) return isoTileCache.get('rock');
+  const hash = ((cx * 3571) + (cy * 9127)) & 0x7FFFFFFF;
+  return rockVariantCache[hash % rockVariantCache.length];
+}
+
 /** Pre-rendered grass variant isometric tiles */
 const grassVariantCache: HTMLCanvasElement[] = [];
+
+/** Pre-rendered dirt variant isometric tiles */
+const dirtVariantCache: HTMLCanvasElement[] = [];
+
+/** Pre-rendered rock variant isometric tiles */
+const rockVariantCache: HTMLCanvasElement[] = [];
 
 /**
  * Check if tiles have been preloaded.

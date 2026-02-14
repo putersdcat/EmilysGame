@@ -5,6 +5,7 @@
  */
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
+import { getBiome } from './config/biomes.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite } from './sprites';
@@ -14,8 +15,8 @@ import { FALLBACK_WORDLIST } from './config/entropy.config';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, type QuizState } from './quiz';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, type UIState } from './ui';
-import { saveGame, loadGame, type SaveData } from './save';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, type UIState } from './ui';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
@@ -168,15 +169,14 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Responsive canvas: fill viewport, render at scaled resolution
   const resizeCanvas = () => {
-    const wrapper = document.getElementById('gameWrapper');
-    if (!wrapper) return;
-    const w = wrapper.clientWidth;
-    const h = wrapper.clientHeight;
+    const container = document.getElementById('gameContainer');
+    if (!container) return;
+    const w = container.clientWidth;
+    const h = container.clientHeight;
     const scale = RENDER_CONFIG.renderScale;
     const rw = Math.round(w * scale);
     const rh = Math.round(h * scale);
     if (rw > 0 && rh > 0 && (rw !== canvas.width || rh !== canvas.height)) {
-      // CSS fills viewport, canvas renders at lower resolution
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
       canvas.style.imageRendering = 'pixelated';
@@ -190,6 +190,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     }
   };
   window.addEventListener('resize', resizeCanvas);
+  // Also resize when sidebar toggles
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  sidebarToggle?.addEventListener('click', () => {
+    setTimeout(resizeCanvas, 300); // after CSS transition
+  });
   resizeCanvas();
 
   const input = new InputManager();
@@ -477,8 +482,9 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
 
 // ─── Save ────────────────────────────────────────────────────
 
-function doSave(state: GameState): void {
-  const data: SaveData = {
+/** Build SaveData from current game state */
+function buildSaveData(state: GameState): SaveData {
+  return {
     version: 1,
     timestamp: Date.now(),
     player: {
@@ -492,7 +498,24 @@ function doSave(state: GameState): void {
     quizStats: state.quizStats,
     wordlistSeed: '',
   };
-  saveGame(data);
+}
+
+/** Apply loaded save data to current game state */
+function applySaveData(state: GameState, data: SaveData): void {
+  state.player.x = data.player.x;
+  state.player.y = data.player.y;
+  state.player.direction = data.player.direction;
+  state.inventory.deserialize(data.inventory);
+  state.quizStats = { ...data.quizStats };
+  // Force camera + chunk reload
+  state.camera.x = data.player.x;
+  state.camera.y = data.player.y;
+  clearTerrainCache();
+}
+
+function doSave(state: GameState): void {
+  saveGame(buildSaveData(state));
+  markSaveSlotsDirty();
 }
 
 // ─── Render ──────────────────────────────────────────────────
@@ -513,6 +536,12 @@ function renderFrame(
 
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active) {
+    // Get current biome name from chunk map
+    const cs = WORLD_CONFIG.chunkSize;
+    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
+    const currentChunk = state.chunks.get(cKey);
+    const biomeName = currentChunk ? getBiome(currentChunk.biomeId).displayName : undefined;
+
     renderUI(
       renderer.getCtx(),
       state.ui,
@@ -520,6 +549,8 @@ function renderFrame(
       state.quiz,
       { x: state.player.x, y: state.player.y },
       state.fps,
+      state.quizStats,
+      biomeName,
     );
   }
 }
@@ -573,6 +604,28 @@ async function main(): Promise<void> {
     () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
     () => { state.ui.showDebug = !state.ui.showDebug; },
     () => { doSave(state); addToast(state.ui, 'Game saved!', '#4caf50', 1500); },
+    // Slot save
+    (slot: number) => {
+      const data = buildSaveData(state);
+      saveToSlot(slot, data);
+      markSaveSlotsDirty();
+      addToast(state.ui, `Saved to slot ${slot + 1}!`, '#4caf50', 1500);
+    },
+    // Slot load
+    (slot: number) => {
+      const data = loadFromSlot(slot);
+      if (data) {
+        applySaveData(state, data);
+        markSaveSlotsDirty();
+        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
+      }
+    },
+    // Slot delete
+    (slot: number) => {
+      deleteSlot(slot);
+      markSaveSlotsDirty();
+      addToast(state.ui, `Slot ${slot + 1} deleted`, '#ff8844', 1500);
+    },
   );
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
