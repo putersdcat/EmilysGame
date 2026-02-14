@@ -6,6 +6,7 @@
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
 import { getBiome } from './config/biomes.config';
+import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, clearVariationCache, type CharacterVariation } from './sprites';
@@ -128,6 +129,19 @@ function maybeLoadChunks(state: GameState): void {
   const pcx = Math.floor(state.player.x / size);
   const pcy = Math.floor(state.player.y / size);
   if (pcx !== state.lastChunkX || pcy !== state.lastChunkY) {
+    // Determine crossing direction and feed entropy (#4)
+    const dx = pcx - state.lastChunkX;
+    const dy = pcy - state.lastChunkY;
+    const dir = Math.abs(dx) >= Math.abs(dy)
+      ? (dx > 0 ? 'right' : 'left')
+      : (dy > 0 ? 'down' : 'up');
+    const table = DIRECTION_WORDS[dir];
+    if (table) {
+      const verb = table.verbs[Math.floor(Math.random() * table.verbs.length)];
+      const noun = table.nouns[Math.floor(Math.random() * table.nouns.length)];
+      feedEntropy(`move:${verb} ${noun}`);
+    }
+
     state.lastChunkX = pcx;
     state.lastChunkY = pcy;
     ensureChunksAround(state);
