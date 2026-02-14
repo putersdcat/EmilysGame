@@ -11,7 +11,7 @@ import type { TileType } from '../tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 
-export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore';
+export type EdgeTag = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore' | 'gate';
 
 /** Cardinal direction type used for edge queries */
 export type Cardinal = 'n' | 's' | 'e' | 'w';
@@ -134,12 +134,13 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
 // Design doc: Docs/WorldEngine-02-EdgeContracts.md
 
 const EDGE_COMPAT: Record<EdgeTag, Set<EdgeTag>> = {
-  open:  new Set<EdgeTag>(['open', 'fence', 'path', 'shore']), // open touches open, fence, path, or shore
-  wall:  new Set<EdgeTag>(['wall', 'open']),           // walls can abut walls or open
+  open:  new Set<EdgeTag>(['open', 'fence', 'path', 'shore', 'gate']), // open touches open, fence, path, shore, or gate
+  wall:  new Set<EdgeTag>(['wall', 'open', 'gate']),   // walls can abut walls, open, or gates
   water: new Set<EdgeTag>(['water', 'shore']),         // water touches water or shore transitions
   fence: new Set<EdgeTag>(['fence', 'open']),          // fences can touch fences or open
-  path:  new Set<EdgeTag>(['path', 'open']),           // paths connect to paths or open ground
+  path:  new Set<EdgeTag>(['path', 'open', 'gate']),   // paths connect to paths, open, or gate openings
   shore: new Set<EdgeTag>(['shore', 'water', 'open']), // shore transitions between water and land
+  gate:  new Set<EdgeTag>(['gate', 'wall', 'open', 'path']), // gates connect to walls, open, paths, or other gates
 };
 
 /** Check if two edge tags are compatible when placed adjacent */
@@ -468,7 +469,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       [null, null, null, null, null],
       [null, null, null, null, null],
     ],
-    edgeTags: { n: 'open', s: 'open', e: 'wall', w: 'wall' },
+    edgeTags: { n: 'gate', s: 'gate', e: 'wall', w: 'wall' },
     rotatable: true,
     terminator: false,
     chainType: 'wall',
@@ -1312,6 +1313,79 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 3, y: 3, role: 'decoration' },
     ],
   },
+
+  // --- Gatehouse: walled enclosure with single gate entrance ---
+  {
+    name: 'gatehouse',
+    cells: [
+      ['stone_wall', 'stone_wall', 'stone_wall', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+    ],
+    edgeTags: { n: 'wall', s: 'gate', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'standalone',
+    biomeAffinity: ['castle', 'cave'],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 2, role: 'feature' },
+      { x: 3, y: 2, role: 'item' },
+    ],
+  },
+
+  // --- Fortified passage: walled corridor with gate openings at both ends ---
+  {
+    name: 'fortified_passage',
+    cells: [
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'dirt', 'dirt', 'dirt', 'stone_wall'],
+      ['stone_wall', 'stone_wall', 'door_gate', 'stone_wall', 'stone_wall'],
+    ],
+    edgeTags: { n: 'gate', s: 'gate', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: false,
+    chainType: 'wall',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'wall-chain',
+    biomeAffinity: ['castle', 'cave'],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'item' },
+      { x: 3, y: 3, role: 'item' },
+    ],
+  },
+
+  // --- Fenced yard with gate: pastoral enclosure ---
+  {
+    name: 'fenced_yard',
+    cells: [
+      ['wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
+      ['wooden_fence', 'wooden_fence', 'door_gate', 'wooden_fence', 'wooden_fence'],
+    ],
+    edgeTags: { n: 'fence', s: 'gate', e: 'fence', w: 'fence' },
+    rotatable: true,
+    terminator: true,
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'forest'],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },
+      { x: 1, y: 1, role: 'decoration' },
+      { x: 3, y: 3, role: 'item' },
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -1349,6 +1423,7 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_segment: 0.01,
     wall_corner: 0.005,
     wall_end: 0.005,
+    fenced_yard: 0.04,
   },
   forest: {
     meadow_base: 0.06,
@@ -1379,6 +1454,7 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_segment: 0.02,
     wall_gate: 0.02,
     fence_enclosure: 0.03,
+    fenced_yard: 0.02,
   },
   cave: {
     rock_cluster: 0.08,
@@ -1403,6 +1479,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     dirt_path_ew: 0.03,
     path_bend_ne: 0.02,
     path_dead_end: 0.02,
+    gatehouse: 0.05,
+    fortified_passage: 0.04,
   },
   castle: {
     wall_segment: 0.10,
@@ -1428,6 +1506,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     river_straight_ns: 0.02,
     river_straight_ew: 0.02,
     shore_n: 0.01,
+    gatehouse: 0.06,
+    fortified_passage: 0.05,
   },
 };
 
