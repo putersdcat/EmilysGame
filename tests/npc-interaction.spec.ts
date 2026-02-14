@@ -10,9 +10,9 @@ const BASE_URL = 'http://localhost:5173/';
 /** Helper: press Space with sufficient hold time for edge detection */
 async function pressSpace(page: import('@playwright/test').Page) {
   await page.keyboard.down(' ');
-  await page.waitForTimeout(100); // Hold for at least 1 game frame
+  await page.waitForTimeout(200); // Hold for multiple game frames
   await page.keyboard.up(' ');
-  await page.waitForTimeout(200); // Wait for next frame to process
+  await page.waitForTimeout(300); // Wait for render to sync dialog state
 }
 
 /** Helper: wait for the game to fully initialize (canvas + gameState available) */
@@ -120,6 +120,9 @@ test.describe('NPC Interaction', () => {
     const npc = await findNearestNpc(page);
     expect(npc).not.toBeNull();
 
+    // Log NPC context for debugging flaky failures
+    console.log('[TEST] NPC found:', JSON.stringify(npc));
+
     // Teleport player to the approach cell
     await page.evaluate((info: any) => {
       const state = (window as any).__gameState;
@@ -134,9 +137,9 @@ test.describe('NPC Interaction', () => {
       state.player.facingDy = info.npcY - info.approachY;
     }, npc);
 
-    await page.waitForTimeout(500); // Let a frame tick
+    await page.waitForTimeout(500); // Let game frames tick after teleport
 
-    // Press Space to interact (hold for edge detection)
+    // Press Space to interact
     await pressSpace(page);
 
     // Check dialog overlay
@@ -166,18 +169,21 @@ test.describe('NPC Interaction', () => {
     const npc = await findNearestNpc(page);
     expect(npc).not.toBeNull();
 
-    // Teleport and face NPC
+    // Teleport and face NPC (same setup as open-dialog test)
     await page.evaluate((info: any) => {
       const state = (window as any).__gameState;
       state.player.x = info.approachX;
       state.player.y = info.approachY;
       state.camera.x = info.approachX;
       state.camera.y = info.approachY;
+      state.player.isMoving = false;
+      state.paused = false;
       state.player.facingDx = info.npcX - info.approachX;
       state.player.facingDy = info.npcY - info.approachY;
     }, npc);
 
     await page.waitForTimeout(500);
+
     await pressSpace(page);
 
     // Dialog should be open

@@ -9,7 +9,7 @@ import { ASSET_DEFS } from './config/assets.config';
 import { ITEM_DEFS } from './config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
-import { isLlmAvailable } from './llm';
+import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
@@ -270,12 +270,20 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
   const localY = ((pos.y % cs) + cs) % cs;
   const wux = Math.floor(localX / ws);
   const wuy = Math.floor(localY / ws);
+
+  const tps = getLlmTps();
+  const cutover = isTpsCutoverActive();
+  const tpsLabel = tps > 0
+    ? `LLM TPS: ${tps}${cutover ? ' ⚠ CUTOVER' : ''}`
+    : 'LLM TPS: —';
+
   el.innerHTML = [
     `FPS: ${fps}`,
     `Pos: ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}`,
     `Chunk: ${cx},${cy}`,
     `WU: ${wux},${wuy}`,
     `Cache: ${getTerrainCacheSize()} chunks`,
+    tpsLabel,
   ].map((l) => `<span>${l}</span>`).join('');
 }
 

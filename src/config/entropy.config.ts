@@ -37,8 +37,12 @@ export const DIRECTION_WORDS: Record<string, DirectionWordTable> = {
 // String templates for LLM calls. Use {placeholders} for injection.
 
 export const ENTROPY_PROMPTS = {
-  /** Initial wordlist generation (game start) */
-  wordlistInit: `Generate 50 random verb-noun pairs, each over 10 letters total, like 'obliterate quasar' or 'fabricate nebula'. Make them absurd, surreal, and completely unrelated to each other. Number them 1-50.`,
+  /**
+   * Wordlist generation (game start) — tuned for speed.
+   * Shorter prompt, clear format, stop at 51 to limit output.
+   * ~200 tokens expected output for 50 pairs.
+   */
+  wordlistInit: `List 50 random verb-noun pairs (10+ letters each). Surreal and unrelated. Format: "1. verb noun" per line.\n1.`,
 
   /** Entropy sentence from a verb-noun pair (chunk generation) */
   entropyExpand: `Elaborate wildly on "{pair}" in 1-2 absurd, surreal sentences. Make it completely nonsensical. Do not explain, just write the sentences.`,

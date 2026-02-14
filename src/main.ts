@@ -10,8 +10,8 @@ import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite } from './sprites';
 import { generateChunkSync, setWordlist, type ChunkData, type BorderConstraints } from './gen';
-import { generateWordlist, checkLlmHealth } from './llm';
-import { FALLBACK_WORDLIST } from './config/entropy.config';
+import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
+import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, type QuizState } from './quiz';
@@ -123,9 +123,17 @@ function maybeLoadChunks(state: GameState): void {
 
 // ─── LLM Connection Gate ─────────────────────────────────────
 
-/** Show splash and poll LLM until connected. Returns only when healthy. */
+/** Show splash and poll LLM until connected. Skips in test mode. Returns only when healthy or skipped. */
 async function waitForLlm(): Promise<void> {
   const splash = document.getElementById('llmSplash');
+
+  // In test mode, skip LLM gate entirely (#26)
+  if (isTestMode()) {
+    console.log('[LLM] Test mode: skipping LLM health gate');
+    if (splash) splash.style.display = 'none';
+    return;
+  }
+
   const statusEl = document.getElementById('llmStatus');
   const skipBtn = document.getElementById('btnSkipLlm');
   if (!splash || !statusEl) return; // Fallback: skip if no splash DOM
@@ -201,13 +209,23 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   const input = new InputManager();
 
-  // Start with fallback wordlist immediately, swap in LLM wordlist when ready
-  // (LLM is CPU BitNet — wordlist gen can take 60-120s, don't block init)
-  setWordlist([...FALLBACK_WORDLIST]);
-  generateWordlist().then((wl) => {
-    setWordlist(wl);
-    console.log('[INIT] LLM wordlist ready');
-  });
+  // Start with scrambled bundled wordlist immediately, swap in LLM wordlist when ready.
+  // In test mode: never call LLM; use scrambled bundled list for deterministic variance.
+  // In normal mode: generateWordlist() checks sessionStorage cache first, only calls
+  // LLM if no cache exists. Result is cached for future startups. (#26)
+  if (isTestMode()) {
+    setWordlist(getScrambledWordlist());
+    console.log('[INIT] Test mode: using scrambled bundled wordlist (no LLM)');
+  } else {
+    setWordlist(getScrambledWordlist()); // Immediate non-blocking fallback
+    generateWordlist().then((wl) => {
+      setWordlist(wl);
+      console.log('[INIT] LLM wordlist ready');
+    });
+  }
+
+  // NOTE: cleanupLlmSessions() available but not auto-called —
+  // BitNet server lacks /v1/sessions endpoint. Call manually if needed.
 
   // Preload SVG tile sprites (async, must complete before rendering)
   await preloadTiles();
@@ -399,9 +417,11 @@ function update(state: GameState, input: InputManager): void {
   // --- Interaction (Space, edge-detected) ---
   if (justKeys.interact && !isMoving) {
     // Try facing direction first, then check all 4 neighbors as fallback
+    // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
+    const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
     const facingDir = {
-      dx: state.player.facingDx || state.player.direction,
-      dy: state.player.facingDy,
+      dx: hasFacing ? state.player.facingDx : state.player.direction,
+      dy: hasFacing ? state.player.facingDy : 0,
     };
     let result = interact(
       state.player.x, state.player.y,
@@ -631,7 +651,9 @@ async function main(): Promise<void> {
   );
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
-  if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
+  if (isTestMode()) {
+    addToast(state.ui, '🧪 Test mode — LLM disabled', '#ffaa00', 3000);
+  } else if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
     addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
   }
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
