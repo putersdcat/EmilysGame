@@ -17,7 +17,10 @@ async function pressSpace(page: import('@playwright/test').Page) {
 
 /** Helper: wait for the game to fully initialize (canvas + gameState available) */
 async function waitForGame(page: import('@playwright/test').Page) {
+  // Clear saved state to ensure deterministic world generation
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'domcontentloaded' });
 
   // Click skip if LLM splash is showing
   const skipBtn = page.locator('#btnSkipLlm');
@@ -113,9 +116,6 @@ test.describe('NPC Interaction', () => {
   test('teleporting next to NPC and pressing Space opens dialog', async ({ page }) => {
     await waitForGame(page);
 
-    // Clear any saved game state first
-    await page.evaluate(() => localStorage.clear());
-
     // Find a nearby NPC
     const npc = await findNearestNpc(page);
     expect(npc).not.toBeNull();
@@ -182,7 +182,10 @@ test.describe('NPC Interaction', () => {
       state.player.facingDy = info.npcY - info.approachY;
     }, npc);
 
-    await page.waitForTimeout(500);
+    // Log NPC context for debugging flaky failures
+    console.log('[TEST] Close-dialog NPC:', JSON.stringify(npc));
+
+    await page.waitForTimeout(800); // Extra settle time after teleport
 
     await pressSpace(page);
 
