@@ -1370,6 +1370,7 @@ function hasAdjacentInteractable(
 /**
  * Phase 5c: Scatter collectibles (coins) along walkable corridors.
  * Density follows biome collectibleRate, scaled by chunk distance.
+ * Enforces minimum 3-cell spacing between same-type collectibles (Doc 05 §5.1).
  * Close to origin = generous (welcoming), far = rarer but more valuable.
  * Keys/crowbars handled in balanceObstacles.
  * TODO: DOC - distance-based collectible scaling
@@ -1391,6 +1392,10 @@ export function scatterCollectibles(
   // Coin density: ~2-4% of walkable base cells × collectibleRate × distance factor
   const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate * distMultiplier;
 
+  // Minimum spacing: 3 cells between same-type collectibles (Doc 05 §5.1)
+  const MIN_SPACING = 3;
+  const placed: Array<{ x: number; y: number }> = [];
+
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const cell = cells[y][x];
@@ -1400,7 +1405,19 @@ export function scatterCollectibles(
           && cell.assetKey !== 'flower') continue;
 
       if (rng() < baseRate) {
-        cell.itemId = 'coin';
+        // Check minimum spacing from already-placed coins
+        let tooClose = false;
+        for (let i = placed.length - 1; i >= 0; i--) {
+          const dx = Math.abs(x - placed[i].x);
+          const dy = Math.abs(y - placed[i].y);
+          // Early exit: if we've moved far enough in Y, no prior placement can be close
+          if (dy > MIN_SPACING) break;
+          if (dx + dy < MIN_SPACING) { tooClose = true; break; }
+        }
+        if (!tooClose) {
+          cell.itemId = 'coin';
+          placed.push({ x, y });
+        }
       }
     }
   }

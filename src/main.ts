@@ -15,7 +15,7 @@ import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, type QuizState } from './quiz';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './save';
@@ -575,9 +575,12 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       feedEntropy(result.greeting);
 
       // If NPC can quiz, queue quiz to start when dialog closes (not via setTimeout race)
+      // Difficulty = max(NPC preference, distance-based scaling) — Doc 05 §9.1
       if (persona?.canQuiz) {
         const bias = getQuizBias(state.knowledge);
-        state.pendingQuiz = { difficulty: persona.quizDifficulty, npcId: result.npcId, bias };
+        const distDiff = getDifficultyForPosition(state.player.x, state.player.y);
+        const finalDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
+        state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
       }
       break;
     }
