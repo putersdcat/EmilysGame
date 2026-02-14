@@ -3,11 +3,15 @@
  *
  * This script:
  * 1. Starts the dev server
- * 2. Opens the game in a headless browser
- * 3. Skips the LLM splash screen
+ * 2. Opens the game in a headless browser with test mode (?test=1)
+ * 3. Game automatically skips LLM calls (Issue #26 test mode)
  * 4. Waits for the game world to render
  * 5. Captures a screenshot showing actual gameplay
  * 6. Saves it to docs/game-screenshot.png for README embedding
+ *
+ * Test mode (?test=1) bypasses all LLM health checks and uses cached/bundled
+ * entropy wordlists, preventing local LLM server from being hammered during
+ * automated screenshot capture.
  *
  * Run: npm run screenshot
  */
@@ -18,10 +22,10 @@ import { setTimeout } from 'timers/promises';
 import * as path from 'path';
 import * as fs from 'fs';
 
-const DEV_SERVER_URL = 'http://localhost:5173/';
+const DEV_SERVER_URL = 'http://localhost:5173/?test=1'; // Test mode - skip LLM
 const SCREENSHOT_PATH = path.join(process.cwd(), 'docs', 'game-screenshot.png');
 const SERVER_STARTUP_DELAY = 3000; // Wait 3s for Vite to start
-const GAME_LOAD_DELAY = 2000; // Wait 2s after skip for game to render
+const GAME_LOAD_DELAY = 2000; // Wait 2s for game to render
 
 let devServer: ChildProcess | null = null;
 let browser: Browser | null = null;
@@ -57,24 +61,11 @@ async function captureScreenshot(): Promise<void> {
   const page: Page = await browser.newPage();
 
   try {
-    console.log('🌐 Navigating to game...');
+    console.log('🌐 Navigating to game (test mode)...');
     await page.goto(DEV_SERVER_URL, { waitUntil: 'domcontentloaded' });
 
-    // Wait a bit for initial render
-    await page.waitForTimeout(500);
-
-    // Check if LLM splash is visible
-    const splash = page.locator('#llmSplash');
-    const splashVisible = await splash.isVisible();
-
-    if (splashVisible) {
-      console.log('⏭️  Skipping LLM splash screen...');
-      const skipBtn = page.locator('#btnSkipLlm');
-      await skipBtn.click();
-      await page.waitForTimeout(500);
-    } else {
-      console.log('✓ Game already loaded (LLM connected)');
-    }
+    // Test mode (?test=1) automatically skips LLM splash - no click needed
+    console.log('✓ Test mode active - LLM calls bypassed');
 
     // Wait for canvas to exist
     console.log('⏳ Waiting for game canvas to render...');
