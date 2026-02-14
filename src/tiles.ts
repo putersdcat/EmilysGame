@@ -10,7 +10,7 @@ import { RENDER_CONFIG } from './config/game.config';
 // ─── Types ───────────────────────────────────────────────────
 
 export type TileType =
-  | 'grass' | 'dirt' | 'rock' | 'water'
+  | 'grass' | 'dirt' | 'rock' | 'water' | 'sand'
   | 'stone_wall' | 'bridge' | 'door_gate' | 'wooden_fence';
 
 // ─── Grass Variants (4 patterns for visual variety) ──────────
@@ -231,6 +231,26 @@ const TILE_SVG_SOURCES: Record<TileType, string> = {
   <circle cx="24" cy="24" r="1" fill="#FFF" opacity="0.3"/>
   <path d="M4 28 Q8 26 12 28 Q16 30 20 28 Q24 26 28 28" stroke="#ADD8E6" stroke-width="1" opacity="0.3"/>
   <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.15"/>
+</svg>`,
+
+  sand: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sG" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F4D68C"/>
+      <stop offset="1" stop-color="#D2B48C"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" fill="url(#sG)"/>
+  <circle cx="5" cy="7" r="0.8" fill="#C4A46C" opacity="0.5"/>
+  <circle cx="14" cy="4" r="0.6" fill="#BFA06A" opacity="0.4"/>
+  <circle cx="24" cy="9" r="0.7" fill="#C4A46C" opacity="0.45"/>
+  <circle cx="8" cy="18" r="0.5" fill="#BFA06A" opacity="0.4"/>
+  <circle cx="20" cy="16" r="0.9" fill="#C4A46C" opacity="0.5"/>
+  <circle cx="28" cy="22" r="0.6" fill="#BFA06A" opacity="0.35"/>
+  <circle cx="12" cy="26" r="0.7" fill="#C4A46C" opacity="0.4"/>
+  <path d="M2 14 Q10 12 18 14 Q26 16 30 14" stroke="#C4A46C" stroke-width="0.6" opacity="0.3"/>
+  <path d="M0 22 Q8 20 16 22 Q24 24 32 22" stroke="#BFA06A" stroke-width="0.6" opacity="0.25"/>
+  <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.1"/>
 </svg>`,
 
   stone_wall: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
