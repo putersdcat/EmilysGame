@@ -33,6 +33,7 @@ import {
 } from './knowledge';
 import { searchArticles } from './config/knowledge.config';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
+import type { FacingPose } from './sprites';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -44,6 +45,7 @@ interface GameState {
     direction: number;    // 1 = right, -1 = left (sprite flip)
     facingDx: number;     // Last movement dx (-1/0/1)
     facingDy: number;     // Last movement dy (-1/0/1)
+    facingPose: FacingPose; // 'front' or 'back' for sprite selection
     speed: number;
     isMoving: boolean;
     animFrame: number;
@@ -65,6 +67,7 @@ interface GameState {
   initialized: boolean;
   // Perf tracking: avoid redundant work
   lastAnimFrame: number;
+  lastFacingPose: FacingPose;
   lastChunkX: number;
   lastChunkY: number;
   // Pending quiz triggered by NPC — starts when dialog closes
@@ -301,6 +304,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
       direction: save?.player.direction ?? 1,
       facingDx: 1,
       facingDy: 0,
+      facingPose: 'front' as FacingPose,
       speed: PLAYER_CONFIG.speed,
       isMoving: false,
       animFrame: 0,
@@ -324,6 +328,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     paused: false,
     initialized: true,
     lastAnimFrame: -1,
+    lastFacingPose: 'front' as FacingPose,
     lastChunkX: Math.floor(startX / size),
     lastChunkY: Math.floor(startY / size),
     pendingQuiz: null,
@@ -477,7 +482,7 @@ function update(state: GameState, input: InputManager): void {
       state.player.y = newY;
     }
 
-    // Direction
+    // Direction (left/right flip)
     if (mv.dx > 0) state.player.direction = 1;
     else if (mv.dx < 0) state.player.direction = -1;
 
@@ -487,16 +492,31 @@ function update(state: GameState, input: InputManager): void {
       state.player.facingDy = Math.sign(mv.dy);
     }
 
+    // Determine facing pose for sprite selection:
+    // In isometric: grid +y = SE (toward camera) = front, grid -y = NW (away) = back
+    // Horizontal movement keeps current pose; vertical movement changes it.
+    // Diagonal: use the vertical component to pick pose.
+    if (mv.dy < 0) {
+      state.player.facingPose = 'back';
+    } else if (mv.dy > 0) {
+      state.player.facingPose = 'front';
+    }
+    // If only horizontal (dy=0), keep current facingPose for smooth transitions
+
     state.player.isMoving = true;
     // Throttle animation: only advance sprite frame every 6th game frame
     if (state.frameCount % 6 === 0) {
       state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
     }
 
-    // Walking sprite - ONLY reload when frame actually changes
-    if (state.player.animFrame !== state.lastAnimFrame) {
-      state.egoImg = loadCharacterSprite(state.playerVariation, state.player.animFrame, true);
+    // Walking sprite - reload when frame or facing pose changes
+    if (state.player.animFrame !== state.lastAnimFrame ||
+        state.player.facingPose !== state.lastFacingPose) {
+      state.egoImg = loadCharacterSprite(
+        state.playerVariation, state.player.animFrame, true, state.player.facingPose,
+      );
       state.lastAnimFrame = state.player.animFrame;
+      state.lastFacingPose = state.player.facingPose;
     }
 
     // Auto-collect walkable items
@@ -513,11 +533,12 @@ function update(state: GameState, input: InputManager): void {
     maybeLoadChunks(state);
   } else {
     state.player.isMoving = false;
-    // Idle sprite - only reload once when stopping
+    // Idle sprite - only reload once when stopping (preserves facing pose)
     if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
       state.player.animFrame = 0;
-      state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
+      state.egoImg = loadCharacterSprite(state.playerVariation, 0, false, state.player.facingPose);
       state.lastAnimFrame = 0;
+      state.lastFacingPose = state.player.facingPose;
     }
   }
 
