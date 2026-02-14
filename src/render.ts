@@ -252,7 +252,7 @@ export class IsometricRenderer {
         if (!chunk) continue;
 
         // Blit cached terrain for this chunk
-        drawCachedChunkTerrain(this.ctx, key, chunk, camera.x, camera.y);
+        drawCachedChunkTerrain(this.ctx, key, chunk, camera.x, camera.y, chunks);
 
         if (jsPoolIdx >= maxCmds) continue; // budget exhausted, skip objects (terrain still drawn)
 
@@ -400,7 +400,7 @@ export class IsometricRenderer {
         const key = `${camCX + dcx},${camCY + dcy}`;
         const chunk = chunks.get(key);
         if (!chunk) continue;
-        drawCachedChunkTerrain(this.ctx, key, chunk, camera.x, camera.y);
+        drawCachedChunkTerrain(this.ctx, key, chunk, camera.x, camera.y, chunks);
       }
     }
 
