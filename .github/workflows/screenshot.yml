@@ -1,0 +1,63 @@
+name: Auto Screenshot
+
+# Run on push to main, or manually via workflow_dispatch
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+  workflow_dispatch: # Allow manual trigger
+  schedule:
+    # Run weekly on Sundays at 00:00 UTC to keep screenshot fresh
+    - cron: '0 0 * * 0'
+
+jobs:
+  capture-screenshot:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Needed to commit screenshot back to repo
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Capture game screenshot
+        run: npm run screenshot
+
+      - name: Check if screenshot changed
+        id: check_changes
+        run: |
+          git add docs/game-screenshot.png
+          if git diff --cached --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push screenshot
+        if: steps.check_changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/game-screenshot.png
+          git commit -m "chore: update game screenshot [skip ci]"
+          git push
+
+      - name: Upload screenshot as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-screenshot
+          path: docs/game-screenshot.png
+          retention-days: 90

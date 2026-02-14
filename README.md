@@ -2,6 +2,12 @@
 
 A lightweight, browser-based procedural adventure game with isometric rendering, LLM-driven entropy, educational quizzes, and biome progression.
 
+## Current Development Status
+
+![Game Screenshot](docs/game-screenshot.png)
+
+*Screenshot automatically updated from latest main branch build*
+
 ## Vision
 
 Emily's Game is an isometric, procedural world adventure designed for educational exploration and discovery. Players navigate a vast 1024×1024 cell world generated using novel LLM entropy mechanics, where language model outputs are mathematically processed into deterministic world seeds. The game incorporates educational elements through dynamic quizzes, a searchable in-game encyclopedia ("Book of Knowledge"), and subject-biased learning paths.
@@ -63,6 +69,7 @@ Key features include:
 
 - Node.js 16+
 - npm 8+
+- Local LLM server (BitNet) running on `http://127.0.0.1:8002` (optional for development)
 
 ### Installation
 
@@ -86,6 +93,14 @@ The dev server will typically open at `http://localhost:5173`.
 - **Quizzes**: Answer educational questions to progress
 - **Explore**: Navigate biomes, collect items, pet cats 🐈
 
+### Scripts
+
+- `npm run dev` - Start development server (localhost:5173)
+- `npm run build` - Build for production
+- `npm run typecheck` - Run TypeScript type checking
+- `npm test` - Run Playwright E2E tests
+- `npm run screenshot` - Capture game screenshot for README
+
 ## Project Structure
 
 ```
@@ -93,38 +108,47 @@ src/
   main.ts         - Game loop, state management
   render.ts       - Isometric rendering pipeline
   input.ts        - Keyboard input handling
-  assets.ts       - Asset library and metadata
+  config/         - Game configuration files
   ui.ts           - DOM-based UI synchronization
-  worldgen.ts     - Procedural world generation
-  llm.ts          - Entropy system integration
+  gen.ts          - Procedural world generation
+  llm.ts          - LLM entropy system integration
   index.html      - Page template
 Docs/             - Design documents (migrated to issues)
 content/          - Educational JSON assets
+tests/            - Playwright E2E tests
+scripts/          - Automation scripts
+.github/workflows/ - GitHub Actions CI/CD
 ```
+
+## CI/CD
+
+See `.github/workflows/ci-cd.yml` for the automated build and test pipeline.
+
+**Note**: GitHub Pages deployment is disabled as the game requires a local LLM server connection which is not available in static hosting environments.
 
 ## Development Roadmap
 
 ### Milestone 1: PoC Complete
-- [ ] Isometric rendering with occlusion
-- [ ] Basic player movement and collision
-- [ ] Character sprites and animations
-- [ ] UI sidebar and options menu
+- [x] Isometric rendering with occlusion
+- [x] Basic player movement and collision
+- [x] Character sprites and animations
+- [x] UI sidebar and options menu
 
 ### Milestone 2: Core Gameplay
-- [ ] Tile & world generation system
-- [ ] LLM entropy integration
+- [x] Tile & world generation system
+- [x] LLM entropy integration
 - [ ] Obstacle templates (doors, bridges)
-- [ ] Save/load functionality
+- [x] Save/load functionality
 
 ### Milestone 3: Content & Polish
-- [ ] Book of Knowledge encyclopedia
+- [x] Book of Knowledge encyclopedia
 - [ ] Knowledge capture pipeline
-- [ ] Subject selection and quiz biasing
+- [x] Subject selection and quiz biasing
 - [ ] Sound effects and polish
 
 ### Milestone 4: Infrastructure & Release
-- [ ] Performance optimizations
-- [ ] CI/CD via GitHub Actions
+- [x] Performance optimizations
+- [x] CI/CD via GitHub Actions
 - [ ] Accessibility features
 - [ ] Multiplayer foundations
 
