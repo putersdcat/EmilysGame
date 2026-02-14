@@ -51,7 +51,11 @@ const ORIGIN_Y = HALF_TH;
  * Get or create cached terrain canvas for a chunk.
  * Only base-layer tiles (terrain) are cached; objects are drawn live.
  */
-export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChunkTerrain {
+export function getCachedTerrain(
+  chunkKey: string,
+  chunk: ChunkData,
+  allChunks?: Map<string, ChunkData>,
+): CachedChunkTerrain {
   let entry = chunkCache.get(chunkKey);
   if (entry) return entry;
 
@@ -105,7 +109,8 @@ export function getCachedTerrain(chunkKey: string, chunk: ChunkData): CachedChun
   }
 
   // --- Auto-tile transitions: subtle edge darkening at tile-type boundaries ---
-  renderAutoTileTransitions(ctx, chunk);
+  // Pass allChunks for cross-chunk border transitions
+  renderAutoTileTransitions(ctx, chunk, allChunks);
 
   entry = {
     canvas,
@@ -128,8 +133,9 @@ export function drawCachedChunkTerrain(
   chunk: ChunkData,
   cameraX: number,
   cameraY: number,
+  allChunks?: Map<string, ChunkData>,
 ): void {
-  const cached = getCachedTerrain(chunkKey, chunk);
+  const cached = getCachedTerrain(chunkKey, chunk, allChunks);
 
   // Chunk's world-space origin (cell 0,0 of this chunk in grid coords)
   const chunkGX = chunk.chunkX * SIZE;
@@ -291,9 +297,42 @@ const TRANSITION_ALPHA = 0.25;
 /** Edge darkening line alpha (subtle definition line at boundary) */
 const EDGE_LINE_ALPHA = 0.08;
 
-function getBaseTileType(chunk: ChunkData, cx: number, cy: number): string | null {
-  if (cx < 0 || cy < 0 || cx >= SIZE || cy >= SIZE) return null;
-  const cell = chunk.cells[cy][cx];
+function getBaseTileType(
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  allChunks?: Map<string, ChunkData>,
+): string | null {
+  // In-bounds: look up directly in this chunk
+  if (cx >= 0 && cy >= 0 && cx < SIZE && cy < SIZE) {
+    const cell = chunk.cells[cy][cx];
+    const def = ASSET_DEFS[cell.assetKey];
+    if (!def || def.layer !== 'base') return null;
+    return def.tileType ?? def.emoji ?? cell.assetKey;
+  }
+
+  // Out-of-bounds: look up in adjacent chunk (cross-chunk transition)
+  if (!allChunks) return null;
+
+  // Compute which neighbor chunk and remapped local cell
+  let nbChunkX = chunk.chunkX;
+  let nbChunkY = chunk.chunkY;
+  let remappedCX = cx;
+  let remappedCY = cy;
+
+  if (cx < 0) { nbChunkX--; remappedCX = SIZE + cx; }
+  else if (cx >= SIZE) { nbChunkX++; remappedCX = cx - SIZE; }
+  if (cy < 0) { nbChunkY--; remappedCY = SIZE + cy; }
+  else if (cy >= SIZE) { nbChunkY++; remappedCY = cy - SIZE; }
+
+  const nbKey = `${nbChunkX},${nbChunkY}`;
+  const nbChunk = allChunks.get(nbKey);
+  if (!nbChunk) return null;
+
+  // Bounds check the remapped coordinates
+  if (remappedCX < 0 || remappedCY < 0 || remappedCX >= SIZE || remappedCY >= SIZE) return null;
+
+  const cell = nbChunk.cells[remappedCY][remappedCX];
   const def = ASSET_DEFS[cell.assetKey];
   if (!def || def.layer !== 'base') return null;
   return def.tileType ?? def.emoji ?? cell.assetKey;
@@ -320,6 +359,7 @@ function isShoreTransition(typeA: string, typeB: string): boolean {
 function renderAutoTileTransitions(
   ctx: CanvasRenderingContext2D,
   chunk: ChunkData,
+  allChunks?: Map<string, ChunkData>,
 ): void {
   // Edge directions: 0=east(+1,0), 1=south(0,+1), 2=west(-1,0), 3=north(0,-1)
   const DX = [1, 0, -1, 0];
@@ -337,7 +377,7 @@ function renderAutoTileTransitions(
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
       for (let ni = 0; ni < 4; ni++) {
-        const nbType = getBaseTileType(chunk, cx + DX[ni], cy + DY[ni]);
+        const nbType = getBaseTileType(chunk, cx + DX[ni], cy + DY[ni], allChunks);
         if (nbType === null || nbType === myType) continue;
 
         const nbColor = getDominantColor(nbType);

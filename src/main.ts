@@ -20,7 +20,7 @@ import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation } from './terrain-cache';
+import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { initMinimap, renderMinimap } from './minimap';
@@ -89,6 +89,11 @@ function ensureChunksAround(state: GameState): void {
         const bc = collectBorderConstraints(state.chunks, cx, cy);
         const chunk = generateChunkSync(cx, cy, bc);
         state.chunks.set(key, chunk);
+        // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
+        invalidateChunkTerrain(chunkKey(cx - 1, cy));
+        invalidateChunkTerrain(chunkKey(cx + 1, cy));
+        invalidateChunkTerrain(chunkKey(cx, cy - 1));
+        invalidateChunkTerrain(chunkKey(cx, cy + 1));
       }
     }
   }
