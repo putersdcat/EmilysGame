@@ -268,6 +268,25 @@ test.describe('NPC Interaction', () => {
     ];
 
     for (const dir of directions) {
+      // Force-close any prior dialog or quiz state before next direction
+      await page.evaluate(() => {
+        const state = (window as any).__gameState;
+        if (state.ui?.dialog) {
+          state.ui.dialog.active = false;
+          state.ui.dialog.currentLine = 0;
+          state.ui.dialog.lines = [];
+        }
+        if (state.quiz) {
+          state.quiz.active = false;
+        }
+        const overlay = document.getElementById('dialogOverlay');
+        if (overlay) overlay.style.display = 'none';
+        const quizOverlay = document.getElementById('quizOverlay');
+        if (quizOverlay) quizOverlay.style.display = 'none';
+        state.paused = false;
+      });
+      await page.waitForTimeout(300);
+
       // Teleport to neighbor, face NPC
       await page.evaluate(
         (info: { npc: any; dir: any }) => {
@@ -283,7 +302,8 @@ test.describe('NPC Interaction', () => {
         { npc: npcInfo, dir },
       );
 
-      await page.waitForTimeout(300);
+      // Wait long enough for game loop to process new position
+      await page.waitForTimeout(800);
       await pressSpace(page);
 
       const dialogResult = await page.evaluate(() => {
@@ -300,7 +320,7 @@ test.describe('NPC Interaction', () => {
 
       // Close dialog before next direction
       await pressSpace(page);
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(500);
     }
   });
 });
