@@ -261,11 +261,35 @@ export function tickWaterAnimation(): void {
 }
 
 // ─── Auto-Tile Transitions ───────────────────────────────────
-// Draws subtle edge darkening where adjacent cells have different base tile types.
+// Draws soft gradient edge blends where adjacent cells have different base tile types.
+// Uses per-tile-type dominant colors to create smooth terrain transitions.
 // Applied to the terrain cache so it renders once, not per-frame.
+// TODO: DOC - auto-tile transition gradient blending algorithm
 
-/** Color for transition edge overlays (semi-transparent dark) */
-const TRANSITION_ALPHA = 0.12;
+/** Dominant colors for each base tile type (used for gradient edge blending) */
+const TILE_DOMINANT_COLORS: Record<string, string> = {
+  grass: '#3CB43C',
+  dirt: '#8B6914',
+  rock: '#808080',
+  water: '#2E6ECC',
+  sand: '#D2B48C',
+  stone_wall: '#909090',
+  bridge: '#8B4513',
+  door_gate: '#8B4513',
+  wooden_fence: '#A0522D',
+};
+
+/** Gradient blend depth as fraction of half tile width (how far the blend reaches) */
+const BLEND_DEPTH = 0.35;
+
+/** Shore/beach overlay alpha for water↔land transitions */
+const SHORE_ALPHA = 0.45;
+
+/** General transition gradient alpha */
+const TRANSITION_ALPHA = 0.25;
+
+/** Edge darkening line alpha (subtle definition line at boundary) */
+const EDGE_LINE_ALPHA = 0.08;
 
 function getBaseTileType(chunk: ChunkData, cx: number, cy: number): string | null {
   if (cx < 0 || cy < 0 || cx >= SIZE || cy >= SIZE) return null;
@@ -275,14 +299,34 @@ function getBaseTileType(chunk: ChunkData, cx: number, cy: number): string | nul
   return def.tileType ?? def.emoji ?? cell.assetKey;
 }
 
+function getDominantColor(tileType: string): string | null {
+  return TILE_DOMINANT_COLORS[tileType] ?? null;
+}
+
+/**
+ * Check if a transition is water↔land (gets special shore treatment).
+ */
+function isShoreTransition(typeA: string, typeB: string): boolean {
+  return (typeA === 'water') !== (typeB === 'water');
+}
+
+/**
+ * Render soft gradient blends at tile-type boundaries within a chunk.
+ * For each cell edge where adjacent tile types differ:
+ * 1. Draw a gradient triangle fading the neighbor's color into this cell
+ * 2. For water↔land edges, add extra shore/foam effect
+ * 3. Draw subtle dark edge line for definition
+ */
 function renderAutoTileTransitions(
   ctx: CanvasRenderingContext2D,
   chunk: ChunkData,
 ): void {
-  ctx.save();
-  ctx.globalAlpha = TRANSITION_ALPHA;
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 1.5;
+  // Edge directions: 0=east(+1,0), 1=south(0,+1), 2=west(-1,0), 3=north(0,-1)
+  const DX = [1, 0, -1, 0];
+  const DY = [0, 1, 0, -1];
+
+  // Diamond vertex offsets from cell center (lsx, lsy):
+  // Top: (0, -HALF_TH), Right: (HALF_TW, 0), Bottom: (0, HALF_TH), Left: (-HALF_TW, 0)
 
   for (let cy = 0; cy < SIZE; cy++) {
     for (let cx = 0; cx < SIZE; cx++) {
@@ -292,44 +336,131 @@ function renderAutoTileTransitions(
       const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
-      // Check 4 cardinal neighbors; draw edge segment where type differs
-      // Isometric diamond edges: top-right(+1,0), bottom-right(0,+1), bottom-left(-1,0), top-left(0,-1)
-      const neighbors = [
-        { dx: 1, dy: 0 },  // east neighbor → top-right edge
-        { dx: 0, dy: 1 },  // south neighbor → bottom-right edge
-        { dx: -1, dy: 0 }, // west neighbor → bottom-left edge
-        { dx: 0, dy: -1 }, // north neighbor → top-left edge
-      ];
-
       for (let ni = 0; ni < 4; ni++) {
-        const nbType = getBaseTileType(chunk, cx + neighbors[ni].dx, cy + neighbors[ni].dy);
+        const nbType = getBaseTileType(chunk, cx + DX[ni], cy + DY[ni]);
         if (nbType === null || nbType === myType) continue;
 
-        // Draw the isometric diamond edge between this cell and the differing neighbor
+        const nbColor = getDominantColor(nbType);
+        if (!nbColor) continue;
+
+        const shore = isShoreTransition(myType, nbType);
+        const alpha = shore ? SHORE_ALPHA : TRANSITION_ALPHA;
+
+        // Draw gradient triangle: neighbor's color fading into this cell from the shared edge
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Clip to this cell's diamond to avoid bleeding into neighbors
+        ctx.beginPath();
+        ctx.moveTo(lsx, lsy - HALF_TH);       // top
+        ctx.lineTo(lsx + HALF_TW, lsy);        // right
+        ctx.lineTo(lsx, lsy + HALF_TH);        // bottom
+        ctx.lineTo(lsx - HALF_TW, lsy);        // left
+        ctx.closePath();
+        ctx.clip();
+
+        // Create gradient from edge toward center, fading the neighbor's color
+        let gx0: number, gy0: number, gx1: number, gy1: number;
+        const depth = BLEND_DEPTH;
+
+        switch (ni) {
+          case 0: // east edge (top→right), gradient goes left (from right edge toward center)
+            gx0 = lsx + HALF_TW;
+            gy0 = lsy;
+            gx1 = lsx + HALF_TW * (1 - depth);
+            gy1 = lsy;
+            break;
+          case 1: // south edge (right→bottom), gradient goes up-left
+            gx0 = lsx;
+            gy0 = lsy + HALF_TH;
+            gx1 = lsx;
+            gy1 = lsy + HALF_TH * (1 - depth);
+            break;
+          case 2: // west edge (bottom→left), gradient goes right (from left edge toward center)
+            gx0 = lsx - HALF_TW;
+            gy0 = lsy;
+            gx1 = lsx - HALF_TW * (1 - depth);
+            gy1 = lsy;
+            break;
+          case 3: // north edge (left→top), gradient goes down-right
+            gx0 = lsx;
+            gy0 = lsy - HALF_TH;
+            gx1 = lsx;
+            gy1 = lsy - HALF_TH * (1 - depth);
+            break;
+          default:
+            gx0 = gx1 = lsx;
+            gy0 = gy1 = lsy;
+        }
+
+        const grad = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
+        grad.addColorStop(0, nbColor);
+        grad.addColorStop(1, nbColor + '00'); // fully transparent
+        ctx.fillStyle = grad;
+
+        // Fill the gradient across the clipped diamond
+        ctx.fillRect(lsx - HALF_TW, lsy - HALF_TH, TW, TH);
+
+        // Shore foam effect: white sparkle along water↔land edges
+        if (shore && nbType === 'water') {
+          ctx.globalAlpha = 0.2;
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([2, 3]);
+          ctx.beginPath();
+          switch (ni) {
+            case 0:
+              ctx.moveTo(lsx, lsy - HALF_TH);
+              ctx.lineTo(lsx + HALF_TW, lsy);
+              break;
+            case 1:
+              ctx.moveTo(lsx + HALF_TW, lsy);
+              ctx.lineTo(lsx, lsy + HALF_TH);
+              break;
+            case 2:
+              ctx.moveTo(lsx, lsy + HALF_TH);
+              ctx.lineTo(lsx - HALF_TW, lsy);
+              break;
+            case 3:
+              ctx.moveTo(lsx - HALF_TW, lsy);
+              ctx.lineTo(lsx, lsy - HALF_TH);
+              break;
+          }
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        ctx.restore();
+
+        // Subtle dark edge line for definition
+        ctx.save();
+        ctx.globalAlpha = EDGE_LINE_ALPHA;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
         ctx.beginPath();
         switch (ni) {
-          case 0: // east → top-right edge: top to right
+          case 0:
             ctx.moveTo(lsx, lsy - HALF_TH);
             ctx.lineTo(lsx + HALF_TW, lsy);
             break;
-          case 1: // south → bottom-right edge: right to bottom
+          case 1:
             ctx.moveTo(lsx + HALF_TW, lsy);
             ctx.lineTo(lsx, lsy + HALF_TH);
             break;
-          case 2: // west → bottom-left edge: bottom to left
+          case 2:
             ctx.moveTo(lsx, lsy + HALF_TH);
             ctx.lineTo(lsx - HALF_TW, lsy);
             break;
-          case 3: // north → top-left edge: left to top
+          case 3:
             ctx.moveTo(lsx - HALF_TW, lsy);
             ctx.lineTo(lsx, lsy - HALF_TH);
             break;
         }
         ctx.stroke();
+        ctx.restore();
       }
     }
   }
-  ctx.restore();
 }
 
 /**
