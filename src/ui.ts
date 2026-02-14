@@ -177,15 +177,19 @@ function syncQuiz(quiz: QuizState): void {
       div.className = 'quiz-choice';
       const selected = i === quiz.selectedIndex;
       const isCorrect = i === quiz.correctIndex;
+      const isIdkOption = i === quiz.choices.length - 1; // Last option is "I don't know"
 
       if (selected) div.classList.add('selected');
       if (quiz.result !== 'pending') {
         if (isCorrect) div.classList.add('correct');
         else if (selected && quiz.result === 'wrong') div.classList.add('wrong');
+        else if (selected && quiz.result === 'idk') div.classList.add('idk');
       }
 
       const marker = selected ? '▸ ' : '  ';
-      div.textContent = `${marker}${String.fromCharCode(65 + i)}) ${choice}`;
+      // Don't use letter label for "I don't know"
+      const label = isIdkOption ? `${marker}${choice}` : `${marker}${String.fromCharCode(65 + i)}) ${choice}`;
+      div.textContent = label;
       choicesEl.appendChild(div);
     });
   }
@@ -196,6 +200,9 @@ function syncQuiz(quiz: QuizState): void {
     } else if (quiz.result === 'correct') {
       resultEl.textContent = '✅ Correct!';
       resultEl.style.color = '#4caf50';
+    } else if (quiz.result === 'idk') {
+      resultEl.textContent = '📖 Opening Book of Knowledge...';
+      resultEl.style.color = '#ce93d8';
     } else {
       resultEl.textContent = '❌ Wrong!';
       resultEl.style.color = '#f44336';
@@ -209,7 +216,7 @@ function syncQuiz(quiz: QuizState): void {
 
   if (navEl) {
     navEl.textContent = quiz.result !== 'pending'
-      ? 'Space to continue'
+      ? (quiz.result === 'idk' ? 'Space to open Book' : 'Space to continue')
       : '↑↓ Navigate • Space to select';
   }
 }

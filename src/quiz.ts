@@ -15,10 +15,10 @@ export interface QuizState {
   active: boolean;
   question: QuizQuestion | null;
   displayText: string;      // Possibly LLM-rephrased
-  choices: string[];         // Shuffled answer options
+  choices: string[];         // Shuffled answer options (last is always "I don't know")
   correctIndex: number;      // Index of correct answer in shuffled choices
   selectedIndex: number;     // Player's current selection (-1 = none)
-  result: 'pending' | 'correct' | 'wrong';
+  result: 'pending' | 'correct' | 'wrong' | 'idk';
   npcId: string | null;      // NPC that triggered the quiz
   difficulty: QuizDifficulty;
 }
@@ -41,12 +41,14 @@ export function createQuizState(): QuizState {
 
 /**
  * Start a quiz for the given difficulty.
- * Picks a random question, shuffles choices, optionally rephrases.
+ * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
+ * @param categoryBias - optional Record<category, weight> for weighted random selection
  */
 export async function startQuiz(
   state: QuizState,
   difficulty: QuizDifficulty,
   npcId: string | null,
+  categoryBias?: Record<string, number>,
 ): Promise<void> {
   // Filter eligible questions
   const eligible = getQuestions(undefined, difficulty);
@@ -56,13 +58,28 @@ export async function startQuiz(
     return;
   }
 
-  const question = eligible[Math.floor(Math.random() * eligible.length)];
+  // Apply category bias: duplicate entries for biased categories
+  let pool: QuizQuestion[];
+  if (categoryBias && Object.keys(categoryBias).length > 0) {
+    pool = [];
+    for (const q of eligible) {
+      const weight = categoryBias[q.category] || 1;
+      for (let i = 0; i < weight; i++) pool.push(q);
+    }
+  } else {
+    pool = eligible;
+  }
+
+  const question = pool[Math.floor(Math.random() * pool.length)];
 
   // Shuffle the answers array (correct answer is always at index 0 in source)
   const shuffledAnswers = [...question.answers];
   shuffle(shuffledAnswers);
   const correctAnswer = question.answers[0]; // Original correct answer
   const correctIdx = shuffledAnswers.indexOf(correctAnswer);
+
+  // Add "I don't know" as the last option
+  shuffledAnswers.push("I don't know 📖");
 
   // Try LLM rephrase (fallback: original text)
   const displayText = await rephraseQuizQuestion(question.question);
@@ -89,17 +106,23 @@ export function quizNavigate(state: QuizState, delta: number): void {
 
 /**
  * Submit the current selection.
- * Returns true if correct.
+ * Returns 'correct', 'wrong', or 'idk'.
  */
-export function quizSubmit(state: QuizState): boolean {
-  if (!state.active || state.result !== 'pending') return false;
+export function quizSubmit(state: QuizState): 'correct' | 'wrong' | 'idk' {
+  if (!state.active || state.result !== 'pending') return 'wrong';
+
+  // "I don't know" is always the last choice
+  if (state.selectedIndex === state.choices.length - 1) {
+    state.result = 'idk';
+    return 'idk';
+  }
 
   if (state.selectedIndex === state.correctIndex) {
     state.result = 'correct';
-    return true;
+    return 'correct';
   } else {
     state.result = 'wrong';
-    return false;
+    return 'wrong';
   }
 }
 
