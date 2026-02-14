@@ -16,6 +16,7 @@ import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, type QuizState } from './quiz';
+import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
@@ -66,6 +67,8 @@ interface GameState {
   lastAnimFrame: number;
   lastChunkX: number;
   lastChunkY: number;
+  // Pending quiz triggered by NPC — starts when dialog closes
+  pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -319,6 +322,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     lastAnimFrame: -1,
     lastChunkX: Math.floor(startX / size),
     lastChunkY: Math.floor(startY / size),
+    pendingQuiz: null,
   };
 
   // Restore inventory from save
@@ -425,7 +429,15 @@ function update(state: GameState, input: InputManager): void {
     if (justKeys.interact) {
       if (!advanceDialog(state.ui)) {
         closeDialog(state.ui);
-        state.paused = false;
+        // Start pending quiz if NPC queued one, otherwise unpause
+        if (state.pendingQuiz) {
+          const pq = state.pendingQuiz;
+          state.pendingQuiz = null;
+          startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
+          // state.paused stays true for quiz
+        } else {
+          state.paused = false;
+        }
       }
     }
     input.endFrame();
@@ -560,16 +572,10 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       // Feed NPC greeting into entropy pool (#4)
       feedEntropy(result.greeting);
 
-      // If NPC can quiz, start quiz after dialog
+      // If NPC can quiz, queue quiz to start when dialog closes (not via setTimeout race)
       if (persona?.canQuiz) {
-        // Quiz starts on dialog close (handled in update loop)
         const bias = getQuizBias(state.knowledge);
-        setTimeout(() => {
-          if (!state.quiz.active) {
-            startQuiz(state.quiz, persona.quizDifficulty, result.npcId, bias);
-            state.paused = true;
-          }
-        }, 100);
+        state.pendingQuiz = { difficulty: persona.quizDifficulty, npcId: result.npcId, bias };
       }
       break;
     }
@@ -730,6 +736,7 @@ function setupExtraKeys(state: GameState): void {
         } else if (state.ui.showInventory) state.ui.showInventory = false;
         else if (state.ui.dialog.active) {
           closeDialog(state.ui);
+          state.pendingQuiz = null; // Cancel pending quiz on Escape
           state.paused = false;
         }
         break;
