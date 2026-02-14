@@ -5,6 +5,9 @@ dist/
 .env
 playwright-report/
 test-results/
+.playwright-mcp/
+test-output.txt
+test-output2.txt
 .env.local
 .env.*.local
 
