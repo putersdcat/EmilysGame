@@ -28,7 +28,7 @@ export interface EdgeVector {
 export type TraversalType = 'open' | 'blocked' | 'conditional' | 'hazardous';
 
 /** Surface type for auto-tiling border blending */
-export type SurfaceType = 'grass' | 'dirt' | 'stone' | 'water' | 'wood';
+export type SurfaceType = 'grass' | 'dirt' | 'stone' | 'water' | 'wood' | 'sand';
 
 // ─── Micro Tile Metadata ─────────────────────────────────────
 
@@ -86,6 +86,14 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'water', variationIndex: 0,
     description: 'Water (impassable)',
+  },
+  sand: {
+    type: 'sand', walkable: true, edgeTag: 'open',
+    edges: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    traversal: 'open', surface: 'sand', height: 0,
+    connectable: false, decorationEligible: true,
+    variationFamily: 'sand', variationIndex: 0,
+    description: 'Sandy terrain',
   },
   stone_wall: {
     type: 'stone_wall', walkable: false, edgeTag: 'wall',

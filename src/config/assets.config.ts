@@ -44,7 +44,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   sand: {
     emoji: '🟨', category: 'terrain', height: 0, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Sandy ground',
+    description: 'Sandy ground', tileType: 'sand',
   },
   water: {
     emoji: '🌊', category: 'terrain', height: 0, layer: 'base',
