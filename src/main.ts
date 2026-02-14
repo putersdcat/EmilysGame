@@ -34,6 +34,7 @@ import {
 import { searchArticles } from './config/knowledge.config';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
 import { updateAndRenderParticles, clearParticles } from './particles';
+import { updateAndRenderLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import type { FacingPose } from './sprites';
 
 
@@ -722,6 +723,9 @@ function renderFrame(
   // Ambient particles (butterflies, sparkles, leaves, birds)
   updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
 
+  // Day/night cycle lighting overlay
+  updateAndRenderLighting(renderer.getCtx());
+
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active) {
     // Get current biome name from chunk map
@@ -798,6 +802,11 @@ function setupExtraKeys(state: GameState): void {
           state.pendingQuiz = null; // Cancel pending quiz on Escape
           state.pendingGateQuiz = null; // Cancel pending gate quiz on Escape
           state.paused = false;
+        }
+        break;
+      case 'T': // Shift+T: advance day/night by 10%
+        if (e.shiftKey) {
+          setTimeOfDay(getCycleProgress() + 0.1);
         }
         break;
     }

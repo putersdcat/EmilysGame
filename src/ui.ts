@@ -10,6 +10,7 @@ import { ITEM_DEFS } from './config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
 import { getTerrainCacheSize } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
+import { getTimeOfDay } from './lighting';
 import { getEntropyStats } from './gen';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
@@ -141,6 +142,11 @@ function syncHUD(inv: Inventory, playerPos: { x: number; y: number }): void {
     llmDot.className = ok ? '' : 'off';
     llmDot.id = 'llmDot';
     llmDot.title = ok ? 'LLM: connected' : 'LLM: disconnected';
+  }
+  // Time of day badge
+  const timeEl = document.getElementById('timeBadge');
+  if (timeEl) {
+    timeEl.textContent = getTimeOfDay();
   }
 }
 
