@@ -16,6 +16,7 @@ import { isFlashlightOn } from './local-lights';
 import { getEntropyStats } from './gen';
 import { perfStats } from './perf';
 import { getParticleStats } from './particles';
+import { getShadowDebugInfo } from './shadows';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
@@ -338,6 +339,7 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     tpsLabel,
     entropyLabel,
     `Perf: W:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)}ms`,
+        getShadowDebugInfo(),
     (() => { const ps = getParticleStats(); return `Particles: ${ps.total} (\u{1F98B}${ps.butterfly} \u{2728}${ps.sparkle} \u{1F343}${ps.leaf} \u{1F426}${ps.bird})`; })(),
   ].map((l) => `<span>${l}</span>`).join('');
 }

@@ -41,6 +41,7 @@ import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
+import { invalidateShadowCache } from './shadows';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -1572,6 +1573,7 @@ function setupExtraKeys(state: GameState): void {
       case 'T': // Shift+T: advance day/night by 10%
         if (e.shiftKey) {
           setTimeOfDay(getCycleProgress() + 0.1);
+          invalidateShadowCache(); // #83 - force shadow recalc after time jump
         }
         break;
       case 'W': // Shift+W: cycle weather
@@ -1580,6 +1582,7 @@ function setupExtraKeys(state: GameState): void {
           const cur = getWeatherInfo().type;
           const idx = types.indexOf(cur);
           setWeather(types[(idx + 1) % types.length]);
+          invalidateShadowCache(); // #83 - weather affects shadow opacity
         }
         break;
       case 'f':

@@ -13,6 +13,7 @@ import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
 import { cellJitter } from './utils';
 import { FIRE_VARIANTS, getFireAnimation } from './config/fire.config';
+import { getShadowParams } from './shadows';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
@@ -133,30 +134,42 @@ export class IsometricRenderer {
     );
   }
 
-  // --- Shadow Sprite Cache ---
-  // Pre-rendered shadow ellipses at common scales → 1 drawImage vs 3 canvas calls per shadow
-  // Shadows offset SE to simulate NW sun angle (not overhead 12:00)
+  // --- Dynamic Shadow Sprite Cache ---
+  // Pre-rendered shadow ellipses, angle baked in from dynamic shadow system (#83).
+  // Cache invalidated when sun angle changes >15° — happens roughly every ~30s.
   private shadowCache = new Map<number, HTMLCanvasElement>();
+  private _shadowAngle = 0.26;   // current baked angle (radians)
+  private _shadowStretch = 1.0;  // current baked stretch multiplier
 
   private getShadowSprite(scale: number): HTMLCanvasElement {
+    const params = getShadowParams(_renderFrameCount);
+
+    // Invalidate cache if shadow angle or stretch changed significantly
+    if (Math.abs(params.angle - this._shadowAngle) > 0.25 ||
+        Math.abs(params.stretch - this._shadowStretch) > 0.15) {
+      this.shadowCache.clear();
+      this._shadowAngle = params.angle;
+      this._shadowStretch = params.stretch;
+    }
+
     // Quantize scale to reduce cache entries (0.1 increments)
     const qScale = Math.round(scale * 10) / 10;
     let cached = this.shadowCache.get(qScale);
     if (cached) return cached;
     const rw = Math.ceil(qScale * RENDER_CONFIG.shadowScale.width);
     const rh = Math.ceil(qScale * RENDER_CONFIG.shadowScale.height);
-    // Elongated shadow for angled sunlight (stretch in cast direction)
-    const stretchX = Math.ceil(rw * 1.3);
-    const w = stretchX * 2 + 8;
-    const h = rh * 2 + 8;
+    // Elongate shadow based on dynamic stretch factor
+    const stretchX = Math.ceil(rw * (1.0 + this._shadowStretch * 0.3));
+    // Canvas large enough for rotated ellipse
+    const maxDim = Math.max(stretchX, rh) * 2 + 8;
     cached = document.createElement('canvas');
-    cached.width = w;
-    cached.height = h;
+    cached.width = maxDim;
+    cached.height = maxDim;
     const sctx = cached.getContext('2d')!;
-    sctx.fillStyle = `rgba(0,0,0,${RENDER_CONFIG.shadowAlpha})`;
+    // Fill solid black; opacity controlled at draw time via globalAlpha
+    sctx.fillStyle = 'rgb(0,0,0)';
     sctx.beginPath();
-    // Slightly rotated ellipse (~15°) for angled cast
-    sctx.ellipse(w / 2, h / 2, stretchX, rh, 0.26, 0, Math.PI * 2);
+    sctx.ellipse(maxDim / 2, maxDim / 2, stretchX, rh, this._shadowAngle, 0, Math.PI * 2);
     sctx.fill();
     this.shadowCache.set(qScale, cached);
     return cached;
@@ -177,13 +190,17 @@ export class IsometricRenderer {
     }
   }
 
-  /** Draw shadow offset SE (sun from NW). Larger objects cast longer shadows. */
+  /** Draw dynamic shadow driven by time-of-day + weather (#83). */
   private drawShadow(sx: number, sy: number, scale: number): void {
+    const params = getShadowParams(_renderFrameCount);
+    if (!params.enabled) return;
     const sprite = this.getShadowSprite(scale);
-    // Offset shadow to the right and slightly down (NW sun casting SE)
-    const offsetX = 6 * scale;
-    const offsetY = 18 + 4 * scale;
-    this.ctx.drawImage(sprite, sx - sprite.width / 2 + offsetX, sy + offsetY - sprite.height / 2);
+    // Dynamic offset from sun angle/length computation
+    const ox = params.dx * scale;
+    const oy = params.dy * scale;
+    this.ctx.globalAlpha = params.opacity;
+    this.ctx.drawImage(sprite, sx - sprite.width / 2 + ox, sy - sprite.height / 2 + oy);
+    this.ctx.globalAlpha = 1.0;
   }
 
   private drawEmoji(emoji: string, sx: number, sy: number, scale: number, tint = 0): void {
