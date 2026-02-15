@@ -704,3 +704,31 @@ export function syncSfxUI(sfx: SfxState): void {
     ambSlider.value = String(Math.round(sfx.settings.ambienceVolume * 100));
   }
 }
+
+// ─── Voice UI Sync (#76) ────────────────────────────────────
+
+import type { VoiceState } from './npc-voice';
+
+let _lastVoiceSyncFrame = 0;
+
+export function syncVoiceUI(voice: VoiceState): void {
+  if (++_lastVoiceSyncFrame % 10 !== 0) return;
+
+  const toggleBtn = document.getElementById('btnVoiceToggle');
+  const volSlider = document.getElementById('voiceVolume') as HTMLInputElement | null;
+
+  if (toggleBtn) {
+    toggleBtn.textContent = voice.settings.enabled ? '🗣️' : '🔇';
+    toggleBtn.title = voice.settings.enabled ? 'Voice enabled' : 'Voice disabled';
+  }
+  if (volSlider && document.activeElement !== volSlider) {
+    volSlider.value = String(Math.round(voice.settings.volume * 100));
+  }
+
+  // If speech not supported, grey out controls
+  const section = document.getElementById('sbVoiceSection');
+  if (section) {
+    section.style.opacity = voice.supported ? '1' : '0.5';
+    section.title = voice.supported ? '' : 'Speech synthesis not available';
+  }
+}

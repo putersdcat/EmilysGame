@@ -46,6 +46,8 @@ export interface SaveData {
   musicSettings?: { volume: number; muted: boolean; enabled: boolean };
   /** SFX & ambience settings (#75) */
   sfxSettings?: { sfxVolume: number; ambienceVolume: number; sfxMuted: boolean; ambienceMuted: boolean; sfxEnabled: boolean };
+  /** NPC voice settings (#76) */
+  voiceSettings?: { enabled: boolean; volume: number };
 }
 
 export interface ResolvedCell {

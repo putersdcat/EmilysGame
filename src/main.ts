@@ -17,7 +17,7 @@ import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionRes
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, type UIState } from './ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
@@ -71,6 +71,11 @@ import {
   serializeSfxSettings, deserializeSfxSettings,
   type SfxState,
 } from './sfx';
+import {
+  createVoiceState, speakLine, cancelSpeech, toggleVoice,
+  setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
+  type VoiceState,
+} from './npc-voice';
 import type { FacingPose } from './sprites';
 
 
@@ -124,7 +129,12 @@ interface GameState {
   music: MusicState;
   // SFX & ambience state (#75)
   sfx: SfxState;
+  // NPC voice state (#76)
+  voice: VoiceState;
 }
+
+// Track NPC id for voice lines during dialog (#76)
+let _lastDialogNpcId: string | null = null;
 
 // ─── Chunk Management ────────────────────────────────────────
 
@@ -389,6 +399,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     unlockedCosmetics: save?.unlockedCosmetics ?? [],
     music: createMusicState(),
     sfx: createSfxState(),
+    voice: createVoiceState(),
   };
 
   // Sync unlocked cosmetics to customizer
@@ -419,6 +430,10 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     // Restore SFX settings (#75)
     if (save.sfxSettings) {
       deserializeSfxSettings(state.sfx, save.sfxSettings);
+    }
+    // Restore voice settings (#76)
+    if (save.voiceSettings) {
+      deserializeVoiceSettings(state.voice, save.voiceSettings);
     }
   }
 
@@ -558,6 +573,7 @@ function update(state: GameState, input: InputManager): void {
     if (justKeys.interact) {
       if (!advanceDialog(state.ui)) {
         closeDialog(state.ui);
+        cancelSpeech(state.voice); // Stop voice on dialog close (#76)
         playSfx(state.sfx, 'dialog_close');
         // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
         if (state.pendingQuiz) {
@@ -581,6 +597,9 @@ function update(state: GameState, input: InputManager): void {
         }
       } else {
         playSfx(state.sfx, 'dialog_advance');
+        // Speak the new dialog line (#76)
+        const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
+        if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : _lastDialogNpcId);
       }
     }
     input.endFrame();
@@ -705,12 +724,13 @@ function update(state: GameState, input: InputManager): void {
     if (wildlifeHit) {
       const { species, entity } = wildlifeHit;
       // Show creature dialog with fun fact
-      showDialog(state.ui, species.name, [
-        `You spotted a ${species.name}! ${species.emoji}`,
-        species.fact,
-      ]);
+      const wildlifeLine = `You spotted a ${species.name}! ${species.emoji}`;
+      showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
       state.paused = true;
       playSfx(state.sfx, 'wildlife_discover');
+      // Speak wildlife discovery (#76)
+      _lastDialogNpcId = null;
+      speakLine(state.voice, wildlifeLine, null);
       // Make creature flee after inspection
       entity.behavior = 'flee';
       entity.fleeCooldown = 180;
@@ -829,6 +849,9 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       showDialog(state.ui, npcName, [result.greeting]);
       state.paused = true;
       playSfx(state.sfx, 'dialog_open');
+      // Speak greeting line (#76)
+      _lastDialogNpcId = result.npcId;
+      speakLine(state.voice, result.greeting, result.npcId);
 
       // Feed NPC greeting into entropy pool (#4)
       feedEntropy(result.greeting);
@@ -853,6 +876,8 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       showDialog(state.ui, 'Sign', [result.message]);
       state.paused = true;
       playSfx(state.sfx, 'dialog_open');
+      _lastDialogNpcId = null;
+      speakLine(state.voice, result.message, null);
       break;
 
     case 'quiz_gate': {
@@ -860,6 +885,8 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       showDialog(state.ui, 'Quiz Gate', [result.message]);
       state.paused = true;
       playSfx(state.sfx, 'dialog_open');
+      _lastDialogNpcId = null;
+      speakLine(state.voice, result.message, null);
       const gateDiff = getDifficultyForPosition(state.player.x, state.player.y);
       const gateBias = getQuizBias(state.knowledge);
       state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
@@ -897,6 +924,7 @@ function buildSaveData(state: GameState): SaveData {
     unlockedCosmetics: state.unlockedCosmetics,
     musicSettings: serializeMusicSettings(state.music),
     sfxSettings: serializeSfxSettings(state.sfx),
+    voiceSettings: serializeVoiceSettings(state.voice),
   };
 }
 
@@ -937,6 +965,8 @@ function applySaveData(state: GameState, data: SaveData): void {
   state.music.settings = deserializeMusicSettings(data.musicSettings);
   // Restore SFX settings (#75)
   if (data.sfxSettings) deserializeSfxSettings(state.sfx, data.sfxSettings);
+  // Restore voice settings (#76)
+  if (data.voiceSettings) deserializeVoiceSettings(state.voice, data.voiceSettings);
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -1086,6 +1116,8 @@ function resetGameState(state: GameState): void {
   musicStop(state.music);
   // Keep SFX settings across new game — just stop ambience
   stopAmbience(state.sfx);
+  // Keep voice settings across new game — just cancel speech
+  cancelSpeech(state.voice);
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1368,6 +1400,9 @@ function renderFrame(
 
     // SFX UI sync (#75)
     syncSfxUI(state.sfx);
+
+    // Voice UI sync (#76)
+    syncVoiceUI(state.voice);
   }
 
   // Minimap (self-throttling to ~6fps)
@@ -1436,6 +1471,7 @@ function setupExtraKeys(state: GameState): void {
           state.ui.showInventory = false;
         } else if (state.ui.dialog.active) {
           closeDialog(state.ui);
+          cancelSpeech(state.voice); // Cancel voice on escape close (#76)
           state.pendingQuiz = null;
           state.pendingGateQuiz = null;
           state.pendingTrade = null;
@@ -1575,6 +1611,15 @@ async function main(): Promise<void> {
       sfxEnabled: state.sfx.settings.sfxEnabled,
       activeAmbience: state.sfx.activeAmbienceId,
     }),
+    // Voice helpers (#76)
+    getVoiceState: () => ({
+      enabled: state.voice.settings.enabled,
+      volume: state.voice.settings.volume,
+      supported: state.voice.supported,
+      speaking: state.voice.speaking,
+    }),
+    toggleVoice: () => toggleVoice(state.voice),
+    speakTest: (text: string) => speakLine(state.voice, text, null),
     // Save/load helpers
     save: () => doSave(state),
   };
@@ -1656,6 +1701,15 @@ async function main(): Promise<void> {
   document.getElementById('ambienceVolume')?.addEventListener('input', (e) => {
     const val = parseInt((e.target as HTMLInputElement).value, 10);
     setAmbienceVolume(state.sfx, val / 100);
+  });
+
+  // ─── Wire Voice Controls (#76) ─────────────────────────────
+  document.getElementById('btnVoiceToggle')?.addEventListener('click', () => {
+    toggleVoice(state.voice);
+  });
+  document.getElementById('voiceVolume')?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    setVoiceVolume(state.voice, val / 100);
   });
 
   // ─── Main Menu / New Game Flow ─────────────────────────────
