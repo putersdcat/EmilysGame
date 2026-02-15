@@ -138,10 +138,37 @@ interface GameState {
   voice: VoiceState;
   // Quiz streak state (#103)
   streak: StreakState;
+  // Transient expression override (#102) — reverts after timer expires
+  expressionOverride: { expr: import('./sprites').Expression; until: number } | null;
+  // Base default expression to revert to after transient override (#102)
+  _baseExpression: import('./sprites').Expression;
 }
 
 // Track NPC id for voice lines during dialog (#76)
 let _lastDialogNpcId: string | null = null;
+
+// ─── Transient Expression System (#102) ─────────────────────
+
+import type { Expression as SpriteExpression } from './sprites';
+
+/** Temporarily override player expression — reverts automatically */
+function setTransientExpression(state: GameState, expr: SpriteExpression, durationMs: number): void {
+  state.expressionOverride = { expr, until: performance.now() + durationMs };
+  // Apply immediately to playerVariation so next sprite load uses it
+  state.playerVariation.expression = expr;
+  state.lastAnimFrame = -1; // force sprite reload
+}
+
+/** Tick the expression override timer; revert when expired */
+function tickExpressionOverride(state: GameState): void {
+  if (!state.expressionOverride) return;
+  if (performance.now() >= state.expressionOverride.until) {
+    // Revert to base expression (from save / customizer default)
+    state.playerVariation.expression = state._baseExpression ?? 'happy';
+    state.expressionOverride = null;
+    state.lastAnimFrame = -1; // force sprite reload
+  }
+}
 
 // ─── Chunk Management ────────────────────────────────────────
 
@@ -413,6 +440,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     sfx: createSfxState(),
     voice: createVoiceState(),
     streak: createStreakState(),
+    expressionOverride: null,
+    _baseExpression: playerVariation.expression ?? 'happy',
   };
 
   // Sync unlocked cosmetics to customizer
@@ -515,6 +544,8 @@ function update(state: GameState, input: InputManager): void {
           addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
           state.quizStats.correct++;
           playSfx(state.sfx, 'quiz_correct');
+          // Transient expression: happy for 2s (#102)
+          setTransientExpression(state, 'happy', 2000);
           checkCosmeticUnlocks(state);
 
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
@@ -530,8 +561,10 @@ function update(state: GameState, input: InputManager): void {
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
           playSfx(state.sfx, 'quiz_wrong');
+          setTransientExpression(state, 'surprised', 1500);
         } else if (state.quiz.result === 'wrong') {
           playSfx(state.sfx, 'quiz_wrong');
+          setTransientExpression(state, 'surprised', 1500);
         } else if (state.quiz.result === 'idk') {
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
@@ -801,6 +834,9 @@ function update(state: GameState, input: InputManager): void {
     // Music biome awareness (#74) — switch tracks on biome change
     musicSetBiome(state.music, biomeId);
   }
+
+  // --- Transient expression tick (#102) ---
+  tickExpressionOverride(state);
 
   // --- Ambience update (#75) — resolves based on time-of-day + weather ---
   // Throttle to every 60th frame (~1s at 60fps) to avoid churn
@@ -1216,6 +1252,8 @@ function showPauseMenu(state: GameState): void {
     const newVariation = await showCustomizer(state.playerVariation);
     clearVariationCache('custom');
     state.playerVariation = newVariation;
+    state._baseExpression = newVariation.expression ?? 'happy';
+    state.expressionOverride = null;
     state.egoImg = loadCharacterSprite(newVariation, 0, false);
     state.lastAnimFrame = -1;
     state.paused = false;
@@ -1802,6 +1840,8 @@ async function main(): Promise<void> {
     const newVariation = await showCustomizer(state.playerVariation);
     clearVariationCache('custom'); // clear old cached sprites
     state.playerVariation = newVariation;
+    state._baseExpression = newVariation.expression ?? 'happy';
+    state.expressionOverride = null;
     state.egoImg = loadCharacterSprite(newVariation, 0, false);
     state.lastAnimFrame = -1;
     state.paused = false;
@@ -1875,6 +1915,8 @@ async function main(): Promise<void> {
       const customVariation = await showCustomizer(state.playerVariation);
       clearVariationCache('custom');
       state.playerVariation = customVariation;
+      state._baseExpression = customVariation.expression ?? 'happy';
+      state.expressionOverride = null;
       state.egoImg = loadCharacterSprite(customVariation, 0, false);
       state.lastAnimFrame = -1;
       // Subject selection

@@ -6,7 +6,7 @@
  * TODO: DOC - customizer UI spec
  */
 
-import type { CharacterVariation } from './sprites';
+import type { CharacterVariation, Accessory, Expression } from './sprites';
 import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from './sprites';
 import { getUnlockablesForCategory } from './config/cosmetics.config';
 
@@ -54,6 +54,20 @@ export const HAIR_STYLES: { name: string; value: CharacterVariation['hairStyle']
   { name: '🎀 Ponytail',  value: 'ponytail' },
 ];
 
+export const ACCESSORIES: { name: string; value: Accessory }[] = [
+  { name: '❌ None',       value: 'none' },
+  { name: '🎀 Bow',       value: 'bow' },
+  { name: '👑 Crown',     value: 'crown' },
+  { name: '👓 Glasses',   value: 'glasses' },
+];
+
+export const EXPRESSIONS: { name: string; value: Expression }[] = [
+  { name: '😊 Happy',       value: 'happy' },
+  { name: '😐 Neutral',     value: 'neutral' },
+  { name: '😮 Surprised',   value: 'surprised' },
+  { name: '😤 Determined',  value: 'determined' },
+];
+
 // ─── Default Variation ───────────────────────────────────────
 
 export function createDefaultVariation(): CharacterVariation {
@@ -63,6 +77,8 @@ export function createDefaultVariation(): CharacterVariation {
     hairStyle: 'pigtails',
     dressColor: '#C84E89',
     skinTone: '#F4C9B8',
+    accessory: 'none',
+    expression: 'happy',
   };
 }
 
@@ -212,6 +228,54 @@ function renderHairStyleButtons(
   });
 }
 
+/** Render accessory toggle buttons */
+function renderAccessoryButtons(
+  containerId: string,
+  selectedAccessory: Accessory,
+  onSelect: (a: Accessory) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = ACCESSORIES.map(a => {
+    const selected = a.value === selectedAccessory;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${a.value}">
+              ${a.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as Accessory);
+    });
+  });
+}
+
+/** Render expression toggle buttons */
+function renderExpressionButtons(
+  containerId: string,
+  selectedExpression: Expression,
+  onSelect: (e: Expression) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = EXPRESSIONS.map(e => {
+    const selected = e.value === selectedExpression;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${e.value}">
+              ${e.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as Expression);
+    });
+  });
+}
+
 // ─── Main Customizer ────────────────────────────────────────
 
 /**
@@ -247,6 +311,14 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
         variation.hairStyle = style;
         refreshAll();
       });
+      renderAccessoryButtons('custAccessories', variation.accessory ?? 'none', (a) => {
+        variation.accessory = a;
+        refreshAll();
+      });
+      renderExpressionButtons('custExpressions', variation.expression ?? 'happy', (e) => {
+        variation.expression = e;
+        refreshAll();
+      });
     };
 
     // Show overlay
@@ -271,6 +343,8 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
       variation.dressColor = OUTFIT_COLORS[Math.floor(Math.random() * OUTFIT_COLORS.length)].hex;
       variation.skinTone = SKIN_TONES[Math.floor(Math.random() * SKIN_TONES.length)].hex;
       variation.hairStyle = HAIR_STYLES[Math.floor(Math.random() * HAIR_STYLES.length)].value;
+      variation.accessory = ACCESSORIES[Math.floor(Math.random() * ACCESSORIES.length)].value;
+      variation.expression = EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)].value;
       refreshAll();
       startPreviewAnimation(variation);
     };
@@ -294,6 +368,8 @@ export interface SerializedVariation {
   hairStyle: string;
   dressColor: string;
   skinTone: string;
+  accessory?: string;
+  expression?: string;
 }
 
 export function serializeVariation(v: CharacterVariation): SerializedVariation {
@@ -302,6 +378,8 @@ export function serializeVariation(v: CharacterVariation): SerializedVariation {
     hairStyle: v.hairStyle,
     dressColor: v.dressColor,
     skinTone: v.skinTone,
+    accessory: v.accessory ?? 'none',
+    expression: v.expression ?? 'happy',
   };
 }
 
@@ -312,5 +390,7 @@ export function deserializeVariation(data: SerializedVariation): CharacterVariat
     hairStyle: (data.hairStyle as CharacterVariation['hairStyle']) || 'pigtails',
     dressColor: data.dressColor,
     skinTone: data.skinTone,
+    accessory: (data.accessory as Accessory) || 'none',
+    expression: (data.expression as Expression) || 'happy',
   };
 }
