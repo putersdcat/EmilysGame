@@ -208,11 +208,12 @@ test.describe('Sprite Customizer', () => {
     await page.locator('#btnCustomize').click();
     await page.waitForTimeout(200);
 
-    // Preview should contain SVGs
+    // Preview should contain SVGs and all 4 pose labels
     const previewHtml = await page.locator('#customizerPreview').innerHTML();
     expect(previewHtml).toContain('svg');
-    expect(previewHtml).toContain('Idle');
-    expect(previewHtml).toContain('Walking');
+    expect(previewHtml).toContain('Front');
+    expect(previewHtml).toContain('Walk');
+    expect(previewHtml).toContain('Side');
   });
 
   test('playerVariation persists in save data', async ({ page }) => {

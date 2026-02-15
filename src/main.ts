@@ -656,16 +656,20 @@ function update(state: GameState, input: InputManager): void {
       state.player.facingDy = Math.sign(mv.dy);
     }
 
-    // Determine facing pose for sprite selection:
-    // In isometric: grid +y = SE (toward camera) = front, grid -y = NW (away) = back
-    // Horizontal movement keeps current pose; vertical movement changes it.
-    // Diagonal: use the vertical component to pick pose.
-    if (mv.dy < 0) {
+    // Determine facing pose from screen-space direction (what the player sees):
+    // Horizontal dominance (left/right keys) → side profile sprite
+    // Vertical dominance (up/down keys) → front (down) or back (up)
+    // Diagonal → use vertical component for front/back
+    const asx = Math.abs(mv.screenDx);
+    const asy = Math.abs(mv.screenDy);
+    if (asx > asy) {
+      state.player.facingPose = 'side';
+    } else if (mv.screenDy < 0) {
       state.player.facingPose = 'back';
-    } else if (mv.dy > 0) {
+    } else if (mv.screenDy > 0) {
       state.player.facingPose = 'front';
     }
-    // If only horizontal (dy=0), keep current facingPose for smooth transitions
+    // Equal diagonal (asx === asy && both > 0) → keep current facingPose
 
     state.player.isMoving = true;
     // Throttle animation: only advance sprite frame every 6th game frame

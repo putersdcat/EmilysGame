@@ -6,7 +6,7 @@
  */
 
 /** Player facing direction for sprite selection */
-export type FacingPose = 'front' | 'back';
+export type FacingPose = 'front' | 'back' | 'side';
 
 export interface CharacterVariation {
   name: string;
@@ -322,6 +322,157 @@ export function generateBackWalkingCharacterSVG(variation: CharacterVariation, f
   `;
 }
 
+// ─── Side-Facing Sprites (player moving left/right on screen) ────
+
+/**
+ * Generate side-facing hair SVG based on style.
+ * Profile view — hair flows behind (to the left, character faces right).
+ */
+function getSideHairSVG(hairStyle: string, hairColor: string): string {
+  if (hairStyle === 'pigtails') {
+    return `
+      <!-- Side pigtail (visible one behind head) -->
+      <ellipse cx="22" cy="28" rx="6" ry="9" fill="${hairColor}"/>
+      <!-- Main hair cap -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+    `;
+  } else if (hairStyle === 'straight') {
+    return `
+      <!-- Side straight hair flows behind -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+      <rect x="18" y="22" width="16" height="18" rx="4" fill="${hairColor}"/>
+    `;
+  } else {
+    // wavy
+    return `
+      <!-- Side wavy hair -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+      <path d="M 20 26 Q 18 36 20 42 M 26 28 Q 24 38 26 44" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <rect x="18" y="22" width="16" height="14" rx="4" fill="${hairColor}"/>
+    `;
+  }
+}
+
+/**
+ * Generate SVG for idle side-facing character (faces right; flipX for left).
+ * Profile view showing one eye, profile nose, narrower body.
+ */
+export function generateSideIdleCharacterSVG(variation: CharacterVariation): string {
+  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+  const sideHair = getSideHairSVG(hairStyle, hairColor);
+
+  return `
+    <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      <!-- Hair -->
+      ${sideHair}
+
+      <!-- Face (profile) -->
+      <circle cx="36" cy="30" r="10" fill="${skinTone}"/>
+
+      <!-- Eye (one visible) -->
+      <circle cx="42" cy="28" r="1.5" fill="#0066CC"/>
+
+      <!-- Nose (profile bump) -->
+      <path d="M 44 30 L 46 32 L 44 33" fill="${skinTone}" stroke="${skinTone}" stroke-width="1"/>
+
+      <!-- Mouth -->
+      <path d="M 41 34 Q 43 35 44 34" stroke="#CC6699" stroke-width="1" fill="none" stroke-linecap="round"/>
+
+      <!-- Neck -->
+      <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
+
+      <!-- Body - Dress (side view, narrower) -->
+      <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressColor}"/>
+
+      <!-- Dress trim -->
+      <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>
+
+      <!-- Back arm (behind body, partially visible) -->
+      <rect x="22" y="44" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.6"/>
+
+      <!-- Front arm -->
+      <rect x="38" y="44" width="6" height="18" rx="2" fill="${skinTone}"/>
+
+      <!-- Back leg -->
+      <rect x="28" y="70" width="5" height="20" fill="${skinTone}" opacity="0.7"/>
+
+      <!-- Front leg -->
+      <rect x="33" y="70" width="5" height="20" fill="${skinTone}"/>
+
+      <!-- Shoes -->
+      <ellipse cx="30.5" cy="90" rx="3" ry="4" fill="#333" opacity="0.7"/>
+      <ellipse cx="35.5" cy="90" rx="3" ry="4" fill="#333"/>
+    </svg>
+  `;
+}
+
+/**
+ * Generate SVG for side-facing walking animation.
+ * Profile stride with clear leg separation and arm swing.
+ */
+export function generateSideWalkingCharacterSVG(variation: CharacterVariation, frame: number): string {
+  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+  const sideHair = getSideHairSVG(hairStyle, hairColor);
+
+  const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
+  const otherLegOffset = [0, 4, 6, 4, 0, -4][frame] || 0;
+  const armSwing = [0, -5, -8, -5, 0, 5][frame] || 0;
+  const bodyBounce = [0, -1, -2, -1, 0, -1][frame] || 0;
+
+  return `
+    <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      <!-- Upper body with bounce -->
+      <g transform="translate(0, ${bodyBounce})">
+        <!-- Hair -->
+        ${sideHair}
+
+        <!-- Face (profile) -->
+        <circle cx="36" cy="30" r="10" fill="${skinTone}"/>
+
+        <!-- Eye -->
+        <circle cx="42" cy="28" r="1.5" fill="#0066CC"/>
+
+        <!-- Nose -->
+        <path d="M 44 30 L 46 32 L 44 33" fill="${skinTone}" stroke="${skinTone}" stroke-width="1"/>
+
+        <!-- Mouth -->
+        <path d="M 41 34 Q 43 35 44 34" stroke="#CC6699" stroke-width="1" fill="none" stroke-linecap="round"/>
+
+        <!-- Neck -->
+        <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
+
+        <!-- Body - Dress (side, narrower) -->
+        <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressColor}"/>
+
+        <!-- Dress trim -->
+        <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>
+
+        <!-- Back arm (swinging, behind body) -->
+        <g transform="translate(25, 44)">
+          <rect x="-3" y="0" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.6" transform="rotate(${-armSwing})"/>
+        </g>
+
+        <!-- Front arm (swinging, in front) -->
+        <g transform="translate(41, 44)">
+          <rect x="-3" y="0" width="6" height="18" rx="2" fill="${skinTone}" transform="rotate(${armSwing})"/>
+        </g>
+      </g>
+
+      <!-- Back leg (striding) -->
+      <g transform="translate(28, 70)">
+        <rect x="0" y="${otherLegOffset}" width="5" height="20" fill="${skinTone}" opacity="0.7"/>
+        <ellipse cx="2.5" cy="${20 + otherLegOffset}" rx="3" ry="4" fill="#333" opacity="0.7"/>
+      </g>
+
+      <!-- Front leg (striding) -->
+      <g transform="translate(33, 70)">
+        <rect x="0" y="${legOffset}" width="5" height="20" fill="${skinTone}"/>
+        <ellipse cx="2.5" cy="${20 + legOffset}" rx="3" ry="4" fill="#333"/>
+      </g>
+    </svg>
+  `;
+}
+
 /**
  * Cache for generated SVG images.
  */
@@ -351,7 +502,12 @@ function getSVGForPose(
       ? generateBackWalkingCharacterSVG(variation, frame)
       : generateBackIdleCharacterSVG(variation);
   }
-  // 'front' pose (default) — also used for side view with flipX in renderer
+  if (pose === 'side') {
+    return isWalking
+      ? generateSideWalkingCharacterSVG(variation, frame)
+      : generateSideIdleCharacterSVG(variation);
+  }
+  // 'front' pose (default)
   return isWalking
     ? generateWalkingCharacterSVG(variation, frame)
     : generateIdleCharacterSVG(variation);

@@ -149,8 +149,9 @@ export class InputManager {
    * Get normalized movement vector, rotated 45° for isometric alignment.
    * Pressing Up moves visually upward on screen (NW in grid).
    * Pressing Right moves visually right on screen (NE in grid).
+   * Also returns raw screen-space direction for sprite pose selection.
    */
-  public getMovementVector(): { dx: number; dy: number } {
+  public getMovementVector(): { dx: number; dy: number; screenDx: number; screenDy: number } {
     // Raw screen-intent input
     let sdx = 0;
     let sdy = 0;
@@ -172,6 +173,6 @@ export class InputManager {
       dy /= magnitude;
     }
 
-    return { dx, dy };
+    return { dx, dy, screenDx: sdx, screenDy: sdy };
   }
 }

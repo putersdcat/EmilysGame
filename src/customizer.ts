@@ -7,7 +7,7 @@
  */
 
 import type { CharacterVariation } from './sprites';
-import { generateIdleCharacterSVG, generateWalkingCharacterSVG } from './sprites';
+import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from './sprites';
 import { getUnlockablesForCategory } from './config/cosmetics.config';
 
 // ─── Preset Options ──────────────────────────────────────────
@@ -74,17 +74,21 @@ function renderPreview(variation: CharacterVariation): void {
   const container = document.getElementById('customizerPreview');
   if (!container) return;
 
-  // Show idle + walking preview
+  // Show idle, walking, and side-view preview
   const idleSvg = generateIdleCharacterSVG(variation);
   const walkSvg = generateWalkingCharacterSVG(variation, previewAnimFrame);
+  const sideSvg = generateSideIdleCharacterSVG(variation);
+  const sideWalkSvg = generateSideWalkingCharacterSVG(variation, previewAnimFrame);
 
   container.innerHTML = `
     <div class="cust-preview-pair">
       <div class="cust-preview-sprite">${idleSvg}</div>
       <div class="cust-preview-sprite">${walkSvg}</div>
+      <div class="cust-preview-sprite">${sideSvg}</div>
+      <div class="cust-preview-sprite" style="transform:scaleX(-1)">${sideWalkSvg}</div>
     </div>
     <div class="cust-preview-labels">
-      <span>Idle</span><span>Walking</span>
+      <span>Front</span><span>Walk</span><span>Side</span><span>Side L</span>
     </div>
   `;
 }
