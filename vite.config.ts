@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: 'src',
   publicDir: path.resolve(__dirname, 'public'),
+  // Set base path for GitHub Pages deployment
+  base: mode === 'pages' ? '/EmilysGame/' : '/',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
@@ -26,4 +28,4 @@ export default defineConfig({
   },
   // Include .wasm files as assets
   assetsInclude: ['**/*.wasm'],
-});
+}));

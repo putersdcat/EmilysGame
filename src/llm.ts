@@ -89,6 +89,8 @@ export function isTestMode(): boolean {
     // ?test=0 forces non-test mode (overrides webdriver detection for menu testing)
     if (url.searchParams.get('test') === '0') { _testMode = false; return false; }
     if (url.searchParams.get('test') === '1') { _testMode = true; return true; }
+    // Detect GitHub Pages deployment by pathname prefix
+    if (url.pathname.startsWith('/EmilysGame/')) { _testMode = true; return true; }
     // Detect Playwright: navigator.webdriver is true in automated browsers
     if (navigator.webdriver) { _testMode = true; return true; }
   } catch { /* SSR or no window */ }
