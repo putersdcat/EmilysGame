@@ -20,6 +20,7 @@ public/wasm/
 game-*.png
 
 # Note: docs/ directory is committed (contains game-screenshot.png for README)
+!docs/game-screenshot.png
 core-test-result.txt
 struct-test-result.txt
 test-regression-output.txt
