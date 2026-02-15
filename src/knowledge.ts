@@ -5,9 +5,13 @@
  */
 
 import {
-  SUBJECTS, KNOWLEDGE_ARTICLES, getArticleById, searchArticles,
+  SUBJECTS,
   type SubjectId, type KnowledgeArticle,
 } from './config/knowledge.config';
+import {
+  getBookArticleById, searchBookArticles,
+  getBookArticlesBySubject,
+} from './book-content';
 import { renderMarkdown, escapeHtml } from './markdown';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -83,12 +87,13 @@ export function confirmSubjects(state: KnowledgeState): void {
 // ─── Book Browsing ──────────────────────────────────────────
 
 export function getSubjectArticles(state: KnowledgeState): KnowledgeArticle[] {
-  if (state.selectedSubjects.length === 0) return KNOWLEDGE_ARTICLES;
-  return KNOWLEDGE_ARTICLES.filter(a => state.selectedSubjects.includes(a.subject));
+  return getBookArticlesBySubject(
+    state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined
+  );
 }
 
 export function openArticle(state: KnowledgeState, articleId: string): KnowledgeArticle | null {
-  const article = getArticleById(articleId);
+  const article = getBookArticleById(articleId) ?? null;
   if (!article) return null;
   state.currentArticleId = articleId;
   if (!state.readArticles.has(articleId)) {
@@ -104,7 +109,7 @@ export function closeArticle(state: KnowledgeState): void {
 
 export function searchBook(state: KnowledgeState, query: string): KnowledgeArticle[] {
   state.searchQuery = query;
-  return searchArticles(query, state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined);
+  return searchBookArticles(query, state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined);
 }
 
 // ─── Word Bag ────────────────────────────────────────────────
@@ -134,7 +139,7 @@ export function lookupWord(state: KnowledgeState, term: string): KnowledgeArticl
     word.lookedUp = true;
     state.discoveryPoints += 3;
   }
-  return searchArticles(term, state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined);
+  return searchBookArticles(term, state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined);
 }
 
 // ─── Book Toggle ─────────────────────────────────────────────
@@ -239,7 +244,7 @@ export function syncBookUI(state: KnowledgeState): void {
 
   // If reading a specific article
   if (state.currentArticleId) {
-    const article = getArticleById(state.currentArticleId);
+    const article = getBookArticleById(state.currentArticleId);
     if (article) {
       renderArticleView(content, article, state);
       return;
@@ -324,7 +329,7 @@ function renderArticleView(container: HTMLElement, article: KnowledgeArticle, st
 
   let relatedHtml = '';
   if (article.related && article.related.length > 0) {
-    const relatedArticles = article.related.map(id => getArticleById(id)).filter(Boolean);
+    const relatedArticles = article.related.map(id => getBookArticleById(id)).filter(Boolean);
     if (relatedArticles.length > 0) {
       relatedHtml = `<div class="book-related">
         <span class="book-related-label">Related:</span>

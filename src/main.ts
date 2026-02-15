@@ -40,7 +40,7 @@ import {
   getQuizBias, openArticle,
   type KnowledgeState,
 } from './knowledge';
-import { searchArticles } from './config/knowledge.config';
+import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
@@ -382,6 +382,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // Initialize minimap canvas
   initMinimap();
 
+  // Load content packs for Book of Knowledge (#120)
+  await initBookContent();
+  const contentStats = getBookContentStats();
+  console.log(`[INIT] Book content: ${contentStats.totalArticles} articles (${contentStats.packArticles} from pack, ${contentStats.staticArticles} static)`);
+
   // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
   const wasmOk = await initWasmRenderer();
   if (wasmOk) {
@@ -582,7 +587,7 @@ function update(state: GameState, input: InputManager): void {
           const category = state.quiz.question?.category || '';
           const questionText = state.quiz.question?.question || '';
           // Search for articles related to the quiz category or question
-          const related = searchArticles(category) || searchArticles(questionText);
+          const related = searchBookArticles(category) || searchBookArticles(questionText);
           if (related.length > 0) {
             openArticle(state.knowledge, related[0].id);
             state.knowledge.bookOpen = true;
@@ -1971,13 +1976,15 @@ async function main(): Promise<void> {
     getTimeSlot,
     // Night mode debug (#114)
     getRevealedCreatures: () => _revealedCreatures.size,
-    // Book/Knowledge debug (#118)
+    // Book/Knowledge debug (#118, #120)
     getKnowledgeState: () => state.knowledge,
     openBookArticle: (id: string) => openArticle(state.knowledge, id),
     toggleBook: () => {
       toggleBook(state.knowledge);
       state.paused = state.knowledge.bookOpen;
     },
+    getBookContentStats,
+    isPackContentLoaded,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
