@@ -454,7 +454,7 @@ export function interactWithWildlife(
 
 /** Get the animation offset for a wildlife entity (used by renderer) */
 export function getAnimationOffset(entity: WildlifeEntity): { dx: number; dy: number } {
-  const species = getSpecies(entity.speciesId);  // O(1) Map lookup instead of linear find (#79)
+  const species = getSpecies(entity.speciesId);  // O(1) Map lookup (#79)
   if (!species) return { dx: 0, dy: 0 };
 
   const t = entity.animPhase;

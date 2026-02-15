@@ -2,27 +2,15 @@
  * particles.ts - Ambient particle system for atmospheric effects.
  * Renders butterflies, water sparkles, drifting leaves, and birds
  * as lightweight screen-space overlays. Grid-position-aware spawning.
+ * Per-type caps, time/biome modifiers, config-driven (#78).
  * TODO: DOC - particle system overview, spawning rules, performance notes
  */
 
 import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
+import { PARTICLE_CAPS, PARTICLE_LIMITS, getEffectiveSpawnRate } from './config/particles.config';
+import { getTimeOfDay } from './lighting';
 import type { Camera } from './render';
 import type { ChunkData } from './gen';
-
-// ─── Config ─────────────────────────────────────────────────
-
-const PARTICLE_CONFIG = {
-  maxParticles: 80,        // Hard cap to prevent perf degradation
-  spawnInterval: 5,        // Frames between spawn attempts
-  despawnMargin: 120,      // px beyond screen edge before killing
-  /** Per-type spawn chances (0-1, checked each spawnInterval) */
-  spawnRates: {
-    butterfly: 0.4,   // Near flowers
-    sparkle: 0.5,     // Near water edges
-    leaf: 0.2,        // Near trees
-    bird: 0.04,       // Rare flyover
-  },
-} as const;
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -54,11 +42,20 @@ interface Particle {
 const particles: Particle[] = [];
 let spawnTimer = 0;
 
+// ─── Per-type live counts (O(1) tracking) ───────────────────
+
+const _typeCounts: Record<string, number> = {
+  butterfly: 0,
+  sparkle: 0,
+  leaf: 0,
+  bird: 0,
+};
+
 // ─── Emoji choices ──────────────────────────────────────────
 
-const BUTTERFLY_EMOJIS = ['🦋'];
-const LEAF_EMOJIS = ['🍃', '🍂'];
-const BIRD_EMOJIS = ['🐦', '🕊️'];
+const BUTTERFLY_EMOJIS = ['\u{1F98B}'];
+const LEAF_EMOJIS = ['\u{1F343}', '\u{1F342}'];
+const BIRD_EMOJIS = ['\u{1F426}', '\u{1F54A}\uFE0F'];
 const SPARKLE_COLORS = ['#fff', '#aee', '#cdf', '#eff'];
 
 // ─── Spawn Logic ────────────────────────────────────────────
@@ -66,14 +63,14 @@ const SPARKLE_COLORS = ['#fff', '#aee', '#cdf', '#eff'];
 function findSpawnSources(
   chunks: Map<string, ChunkData>,
   camera: Camera,
-): { flowers: number; waterEdges: number; trees: number } {
+): { flowers: number; waterEdges: number; trees: number; biomeName: string } {
   // Quick scan of center chunk to gauge what's nearby
   const size = WORLD_CONFIG.chunkSize;
   const cx = Math.floor(camera.x / size);
   const cy = Math.floor(camera.y / size);
   const key = `${cx},${cy}`;
   const chunk = chunks.get(key);
-  if (!chunk) return { flowers: 0, waterEdges: 0, trees: 0 };
+  if (!chunk) return { flowers: 0, waterEdges: 0, trees: 0, biomeName: 'meadow' };
 
   let flowers = 0, waterEdges = 0, trees = 0;
 
@@ -88,7 +85,7 @@ function findSpawnSources(
     }
   }
 
-  return { flowers, waterEdges, trees };
+  return { flowers, waterEdges, trees, biomeName: chunk.biomeName || 'meadow' };
 }
 
 function spawnParticle(
@@ -98,6 +95,9 @@ function spawnParticle(
 ): Particle {
   const halfW = canvasW / 2;
   const halfH = canvasH / 2;
+  const cap = PARTICLE_CAPS[kind];
+  const baseSize = cap ? cap.baseSize : 16;
+  const sizeVar = cap ? cap.sizeVariance : 4;
 
   switch (kind) {
     case 'butterfly': {
@@ -110,7 +110,7 @@ function spawnParticle(
         life: 180 + Math.random() * 120,
         maxLife: 300,
         opacity: 0,
-        size: 18 + Math.random() * 8,
+        size: baseSize + Math.random() * sizeVar,
         phase: Math.random() * Math.PI * 2,
         color: '',
         emoji: BUTTERFLY_EMOJIS[0],
@@ -127,7 +127,7 @@ function spawnParticle(
         life: 40 + Math.random() * 40,
         maxLife: 80,
         opacity: 0,
-        size: 3 + Math.random() * 4,
+        size: baseSize + Math.random() * sizeVar,
         phase: Math.random() * Math.PI * 2,
         color: SPARKLE_COLORS[Math.floor(Math.random() * SPARKLE_COLORS.length)],
         emoji: '',
@@ -145,7 +145,7 @@ function spawnParticle(
         life: 200 + Math.random() * 150,
         maxLife: 350,
         opacity: 0,
-        size: 16 + Math.random() * 6,
+        size: baseSize + Math.random() * sizeVar,
         phase: Math.random() * Math.PI * 2,
         color: '',
         emoji: LEAF_EMOJIS[Math.floor(Math.random() * LEAF_EMOJIS.length)],
@@ -164,7 +164,7 @@ function spawnParticle(
         life: 200 + Math.random() * 100,
         maxLife: 300,
         opacity: 0,
-        size: 20 + Math.random() * 8,
+        size: baseSize + Math.random() * sizeVar,
         phase: Math.random() * Math.PI * 2,
         color: '',
         emoji: BIRD_EMOJIS[Math.floor(Math.random() * BIRD_EMOJIS.length)],
@@ -172,6 +172,17 @@ function spawnParticle(
       };
     }
   }
+}
+
+/** Try to spawn a particle of the given kind. Respects per-type cap. */
+function trySpawn(kind: ParticleKind, canvasW: number, canvasH: number, rate: number): void {
+  const cap = PARTICLE_CAPS[kind];
+  if (!cap || !cap.enabled) return;
+  if (_typeCounts[kind] >= cap.max) return;
+  if (Math.random() >= rate) return;
+  const p = spawnParticle(kind, canvasW, canvasH);
+  particles.push(p);
+  _typeCounts[kind]++;
 }
 
 // ─── Update & Render ────────────────────────────────────────
@@ -189,32 +200,38 @@ export function updateAndRenderParticles(
 ): void {
   const cw = RENDER_CONFIG.canvasWidth;
   const ch = RENDER_CONFIG.canvasHeight;
-  const margin = PARTICLE_CONFIG.despawnMargin;
+  const margin = PARTICLE_LIMITS.despawnMargin;
 
   // --- Spawn new particles periodically ---
   spawnTimer++;
-  if (spawnTimer >= PARTICLE_CONFIG.spawnInterval && particles.length < PARTICLE_CONFIG.maxParticles) {
+  if (spawnTimer >= PARTICLE_LIMITS.spawnInterval && particles.length < PARTICLE_LIMITS.maxTotal) {
     spawnTimer = 0;
     const sources = findSpawnSources(chunks, camera);
-    const rates = PARTICLE_CONFIG.spawnRates;
+    const tod = getTimeOfDay();
+    const biome = sources.biomeName;
 
-    // Spawn based on nearby terrain
-    if (sources.flowers > 0 && Math.random() < rates.butterfly) {
-      particles.push(spawnParticle('butterfly', cw, ch));
+    // Compute effective rates (config × time × biome modifiers)
+    if (sources.flowers > 0) {
+      trySpawn('butterfly', cw, ch, getEffectiveSpawnRate('butterfly', tod, biome));
     }
-    if (sources.waterEdges > 2 && Math.random() < rates.sparkle) {
-      particles.push(spawnParticle('sparkle', cw, ch));
+    if (sources.waterEdges > 2) {
+      trySpawn('sparkle', cw, ch, getEffectiveSpawnRate('sparkle', tod, biome));
     }
-    if (sources.trees > 0 && Math.random() < rates.leaf) {
-      particles.push(spawnParticle('leaf', cw, ch));
+    if (sources.trees > 0) {
+      trySpawn('leaf', cw, ch, getEffectiveSpawnRate('leaf', tod, biome));
     }
-    if (Math.random() < rates.bird) {
-      particles.push(spawnParticle('bird', cw, ch));
-    }
+    trySpawn('bird', cw, ch, getEffectiveSpawnRate('bird', tod, biome));
   }
 
   // --- Update & render each particle, write-compaction for dead particles (#79) ---
   ctx.save();
+
+  // Reset type counts — we recount live particles during compaction
+  _typeCounts.butterfly = 0;
+  _typeCounts.sparkle = 0;
+  _typeCounts.leaf = 0;
+  _typeCounts.bird = 0;
+
   let writeIdx = 0;
   for (let i = 0; i < particles.length; i++) {
     const p = particles[i];
@@ -272,8 +289,9 @@ export function updateAndRenderParticles(
       continue; // Skip dead particles (write-compaction)
     }
 
-    // Keep alive — compact
+    // Keep alive — compact + count
     particles[writeIdx++] = p;
+    _typeCounts[p.kind]++;
 
     // --- Render ---
     ctx.globalAlpha = p.opacity * 0.85; // Overall particle opacity
@@ -310,4 +328,19 @@ export function updateAndRenderParticles(
 export function clearParticles(): void {
   particles.length = 0;
   spawnTimer = 0;
+  _typeCounts.butterfly = 0;
+  _typeCounts.sparkle = 0;
+  _typeCounts.leaf = 0;
+  _typeCounts.bird = 0;
+}
+
+/** Get particle debug stats for overlay (#78) */
+export function getParticleStats(): { total: number; butterfly: number; sparkle: number; leaf: number; bird: number } {
+  return {
+    total: particles.length,
+    butterfly: _typeCounts.butterfly,
+    sparkle: _typeCounts.sparkle,
+    leaf: _typeCounts.leaf,
+    bird: _typeCounts.bird,
+  };
 }
