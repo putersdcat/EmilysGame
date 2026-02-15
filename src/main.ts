@@ -1337,7 +1337,16 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
       ctx.globalAlpha = Math.max(0.15, fadeT);
     }
 
-    ctx.drawImage(sprite, drawX, drawY, size, size);
+    // Directional flip based on facingDir (#80)
+    if (entity.facingDir === -1) {
+      ctx.save();
+      ctx.translate(drawX + size, drawY);
+      ctx.scale(-1, 1);
+      ctx.drawImage(sprite, 0, 0, size, size);
+      ctx.restore();
+    } else {
+      ctx.drawImage(sprite, drawX, drawY, size, size);
+    }
 
     if (entity.behavior === 'flee') {
       ctx.globalAlpha = 1.0;

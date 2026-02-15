@@ -39,6 +39,8 @@ export interface WildlifeEntity {
   chunkKey: string;
   /** Unique ID within chunk for interaction tracking */
   localId: number;
+  /** Facing direction: 1 = right (default), -1 = left/flipped (#80) */
+  facingDir: 1 | -1;
 }
 
 /** Per-chunk wildlife cache */
@@ -202,6 +204,7 @@ function spawnChunkWildlife(chunk: ChunkData, timeSlot: TimeSlot): WildlifeEntit
       hidden: false,
       chunkKey: key,
       localId: i,
+      facingDir: (species.flipRule === 'random' ? (rng() < 0.5 ? -1 : 1) : 1) as 1 | -1,
     });
   }
 
@@ -228,6 +231,7 @@ function spawnChunkWildlife(chunk: ChunkData, timeSlot: TimeSlot): WildlifeEntit
       hidden: false,
       chunkKey: key,
       localId: waterSlots + i,
+      facingDir: (species.flipRule === 'random' ? (rng() < 0.5 ? -1 : 1) : 1) as 1 | -1,
     });
   }
 
@@ -302,6 +306,9 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
   const species = getSpecies(entity.speciesId);  // O(1) Map lookup (#79)
   if (!species) return;
 
+  // Track position for facing direction update (#80)
+  const _prevX = entity.worldX;
+
   // Advance animation phase
   entity.animPhase += 0.05;
 
@@ -358,6 +365,14 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
     // Occasionally stop
     if (Math.random() < 0.008) {
       entity.behavior = 'idle';
+    }
+  }
+
+  // Update facing direction from movement delta (#80)
+  if (species.flipRule === 'movement') {
+    const moveDx = entity.worldX - _prevX;
+    if (Math.abs(moveDx) > 0.001) {
+      entity.facingDir = moveDx > 0 ? 1 : -1;
     }
   }
 }

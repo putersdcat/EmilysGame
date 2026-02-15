@@ -313,11 +313,19 @@ export function updateAndRenderParticles(
       ctx.lineTo(p.sx, p.sy + s2);
       ctx.stroke();
     } else {
-      // Draw emoji particle
+      // Draw emoji particle (birds flip with travel direction #80)
       ctx.font = `${Math.round(p.size)}px serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(p.emoji, p.sx, p.sy);
+      if (p.kind === 'bird' && p.vx < 0) {
+        ctx.save();
+        ctx.translate(p.sx, p.sy);
+        ctx.scale(-1, 1);
+        ctx.fillText(p.emoji, 0, 0);
+        ctx.restore();
+      } else {
+        ctx.fillText(p.emoji, p.sx, p.sy);
+      }
     }
   }
   particles.length = writeIdx; // Trim dead particles
