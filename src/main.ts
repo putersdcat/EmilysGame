@@ -41,6 +41,8 @@ import {
   type KnowledgeState,
 } from './knowledge';
 import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
+import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './age-profile';
+import type { AgeBand } from './types/content-pack.types';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
@@ -146,6 +148,8 @@ interface GameState {
   voice: VoiceState;
   // Quiz streak state (#103)
   streak: StreakState;
+  // Age band profile (#92)
+  ageProfile: AgeProfile;
   // Transient expression override (#102) — reverts after timer expires
   expressionOverride: { expr: import('./sprites').Expression; until: number } | null;
   // Base default expression to revert to after transient override (#102)
@@ -453,6 +457,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     sfx: createSfxState(),
     voice: createVoiceState(),
     streak: createStreakState(),
+    ageProfile: createAgeProfile(),
     expressionOverride: null,
     _baseExpression: playerVariation.expression ?? 'happy',
   };
@@ -493,6 +498,10 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     // Restore fog-of-war visited cells (#114)
     if (save.visitedFog) {
       deserializeVisited(save.visitedFog);
+    }
+    // Restore age band profile (#92)
+    if (save.ageBand) {
+      setAgeBand(state.ageProfile, save.ageBand as AgeBand);
     }
   }
 
@@ -1042,6 +1051,7 @@ function buildSaveData(state: GameState): SaveData {
     voiceSettings: serializeVoiceSettings(state.voice),
     streakHistory: [...state.streak.history],
     visitedFog: serializeVisited(),
+    ageBand: state.ageProfile.ageBand ?? undefined,
   };
 }
 
@@ -1095,6 +1105,10 @@ function applySaveData(state: GameState, data: SaveData): void {
   if (data.visitedFog) {
     deserializeVisited(data.visitedFog);
   }
+  // Restore age band profile (#92)
+  if (data.ageBand) {
+    setAgeBand(state.ageProfile, data.ageBand as AgeBand);
+  }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -1133,6 +1147,68 @@ function checkCosmeticUnlocks(state: GameState): void {
 
 // ─── Menu System ───────────────────────────────────────────────────
 // TODO: DOC - menu flow state diagram
+
+// ─── Age Band Selection (#92) ───────────────────────────────────
+
+/** Show age band selection overlay. Resolves when player picks or skips. */
+function showAgeSelection(profile: AgeProfile): Promise<void> {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('ageOverlay');
+    if (!overlay) { resolve(); return; }
+
+    const list = document.getElementById('ageBandList');
+    const confirmBtn = document.getElementById('ageConfirm') as HTMLButtonElement;
+    const skipBtn = document.getElementById('ageSkip');
+
+    if (!list || !confirmBtn) { resolve(); return; }
+
+    let selected: AgeBand | null = null;
+
+    function renderOptions(): void {
+      list!.innerHTML = AGE_BANDS.map(b => {
+        const sel = selected === b.id;
+        return `<div class="age-band-option ${sel ? 'selected' : ''}" data-band="${b.id}">
+          <span class="age-band-icon">${b.icon}</span>
+          <div class="age-band-info">
+            <span class="age-band-label">${b.label}</span>
+            <span class="age-band-range">${b.range}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      // Wire option clicks
+      list!.querySelectorAll('.age-band-option').forEach(el => {
+        el.addEventListener('click', () => {
+          selected = (el as HTMLElement).dataset.band as AgeBand;
+          confirmBtn.disabled = false;
+          renderOptions();
+        });
+      });
+    }
+
+    renderOptions();
+    overlay.style.display = 'flex';
+
+    const onConfirm = () => {
+      if (selected) setAgeBand(profile, selected);
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      skipBtn?.removeEventListener('click', onSkip);
+      resolve();
+    };
+
+    const onSkip = () => {
+      // Skip = no age band, show everything
+      overlay.style.display = 'none';
+      confirmBtn.removeEventListener('click', onConfirm);
+      skipBtn?.removeEventListener('click', onSkip);
+      resolve();
+    };
+
+    confirmBtn.addEventListener('click', onConfirm);
+    skipBtn?.addEventListener('click', onSkip);
+  });
+}
 
 /** Show main menu overlay. Returns promise resolving to player choice. */
 function showMainMenu(hasSaveData: boolean): Promise<string> {
@@ -1985,6 +2061,10 @@ async function main(): Promise<void> {
     },
     getBookContentStats,
     isPackContentLoaded,
+    // Age profile debug (#92)
+    getAgeProfile: () => state.ageProfile,
+    getAgeProfileDebug: () => getAgeProfileDebug(state.ageProfile),
+    setAgeBand: (band: AgeBand) => setAgeBand(state.ageProfile, band),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -2091,6 +2171,8 @@ async function main(): Promise<void> {
       state.expressionOverride = null;
       state.egoImg = loadCharacterSprite(customVariation, 0, false);
       state.lastAnimFrame = -1;
+      // Age band selection (#92)
+      await showAgeSelection(state.ageProfile);
       // Subject selection
       await showSubjectSelection(state.knowledge);
       addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
