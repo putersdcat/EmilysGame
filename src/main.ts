@@ -4,7 +4,7 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './config/game.config';
 import { getBiome } from './config/biomes.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
@@ -36,13 +36,17 @@ import { showCustomizer, createDefaultVariation, serializeVariation, deserialize
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight } from './local-lights';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './local-lights';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
 } from './wildlife';
 import { getSpecies } from './config/wildlife.config';
 import { getEmojiSprite } from './emoji-cache';
+import {
+  triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
+  clearBubbles, getBubbleState, resetCooldowns,
+} from './thought-bubbles';
 import type { FacingPose } from './sprites';
 
 
@@ -381,6 +385,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     getWildlifeStats,
   };
   (window as any).__lighting = { setTimeOfDay, getCycleProgress };
+  // Expose thought bubble functions for E2E tests (#71)
+  (window as any).__bubbles = {
+    triggerHint, tickBubbles, dismissBubble, clearBubbles,
+    getBubbleState, resetCooldowns, updateBubblePosition,
+  };
 
   return { state, renderer, input, hasSaveData: !!save };
 }
@@ -632,6 +641,20 @@ function update(state: GameState, input: InputManager): void {
     updateWildlife(state.chunks, state.player.x, state.player.y);
   }
 
+  // --- Thought Bubble triggers (throttled to every 30th frame for perf) ---
+  if (state.frameCount % 30 === 0 && !state.paused) {
+    checkBubbleTriggers(state);
+  }
+  // Tick bubble queue/display every 6th frame
+  if (state.frameCount % 6 === 0) {
+    // Dismiss bubbles during modal overlays (dialog, quiz, book)
+    if (state.paused) {
+      dismissBubble();
+    } else {
+      tickBubbles();
+    }
+  }
+
   // Snapshot input for edge detection next frame
   input.endFrame();
 }
@@ -873,6 +896,7 @@ function resetGameState(state: GameState): void {
   clearObjectCache();
   clearParticles();
   clearWeather();
+  clearBubbles();
   deleteSave();
   ensureChunksAround(state);
 }
@@ -909,6 +933,108 @@ function showPauseMenu(state: GameState): void {
     window.location.reload();
   };
 }
+// ─── Thought Bubble Triggers ─────────────────────────────────
+
+let lastBubbleBiomeId = -1;
+let lastBubbleDiffTier = -1;
+
+function checkBubbleTriggers(state: GameState): void {
+  const px = state.player.x;
+  const py = state.player.y;
+  const cs = WORLD_CONFIG.chunkSize;
+  const cKey = `${Math.floor(px / cs)},${Math.floor(py / cs)}`;
+  const chunk = state.chunks.get(cKey);
+
+  // Low resources
+  if (state.inventory.countItem('coin') === 0) {
+    triggerHint('low_coins');
+  }
+  if (state.inventory.countItem('key') === 0) {
+    triggerHint('no_keys');
+  }
+
+  // Nearby interactives — scan 3x3 cells around player
+  const rx = Math.round(px);
+  const ry = Math.round(py);
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const gx = rx + dx;
+      const gy = ry + dy;
+      const ccx = Math.floor(gx / cs);
+      const ccy = Math.floor(gy / cs);
+      const nearChunk = state.chunks.get(`${ccx},${ccy}`);
+      if (!nearChunk?.generated) continue;
+      const lx = ((gx % cs) + cs) % cs;
+      const ly = ((gy % cs) + cs) % cs;
+      const cell = nearChunk.cells[ly]?.[lx];
+      if (!cell) continue;
+
+      if (cell.npcId) triggerHint('near_npc');
+      if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'door') triggerHint('near_gate');
+      if (cell.assetKey === 'chest') triggerHint('near_chest');
+    }
+  }
+
+  // Wildlife nearby
+  const wildlife = getVisibleWildlife(state.camera, px, py);
+  if (wildlife.length > 0) {
+    // Only trigger if there's a close creature (within ~3 grid units)
+    const close = wildlife.some(e => {
+      const distSq = (e.worldX - px) ** 2 + (e.worldY - py) ** 2;
+      return distSq < 9; // 3^2
+    });
+    if (close) triggerHint('wildlife_spotted');
+  }
+
+  // Biome transitions
+  if (chunk?.generated && chunk.biomeId !== lastBubbleBiomeId) {
+    const oldBiome = lastBubbleBiomeId;
+    lastBubbleBiomeId = chunk.biomeId;
+    if (oldBiome >= 0) { // Don't trigger on first chunk
+      if (chunk.biomeId === 1) triggerHint('biome_forest');
+      else if (chunk.biomeId === 2) triggerHint('biome_cave');
+      else if (chunk.biomeId === 3) triggerHint('biome_castle');
+    }
+  }
+
+  // Difficulty warnings
+  if (chunk?.generated) {
+    const dist = Math.abs(Math.floor(px / cs)) + Math.abs(Math.floor(py / cs));
+    const diff = getDifficulty(dist);
+    if (diff.tier >= 3 && diff.tier !== lastBubbleDiffTier) {
+      triggerHint('danger_zone');
+    }
+    lastBubbleDiffTier = diff.tier;
+  }
+
+  // Quiz streak / wrong encouragement
+  if (state.quizStats.answered > 0) {
+    const streakPct = state.quizStats.correct / state.quizStats.answered;
+    if (streakPct >= 0.8 && state.quizStats.answered >= 3) {
+      triggerHint('quiz_streak');
+    }
+  }
+
+  // Nightfall / dawn from lighting (check cycle progress)
+  const progress = getCycleProgress();
+  if (progress >= 0.78 && progress < 0.82) {
+    triggerHint('nightfall');
+  } else if (progress >= 0.0 && progress < 0.05) {
+    triggerHint('dawn');
+  }
+
+  // Dark without flashlight
+  if (progress >= 0.80 && !isFlashlightOn()) {
+    triggerHint('dark_no_flashlight');
+  }
+
+  // Far from spawn
+  const spawnDist = Math.sqrt(px * px + py * py);
+  if (spawnDist > 60) {
+    triggerHint('far_from_spawn');
+  }
+}
+
 // ─── Wildlife Rendering ──────────────────────────────────────
 
 function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
@@ -970,6 +1096,10 @@ function renderFrame(
 
   // Wildlife layer: draw creatures after terrain/objects, before lighting
   renderWildlife(renderer, state);
+
+  // Update thought bubble position (anchored above player sprite screen position)
+  const playerScreen = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
+  updateBubblePosition(playerScreen.x, playerScreen.y);
 
   // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
   tickLighting();

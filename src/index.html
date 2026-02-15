@@ -823,6 +823,68 @@
       margin-bottom: 24px;
     }
 
+    /* ── Thought / Speech Bubbles ── */
+    .thought-bubble {
+      position: absolute;
+      width: 220px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font: 12px monospace;
+      line-height: 1.4;
+      pointer-events: none;
+      z-index: 14;
+      display: none;
+      transition: opacity 0.15s ease;
+      animation: bubblePop 0.3s ease;
+    }
+    @keyframes bubblePop {
+      0% { transform: scale(0.5) translateY(10px); opacity: 0; }
+      60% { transform: scale(1.05) translateY(-2px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .thought-bubble.bubble-thought {
+      background: rgba(40,35,65,0.92);
+      border: 1px solid rgba(120,100,180,0.5);
+      color: #c8bfe0;
+      box-shadow: 0 2px 12px rgba(80,60,140,0.3);
+    }
+    .thought-bubble.bubble-thought::after {
+      content: '';
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid rgba(40,35,65,0.92);
+    }
+    .thought-bubble.bubble-speech {
+      background: rgba(255,255,255,0.93);
+      border: 1px solid rgba(180,180,200,0.6);
+      color: #333;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    .thought-bubble.bubble-speech::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0; height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid rgba(255,255,255,0.93);
+    }
+    .bubble-emoji {
+      font-size: 14px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .bubble-text {
+      vertical-align: middle;
+    }
+
     .controls {
       color: #aaa; font-size: 11px; flex-shrink: 0; padding: 2px 1rem;
     }
@@ -925,6 +987,12 @@
 
       <!-- Toast notifications -->
       <div id="toastContainer"></div>
+
+      <!-- Thought / Speech Bubble -->
+      <div id="thoughtBubble" class="thought-bubble bubble-thought" style="display:none">
+        <span class="bubble-emoji" id="bubbleEmoji">💭</span>
+        <span class="bubble-text" id="bubbleText"></span>
+      </div>
 
       <!-- Dialog box -->
       <div id="dialogOverlay">
