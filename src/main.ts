@@ -12,7 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
@@ -1771,6 +1771,8 @@ async function main(): Promise<void> {
     // Quiz streak helpers (#103)
     getStreakDebug: () => getStreakDebugInfo(state.streak),
     getStreakState: () => state.streak,
+    // Water/bridge debug (#100)
+    getWaterDebug: () => getWaterDebugInfo(),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

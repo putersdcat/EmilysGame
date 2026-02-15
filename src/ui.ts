@@ -13,7 +13,7 @@ import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getTimeOfDay } from './lighting';
 import { getWeatherInfo } from './weather';
 import { isFlashlightOn } from './local-lights';
-import { getEntropyStats } from './gen';
+import { getEntropyStats, getWaterDebugInfo } from './gen';
 import { perfStats } from './perf';
 import { getParticleStats } from './particles';
 import { getShadowDebugInfo } from './shadows';
@@ -349,6 +349,11 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
       if (!dbg?.getStreakDebug) return '';
       const s = dbg.getStreakDebug();
       return `Streak: ${s.zone} cc:${s.consecutiveCorrect} cw:${s.consecutiveWrong} wr:${isNaN(s.windowRate) ? '-' : (s.windowRate * 100).toFixed(0) + '%'} [${s.lastReason}]`;
+    })(),
+    // Water/bridge debug (#100)
+    (() => {
+      const w = getWaterDebugInfo();
+      return w.waterCells > 0 ? `Water: ${w.waterCells}💧 ${w.bridgeCells}🌉 ${w.leaks > 0 ? `⚠${w.leaks} leaks` : '✓'}` : '';
     })(),
   ].filter(Boolean).map((l) => `<span>${l}</span>`).join('');
 }
