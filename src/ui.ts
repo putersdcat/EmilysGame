@@ -13,7 +13,7 @@ import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getTimeOfDay } from './lighting';
 import { getWeatherInfo } from './weather';
 import { isFlashlightOn } from './local-lights';
-import { getEntropyStats, getWaterDebugInfo } from './gen';
+import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from './gen';
 import { perfStats } from './perf';
 import { getParticleStats } from './particles';
 import { getShadowDebugInfo } from './shadows';
@@ -354,6 +354,13 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     (() => {
       const w = getWaterDebugInfo();
       return w.waterCells > 0 ? `Water: ${w.waterCells}💧 ${w.bridgeCells}🌉 ${w.leaks > 0 ? `⚠${w.leaks} leaks` : '✓'}` : '';
+    })(),
+    // Lock-Key DAG debug (#98)
+    (() => {
+      const d = getLockKeyDebugInfo();
+      if (d.chunksValidated === 0) return '';
+      const status = d.dagValid ? '✓' : `⚠${d.locksRemoved}rm`;
+      return `DAG: ${d.totalLocks}🔒 ${d.keysPlaced}🔑 L${d.layers} ${d.chunksValidated}ch ${status}`;
     })(),
   ].filter(Boolean).map((l) => `<span>${l}</span>`).join('');
 }

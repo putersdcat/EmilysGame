@@ -317,6 +317,11 @@ function generateGridChunk(
   // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
   placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
 
+  // Phase 5.41: convert remaining door_gate → door_locked (#98)
+  // door_gate cells that weren't converted to quiz_gate need to become
+  // door_locked so the mechanics system can resolve them with keys.
+  promoteDoorGates(cells, size);
+
   // Phase 5.45: place bonfires for night-time local lighting (#67)
   placeBonfires(cells, size, biome, seededRandom(featureSeed + 475));
 
@@ -1958,10 +1963,69 @@ function findPathBFS(
   return null; // Unreachable
 }
 
+// ─── Lock-Key DAG System (Issue #98 — Solver D: No Softlocks) ────────────
+
+/** Lock cell tracked during DAG validation */
+interface LockInfo {
+  x: number;
+  y: number;
+  assetKey: string;
+  keyItem: string;
+  layer: number;        // expansion layer this lock was resolved in (-1 = unresolved)
+  keyPlaced: boolean;
+  removed: boolean;
+}
+
+/** Result of the DAG validation pass, stored for debug overlay */
+interface DAGResult {
+  totalLocks: number;
+  keysPlaced: number;
+  locksRemoved: number;
+  layers: number;
+  dagValid: boolean;
+  recoveryAttempts: number;
+  chunksValidated: number;
+}
+
+// Module-level cumulative state for debug visibility across all chunks
+let _dagAccum: DAGResult = {
+  totalLocks: 0, keysPlaced: 0, locksRemoved: 0,
+  layers: 0, dagValid: true, recoveryAttempts: 0, chunksValidated: 0,
+};
+
 /**
- * Phase 6: Balance Obstacles — ensure locks have reachable keys.
- * Scans for door_locked/barricade cells, places corresponding key/crowbar
- * in reachable walkable cells before the lock (closer to chunk center).
+ * Phase 5.41: Convert remaining door_gate cells to door_locked (#98).
+ * After placeQuizGates, any door_gate cells that weren't converted to quiz_gate
+ * become door_locked so the mechanics system (OBSTACLE_TEMPLATES) can resolve them.
+ * TODO: DOC - door_gate promotion rationale
+ */
+function promoteDoorGates(cells: CellData[][], size: number): void {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (cells[y][x].assetKey === 'door_gate') {
+        cells[y][x].assetKey = 'door_locked';
+        cells[y][x].interactable = true;
+      }
+    }
+  }
+}
+
+/**
+ * Phase 6: Lock-Key DAG Validation + Forward Key Placement
+ * (Issue #98 — Solver D: No Softlocks)
+ *
+ * Layered reachability expansion guarantees no softlocks:
+ * 1. BFS from center to find freely reachable region (stops at all locks)
+ * 2. Identify boundary locks (locks directly adjacent to reachable region)
+ * 3. Place keys for boundary locks in the reachable region
+ * 4. "Open" those locks and expand the reachable region
+ * 5. Repeat until no new locks are resolved
+ * 6. Remove any locks that couldn't be resolved (recovery)
+ * 7. Store DAG result for debug overlay
+ *
+ * Quiz gates are treated as passable (always solvable via quiz retry).
+ * Toll gates are excluded (coins are scattered organically).
+ * TODO: DOC - lock-key DAG algorithm, layered expansion proof
  */
 export function balanceObstacles(
   cells: CellData[][],
@@ -1970,53 +2034,174 @@ export function balanceObstacles(
 ): void {
   const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
 
-  // Find all locks
-  const locks: Array<{ x: number; y: number; type: string; keyItem: string }> = [];
+  // Lock types that require item-based resolution
+  const LOCK_KEYS: Record<string, string> = {
+    door_locked: 'key',
+    barricade: 'crowbar',
+    // toll_gate excluded: coins are organic, not DAG-placed
+  };
+
+  // Identify all lock cells
+  const allLocks: LockInfo[] = [];
+  const lockSet = new Set<string>(); // "x,y" for BFS barrier lookup
+
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const cell = cells[y][x];
-      if (cell.assetKey === 'door_locked' || cell.assetKey === 'door_gate') {
-        locks.push({ x, y, type: cell.assetKey, keyItem: 'key' });
-      } else if (cell.assetKey === 'barricade' || cell.assetKey === 'wooden_fence') {
-        // Only barricade-type fences are interactable locks
-        if (cell.interactable) {
-          locks.push({ x, y, type: cell.assetKey, keyItem: 'crowbar' });
-        }
+      const keyItem = LOCK_KEYS[cell.assetKey];
+      if (!keyItem) continue;
+      // barricade must be interactable to count as a lock
+      if (cell.assetKey === 'barricade' && !cell.interactable) continue;
+      allLocks.push({
+        x, y, assetKey: cell.assetKey,
+        keyItem, layer: -1, keyPlaced: false, removed: false,
+      });
+      lockSet.add(`${x},${y}`);
+    }
+  }
+
+  if (allLocks.length === 0) {
+    _dagAccum.chunksValidated++;
+    return;
+  }
+
+  // Quiz gates are soft barriers — passable for reachability
+  const quizGates = new Set<string>();
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (cells[y][x].assetKey === 'quiz_gate') quizGates.add(`${x},${y}`);
+    }
+  }
+
+  // BFS that stops at lock cells but passes through quiz gates
+  const bfsStoppingAtLocks = (starts: Array<{ x: number; y: number }>): Set<string> => {
+    const visited = new Set<string>();
+    const queue = [...starts];
+    for (const s of starts) visited.add(`${s.x},${s.y}`);
+
+    while (queue.length > 0) {
+      const curr = queue.shift()!;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        const nx = curr.x + dx;
+        const ny = curr.y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const k = `${nx},${ny}`;
+        if (visited.has(k)) continue;
+        if (lockSet.has(k)) continue;   // stop at item-locks
+        const cell = cells[ny][nx];
+        // passable: walkable cells OR quiz gates (always solvable)
+        if (!cell.walkable && !quizGates.has(k)) continue;
+        visited.add(k);
+        queue.push({ x: nx, y: ny });
       }
     }
-  }
+    return visited;
+  };
 
-  if (locks.length === 0) return;
+  const reachable = new Set<string>();
+  let layer = 0;
+  let keysPlaced = 0;
+  let locksRemoved = 0;
+  let recoveryAttempts = 0;
 
-  // BFS from center to find reachable cells (not blocked by locks themselves)
-  const reachable = bfsFloodFill(
-    (x, y) => cells[y][x].walkable,
-    size, size, center,
-  );
+  // Layer 0: freely reachable from center (before any locks)
+  for (const k of bfsStoppingAtLocks([center])) reachable.add(k);
 
-  // For each lock, place key item in a reachable walkable cell
-  for (const lock of locks) {
-    // Find candidate cells: walkable, reachable, no existing item, close to center
-    const candidates: Array<{ x: number; y: number; dist: number }> = [];
-    for (const key of reachable) {
-      const [px, py] = key.split(',').map(Number);
-      const cell = cells[py][px];
-      if (!cell.walkable || cell.itemId || cell.npcId) continue;
-      // Prefer cells closer to center (player starts near center)
-      const dist = Math.abs(px - center.x) + Math.abs(py - center.y);
-      candidates.push({ x: px, y: py, dist });
+  // Iterative expansion: resolve boundary locks layer by layer
+  let changed = true;
+  while (changed) {
+    changed = false;
+
+    // Find locks adjacent to the reachable frontier
+    const boundaryLocks = allLocks.filter(lock => {
+      if (lock.layer !== -1 || lock.removed) return false;
+      for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+        if (reachable.has(`${lock.x + dx},${lock.y + dy}`)) return true;
+      }
+      return false;
+    });
+
+    if (boundaryLocks.length === 0) break;
+
+    // For each boundary lock, place its key in the current reachable region
+    for (const lock of boundaryLocks) {
+      const candidates: Array<{ x: number; y: number; dist: number }> = [];
+      for (const k of reachable) {
+        const [px, py] = k.split(',').map(Number);
+        const cell = cells[py][px];
+        if (!cell.walkable || cell.itemId || cell.npcId) continue;
+        const dist = Math.abs(px - center.x) + Math.abs(py - center.y);
+        candidates.push({ x: px, y: py, dist });
+      }
+
+      if (candidates.length > 0) {
+        // Place key closer to center (early in player's path)
+        candidates.sort((a, b) => a.dist - b.dist);
+        const poolSize = Math.max(1, Math.floor(candidates.length * 0.3));
+        const pick = candidates[Math.floor(rng() * poolSize)];
+        cells[pick.y][pick.x].itemId = lock.keyItem;
+        lock.keyPlaced = true;
+        lock.layer = layer;
+        keysPlaced++;
+      } else {
+        // Recovery: no room for key → remove the lock entirely
+        recoveryAttempts++;
+        cells[lock.y][lock.x] = {
+          ...cells[lock.y][lock.x],
+          assetKey: 'grass',
+          walkable: true,
+          interactable: false,
+        };
+        lock.removed = true;
+        lock.layer = layer;
+        locksRemoved++;
+        lockSet.delete(`${lock.x},${lock.y}`);
+      }
+      changed = true;
     }
 
-    if (candidates.length === 0) continue;
+    // Expand reachable region through resolved/removed locks
+    const newStarts = boundaryLocks
+      .filter(l => l.keyPlaced || l.removed)
+      .map(l => {
+        lockSet.delete(`${l.x},${l.y}`); // no longer a barrier
+        reachable.add(`${l.x},${l.y}`);
+        return { x: l.x, y: l.y };
+      });
 
-    // Sort by distance to center (place keys in accessible early areas)
-    candidates.sort((a, b) => a.dist - b.dist);
-
-    // Pick from the first ~30% closest candidates (with some randomness)
-    const poolSize = Math.max(1, Math.floor(candidates.length * 0.3));
-    const pick = candidates[Math.floor(rng() * poolSize)];
-    cells[pick.y][pick.x].itemId = lock.keyItem;
+    if (newStarts.length > 0) {
+      for (const k of bfsStoppingAtLocks(newStarts)) reachable.add(k);
+    }
+    layer++;
   }
+
+  // Cleanup: any remaining unresolved locks are unreachable from center
+  for (const lock of allLocks) {
+    if (lock.layer === -1 && !lock.removed) {
+      recoveryAttempts++;
+      cells[lock.y][lock.x] = {
+        ...cells[lock.y][lock.x],
+        assetKey: 'grass',
+        walkable: true,
+        interactable: false,
+      };
+      lock.removed = true;
+      locksRemoved++;
+    }
+  }
+
+  _dagAccum.totalLocks += allLocks.length;
+  _dagAccum.keysPlaced += keysPlaced;
+  _dagAccum.locksRemoved += locksRemoved;
+  _dagAccum.layers = Math.max(_dagAccum.layers, layer);
+  _dagAccum.recoveryAttempts += recoveryAttempts;
+  _dagAccum.chunksValidated++;
+  if (locksRemoved > 0) _dagAccum.dagValid = false;
+}
+
+/** Debug info for Lock-Key DAG (Issue #98) — cumulative across all chunks */
+export function getLockKeyDebugInfo(): DAGResult {
+  return { ..._dagAccum };
 }
 
 /**
