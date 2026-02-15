@@ -300,8 +300,29 @@ export const BIOME_NPC_PERSONAS: NpcPersona[] = [
 /** All personas combined */
 const ALL_PERSONAS = [...NPC_PERSONAS, ...BIOME_NPC_PERSONAS];
 
+// --- Generic shop merchant for structure-based shops (#77) ---
+export const SHOP_MERCHANT_PERSONA: NpcPersona = {
+  id: 'shop_merchant',
+  assetKey: 'shop',
+  displayName: 'Shopkeeper',
+  llmPersona: 'You are a friendly traveling merchant. You sell useful items to adventurers.',
+  greetings: ['Welcome! Take a look at my wares.', 'What can I get for you today?'],
+  fallbackResponses: ['Fine goods, fair prices!', 'Everything an adventurer needs.'],
+  trades: [
+    { gives: 'potion', wants: 'coin', cost: 3, description: 'Speed Potion' },
+    { gives: 'mushroom', wants: 'coin', cost: 1, description: 'Forest Mushroom' },
+    { gives: 'bandage', wants: 'coin', cost: 2, description: 'Bandage' },
+    { gives: 'key', wants: 'coin', cost: 5, description: 'Bronze Key' },
+    { gives: 'torch', wants: 'coin', cost: 2, description: 'Torch' },
+    { gives: 'snack', wants: 'coin', cost: 1, description: 'Trail Snack' },
+  ],
+  canQuiz: false,
+  quizDifficulty: 'easy',
+};
+
 /** Lookup NPC persona by id */
 export function getNpcPersona(id: string): NpcPersona | undefined {
+  if (id === SHOP_MERCHANT_PERSONA.id) return SHOP_MERCHANT_PERSONA;
   return ALL_PERSONAS.find((p) => p.id === id);
 }
 

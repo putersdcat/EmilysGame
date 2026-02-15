@@ -20,7 +20,7 @@ import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizRe
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
-import { getNpcPersona } from './config/npc.config';
+import { getNpcPersona, SHOP_MERCHANT_PERSONA } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain } from './terrain-cache';
@@ -54,7 +54,7 @@ import {
   executeTrade, syncTradeDOM, type TradeState,
 } from './trading';
 import {
-  createPlayerStatus, tickStatus, getDebuffs, useStatusItem,
+  createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
   serializeStatus, deserializeStatus, resetTickCounter,
   type PlayerStatus,
 } from './status';
@@ -898,6 +898,37 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
       break;
     }
+
+    // --- Shop structure interaction (#77) ---
+    case 'shop':
+      showDialog(state.ui, 'Shopkeeper', [result.message]);
+      state.paused = true;
+      playSfx(state.sfx, 'dialog_open');
+      _lastDialogNpcId = null;
+      speakLine(state.voice, result.message, null);
+      // Queue trade panel to open after dialog closes
+      state.pendingTrade = SHOP_MERCHANT_PERSONA.id;
+      break;
+
+    // --- Campfire rest interaction (#77) ---
+    case 'campfire': {
+      const changes = applyStatusEffect(state.status, { energy: 25, hydration: 10 });
+      const msg = changes.length > 0
+        ? `${result.message} ${changes.join(', ')}`
+        : `${result.message} You feel refreshed!`;
+      addToast(state.ui, msg, '#ff8844', 3000);
+      playSfx(state.sfx, 'pickup_item');
+      break;
+    }
+
+    // --- Structure flavor text (#77) ---
+    case 'structure':
+      showDialog(state.ui, '🏠 Structure', [result.message]);
+      state.paused = true;
+      playSfx(state.sfx, 'dialog_open');
+      _lastDialogNpcId = null;
+      speakLine(state.voice, result.message, null);
+      break;
   }
 }
 

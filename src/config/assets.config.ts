@@ -339,7 +339,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   },
   fence: {
     emoji: '🚧', category: 'obstacle', height: 2, layer: 'mid',
-    scale: 0.7, shadow: false, walkable: false, interactable: false,
+    scale: 0.7, shadow: false, walkable: false, interactable: true,
     description: 'Wooden fence segment',
   },
 
@@ -351,7 +351,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   },
   campfire: {
     emoji: '🔥', category: 'interactive', height: 2, layer: 'mid',
-    scale: 0.7, shadow: true, walkable: false, interactable: false,
+    scale: 0.7, shadow: true, walkable: false, interactable: true,
     description: 'Small campfire',
   },
 

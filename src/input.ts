@@ -30,6 +30,18 @@ export class InputManager {
     interact: false,
   };
 
+  /**
+   * Queued presses: set on keydown, cleared only by endFrame().
+   * Prevents fast keydown→keyup between frames from being missed.
+   */
+  private pressQueue: InputState = {
+    up: false,
+    down: false,
+    left: false,
+    right: false,
+    interact: false,
+  };
+
   constructor() {
     this.setupListeners();
   }
@@ -52,25 +64,30 @@ export class InputManager {
       case 'w':
       case 'arrowup':
         this.keyState.up = true;
+        this.pressQueue.up = true;
         event.preventDefault();
         break;
       case 's':
       case 'arrowdown':
         this.keyState.down = true;
+        this.pressQueue.down = true;
         event.preventDefault();
         break;
       case 'a':
       case 'arrowleft':
         this.keyState.left = true;
+        this.pressQueue.left = true;
         event.preventDefault();
         break;
       case 'd':
       case 'arrowright':
         this.keyState.right = true;
+        this.pressQueue.right = true;
         event.preventDefault();
         break;
       case ' ':
         this.keyState.interact = true;
+        this.pressQueue.interact = true;
         event.preventDefault();
         break;
     }
@@ -119,23 +136,39 @@ export class InputManager {
 
   /**
    * Returns keys that were JUST pressed this frame (rising edge).
+   * Uses pressQueue to catch fast keydown→keyup between frames.
    * Use for single-fire actions like quiz navigate, dialog advance.
    */
   public justPressed(): InputState {
     return {
-      up: this.keyState.up && !this.prevState.up,
-      down: this.keyState.down && !this.prevState.down,
-      left: this.keyState.left && !this.prevState.left,
-      right: this.keyState.right && !this.prevState.right,
-      interact: this.keyState.interact && !this.prevState.interact,
+      up: (this.keyState.up || this.pressQueue.up) && !this.prevState.up,
+      down: (this.keyState.down || this.pressQueue.down) && !this.prevState.down,
+      left: (this.keyState.left || this.pressQueue.left) && !this.prevState.left,
+      right: (this.keyState.right || this.pressQueue.right) && !this.prevState.right,
+      interact: (this.keyState.interact || this.pressQueue.interact) && !this.prevState.interact,
     };
   }
 
   /**
    * Call at the END of each update frame to snapshot previous state.
+   * Also clears the press queue so queued presses fire only once.
    */
   public endFrame(): void {
-    this.prevState = { ...this.keyState };
+    // Use pressQueue OR keyState for prev — ensures edge detection
+    // works even if key was released before this frame ran
+    this.prevState = {
+      up: this.keyState.up || this.pressQueue.up,
+      down: this.keyState.down || this.pressQueue.down,
+      left: this.keyState.left || this.pressQueue.left,
+      right: this.keyState.right || this.pressQueue.right,
+      interact: this.keyState.interact || this.pressQueue.interact,
+    };
+    // Clear queue — presses consumed
+    this.pressQueue.up = false;
+    this.pressQueue.down = false;
+    this.pressQueue.left = false;
+    this.pressQueue.right = false;
+    this.pressQueue.interact = false;
   }
 
   /**

@@ -21,7 +21,10 @@ export type InteractionResult =
   | { type: 'npc'; npcId: string; greeting: string }
   | { type: 'sign'; message: string }
   | { type: 'chest'; items: string[]; message: string }
-  | { type: 'quiz_gate'; chunkKey: string; lx: number; ly: number; message: string };
+  | { type: 'quiz_gate'; chunkKey: string; lx: number; ly: number; message: string }
+  | { type: 'shop'; message: string }
+  | { type: 'campfire'; message: string }
+  | { type: 'structure'; assetKey: string; message: string };
 
 // ─── Collision Check ─────────────────────────────────────────
 
@@ -189,6 +192,26 @@ export function interact(
           : `Need a ${template.requiredItem}!`,
       };
     }
+  }
+
+  // --- Shop structure (#77) ---
+  if (cell.assetKey === 'shop') {
+    return { type: 'shop', message: 'Welcome to the shop! Browse our wares.' };
+  }
+
+  // --- Campfire rest (#77) ---
+  if (cell.assetKey === 'campfire') {
+    return { type: 'campfire', message: 'You rest by the warm campfire...' };
+  }
+
+  // --- House / Hut / structure flavor (#77) ---
+  const STRUCTURE_FLAVOR: Record<string, string> = {
+    house: 'A cozy cottage. Smoke rises from the chimney.',
+    hut: 'A small shelter made of branches and thatch.',
+    fence: 'A sturdy fence marking a boundary.',
+  };
+  if (STRUCTURE_FLAVOR[cell.assetKey]) {
+    return { type: 'structure', assetKey: cell.assetKey, message: STRUCTURE_FLAVOR[cell.assetKey] };
   }
 
   return { type: 'none' };
