@@ -8,6 +8,7 @@ import {
   SUBJECTS, KNOWLEDGE_ARTICLES, getArticleById, searchArticles,
   type SubjectId, type KnowledgeArticle,
 } from './config/knowledge.config';
+import { renderMarkdown, escapeHtml } from './markdown';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -282,9 +283,9 @@ function renderBrowseView(container: HTMLElement, state: KnowledgeState): void {
 
     for (const a of group) {
       const isRead = state.readArticles.has(a.id);
-      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${a.id}">
-        <div class="book-article-title">${a.title} ${isRead ? '✓' : ''}</div>
-        <div class="book-article-summary">${a.summary}</div>
+      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${escapeHtml(a.id)}">
+        <div class="book-article-title">${escapeHtml(a.title)} ${isRead ? '✓' : ''}</div>
+        <div class="book-article-summary">${escapeHtml(a.summary)}</div>
       </div>`;
     }
     html += '</div>';
@@ -307,10 +308,8 @@ function renderBrowseView(container: HTMLElement, state: KnowledgeState): void {
 
 function renderArticleView(container: HTMLElement, article: KnowledgeArticle, state: KnowledgeState): void {
   const subject = SUBJECTS.find(s => s.id === article.subject);
-  // Convert **bold** markdown to <strong>
-  const formattedContent = article.content
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
+  // Render markdown content to structured HTML (lists, headings, bold, etc.)
+  const formattedContent = renderMarkdown(article.content);
 
   let keyTermsHtml = '';
   if (article.keyTerms.length > 0) {
@@ -339,7 +338,7 @@ function renderArticleView(container: HTMLElement, article: KnowledgeArticle, st
       <div class="book-back" id="bookBack">← Back</div>
       <div class="book-article-header">
         <span style="color:${subject?.color || '#fff'}">${subject?.icon || '📖'}</span>
-        <span class="book-article-full-title">${article.title}</span>
+        <span class="book-article-full-title">${escapeHtml(article.title)}</span>
       </div>
       <div class="book-article-body">${formattedContent}</div>
       ${keyTermsHtml}
@@ -434,9 +433,9 @@ function renderSearchView(container: HTMLElement, state: KnowledgeState): void {
     for (const a of results) {
       const subject = SUBJECTS.find(s => s.id === a.subject);
       const isRead = state.readArticles.has(a.id);
-      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${a.id}">
-        <div class="book-article-title"><span style="color:${subject?.color || '#fff'}">${subject?.icon}</span> ${a.title} ${isRead ? '✓' : ''}</div>
-        <div class="book-article-summary">${a.summary}</div>
+      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${escapeHtml(a.id)}">
+        <div class="book-article-title"><span style="color:${subject?.color || '#fff'}">${subject?.icon}</span> ${escapeHtml(a.title)} ${isRead ? '✓' : ''}</div>
+        <div class="book-article-summary">${escapeHtml(a.summary)}</div>
       </div>`;
     }
   }

@@ -1971,6 +1971,13 @@ async function main(): Promise<void> {
     getTimeSlot,
     // Night mode debug (#114)
     getRevealedCreatures: () => _revealedCreatures.size,
+    // Book/Knowledge debug (#118)
+    getKnowledgeState: () => state.knowledge,
+    openBookArticle: (id: string) => openArticle(state.knowledge, id),
+    toggleBook: () => {
+      toggleBook(state.knowledge);
+      state.paused = state.knowledge.bookOpen;
+    },
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
