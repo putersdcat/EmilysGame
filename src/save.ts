@@ -40,6 +40,8 @@ export interface SaveData {
   discoveredWildlife?: string[];
   /** Player survival status (#70) */
   playerStatus?: { energy: number; hydration: number; cleanliness: number };
+  /** Unlocked cosmetic IDs for progression-gated customizer (#66) */
+  unlockedCosmetics?: string[];
 }
 
 export interface ResolvedCell {

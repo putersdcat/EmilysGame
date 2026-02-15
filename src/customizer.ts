@@ -2,11 +2,13 @@
  * customizer.ts - Player sprite customizer overlay.
  * Lets players pick hair style, hair color, outfit color, skin tone.
  * Shows live SVG preview. Returns a CharacterVariation for the game to use.
+ * Supports progression-gated locked cosmetics (#66).
  * TODO: DOC - customizer UI spec
  */
 
 import type { CharacterVariation } from './sprites';
 import { generateIdleCharacterSVG, generateWalkingCharacterSVG } from './sprites';
+import { getUnlockablesForCategory } from './config/cosmetics.config';
 
 // ─── Preset Options ──────────────────────────────────────────
 
@@ -105,9 +107,49 @@ function stopPreviewAnimation(): void {
 
 // ─── Swatch Rendering ────────────────────────────────────────
 
+/** Set of unlocked cosmetic IDs — managed externally, read by customizer */
+let _unlockedCosmeticIds: Set<string> = new Set();
+
+/** Update the set of unlocked cosmetics (called from main.ts) */
+export function setUnlockedCosmetics(ids: string[]): void {
+  _unlockedCosmeticIds = new Set(ids);
+}
+
+/** Get current unlock set (for debug) */
+export function getUnlockedCosmetics(): string[] {
+  return [..._unlockedCosmeticIds];
+}
+
+interface SwatchOption {
+  name: string;
+  hex: string;
+  locked?: boolean;
+  lockHint?: string;
+}
+
+function buildSwatchOptions(
+  baseOptions: { name: string; hex: string }[],
+  category: 'hairColor' | 'outfitColor' | 'skinTone',
+): SwatchOption[] {
+  const unlockables = getUnlockablesForCategory(category);
+  const options: SwatchOption[] = baseOptions.map(o => ({ ...o }));
+
+  // Add locked/unlocked premium options
+  for (const u of unlockables) {
+    const isUnlocked = _unlockedCosmeticIds.has(u.id);
+    options.push({
+      name: u.name,
+      hex: u.value,
+      locked: !isUnlocked,
+      lockHint: u.hint,
+    });
+  }
+  return options;
+}
+
 function renderSwatches(
   containerId: string,
-  options: { name: string; hex: string }[],
+  options: SwatchOption[],
   selectedHex: string,
   onSelect: (hex: string) => void,
 ): void {
@@ -116,6 +158,15 @@ function renderSwatches(
 
   container.innerHTML = options.map(opt => {
     const selected = opt.hex.toLowerCase() === selectedHex.toLowerCase();
+    if (opt.locked) {
+      return `<button class="cust-swatch locked" 
+                data-hex="${opt.hex}"
+                data-locked="true"
+                title="🔒 ${opt.name} — ${opt.lockHint}"
+                style="background:${opt.hex}" disabled>
+                🔒
+              </button>`;
+    }
     return `<button class="cust-swatch${selected ? ' selected' : ''}" 
               data-hex="${opt.hex}" 
               title="${opt.name}" 
@@ -124,7 +175,7 @@ function renderSwatches(
             </button>`;
   }).join('');
 
-  container.querySelectorAll('.cust-swatch').forEach(btn => {
+  container.querySelectorAll('.cust-swatch:not([data-locked])').forEach(btn => {
     btn.addEventListener('click', () => {
       const hex = (btn as HTMLElement).dataset.hex!;
       onSelect(hex);
@@ -175,15 +226,15 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
     // Helper to refresh all UI
     const refreshAll = () => {
       renderPreview(variation);
-      renderSwatches('custHairColors', HAIR_COLORS, variation.hairColor, (hex) => {
+      renderSwatches('custHairColors', buildSwatchOptions(HAIR_COLORS, 'hairColor'), variation.hairColor, (hex) => {
         variation.hairColor = hex;
         refreshAll();
       });
-      renderSwatches('custOutfitColors', OUTFIT_COLORS, variation.dressColor, (hex) => {
+      renderSwatches('custOutfitColors', buildSwatchOptions(OUTFIT_COLORS, 'outfitColor'), variation.dressColor, (hex) => {
         variation.dressColor = hex;
         refreshAll();
       });
-      renderSwatches('custSkinTones', SKIN_TONES, variation.skinTone, (hex) => {
+      renderSwatches('custSkinTones', buildSwatchOptions(SKIN_TONES, 'skinTone'), variation.skinTone, (hex) => {
         variation.skinTone = hex;
         refreshAll();
       });

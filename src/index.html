@@ -537,6 +537,19 @@
     }
     .cust-swatch:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
     .cust-swatch.selected { border-color: #ffdd88; box-shadow: 0 0 8px rgba(255,221,136,0.5); }
+    /* Locked cosmetics (#66) */
+    .cust-swatch.locked {
+      opacity: 0.45;
+      cursor: not-allowed;
+      border: 2px dashed rgba(255,255,255,0.3);
+      font-size: 12px;
+      position: relative;
+    }
+    .cust-swatch.locked:hover {
+      transform: scale(1.1);
+      opacity: 0.6;
+      border-color: rgba(255,180,50,0.5);
+    }
     /* Hair style buttons */
     .cust-style-row {
       display: flex; gap: 8px;

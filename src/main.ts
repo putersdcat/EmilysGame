@@ -32,7 +32,8 @@ import {
   type KnowledgeState,
 } from './knowledge';
 import { searchArticles } from './config/knowledge.config';
-import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation } from './customizer';
+import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './customizer';
+import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
@@ -103,6 +104,8 @@ interface GameState {
   pendingTrade: string | null;
   // Player survival status (#70)
   status: PlayerStatus;
+  // Unlocked cosmetic IDs (#66)
+  unlockedCosmetics: string[];
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -365,7 +368,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     trade: createTradeState(),
     pendingTrade: null,
     status: createPlayerStatus(),
+    unlockedCosmetics: save?.unlockedCosmetics ?? [],
   };
+
+  // Sync unlocked cosmetics to customizer
+  setUnlockedCosmetics(state.unlockedCosmetics);
 
   // Restore inventory from save
   if (save?.inventory) {
@@ -451,6 +458,7 @@ function update(state: GameState, input: InputManager): void {
           for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
           addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
           state.quizStats.correct++;
+          checkCosmeticUnlocks(state);
 
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
           if (state.pendingGateQuiz) {
@@ -660,6 +668,8 @@ function update(state: GameState, input: InputManager): void {
       // Make creature flee after inspection
       entity.behavior = 'flee';
       entity.fleeCooldown = 180;
+      // Check cosmetic unlocks for wildlife discovery (#66)
+      checkCosmeticUnlocks(state);
       // Queue a quiz if species has a quiz category
       if (species.quizCategory) {
         const diff = getDifficultyForPosition(state.player.x, state.player.y);
@@ -820,6 +830,7 @@ function buildSaveData(state: GameState): SaveData {
     playerVariation: serializeVariation(state.playerVariation),
     discoveredWildlife: getDiscoveredSpeciesArray(),
     playerStatus: serializeStatus(state.status),
+    unlockedCosmetics: state.unlockedCosmetics,
   };
 }
 
@@ -853,6 +864,9 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Restore survival status (#70)
   state.status = deserializeStatus(data.playerStatus);
   resetTickCounter();
+  // Restore unlocked cosmetics (#66)
+  state.unlockedCosmetics = data.unlockedCosmetics ?? [];
+  setUnlockedCosmetics(state.unlockedCosmetics);
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -866,6 +880,29 @@ function doSave(state: GameState): void {
   saveGame(buildSaveData(state));
   markSaveSlotsDirty();
 }
+
+// ─── Cosmetic Unlock Check (#66) ────────────────────────────────
+/** Check progression and grant newly unlocked cosmetics */
+function checkCosmeticUnlocks(state: GameState): void {
+  const progress: ProgressionData = {
+    quizCorrect: state.quizStats.correct,
+    quizAnswered: state.quizStats.answered,
+    wildlifeDiscovered: getWildlifeStats().discovered,
+  };
+  const newUnlocks = checkAllUnlocks(progress, new Set(state.unlockedCosmetics));
+  if (newUnlocks.length > 0) {
+    state.unlockedCosmetics.push(...newUnlocks);
+    setUnlockedCosmetics(state.unlockedCosmetics);
+    // Show toast for each unlock
+    for (const id of newUnlocks) {
+      const cosmetic = getCosmeticById(id);
+      if (cosmetic) {
+        addToast(state.ui, `🔓 New cosmetic unlocked: ${cosmetic.name}!`, '#ffab40', 4000);
+      }
+    }
+  }
+}
+
 // ─── Menu System ───────────────────────────────────────────────────
 // TODO: DOC - menu flow state diagram
 
@@ -973,6 +1010,8 @@ function resetGameState(state: GameState): void {
   state.pendingTrade = null;
   state.status = createPlayerStatus();
   resetTickCounter();
+  state.unlockedCosmetics = [];
+  setUnlockedCosmetics([]);
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1409,6 +1448,17 @@ async function main(): Promise<void> {
       if (result) addToast(state.ui, result, '#88ccff', 2000);
       return result;
     },
+    // Cosmetic unlock helpers (#66)
+    getUnlockedCosmetics: () => state.unlockedCosmetics,
+    grantCosmetic: (id: string) => {
+      if (!state.unlockedCosmetics.includes(id)) {
+        state.unlockedCosmetics.push(id);
+        setUnlockedCosmetics(state.unlockedCosmetics);
+        const cosmetic = getCosmeticById(id);
+        if (cosmetic) addToast(state.ui, `🔓 ${cosmetic.name} unlocked!`, '#ffab40', 3000);
+      }
+    },
+    checkUnlocks: () => checkCosmeticUnlocks(state),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
