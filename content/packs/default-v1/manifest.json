@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0.0",
+  "packName": "Default Educational Content Pack",
+  "packVersion": "1.0.0",
+  "description": "Core educational content for Emily's Game - quiz questions and knowledge articles across multiple subjects and age bands (5-12+)",
+  "author": "Emily's Game Content Team",
+  "license": "CC0-1.0",
+  "createdAt": "2026-02-15T19:24:47.023Z",
+  "updatedAt": "2026-02-15T19:24:47.023Z",
+  "shards": {
+    "quizzes": [
+      "quizzes-001.json",
+      "quizzes-002.json"
+    ],
+    "articles": [
+      "articles-001.json"
+    ]
+  },
+  "stats": {
+    "totalQuizzes": 105,
+    "totalArticles": 15,
+    "categoryCounts": {
+      "math": 15,
+      "science": 15,
+      "history": 15,
+      "language": 15,
+      "logic": 15,
+      "geography": 15,
+      "technology": 15
+    },
+    "subjectCounts": {
+      "math": 3,
+      "science": 4,
+      "history": 2,
+      "language": 2,
+      "technology": 2,
+      "geography": 2
+    },
+    "ageBandCounts": {
+      "5-7": 38,
+      "8-10": 42,
+      "11-12+": 40
+    }
+  }
+}

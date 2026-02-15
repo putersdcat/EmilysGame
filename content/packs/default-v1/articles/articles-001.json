@@ -1,0 +1,420 @@
+{
+  "shardId": "articles-001",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-02-15T19:24:26.240Z",
+  "articles": [
+    {
+      "id": "article_math_000",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "What Are Fractions?",
+      "summary": "Learn about fractions - parts of a whole, like slicing a pizza!",
+      "content": "A **fraction** represents a part of something whole. When you cut a pizza into 4 equal slices and eat 1, you've eaten 1/4 (one quarter) of the pizza.\n\nThe top number is called the **numerator** — it tells you how many parts you have. The bottom number is the **denominator** — it tells you how many equal parts the whole is divided into.\n\n**Examples:**\n- 1/2 means one part out of two (half)\n- 3/4 means three parts out of four\n- 5/8 means five parts out of eight\n\nFun fact: The word \"fraction\" comes from the Latin word \"fractio\" which means \"to break\"! So fractions are literally about breaking things into pieces.\n\n**Practice:** If you have a candy bar divided into 6 pieces and you eat 2, what fraction did you eat? Answer: 2/6 (which can be simplified to 1/3).",
+      "keyTerms": [
+        "fraction",
+        "numerator",
+        "denominator",
+        "quarter",
+        "half"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.239Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_math_001",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Prime Numbers Explained",
+      "summary": "Special numbers that can only be divided by 1 and themselves.",
+      "content": "A **prime number** is a number greater than 1 that can only be divided evenly by 1 and itself. The first few primes are: 2, 3, 5, 7, 11, 13, 17, 19, 23...\n\n**Why is 2 special?** It's the only even prime number! Every other even number can be divided by 2, so they're not prime.\n\n**Prime Factorization:**\nPrime numbers are like the \"atoms\" of math — every whole number can be built by multiplying primes together. This is called **prime factorization**.\n\nExample: 12 = 2 × 2 × 3\n\n**Where are primes used?**\n- Internet security and encryption\n- Random number generation\n- Coding theory\n\n**Unsolved Mystery:** The **Goldbach Conjecture** says every even number greater than 2 can be written as the sum of two primes. It's been tested for numbers up to billions, but no one has proven it's always true!",
+      "keyTerms": [
+        "prime number",
+        "prime factorization",
+        "divisible",
+        "composite number"
+      ],
+      "readingLevel": 5.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_math_002",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Geometry Basics: Shapes Around Us",
+      "summary": "Learn about triangles, squares, circles and other shapes!",
+      "content": "**Geometry** is the study of shapes! Shapes are all around us - in buildings, nature, and even in this game!\n\n**Triangle** 🔺\n- Has 3 sides and 3 corners\n- All its angles add up to 180°\n- Can be different types: equilateral (all sides equal), isosceles (two sides equal), or scalene (all different)\n\n**Square** ⬛\n- Has 4 equal sides\n- Has 4 right angles (90° each)\n- All corners are the same\n\n**Circle** ⭕\n- Has no corners at all\n- Every point on the edge is the same distance from the center\n- That distance is called the radius\n\n**Rectangle** 📱\n- Has 4 sides (opposite sides are equal)\n- Has 4 right angles\n\n**Fun Activity:** Look around your room. Can you find 5 different shapes?",
+      "keyTerms": [
+        "triangle",
+        "square",
+        "circle",
+        "rectangle",
+        "geometry",
+        "right angle"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_003",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Atoms: The Building Blocks of Everything",
+      "summary": "Everything is made of tiny particles called atoms. Learn how they work!",
+      "content": "Everything you can see, touch, or smell is made of incredibly tiny particles called **atoms**. They're so small that millions of them could fit on the period at the end of this sentence!\n\n**Parts of an Atom:**\n- **Protons**: Positive charge, found in the nucleus (center)\n- **Neutrons**: No charge, also in the nucleus\n- **Electrons**: Negative charge, zoom around the nucleus in shells\n\n**Elements:**\nWhen you have atoms that are all the same type, that's called an **element**. Gold, oxygen, and carbon are all elements. There are 118 known elements!\n\n**The Periodic Table:**\nScientists organize all elements in a chart called the **Periodic Table**. Elements in the same column have similar properties.\n\n**Molecules:**\nWhen atoms bond together, they form **molecules**. Water (H₂O) is a molecule made of 2 hydrogen atoms and 1 oxygen atom.\n\n**Amazing Fact:** If an atom were the size of a football stadium, the nucleus would be the size of a pea in the center!",
+      "keyTerms": [
+        "atom",
+        "proton",
+        "neutron",
+        "electron",
+        "nucleus",
+        "element",
+        "periodic table",
+        "molecule"
+      ],
+      "readingLevel": 6,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_004",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Photosynthesis: How Plants Make Food",
+      "summary": "Plants can make their own food using sunlight. Here's how!",
+      "content": "Plants are amazing — they can make their own food! This process is called **photosynthesis**.\n\n**The Recipe for Photosynthesis:**\n1. **Sunlight** ☀️ (energy source)\n2. **Water** 💧 (from roots)\n3. **Carbon Dioxide** (from air)\n4. **Chlorophyll** 🌿 (green substance in leaves)\n\n**What Happens:**\nThe plant uses the sun's energy to combine water and CO₂ into **glucose** (sugar for energy) and releases **oxygen** as a bonus. That oxygen is what we breathe!\n\n**The Equation:**\nWater + Carbon Dioxide + Sunlight → Glucose + Oxygen\n\n**Where It Happens:**\nPhotosynthesis happens in tiny structures called **chloroplasts** inside plant cells. Chloroplasts contain chlorophyll, which makes plants look green!\n\n**Why It Matters:**\nWithout photosynthesis, there would be no oxygen in the air for us to breathe. Plants are Earth's oxygen factories! 🌍",
+      "keyTerms": [
+        "photosynthesis",
+        "chlorophyll",
+        "glucose",
+        "carbon dioxide",
+        "oxygen",
+        "chloroplasts"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_005",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Gravity: The Force That Keeps Us Down",
+      "summary": "What is gravity and why don't we float away?",
+      "content": "**Gravity** is an invisible force that pulls objects toward each other. The bigger an object is, the stronger its gravity.\n\n**Earth's Gravity:**\nEarth is really big, so it pulls everything toward its center — that's why we don't float away! When you jump, gravity pulls you back down.\n\n**Sir Isaac Newton:**\nLegend says Newton figured out gravity around 1687 after watching an apple fall from a tree. He realized the same force pulling the apple down also keeps the Moon orbiting Earth!\n\n**On Other Worlds:**\nThe Moon's gravity is about 1/6th of Earth's. If you weigh 60 kg on Earth, you'd only weigh about 10 kg on the Moon! You could jump 6 times higher there.\n\n**In Space:**\nGravity keeps:\n- The Moon orbiting Earth\n- Earth orbiting the Sun\n- Planets in our solar system together\n\nWithout gravity, everything would just float apart into space!",
+      "keyTerms": [
+        "gravity",
+        "force",
+        "mass",
+        "orbit",
+        "Newton",
+        "weight"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_006",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "The Water Cycle",
+      "summary": "How water travels from the ocean to the sky and back again!",
+      "content": "Water is always moving! It goes through a journey called the **water cycle**.\n\n**The Journey:**\n\n1. **Evaporation** ☀️💧\n   - The sun heats water in oceans, lakes, and rivers\n   - Water turns into invisible water vapor and rises into the sky\n\n2. **Condensation** ☁️\n   - Water vapor cools down and forms tiny droplets\n   - These droplets make clouds!\n\n3. **Precipitation** 🌧️❄️\n   - When clouds get heavy, water falls back to Earth\n   - This can be rain, snow, sleet, or hail\n\n4. **Collection** 🌊\n   - Water flows into rivers, lakes, and oceans\n   - Then the cycle starts again!\n\n**Fun Fact:** The water you drink today is the same water dinosaurs drank millions of years ago! Water doesn't leave Earth - it just keeps recycling.",
+      "keyTerms": [
+        "water cycle",
+        "evaporation",
+        "condensation",
+        "precipitation",
+        "collection"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_history_007",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Ancient Egypt: Land of Pharaohs and Pyramids",
+      "summary": "Discover the amazing civilization that built pyramids along the Nile River.",
+      "content": "Ancient Egypt was one of the world's first great civilizations, lasting over **3,000 years**! It grew along the **Nile River** in northeast Africa.\n\n**Pharaohs:**\nEgyptian kings were called **pharaohs**. They were thought to be gods on Earth! Famous pharaohs include:\n- **Tutankhamun** (King Tut) - died young, tomb found intact\n- **Ramses II** - built many temples\n- **Cleopatra** - last pharaoh of Egypt\n\n**The Pyramids:**\nThe Great Pyramid of Giza is made of about 2.3 million stone blocks! Each block weighs as much as two cars. It took 20 years and thousands of workers to build.\n\n**Hieroglyphics:**\nEgyptians invented **hieroglyphics** — a writing system using pictures and symbols. We can read it now thanks to the Rosetta Stone!\n\n**Amazing Inventions:**\n- **Papyrus** (early paper made from reeds)\n- **Calendar** (365 days, 12 months)\n- **Advanced medicine** (they even performed surgery!)\n\n**Fun Fact:** Ancient Egyptians loved cats so much that harming one was against the law! 🐱",
+      "keyTerms": [
+        "pharaoh",
+        "pyramid",
+        "hieroglyphics",
+        "Nile River",
+        "papyrus",
+        "mummy",
+        "sphinx"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "public-domain",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Ancient_Egypt",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_history_008",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "The Space Race: Journey to the Moon",
+      "summary": "How humans first reached the Moon in 1969.",
+      "content": "The **Space Race** was a competition between the USA and Soviet Union to explore space. It started in the 1950s and reached its peak in 1969.\n\n**The Soviets Lead:**\n- **1957**: Launch **Sputnik**, the first satellite\n- **1961**: **Yuri Gagarin** becomes first human in space\n- **1963**: Valentina Tereshkova becomes first woman in space\n\n**America Responds:**\nPresident Kennedy announced in 1961: \"We choose to go to the Moon!\" This started the **Apollo program**.\n\n**Apollo 11 - July 20, 1969:**\n- **Neil Armstrong** becomes first person to walk on the Moon\n- **Buzz Aldrin** follows 19 minutes later\n- **Michael Collins** orbits above in the command module\n\n**Famous Quote:**\n\"That's one small step for man, one giant leap for mankind.\" - Neil Armstrong\n\n**The Legacy:**\nThe Space Race led to inventions we still use:\n- Memory foam\n- Scratch-resistant lenses\n- Water filters\n- Cordless tools\n- Satellite TV\n\n**After the Race:**\nIn 1975, American and Soviet spacecraft docked in space, marking the end of the Space Race and beginning of cooperation.",
+      "keyTerms": [
+        "Sputnik",
+        "Apollo",
+        "Neil Armstrong",
+        "Yuri Gagarin",
+        "satellite",
+        "orbit",
+        "NASA"
+      ],
+      "readingLevel": 6,
+      "provenance": {
+        "source": "public-domain",
+        "sourceUrl": "https://en.wikipedia.org/wiki/Space_Race",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_language_009",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Parts of Speech: The Building Blocks of Sentences",
+      "summary": "Every word has a job in a sentence. Learn about nouns, verbs, and more!",
+      "content": "Every word in a sentence has a job. These jobs are called **parts of speech**.\n\n**Noun** 📦\nA person, place, or thing.\nExamples: dog, happiness, London, teacher\n\n**Verb** 🏃\nAn action or state of being.\nExamples: run, think, is, jump, sleep\n\n**Adjective** 🎨\nDescribes a noun.\nExamples: big, blue, happy, fast, delicious\n\n**Adverb** ⚡\nDescribes a verb (often ends in -ly).\nExamples: quickly, very, yesterday, carefully\n\n**Pronoun** 👤\nReplaces a noun.\nExamples: he, she, they, it, who\n\n**Preposition** ↔️\nShows position or direction.\nExamples: in, on, under, through, between\n\n**Conjunction** ➕\nJoins words or sentences.\nExamples: and, but, because, or\n\n**Challenge Sentence:**\n\"The quick brown fox jumps over the lazy dog.\"\n- **Nouns**: fox, dog\n- **Verb**: jumps\n- **Adjectives**: quick, brown, lazy\n- **Preposition**: over\n- **Article**: the (special type of adjective)",
+      "keyTerms": [
+        "noun",
+        "verb",
+        "adjective",
+        "adverb",
+        "pronoun",
+        "preposition",
+        "conjunction"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_language_010",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Word Origins: Where English Comes From",
+      "summary": "English is a mix of many languages! Discover where words come from.",
+      "content": "**Etymology** is the study of where words come from. English is like a big mixing bowl!\n\n**Language Sources:**\n- **29% Latin**: animal, video, circus, bonus\n- **29% French**: menu, chef, ballet, café\n- **26% Germanic**: house, water, mother, bread\n- **7% Greek**: phone, photo, geography, democracy\n- **9% Other**: Borrowed from languages worldwide!\n\n**Interesting Word Origins:**\n\n**Robot** 🤖\nFrom Czech \"robota\" meaning forced labor. First used in a 1920 play.\n\n**Ketchup** 🍅\nMay come from Chinese \"kê-tsiap\" (a fish sauce)!\n\n**Salary** 💰\nFrom Latin \"salarium\" — Roman soldiers were partly paid in salt! (Salt was valuable for preserving food.)\n\n**Dinosaur** 🦕\nGreek: \"deinos\" (terrible) + \"sauros\" (lizard) = terrible lizard\n\n**Why Learn Etymology?**\nKnowing word origins helps you:\n- Guess meanings of new words\n- Spell better\n- Remember vocabulary\n- Understand connections between words\n\n**Example:** If you know \"aqua\" means water in Latin, you can guess that \"aquarium,\" \"aquatic,\" and \"aqueduct\" all relate to water!",
+      "keyTerms": [
+        "etymology",
+        "Latin",
+        "Germanic",
+        "Greek",
+        "origin",
+        "root word"
+      ],
+      "readingLevel": 6.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_technology_011",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Binary Code: The Language of Computers",
+      "summary": "Computers only understand 1s and 0s. Learn how binary works!",
+      "content": "Computers only understand two things: **on** and **off**, represented as **1** and **0**. This system is called **binary**.\n\n**Bits and Bytes:**\n- A **bit** is a single 1 or 0 (the smallest unit of data)\n- A **byte** is 8 bits together\n- 1 kilobyte (KB) = 1,024 bytes\n- 1 megabyte (MB) = 1,024 KB\n- 1 gigabyte (GB) = 1,024 MB\n\n**How Binary Counting Works:**\nDecimal → Binary\n- 0 → 0\n- 1 → 1\n- 2 → 10\n- 3 → 11\n- 4 → 100\n- 5 → 101\n- 10 → 1010\n\n**Storing Information:**\n- **Numbers**: Direct binary conversion\n- **Letters**: Each letter has a code (A = 01000001)\n- **Colors**: Three numbers for red, green, blue\n- **Music**: Thousands of numbers per second!\n- **This game**: Millions of 1s and 0s!\n\n**Transistors:**\nYour computer has billions of tiny switches called **transistors**. Each one represents one bit. Modern processors can switch billions of times per second!\n\n**Fun Activity:** Try writing your age in binary!",
+      "keyTerms": [
+        "binary",
+        "bit",
+        "byte",
+        "transistor",
+        "digital",
+        "code"
+      ],
+      "readingLevel": 6.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_technology_012",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "How the Internet Works",
+      "summary": "The internet connects billions of devices worldwide. Here's how!",
+      "content": "The **Internet** is a giant network of computers all connected together. Think of it like roads connecting cities, but for information!\n\n**When You Visit a Website:**\n\n1. **You Type a URL** 🌐\n   Example: www.example.com\n\n2. **DNS Lookup** 📞\n   Your computer asks a **DNS server** (like a phone book) to find the website's address\n\n3. **Travel Through Cables** 🔌\n   Your request travels through cables (sometimes under the ocean!) to a **server**\n\n4. **Server Responds** 💻\n   The server (a powerful computer) sends the website data back in small **packets**\n\n5. **Your Browser Displays It** 📱\n   Your browser puts all the packets together and shows you the page\n\nAll this happens in milliseconds!\n\n**Amazing Facts:**\n- There are over 800,000 miles of undersea cables!\n- Google handles about 5 billion searches every day\n- The first message sent over the internet was \"LO\" (they were trying to type \"LOGIN\" but it crashed!)\n\n**Internet vs. Web:**\nThe **Internet** is the network of connections.\nThe **World Wide Web** (WWW) is the system of websites that runs on the Internet.",
+      "keyTerms": [
+        "internet",
+        "server",
+        "DNS",
+        "packet",
+        "URL",
+        "browser",
+        "network",
+        "web"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_geography_013",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "The Seven Continents",
+      "summary": "Explore the seven large landmasses on Earth!",
+      "content": "Our Earth has seven huge pieces of land called **continents**. Let's explore each one!\n\n**1. Asia** 🌏\n- Largest continent\n- Home to China, India, Japan\n- More than half of all people live here!\n\n**2. Africa** 🦁\n- Second largest\n- Has the Sahara Desert and Nile River\n- Where humans first evolved\n\n**3. North America** 🦅\n- Has USA, Canada, Mexico\n- Contains every type of climate\n\n**4. South America** 🌴\n- Has the Amazon rainforest\n- Home to the Andes Mountains\n\n**5. Antarctica** 🐧\n- Coldest continent\n- Covered in ice\n- No countries, just research stations!\n\n**6. Europe** 🏰\n- Has many countries close together\n- Rich in history and culture\n\n**7. Australia/Oceania** 🦘\n- Smallest continent\n- Also called Oceania (includes nearby islands)\n- Home to unique animals like kangaroos\n\n**Memory Trick:** \"Asia, Africa, North America, South America, Antarctica, Europe, Australia\" — or make up your own sentence using the first letters!",
+      "keyTerms": [
+        "continent",
+        "Asia",
+        "Africa",
+        "North America",
+        "South America",
+        "Antarctica",
+        "Europe",
+        "Australia"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_geography_014",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Oceans of the World",
+      "summary": "Learn about the five oceans that cover most of our planet!",
+      "content": "About **71% of Earth's surface** is covered by oceans! There are five major oceans:\n\n**1. Pacific Ocean** 🌊\n- Largest and deepest\n- Covers more area than all land combined!\n- Home to the Mariana Trench (deepest spot on Earth)\n\n**2. Atlantic Ocean** 🚢\n- Second largest\n- Separates Americas from Europe and Africa\n- Has the Bermuda Triangle\n\n**3. Indian Ocean** 🏝️\n- Third largest\n- Warmest ocean\n- Important for trade routes\n\n**4. Southern Ocean** 🐧\n- Surrounds Antarctica\n- Very cold with lots of icebergs\n- Fourth largest\n\n**5. Arctic Ocean** ❄️\n- Smallest and shallowest\n- Mostly frozen\n- Home to polar bears and seals\n\n**Ocean Facts:**\n- Oceans contain 97% of Earth's water\n- The deepest point is 36,070 feet (almost 7 miles!)\n- More people have been to space than to the deepest ocean\n- Oceans produce over half of the world's oxygen\n\n**Why Oceans Matter:**\n- Regulate Earth's temperature\n- Provide food\n- Create weather patterns\n- Home to millions of species",
+      "keyTerms": [
+        "ocean",
+        "Pacific",
+        "Atlantic",
+        "Indian",
+        "Southern",
+        "Arctic",
+        "sea"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "curator": "content-pipeline-v1"
+      }
+    }
+  ]
+}
