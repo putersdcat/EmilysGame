@@ -29,6 +29,7 @@ import {
   getAllRotations,
   BIOME_TEMPLATE_WEIGHTS,
   MICRO_TILE_DEFS,
+  tileMatchesClimate,
   type EdgeTag,
   type RotatedTemplate,
   type Cardinal,
@@ -74,6 +75,8 @@ export interface ChunkData {
   generated: boolean;
   /** World unit grid border edges for inter-chunk stitching (#17) */
   borderEdges?: ChunkBorderEdges;
+  /** Chunk-level climate derived from noise fields (#101) */
+  climate?: { moisture: number; temperature: number };
 }
 
 // --- Entropy State ---
@@ -154,6 +157,8 @@ let _biomeNoiseSeed = 42;
 export function setBiomeNoiseSeed(seed: number): void {
   _biomeNoiseSeed = seed;
   _biomeNoise = null; // Reset so it reconstructs on next use
+  _moistureNoise = null; // #101: reset climate noise too
+  _tempNoise = null;
 }
 
 function getBiomeNoise(): PerlinNoise {
@@ -161,6 +166,30 @@ function getBiomeNoise(): PerlinNoise {
     _biomeNoise = new PerlinNoise(_biomeNoiseSeed);
   }
   return _biomeNoise;
+}
+
+// ─── Chunk-level climate from noise fields (#101) ────────────
+// Derives moisture & temperature per chunk for biome-aware tile selection.
+// Uses separate noise channels from biome selection so climate doesn't
+// perfectly align with biome boundaries (creating natural variation).
+
+let _moistureNoise: PerlinNoise | null = null;
+let _tempNoise: PerlinNoise | null = null;
+
+function getMoistureNoise(): PerlinNoise {
+  if (!_moistureNoise) _moistureNoise = new PerlinNoise(_biomeNoiseSeed + 3141);
+  return _moistureNoise;
+}
+function getTempNoise(): PerlinNoise {
+  if (!_tempNoise) _tempNoise = new PerlinNoise(_biomeNoiseSeed + 2718);
+  return _tempNoise;
+}
+
+/** Derive chunk-level climate (moisture + temperature in 0-1 range) from noise. */
+export function getChunkClimate(chunkX: number, chunkY: number): { moisture: number; temperature: number } {
+  const m = (getMoistureNoise().noise(chunkX * 0.06, chunkY * 0.06) + 1) / 2;
+  const t = (getTempNoise().noise(chunkX * 0.05, chunkY * 0.05) + 1) / 2;
+  return { moisture: m, temperature: t };
 }
 
 /**
@@ -230,6 +259,7 @@ export async function generateChunk(
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
   const biome = selectBiomeCoherent(chunkX, chunkY);
+  const climate = getChunkClimate(chunkX, chunkY);
   const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
 
   return {
@@ -238,6 +268,7 @@ export async function generateChunk(
     biomeName: biome.name,
     cells, seed: entropyText, generated: true,
     borderEdges,
+    climate,
   };
 }
 
@@ -262,6 +293,7 @@ export function generateChunkSync(
   const noiseSeed = fastHash(seedText);
   const featureSeed = fastHash(seedText + '_features');
   const biome = selectBiomeCoherent(chunkX, chunkY);
+  const climate = getChunkClimate(chunkX, chunkY);
 
   const { cells, borderEdges } = generateGridChunk(
     size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints,
@@ -273,6 +305,7 @@ export function generateChunkSync(
     biomeName: biome.name,
     cells, seed: seedText, generated: true,
     borderEdges,
+    climate,
   };
 }
 
@@ -359,6 +392,8 @@ function buildPerlinBase(
   // This replaces Math.random() so nearby cells get the same terrain type → larger patches.
   const terrainTypeNoise = new PerlinNoise(noiseSeed + 7777);
   const cells: CellData[][] = [];
+  // #101: chunk climate for tile affinity scoring
+  const climate = getChunkClimate(chunkX, chunkY);
 
   for (let y = 0; y < size; y++) {
     cells[y] = [];
@@ -368,31 +403,66 @@ function buildPerlinBase(
       const density = perlin.noise100(gx * 0.1, gy * 0.1);
       // Low-frequency noise (0.04) → large coherent patches of same terrain type
       const typeNoise = terrainTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
-      cells[y][x] = assignTerrainCell(density, biome, typeNoise);
+      cells[y][x] = assignTerrainCell(density, biome, typeNoise, climate);
     }
   }
   return cells;
 }
 
-function assignTerrainCell(density: number, biome: BiomeDef, typeNoise: number): CellData {
+/**
+ * Assign a terrain cell based on density, biome, and noise.
+ * #101: Climate affinity check — if the biome-weighted pick doesn't match
+ * the chunk climate, try the alternative terrain to find one that does.
+ * Falls back gracefully if no climate-matching tile exists.
+ */
+function assignTerrainCell(
+  density: number,
+  biome: BiomeDef,
+  typeNoise: number,
+  climate?: { moisture: number; temperature: number },
+): CellData {
   const { terrain, obstacle } = WORLD_CONFIG.density;
 
   if (density <= terrain.max) {
-    // Use spatially coherent noise value (0-1) instead of Math.random()
-    // This creates larger, more natural patches of the same terrain type
-    const assetKey = weightedPick(biome.terrainWeights, typeNoise);
+    let assetKey = weightedPick(biome.terrainWeights, typeNoise);
+    // #101: climate-based tile affinity filtering
+    if (climate && !tileMatchesClimate(assetKey as TileType, climate.moisture, climate.temperature)) {
+      // Try a climate-compatible alternative from same biome terrain pool
+      const altKey = findClimateCompatibleTile(biome.terrainWeights, climate);
+      if (altKey) assetKey = altKey;
+    }
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   } else if (density <= obstacle.max) {
-    // Use biome obstacleWeights for varied obstacles (not just rock)
     const assetKey = weightedPick(biome.obstacleWeights, Math.random());
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? false, interactable: def?.interactable ?? false };
   } else {
-    const assetKey = weightedPick(biome.terrainWeights, typeNoise);
+    let assetKey = weightedPick(biome.terrainWeights, typeNoise);
+    if (climate && !tileMatchesClimate(assetKey as TileType, climate.moisture, climate.temperature)) {
+      const altKey = findClimateCompatibleTile(biome.terrainWeights, climate);
+      if (altKey) assetKey = altKey;
+    }
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   }
+}
+
+/**
+ * Search biome terrain weights for a tile that matches the given climate.
+ * Returns the first climate-compatible tile, or null if none match.
+ * #101: biome-aware palette mapping via climate metadata.
+ */
+function findClimateCompatibleTile(
+  terrainWeights: Record<string, number>,
+  climate: { moisture: number; temperature: number },
+): string | null {
+  for (const key of Object.keys(terrainWeights)) {
+    if (tileMatchesClimate(key as TileType, climate.moisture, climate.temperature)) {
+      return key;
+    }
+  }
+  return null; // No climate match → caller falls back to original pick
 }
 
 // --- Phase 5.5: LLM Entropy Cell Flags (#4) ---
@@ -1176,6 +1246,24 @@ export function populateAnchors(
             break;
           case 'feature':
             placeFeatureAtCell(cells, cx, cy, biome, rng);
+            break;
+          // #101: new anchor roles — fall through to decoration for now
+          case 'merchant':
+          case 'quest':
+            // Merchant/quest anchors place NPCs when supported
+            if (!npcPlacedInUnit.has(unitKey)) {
+              if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty)) {
+                npcPlacedInUnit.add(unitKey);
+                npcPlaced++;
+              }
+            }
+            break;
+          case 'waypoint':
+          case 'spawn':
+          case 'landmark':
+          case 'puzzle':
+            // TODO: DOC — new anchor roles placeholder, treat as decoration
+            placeDecorationAtCell(cells, cx, cy, biome, rng);
             break;
         }
       }

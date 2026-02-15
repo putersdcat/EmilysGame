@@ -12,7 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
@@ -23,6 +23,12 @@ import { createUIState, addToast, showDialog, advanceDialog, closeDialog, render
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona, SHOP_MERCHANT_PERSONA } from './config/npc.config';
 import { preloadTiles } from './tiles';
+import {
+  MICRO_TILE_DEFS, WORLD_UNIT_TEMPLATES, BIOME_PALETTES,
+  validateAllTileDefs, validateTemplate, normalizeTileDef,
+  isValidAnchorRole, tileMatchesClimate, getTileLOD, tilesAtLOD,
+  getBiomePalette,
+} from './config/tiles.config';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
 import { clearObjectCache } from './render';
@@ -1813,6 +1819,21 @@ async function main(): Promise<void> {
     getWaterDebug: () => getWaterDebugInfo(),
     // Lock-Key DAG debug (#98)
     getLockKeyDAG: () => getLockKeyDebugInfo(),
+    // Tile metadata v2 (#101) — climate, LOD, anchor roles, validation
+    getTileConfig: () => ({
+      MICRO_TILE_DEFS,
+      WORLD_UNIT_TEMPLATES,
+      BIOME_PALETTES,
+    }),
+    validateAllTileDefs,
+    validateTemplate,
+    normalizeTileDef,
+    isValidAnchorRole,
+    tileMatchesClimate,
+    getTileLOD,
+    tilesAtLOD,
+    getBiomePalette,
+    getChunkClimate,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

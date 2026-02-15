@@ -30,6 +30,65 @@ export type TraversalType = 'open' | 'blocked' | 'conditional' | 'hazardous';
 /** Surface type for auto-tiling border blending */
 export type SurfaceType = 'grass' | 'dirt' | 'stone' | 'water' | 'wood' | 'sand';
 
+// ─── Climate & LOD (#101) ────────────────────────────────────
+
+/** Normalized moisture/temperature bands for biome affinity */
+export interface ClimateBand {
+  /** Moisture range [min, max], normalized 0-1. 0 = arid, 1 = saturated */
+  moisture: [number, number];
+  /** Temperature range [min, max], normalized 0-1. 0 = frozen, 1 = scorching */
+  temperature: [number, number];
+}
+
+/** LOD level for rendering detail decisions */
+export type LODLevel = 'detail' | 'standard' | 'simplified' | 'minimal';
+
+/** Default climate: any biome can use this tile */
+export const DEFAULT_CLIMATE: ClimateBand = { moisture: [0, 1], temperature: [0, 1] };
+
+// ─── Biome Palette Mapping (#101) ────────────────────────────
+
+/** Color palette for biome-specific tile rendering */
+export interface BiomePalette {
+  primary: string;    // main fill hex
+  secondary: string;  // accent/shadow hex
+  accent: string;     // highlight hex
+}
+
+/** Biome → SurfaceType → palette override.
+ *  When a tile is rendered in a biome, look up its surface type here. */
+export const BIOME_PALETTES: Record<string, Partial<Record<SurfaceType, BiomePalette>>> = {
+  meadow: {
+    grass: { primary: '#55AA44', secondary: '#448833', accent: '#88CC66' },
+    dirt:  { primary: '#B08040', secondary: '#8A6030', accent: '#D0A060' },
+  },
+  forest: {
+    grass: { primary: '#2D6B1E', secondary: '#1F4F14', accent: '#3D8B2E' },
+    dirt:  { primary: '#6B4226', secondary: '#4A2E1A', accent: '#8B5A36' },
+  },
+  desert: {
+    sand:  { primary: '#E8C868', secondary: '#C8A848', accent: '#F8D888' },
+    stone: { primary: '#C8B080', secondary: '#A89060', accent: '#D8C090' },
+    dirt:  { primary: '#D4A050', secondary: '#B48830', accent: '#E4B060' },
+  },
+  tundra: {
+    grass: { primary: '#9BAAAB', secondary: '#7B8A8B', accent: '#BBCCCD' },
+    stone: { primary: '#8899AA', secondary: '#6879AA', accent: '#AAB9CC' },
+    water: { primary: '#5588AA', secondary: '#3366AA', accent: '#88BBDD' },
+  },
+  swamp: {
+    grass: { primary: '#4A6B3A', secondary: '#3A5B2A', accent: '#5A7B4A' },
+    water: { primary: '#3D5A3A', secondary: '#2D4A2A', accent: '#4D6A4A' },
+    dirt:  { primary: '#5A4A30', secondary: '#4A3A20', accent: '#6A5A40' },
+  },
+};
+
+/** Look up a biome-specific palette for a surface type.
+ *  Returns undefined if no override exists (use default rendering). */
+export function getBiomePalette(biome: string, surface: SurfaceType): BiomePalette | undefined {
+  return BIOME_PALETTES[biome]?.[surface];
+}
+
 // ─── Micro Tile Metadata ─────────────────────────────────────
 
 export interface MicroTileDef {
@@ -52,6 +111,10 @@ export interface MicroTileDef {
   /** Index within the variation family (0 = base) */
   variationIndex: number;
   description: string;
+  /** Climate band describing moisture/temperature affinity (#101) */
+  climate?: ClimateBand;
+  /** LOD level for render detail decisions (#101) */
+  lod?: LODLevel;
 }
 
 export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
@@ -62,6 +125,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: true,
     variationFamily: 'grass', variationIndex: 0,
     description: 'Grass ground',
+    climate: { moisture: [0.3, 0.9], temperature: [0.2, 0.8] },
+    lod: 'standard',
   },
   dirt: {
     type: 'dirt', walkable: true, edgeTag: 'open',
@@ -70,6 +135,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: true,
     variationFamily: 'dirt', variationIndex: 0,
     description: 'Dirt path',
+    climate: { moisture: [0.1, 0.7], temperature: [0.1, 0.9] },
+    lod: 'standard',
   },
   rock: {
     type: 'rock', walkable: false, edgeTag: 'open',
@@ -78,6 +145,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: false,
     variationFamily: 'rock', variationIndex: 0,
     description: 'Boulder obstacle',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'detail',
   },
   water: {
     type: 'water', walkable: false, edgeTag: 'water',
@@ -86,6 +155,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'water', variationIndex: 0,
     description: 'Water (impassable)',
+    climate: { moisture: [0.6, 1.0], temperature: [0.1, 0.9] },
+    lod: 'standard',
   },
   sand: {
     type: 'sand', walkable: true, edgeTag: 'open',
@@ -94,6 +165,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: true,
     variationFamily: 'sand', variationIndex: 0,
     description: 'Sandy terrain',
+    climate: { moisture: [0, 0.3], temperature: [0.5, 1.0] },
+    lod: 'standard',
   },
   stone_wall: {
     type: 'stone_wall', walkable: false, edgeTag: 'wall',
@@ -102,6 +175,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'wall', variationIndex: 0,
     description: 'Stone wall segment',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'detail',
   },
   bridge: {
     type: 'bridge', walkable: true, edgeTag: 'water',
@@ -110,6 +185,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: false,
     variationFamily: 'bridge', variationIndex: 0,
     description: 'Bridge over water',
+    climate: { moisture: [0.5, 1.0], temperature: [0.1, 0.9] },
+    lod: 'detail',
   },
   door_gate: {
     type: 'door_gate', walkable: false, edgeTag: 'wall',
@@ -118,6 +195,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: false,
     variationFamily: 'gate', variationIndex: 0,
     description: 'Locked gate in wall (needs key)',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'detail',
   },
   wooden_fence: {
     type: 'wooden_fence', walkable: false, edgeTag: 'fence',
@@ -126,6 +205,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'fence', variationIndex: 0,
     description: 'Wooden fence segment',
+    climate: { moisture: [0, 1], temperature: [0.1, 0.9] },
+    lod: 'standard',
   },
   quiz_gate: {
     type: 'quiz_gate', walkable: false, edgeTag: 'gate',
@@ -134,6 +215,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'gate', variationIndex: 1,
     description: 'Quiz gate — answer a question to pass',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'detail',
   },
   stone_floor: {
     type: 'stone_floor', walkable: true, edgeTag: 'open',
@@ -142,6 +225,8 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: false, decorationEligible: true,
     variationFamily: 'stone_floor', variationIndex: 0,
     description: 'Stone flagstone floor',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'standard',
   },
 };
 
@@ -216,11 +301,25 @@ export type ConnectivityClass =
   | 'crossing'      // Bridges between chain types (bridge over river)
   ;
 
+/** Typed anchor roles for feature/NPC/item placement (#101 expanded) */
+export type AnchorRole =
+  | 'npc'         // NPC spawn point
+  | 'item'        // Collectible item
+  | 'decoration'  // Visual-only decoration
+  | 'feature'     // Gameplay feature (quiz gate, chest, etc.)
+  | 'quest'       // Quest objective marker
+  | 'merchant'    // Trading NPC position
+  | 'waypoint'    // Navigation waypoint / fast-travel
+  | 'spawn'       // Player/entity spawn point
+  | 'landmark'    // Named location marker
+  | 'puzzle'      // Puzzle element anchor
+  ;
+
 /** Anchor point within a template for feature/NPC/item placement */
 export interface AnchorPoint {
   x: number;        // Column (0-4) within the 5×5 grid
   y: number;        // Row (0-4) within the 5×5 grid
-  role: 'npc' | 'item' | 'decoration' | 'feature';
+  role: AnchorRole;
 }
 
 export interface WorldUnitTemplate {
@@ -247,6 +346,10 @@ export interface WorldUnitTemplate {
   category?: TemplateCategory;
   /** Connectivity class for chain management */
   connectivity?: ConnectivityClass;
+  /** LOD level for this template (#101) */
+  lod?: LODLevel;
+  /** Template-level climate preference (#101) */
+  climate?: ClimateBand;
 }
 
 /** A concrete rotation of a template, pre-computed at load time */
@@ -2162,4 +2265,107 @@ export function getCompatibleVariants(
     }
   }
   return results;
+}
+
+// ─── Schema Validation & Helpers (#101) ──────────────────────
+
+/** Valid anchor roles for runtime validation */
+const VALID_ANCHOR_ROLES: ReadonlySet<AnchorRole> = new Set([
+  'npc', 'item', 'decoration', 'feature',
+  'quest', 'merchant', 'waypoint', 'spawn', 'landmark', 'puzzle',
+]);
+
+/** Validate a ClimateBand: both ranges must be [0,1] with min <= max */
+export function isValidClimate(c: ClimateBand): boolean {
+  const [mMin, mMax] = c.moisture;
+  const [tMin, tMax] = c.temperature;
+  return mMin >= 0 && mMax <= 1 && mMin <= mMax
+      && tMin >= 0 && tMax <= 1 && tMin <= tMax;
+}
+
+/** Normalize a MicroTileDef, filling in missing climate/LOD defaults */
+export function normalizeTileDef(def: MicroTileDef): MicroTileDef {
+  return {
+    ...def,
+    climate: def.climate ?? { ...DEFAULT_CLIMATE },
+    lod: def.lod ?? 'standard',
+  };
+}
+
+/** Validate an anchor point role is in the known set */
+export function isValidAnchorRole(role: string): role is AnchorRole {
+  return VALID_ANCHOR_ROLES.has(role as AnchorRole);
+}
+
+/** Validate a WorldUnitTemplate's metadata integrity.
+ *  Returns an array of error strings (empty = valid). */
+export function validateTemplate(tmpl: WorldUnitTemplate): string[] {
+  const errors: string[] = [];
+  if (!tmpl.name) errors.push('Template missing name');
+  if (!tmpl.cells || tmpl.cells.length !== 5) {
+    errors.push(`Template "${tmpl.name}": cells must be a 5×5 grid (got ${tmpl.cells?.length ?? 0} rows)`);
+  } else {
+    for (let r = 0; r < 5; r++) {
+      if (!tmpl.cells[r] || tmpl.cells[r].length !== 5) {
+        errors.push(`Template "${tmpl.name}": row ${r} must have 5 columns`);
+      }
+    }
+  }
+  if (tmpl.anchors) {
+    for (const a of tmpl.anchors) {
+      if (a.x < 0 || a.x > 4 || a.y < 0 || a.y > 4) {
+        errors.push(`Template "${tmpl.name}": anchor (${a.x},${a.y}) out of 5×5 bounds`);
+      }
+      if (!isValidAnchorRole(a.role)) {
+        errors.push(`Template "${tmpl.name}": unknown anchor role "${a.role}"`);
+      }
+    }
+  }
+  if (tmpl.climate && !isValidClimate(tmpl.climate)) {
+    errors.push(`Template "${tmpl.name}": invalid climate band`);
+  }
+  return errors;
+}
+
+/** Validate all MICRO_TILE_DEFS. Returns array of error strings. */
+export function validateAllTileDefs(): string[] {
+  const errors: string[] = [];
+  for (const [key, def] of Object.entries(MICRO_TILE_DEFS)) {
+    if (def.climate && !isValidClimate(def.climate)) {
+      errors.push(`MicroTileDef "${key}": invalid climate band`);
+    }
+    if (def.lod && !['detail', 'standard', 'simplified', 'minimal'].includes(def.lod)) {
+      errors.push(`MicroTileDef "${key}": unknown LOD level "${def.lod}"`);
+    }
+  }
+  return errors;
+}
+
+/** Check if a tile fits within a given climate (e.g., chunk-level moisture/temp).
+ *  Returns true if the tile's climate band overlaps the target. */
+export function tileMatchesClimate(
+  tileType: TileType,
+  moisture: number,
+  temperature: number,
+): boolean {
+  const def = MICRO_TILE_DEFS[tileType];
+  if (!def) return false;
+  const c = def.climate ?? DEFAULT_CLIMATE;
+  return moisture >= c.moisture[0] && moisture <= c.moisture[1]
+      && temperature >= c.temperature[0] && temperature <= c.temperature[1];
+}
+
+/** Get the LOD level for a tile type. Returns 'standard' as default. */
+export function getTileLOD(tileType: TileType): LODLevel {
+  return MICRO_TILE_DEFS[tileType]?.lod ?? 'standard';
+}
+
+/** Filter tiles to those matching a specific LOD level or "better" */
+export function tilesAtLOD(level: LODLevel): TileType[] {
+  const LOD_ORDER: LODLevel[] = ['detail', 'standard', 'simplified', 'minimal'];
+  const threshold = LOD_ORDER.indexOf(level);
+  return (Object.keys(MICRO_TILE_DEFS) as TileType[]).filter(t => {
+    const tileLod = MICRO_TILE_DEFS[t]?.lod ?? 'standard';
+    return LOD_ORDER.indexOf(tileLod) <= threshold;
+  });
 }

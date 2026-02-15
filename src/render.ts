@@ -13,6 +13,7 @@ import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
 import { cellJitter } from './utils';
 import { FIRE_VARIANTS, getFireAnimation } from './config/fire.config';
+import { getTileLOD } from './config/tiles.config';
 import { getShadowParams } from './shadows';
 import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from './npc-sprites';
 import {
@@ -623,6 +624,47 @@ export class IsometricRenderer {
             }
           }
         }
+
+        // #101: LOD tag overlay — show LOD level of the center cell per world unit
+        ctx.font = '8px monospace';
+        ctx.globalAlpha = 0.7;
+        for (let wy = 0; wy < gridDim; wy++) {
+          for (let wx = 0; wx < gridDim; wx++) {
+            const cellX = wx * wuSize + Math.floor(wuSize / 2);
+            const cellY = wy * wuSize + Math.floor(wuSize / 2);
+            if (cellY < chunk.cells.length && cellX < chunk.cells[0].length) {
+              const cell = chunk.cells[cellY][cellX];
+              const lod = getTileLOD(cell.assetKey as TileType);
+              const centerGX = baseGX + wx * wuSize + wuSize / 2;
+              const centerGY = baseGY + wy * wuSize + wuSize / 2;
+              const { x: lx, y: ly } = this.gridToScreen(centerGX, centerGY, camera);
+              if (this.isVisible(lx, ly)) {
+                // LOD color coding: detail=green, standard=cyan, simplified=yellow, minimal=red
+                const lodColors: Record<string, string> = {
+                  detail: '#0f0', standard: '#0ff', simplified: '#ff0', minimal: '#f00',
+                };
+                ctx.fillStyle = lodColors[lod] ?? '#888';
+                ctx.fillText(`L:${lod.slice(0, 3)}`, lx - 8, ly + 12);
+              }
+            }
+          }
+        }
+
+        // #101: Chunk climate overlay — show moisture/temperature for this chunk
+        if (chunk.climate) {
+          const topGX = baseGX;
+          const topGY = baseGY;
+          const { x: cx, y: cy } = this.gridToScreen(topGX + chunkSize / 2, topGY + 1, camera);
+          if (this.isVisible(cx, cy)) {
+            ctx.font = '9px monospace';
+            ctx.fillStyle = '#ffa';
+            ctx.globalAlpha = 0.8;
+            const m = chunk.climate.moisture.toFixed(2);
+            const t = chunk.climate.temperature.toFixed(2);
+            ctx.fillText(`M:${m} T:${t}`, cx - 25, cy - 4);
+          }
+        }
+
         ctx.globalAlpha = 0.35;
       }
     }
