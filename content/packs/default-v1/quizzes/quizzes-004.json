@@ -1,0 +1,848 @@
+{
+  "shardId": "quizzes-004",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-02-15T20:18:45.195Z",
+  "questions": [
+    {
+      "id": "q_science_easy_300",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do birds have that helps them fly?",
+      "answers": [
+        "Wings",
+        "Legs",
+        "Beaks",
+        "Tails"
+      ],
+      "hint": "Flap flap!",
+      "explanation": "Birds use wings to fly",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_301",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Is a tomato a fruit or vegetable?",
+      "answers": [
+        "Fruit",
+        "Vegetable",
+        "Both",
+        "Neither"
+      ],
+      "hint": "Has seeds!",
+      "explanation": "Tomatoes are fruits (they have seeds)",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_302",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call water falling from the sky?",
+      "answers": [
+        "Rain",
+        "Snow",
+        "Hail",
+        "Sleet"
+      ],
+      "hint": "Drops of water",
+      "explanation": "Rain is water falling from clouds",
+      "tags": [
+        "weather"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_303",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many wings does a bee have?",
+      "answers": [
+        "4",
+        "2",
+        "6",
+        "8"
+      ],
+      "hint": "Two pairs",
+      "explanation": "Bees have 4 wings",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_304",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What animal is the tallest?",
+      "answers": [
+        "Giraffe",
+        "Elephant",
+        "Horse",
+        "Bear"
+      ],
+      "hint": "Long neck",
+      "explanation": "Giraffes are the tallest land animals",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_305",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do caterpillars turn into?",
+      "answers": [
+        "Butterflies or moths",
+        "Birds",
+        "Beetles",
+        "Flies"
+      ],
+      "hint": "Beautiful wings",
+      "explanation": "Caterpillars become butterflies or moths",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_306",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is steam?",
+      "answers": [
+        "Water vapor",
+        "Ice",
+        "Liquid",
+        "Solid"
+      ],
+      "hint": "Hot gas",
+      "explanation": "Steam is water in gas form",
+      "tags": [
+        "states-of-matter"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_307",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do bees collect from flowers?",
+      "answers": [
+        "Nectar and pollen",
+        "Water",
+        "Leaves",
+        "Stems"
+      ],
+      "hint": "Make honey!",
+      "explanation": "Bees collect nectar and pollen",
+      "tags": [
+        "insects",
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_308",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many teeth do adults usually have?",
+      "answers": [
+        "32",
+        "28",
+        "30",
+        "24"
+      ],
+      "hint": "Including wisdom teeth",
+      "explanation": "Adults have 32 teeth total",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_309",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the smallest bone in the human body?",
+      "answers": [
+        "Stapes (in ear)",
+        "Toe bone",
+        "Finger bone",
+        "Wrist bone"
+      ],
+      "hint": "In your ear",
+      "explanation": "The stapes in the ear is the smallest bone",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_310",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What planet has rings?",
+      "answers": [
+        "Saturn",
+        "Jupiter",
+        "Mars",
+        "Venus"
+      ],
+      "hint": "Most visible rings",
+      "explanation": "Saturn has prominent rings",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_311",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the boiling point of water (Fahrenheit)?",
+      "answers": [
+        "212°F",
+        "100°F",
+        "200°F",
+        "180°F"
+      ],
+      "hint": "Also 100°C",
+      "explanation": "Water boils at 212°F or 100°C",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_312",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an ecosystem?",
+      "answers": [
+        "Living and non-living things interacting",
+        "A type of animal",
+        "A habitat",
+        "A plant"
+      ],
+      "hint": "Environment system",
+      "explanation": "Ecosystems include all living and non-living parts",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_313",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the outer layer of Earth called?",
+      "answers": [
+        "Crust",
+        "Mantle",
+        "Core",
+        "Surface"
+      ],
+      "hint": "Thin outer layer",
+      "explanation": "Earth's crust is the outer rocky layer",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_314",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is chlorophyll?",
+      "answers": [
+        "Green pigment in plants",
+        "A vitamin",
+        "A mineral",
+        "An animal"
+      ],
+      "hint": "Makes plants green",
+      "explanation": "Chlorophyll is the green pigment for photosynthesis",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_315",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How long does it take Earth to orbit the Sun?",
+      "answers": [
+        "365 days",
+        "360 days",
+        "300 days",
+        "400 days"
+      ],
+      "hint": "One year",
+      "explanation": "Earth takes 365 days (1 year) to orbit the Sun",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_316",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a carnivore?",
+      "answers": [
+        "Meat eater",
+        "Plant eater",
+        "Eats both",
+        "Eats nothing"
+      ],
+      "hint": "Like lions",
+      "explanation": "Carnivores eat only meat",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_317",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the freezing point of water (Celsius)?",
+      "answers": [
+        "0°C",
+        "32°C",
+        "100°C",
+        "-10°C"
+      ],
+      "hint": "Also 32°F",
+      "explanation": "Water freezes at 0°C or 32°F",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_318",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What are the three states of matter?",
+      "answers": [
+        "Solid, liquid, gas",
+        "Hot, cold, warm",
+        "Big, small, tiny",
+        "Hard, soft, medium"
+      ],
+      "hint": "Ice, water, steam",
+      "explanation": "Matter exists as solid, liquid, or gas",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_319",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is evaporation?",
+      "answers": [
+        "Liquid to gas",
+        "Gas to liquid",
+        "Solid to liquid",
+        "Liquid to solid"
+      ],
+      "hint": "Water drying up",
+      "explanation": "Evaporation is liquid becoming gas",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_320",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is E=mc²?",
+      "answers": [
+        "Energy equals mass times speed of light squared",
+        "A math problem",
+        "A chemistry formula",
+        "A biology term"
+      ],
+      "hint": "Einstein's equation",
+      "explanation": "Einstein's famous equation relates energy and mass",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_321",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What are prokaryotic cells?",
+      "answers": [
+        "Cells without nucleus",
+        "Cells with nucleus",
+        "Plant cells",
+        "Animal cells"
+      ],
+      "hint": "Like bacteria",
+      "explanation": "Prokaryotes have no nucleus (bacteria)",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_322",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the periodic table?",
+      "answers": [
+        "Chart of elements",
+        "A calendar",
+        "A time table",
+        "A chart of animals"
+      ],
+      "hint": "Chemistry chart",
+      "explanation": "The periodic table organizes chemical elements",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_323",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is mitosis?",
+      "answers": [
+        "Cell division",
+        "Cell death",
+        "Cell growth",
+        "Cell eating"
+      ],
+      "hint": "One cell becomes two",
+      "explanation": "Mitosis is cell division for growth",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_324",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an isotope?",
+      "answers": [
+        "Same element, different neutrons",
+        "Different element",
+        "A molecule",
+        "A compound"
+      ],
+      "hint": "Atomic variants",
+      "explanation": "Isotopes have same protons but different neutrons",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_325",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the Richter scale?",
+      "answers": [
+        "Measures earthquakes",
+        "Measures temperature",
+        "Measures wind",
+        "Measures rain"
+      ],
+      "hint": "Earthquake strength",
+      "explanation": "Richter scale measures earthquake magnitude",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_326",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a light-year?",
+      "answers": [
+        "Distance light travels in a year",
+        "Time measurement",
+        "Star brightness",
+        "Planet distance"
+      ],
+      "hint": "Distance, not time!",
+      "explanation": "Light-year is about 9.5 trillion kilometers",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_327",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an exothermic reaction?",
+      "answers": [
+        "Releases heat",
+        "Absorbs heat",
+        "No heat change",
+        "Needs light"
+      ],
+      "hint": "Gets hot!",
+      "explanation": "Exothermic reactions release energy as heat",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_328",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a food chain?",
+      "answers": [
+        "Energy transfer between organisms",
+        "A restaurant",
+        "A cooking method",
+        "A type of diet"
+      ],
+      "hint": "Who eats whom",
+      "explanation": "Food chains show energy flow through ecosystems",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_329",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the difference between mass and weight?",
+      "answers": [
+        "Mass is matter amount, weight is gravity force",
+        "No difference",
+        "Mass is heavier",
+        "Weight is bigger"
+      ],
+      "hint": "Mass stays same everywhere",
+      "explanation": "Mass is constant; weight changes with gravity",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    }
+  ]
+}

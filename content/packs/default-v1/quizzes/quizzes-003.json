@@ -1,7 +1,7 @@
 {
   "shardId": "quizzes-003",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T19:39:42.093Z",
+  "createdAt": "2026-02-15T20:18:45.195Z",
   "questions": [
     {
       "id": "q_geography_easy_200",
@@ -28,7 +28,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.194Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -57,7 +57,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.194Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -86,7 +86,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -115,7 +115,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -144,7 +144,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -173,7 +173,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -202,7 +202,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -231,7 +231,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -260,7 +260,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -289,7 +289,2543 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_210",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 7+5?",
+      "answers": [
+        "12",
+        "11",
+        "13",
+        "10"
+      ],
+      "hint": "Count on your fingers!",
+      "explanation": "7+5=12",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_211",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 20-8?",
+      "answers": [
+        "12",
+        "10",
+        "14",
+        "11"
+      ],
+      "hint": "Count back from 20",
+      "explanation": "20-8=12",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_212",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 3×4?",
+      "answers": [
+        "12",
+        "10",
+        "14",
+        "15"
+      ],
+      "hint": "3 groups of 4",
+      "explanation": "3×4=12",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_213",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many corners does a triangle have?",
+      "answers": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "hint": "Count them!",
+      "explanation": "A triangle has 3 corners and 3 sides.",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_214",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 10+10?",
+      "answers": [
+        "20",
+        "15",
+        "25",
+        "30"
+      ],
+      "hint": "Double 10",
+      "explanation": "10+10=20",
+      "tags": [
+        "addition",
+        "doubles"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_215",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is half of 10?",
+      "answers": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "hint": "Cut it in the middle",
+      "explanation": "Half of 10 is 5",
+      "tags": [
+        "division",
+        "fractions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_216",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 8+9?",
+      "answers": [
+        "17",
+        "16",
+        "18",
+        "15"
+      ],
+      "hint": "Almost 8+10",
+      "explanation": "8+9=17",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_217",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 14-6?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "hint": "Count back",
+      "explanation": "14-6=8",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_218",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many sides does a rectangle have?",
+      "answers": [
+        "4",
+        "3",
+        "5",
+        "6"
+      ],
+      "hint": "Same as a square",
+      "explanation": "A rectangle has 4 sides",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_219",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 2+2+2?",
+      "answers": [
+        "6",
+        "5",
+        "7",
+        "8"
+      ],
+      "hint": "Add them together",
+      "explanation": "2+2+2=6, or 3×2=6",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_220",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 45+15?",
+      "answers": [
+        "60",
+        "55",
+        "65",
+        "50"
+      ],
+      "hint": "Add tens first",
+      "explanation": "45+15=60. (40+10)+(5+5)=50+10",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_221",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 12×3?",
+      "answers": [
+        "36",
+        "33",
+        "39",
+        "30"
+      ],
+      "hint": "10×3 plus 2×3",
+      "explanation": "12×3=36. (10×3)+(2×3)=30+6",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_222",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 48÷6?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "hint": "What times 6 equals 48?",
+      "explanation": "48÷6=8 because 8×6=48",
+      "tags": [
+        "division"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_223",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 2/3+1/3?",
+      "answers": [
+        "3/3 or 1",
+        "2/6",
+        "1/3",
+        "4/3"
+      ],
+      "hint": "Same denominator!",
+      "explanation": "2/3+1/3=3/3=1 whole",
+      "tags": [
+        "fractions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_224",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the area of a rectangle 4×3?",
+      "answers": [
+        "12",
+        "14",
+        "7",
+        "10"
+      ],
+      "hint": "Multiply length times width",
+      "explanation": "Area=4×3=12 square units",
+      "tags": [
+        "geometry",
+        "area"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_225",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 20% of 50?",
+      "answers": [
+        "10",
+        "5",
+        "15",
+        "20"
+      ],
+      "hint": "20% is 1/5",
+      "explanation": "20%=0.2, so 0.2×50=10",
+      "tags": [
+        "percentages"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_226",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 7×8?",
+      "answers": [
+        "56",
+        "48",
+        "64",
+        "54"
+      ],
+      "hint": "Important multiplication fact",
+      "explanation": "7×8=56",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_227",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 100-37?",
+      "answers": [
+        "63",
+        "67",
+        "73",
+        "57"
+      ],
+      "hint": "Subtract 30 then 7",
+      "explanation": "100-37=63. (100-30)-7=70-7",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_228",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 0.5+0.25?",
+      "answers": [
+        "0.75",
+        "0.50",
+        "1.0",
+        "0.25"
+      ],
+      "hint": "Add the decimals",
+      "explanation": "0.5+0.25=0.75 or 3/4",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_229",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many degrees in a right angle?",
+      "answers": [
+        "90",
+        "180",
+        "45",
+        "360"
+      ],
+      "hint": "Quarter of a circle",
+      "explanation": "A right angle is 90 degrees",
+      "tags": [
+        "geometry",
+        "angles"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_230",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 144÷12?",
+      "answers": [
+        "12",
+        "11",
+        "13",
+        "14"
+      ],
+      "hint": "12 squared",
+      "explanation": "144÷12=12 because 12×12=144",
+      "tags": [
+        "division"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_231",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is √64?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "hint": "What times itself equals 64?",
+      "explanation": "√64=8 because 8×8=64",
+      "tags": [
+        "square-roots"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_232",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If y=2x+3 and x=5, what is y?",
+      "answers": [
+        "13",
+        "10",
+        "11",
+        "15"
+      ],
+      "hint": "Substitute x=5",
+      "explanation": "y=2(5)+3=10+3=13",
+      "tags": [
+        "algebra"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_233",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 25% of 80?",
+      "answers": [
+        "20",
+        "15",
+        "25",
+        "30"
+      ],
+      "hint": "Quarter of 80",
+      "explanation": "25%=1/4, so 80÷4=20",
+      "tags": [
+        "percentages"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_234",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the circumference of a circle with diameter 10? (Use π≈3)",
+      "answers": [
+        "30",
+        "20",
+        "40",
+        "15"
+      ],
+      "hint": "C=πd",
+      "explanation": "C=π×10≈3×10=30",
+      "tags": [
+        "geometry",
+        "circles"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_235",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 3²+4²?",
+      "answers": [
+        "25",
+        "24",
+        "26",
+        "20"
+      ],
+      "hint": "9+16",
+      "explanation": "3²=9, 4²=16, so 9+16=25",
+      "tags": [
+        "exponents"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_236",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 0.1×100?",
+      "answers": [
+        "10",
+        "1",
+        "100",
+        "0.1"
+      ],
+      "hint": "Move decimal 2 places",
+      "explanation": "0.1×100=10",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_237",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the prime factorization of 24?",
+      "answers": [
+        "2×2×2×3",
+        "2×12",
+        "4×6",
+        "8×3"
+      ],
+      "hint": "Break it down to primes",
+      "explanation": "24=2×2×2×3=2³×3",
+      "tags": [
+        "prime-factorization"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_238",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 5/8 as a decimal?",
+      "answers": [
+        "0.625",
+        "0.5",
+        "0.75",
+        "0.6"
+      ],
+      "hint": "Divide 5 by 8",
+      "explanation": "5÷8=0.625",
+      "tags": [
+        "fractions",
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_239",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the volume of a cube with side 3?",
+      "answers": [
+        "27",
+        "9",
+        "18",
+        "24"
+      ],
+      "hint": "3×3×3",
+      "explanation": "Volume=3×3×3=27 cubic units",
+      "tags": [
+        "geometry",
+        "volume"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_240",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 16+7?",
+      "answers": [
+        "23",
+        "22",
+        "24",
+        "21"
+      ],
+      "hint": "Count up",
+      "explanation": "16+7=23",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_241",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 30-12?",
+      "answers": [
+        "18",
+        "17",
+        "19",
+        "16"
+      ],
+      "hint": "Subtract 10 then 2",
+      "explanation": "30-12=18",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_242",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 5×2?",
+      "answers": [
+        "10",
+        "8",
+        "12",
+        "15"
+      ],
+      "hint": "Two fives",
+      "explanation": "5×2=10",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_243",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What shape is a pizza slice?",
+      "answers": [
+        "Triangle",
+        "Circle",
+        "Square",
+        "Rectangle"
+      ],
+      "hint": "Three sides",
+      "explanation": "A pizza slice is triangle-shaped",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_244",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 6+6?",
+      "answers": [
+        "12",
+        "11",
+        "13",
+        "10"
+      ],
+      "hint": "Double 6",
+      "explanation": "6+6=12",
+      "tags": [
+        "addition",
+        "doubles"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_245",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 18-9?",
+      "answers": [
+        "9",
+        "8",
+        "10",
+        "7"
+      ],
+      "hint": "Half of 18",
+      "explanation": "18-9=9",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_246",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 10×2?",
+      "answers": [
+        "20",
+        "15",
+        "25",
+        "30"
+      ],
+      "hint": "Double 10",
+      "explanation": "10×2=20",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_247",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many cents in a quarter?",
+      "answers": [
+        "25",
+        "20",
+        "30",
+        "50"
+      ],
+      "hint": "Quarter of 100",
+      "explanation": "A quarter is 25 cents",
+      "tags": [
+        "money"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_248",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 13+8?",
+      "answers": [
+        "21",
+        "20",
+        "22",
+        "19"
+      ],
+      "hint": "Make 10 first",
+      "explanation": "13+8=21. (13+7)+1=20+1",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_249",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 17-5?",
+      "answers": [
+        "12",
+        "11",
+        "13",
+        "10"
+      ],
+      "hint": "Count back",
+      "explanation": "17-5=12",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_250",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 35+25?",
+      "answers": [
+        "60",
+        "55",
+        "65",
+        "50"
+      ],
+      "hint": "Add tens and ones",
+      "explanation": "35+25=60. (30+20)+(5+5)=50+10",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_251",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 6×6?",
+      "answers": [
+        "36",
+        "30",
+        "42",
+        "32"
+      ],
+      "hint": "Six squared",
+      "explanation": "6×6=36",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_252",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 81÷9?",
+      "answers": [
+        "9",
+        "8",
+        "10",
+        "7"
+      ],
+      "hint": "Nine squared",
+      "explanation": "81÷9=9 because 9×9=81",
+      "tags": [
+        "division"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_253",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 3/4 of 20?",
+      "answers": [
+        "15",
+        "10",
+        "12",
+        "18"
+      ],
+      "hint": "Find 1/4 first",
+      "explanation": "1/4 of 20 is 5, so 3/4 is 15",
+      "tags": [
+        "fractions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_254",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 5²?",
+      "answers": [
+        "25",
+        "20",
+        "30",
+        "15"
+      ],
+      "hint": "5×5",
+      "explanation": "5²=5×5=25",
+      "tags": [
+        "squares"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_255",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 90-45?",
+      "answers": [
+        "45",
+        "40",
+        "50",
+        "35"
+      ],
+      "hint": "Half of 90",
+      "explanation": "90-45=45",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_256",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many minutes in 2 hours?",
+      "answers": [
+        "120",
+        "100",
+        "140",
+        "60"
+      ],
+      "hint": "60 per hour",
+      "explanation": "2×60=120 minutes",
+      "tags": [
+        "time"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_257",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 0.1+0.9?",
+      "answers": [
+        "1.0",
+        "0.10",
+        "0.9",
+        "2.0"
+      ],
+      "hint": "Makes a whole",
+      "explanation": "0.1+0.9=1.0",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_258",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 11×11?",
+      "answers": [
+        "121",
+        "111",
+        "131",
+        "110"
+      ],
+      "hint": "Eleven squared",
+      "explanation": "11×11=121",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_259",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the perimeter of a square with side 7?",
+      "answers": [
+        "28",
+        "21",
+        "35",
+        "14"
+      ],
+      "hint": "Add all 4 sides",
+      "explanation": "Perimeter=7+7+7+7=28 or 4×7",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_260",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 2³?",
+      "answers": [
+        "8",
+        "6",
+        "10",
+        "4"
+      ],
+      "hint": "2×2×2",
+      "explanation": "2³=2×2×2=8",
+      "tags": [
+        "exponents"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_261",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is √100?",
+      "answers": [
+        "10",
+        "9",
+        "11",
+        "5"
+      ],
+      "hint": "What squared is 100?",
+      "explanation": "√100=10 because 10×10=100",
+      "tags": [
+        "square-roots"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_262",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If 2x=18, what is x?",
+      "answers": [
+        "9",
+        "8",
+        "10",
+        "18"
+      ],
+      "hint": "Divide both sides by 2",
+      "explanation": "x=18÷2=9",
+      "tags": [
+        "algebra"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_263",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 7/10 as a percentage?",
+      "answers": [
+        "70%",
+        "7%",
+        "75%",
+        "60%"
+      ],
+      "hint": "Multiply by 100",
+      "explanation": "7/10=0.7=70%",
+      "tags": [
+        "percentages"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_264",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the area of a triangle with base 6 and height 4?",
+      "answers": [
+        "12",
+        "24",
+        "10",
+        "14"
+      ],
+      "hint": "(base×height)/2",
+      "explanation": "Area=(6×4)/2=24/2=12",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_265",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 10²-5²?",
+      "answers": [
+        "75",
+        "50",
+        "100",
+        "25"
+      ],
+      "hint": "100-25",
+      "explanation": "10²=100, 5²=25, so 100-25=75",
+      "tags": [
+        "exponents"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_266",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 2.5×4?",
+      "answers": [
+        "10",
+        "8",
+        "12",
+        "10.0"
+      ],
+      "hint": "2.5 is 5/2",
+      "explanation": "2.5×4=10",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_267",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the LCM of 4 and 6?",
+      "answers": [
+        "12",
+        "24",
+        "8",
+        "6"
+      ],
+      "hint": "Smallest common multiple",
+      "explanation": "Multiples of 4: 4,8,12... Multiples of 6: 6,12... LCM=12",
+      "tags": [
+        "multiples"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_268",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 40% of 75?",
+      "answers": [
+        "30",
+        "25",
+        "35",
+        "20"
+      ],
+      "hint": "0.4×75",
+      "explanation": "40%=0.4, so 0.4×75=30",
+      "tags": [
+        "percentages"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_269",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the mean of 10,20,30?",
+      "answers": [
+        "20",
+        "15",
+        "25",
+        "30"
+      ],
+      "hint": "Add and divide by 3",
+      "explanation": "Mean=(10+20+30)/3=60/3=20",
+      "tags": [
+        "statistics"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_270",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do cows eat?",
+      "answers": [
+        "Grass",
+        "Meat",
+        "Fish",
+        "Candy"
+      ],
+      "hint": "Plants!",
+      "explanation": "Cows eat grass and hay",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_271",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What color is grass?",
+      "answers": [
+        "Green",
+        "Blue",
+        "Red",
+        "Yellow"
+      ],
+      "hint": "Look outside!",
+      "explanation": "Grass is green from chlorophyll",
+      "tags": [
+        "plants",
+        "colors"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_272",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many legs does a spider have?",
+      "answers": [
+        "8",
+        "6",
+        "10",
+        "4"
+      ],
+      "hint": "More than an insect",
+      "explanation": "Spiders have 8 legs (arachnids)",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_273",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do fish use to breathe underwater?",
+      "answers": [
+        "Gills",
+        "Lungs",
+        "Nose",
+        "Mouth"
+      ],
+      "hint": "Special organs",
+      "explanation": "Fish have gills to breathe underwater",
+      "tags": [
+        "animals",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_274",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Is the sun a star?",
+      "answers": [
+        "Yes",
+        "No",
+        "Sometimes",
+        "Maybe"
+      ],
+      "hint": "It's very bright!",
+      "explanation": "The Sun is our closest star",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_275",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What season comes after spring?",
+      "answers": [
+        "Summer",
+        "Fall",
+        "Winter",
+        "Autumn"
+      ],
+      "hint": "Hot weather!",
+      "explanation": "Summer comes after spring",
+      "tags": [
+        "seasons"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_276",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do plants make from sunlight?",
+      "answers": [
+        "Food",
+        "Water",
+        "Air",
+        "Soil"
+      ],
+      "hint": "Photosynthesis!",
+      "explanation": "Plants make food using sunlight",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_277",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is frozen water called?",
+      "answers": [
+        "Ice",
+        "Steam",
+        "Cloud",
+        "Snow"
+      ],
+      "hint": "Very cold!",
+      "explanation": "Frozen water becomes ice",
+      "tags": [
+        "water",
+        "states"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_278",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What animal says \"moo\"?",
+      "answers": [
+        "Cow",
+        "Dog",
+        "Cat",
+        "Pig"
+      ],
+      "hint": "Farm animal",
+      "explanation": "Cows say moo",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_279",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many eyes do most people have?",
+      "answers": [
+        "2",
+        "3",
+        "1",
+        "4"
+      ],
+      "hint": "One on each side",
+      "explanation": "Humans have 2 eyes",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_280",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What gas do plants release?",
+      "answers": [
+        "Oxygen",
+        "Carbon dioxide",
+        "Nitrogen",
+        "Helium"
+      ],
+      "hint": "We breathe it",
+      "explanation": "Plants release oxygen during photosynthesis",
+      "tags": [
+        "plants",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_281",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many bones are in an adult human body?",
+      "answers": [
+        "206",
+        "200",
+        "250",
+        "150"
+      ],
+      "hint": "Over 200",
+      "explanation": "Adults have 206 bones",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_282",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What planet is closest to the Sun?",
+      "answers": [
+        "Mercury",
+        "Venus",
+        "Earth",
+        "Mars"
+      ],
+      "hint": "First planet",
+      "explanation": "Mercury is closest to the Sun",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_283",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is H₂O?",
+      "answers": [
+        "Water",
+        "Oxygen",
+        "Hydrogen",
+        "Salt"
+      ],
+      "hint": "2 hydrogen, 1 oxygen",
+      "explanation": "H₂O is water's chemical formula",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_284",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the largest planet?",
+      "answers": [
+        "Jupiter",
+        "Saturn",
+        "Earth",
+        "Mars"
+      ],
+      "hint": "Has a big red spot",
+      "explanation": "Jupiter is the largest planet",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_285",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What do we call baby frogs?",
+      "answers": [
+        "Tadpoles",
+        "Froglets",
+        "Pollywogs",
+        "Babies"
+      ],
+      "hint": "They swim",
+      "explanation": "Baby frogs are called tadpoles",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_286",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What causes tides in the ocean?",
+      "answers": [
+        "The Moon",
+        "The Sun",
+        "Wind",
+        "Fish"
+      ],
+      "hint": "Gravity pull",
+      "explanation": "Moon's gravity causes tides",
+      "tags": [
+        "astronomy",
+        "oceans"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_287",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the process of a caterpillar becoming a butterfly?",
+      "answers": [
+        "Metamorphosis",
+        "Evolution",
+        "Growth",
+        "Change"
+      ],
+      "hint": "Life cycle change",
+      "explanation": "Metamorphosis transforms caterpillars to butterflies",
+      "tags": [
+        "insects",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_288",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the hardest natural substance?",
+      "answers": [
+        "Diamond",
+        "Steel",
+        "Iron",
+        "Rock"
+      ],
+      "hint": "Gemstone",
+      "explanation": "Diamond is the hardest natural substance",
+      "tags": [
+        "minerals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_289",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What organ pumps blood?",
+      "answers": [
+        "Heart",
+        "Lungs",
+        "Brain",
+        "Liver"
+      ],
+      "hint": "Beat beat!",
+      "explanation": "The heart pumps blood throughout the body",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_290",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the speed of light?",
+      "answers": [
+        "300,000 km/s",
+        "150,000 km/s",
+        "500,000 km/s",
+        "100,000 km/s"
+      ],
+      "hint": "Very fast!",
+      "explanation": "Light travels at about 300,000 kilometers per second",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_291",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is DNA?",
+      "answers": [
+        "Genetic code",
+        "A protein",
+        "A cell",
+        "An organ"
+      ],
+      "hint": "Instructions for life",
+      "explanation": "DNA contains genetic instructions",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_292",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is photosynthesis?",
+      "answers": [
+        "Plants making food from light",
+        "Plants breathing",
+        "Plants drinking",
+        "Plants growing"
+      ],
+      "hint": "Light + CO₂ + water",
+      "explanation": "Photosynthesis converts light to food",
+      "tags": [
+        "plants",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_293",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an atom?",
+      "answers": [
+        "Smallest unit of matter",
+        "A molecule",
+        "A cell",
+        "A particle"
+      ],
+      "hint": "Very tiny!",
+      "explanation": "Atoms are the smallest units of matter",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_294",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What causes earthquakes?",
+      "answers": [
+        "Tectonic plates moving",
+        "Volcanoes",
+        "Wind",
+        "Rain"
+      ],
+      "hint": "Earth's crust",
+      "explanation": "Earthquakes occur when tectonic plates shift",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_295",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is Newton's first law?",
+      "answers": [
+        "Objects in motion stay in motion",
+        "F=ma",
+        "Action-reaction",
+        "Gravity"
+      ],
+      "hint": "Inertia",
+      "explanation": "Law of inertia: objects resist changes in motion",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_296",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the nearest star to Earth?",
+      "answers": [
+        "The Sun",
+        "Proxima Centauri",
+        "Sirius",
+        "Alpha Centauri"
+      ],
+      "hint": "We see it every day",
+      "explanation": "The Sun is Earth's nearest star",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_297",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the pH of pure water?",
+      "answers": [
+        "7",
+        "0",
+        "14",
+        "10"
+      ],
+      "hint": "Neutral",
+      "explanation": "Pure water has pH 7 (neutral)",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_298",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What organelle is found in plant cells but not animal cells?",
+      "answers": [
+        "Chloroplast",
+        "Nucleus",
+        "Mitochondria",
+        "Ribosome"
+      ],
+      "hint": "Photosynthesis happens here",
+      "explanation": "Chloroplasts are only in plant cells",
+      "tags": [
+        "biology",
+        "cells"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_299",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the formula for carbon dioxide?",
+      "answers": [
+        "CO₂",
+        "O₂",
+        "H₂O",
+        "CH₄"
+      ],
+      "hint": "One carbon, two oxygen",
+      "explanation": "CO₂ is carbon dioxide",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:18:45.195Z",
         "curator": "content-pipeline-v1"
       }
     }
