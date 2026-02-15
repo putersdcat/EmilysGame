@@ -360,6 +360,7 @@ function isShoreTransition(typeA: string, typeB: string): boolean {
  * 1. Draw a gradient triangle fading the neighbor's color into this cell
  * 2. For water↔land edges, add extra shore/foam effect
  * 3. Draw subtle dark edge line for definition
+ * 4. Corner blending for diagonal neighbors (bitmask-aware) (#47)
  */
 function renderAutoTileTransitions(
   ctx: CanvasRenderingContext2D,
@@ -381,6 +382,7 @@ function renderAutoTileTransitions(
       const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
+      // --- Pass 1: Cardinal edge transitions ---
       for (let ni = 0; ni < 4; ni++) {
         const nbType = getBaseTileType(chunk, cx + DX[ni], cy + DY[ni], allChunks);
         if (nbType === null || nbType === myType) continue;
@@ -504,6 +506,71 @@ function renderAutoTileTransitions(
         ctx.stroke();
         ctx.restore();
       }
+
+      // --- Pass 2: Diagonal corner transitions (#47 bitmask-aware) ---
+      // Handles the case where both adjacent cardinal neighbors match our type,
+      // but the diagonal neighbor differs — needs a corner-only radial blend.
+      // Diagonal offsets: 0=NE(+1,-1), 1=SE(+1,+1), 2=SW(-1,+1), 3=NW(-1,-1)
+      const DIAG_DX = [1, 1, -1, -1];
+      const DIAG_DY = [-1, 1, 1, -1];
+      // The two cardinal neighbors flanking each diagonal corner
+      // NE: flanked by E(+1,0) and N(0,-1)
+      // SE: flanked by E(+1,0) and S(0,+1)
+      // SW: flanked by W(-1,0) and S(0,+1)
+      // NW: flanked by W(-1,0) and N(0,-1)
+      const FLANK_A_DX = [1, 1, -1, -1];
+      const FLANK_A_DY = [0, 0, 0, 0];
+      const FLANK_B_DX = [0, 0, 0, 0];
+      const FLANK_B_DY = [-1, 1, 1, -1];
+
+      // Corner vertex positions on the diamond (midpoints of edges)
+      // NE: midpoint of Top→Right
+      // SE: midpoint of Right→Bottom
+      // SW: midpoint of Bottom→Left
+      // NW: midpoint of Left→Top
+      const CORNER_X = [HALF_TW / 2, HALF_TW / 2, -HALF_TW / 2, -HALF_TW / 2];
+      const CORNER_Y = [-HALF_TH / 2, HALF_TH / 2, HALF_TH / 2, -HALF_TH / 2];
+
+      for (let di = 0; di < 4; di++) {
+        const diagType = getBaseTileType(chunk, cx + DIAG_DX[di], cy + DIAG_DY[di], allChunks);
+        if (diagType === null || diagType === myType) continue;
+
+        // Only draw corner blend if BOTH flanking cardinal neighbors match our type
+        // (otherwise the cardinal pass already handled those edges)
+        const flankA = getBaseTileType(chunk, cx + FLANK_A_DX[di], cy + FLANK_A_DY[di], allChunks);
+        const flankB = getBaseTileType(chunk, cx + FLANK_B_DX[di], cy + FLANK_B_DY[di], allChunks);
+        if (flankA !== myType || flankB !== myType) continue;
+
+        const diagColor = getDominantColor(diagType);
+        if (!diagColor) continue;
+
+        const cornerX = lsx + CORNER_X[di];
+        const cornerY = lsy + CORNER_Y[di];
+        const shore = isShoreTransition(myType, diagType);
+        const alpha = shore ? SHORE_ALPHA * 0.6 : TRANSITION_ALPHA * 0.7;
+        const radius = Math.min(HALF_TW, HALF_TH) * 0.5;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+
+        // Clip to diamond
+        ctx.beginPath();
+        ctx.moveTo(lsx, lsy - HALF_TH);
+        ctx.lineTo(lsx + HALF_TW, lsy);
+        ctx.lineTo(lsx, lsy + HALF_TH);
+        ctx.lineTo(lsx - HALF_TW, lsy);
+        ctx.closePath();
+        ctx.clip();
+
+        // Radial gradient at the corner point
+        const grad = ctx.createRadialGradient(cornerX, cornerY, 0, cornerX, cornerY, radius);
+        grad.addColorStop(0, diagColor);
+        grad.addColorStop(1, diagColor + '00');
+        ctx.fillStyle = grad;
+        ctx.fillRect(cornerX - radius, cornerY - radius, radius * 2, radius * 2);
+
+        ctx.restore();
+      }
     }
   }
 }
@@ -527,4 +594,42 @@ export function clearTerrainCache(): void {
  */
 export function getTerrainCacheSize(): number {
   return chunkCache.size;
+}
+
+/**
+ * Estimated memory usage of all cached chunk terrain canvases (in MB).
+ * Each cached canvas is CHUNK_PX_W × CHUNK_PX_H × 4 bytes (RGBA bitmap).
+ */
+export function getTerrainCacheMemoryMB(): number {
+  const bytesPerChunk = CHUNK_PX_W * CHUNK_PX_H * 4;
+  return (chunkCache.size * bytesPerChunk) / (1024 * 1024);
+}
+
+/** Maximum allowed cache memory in MB before eviction kicks in */
+const MAX_CACHE_MB = 200;
+
+/**
+ * Evict cached chunks that are farthest from the player's current chunk.
+ * Keeps chunks within `keepRadius` chunks of the player, evicts the rest
+ * when total memory exceeds MAX_CACHE_MB.
+ */
+export function evictDistantChunks(playerChunkX: number, playerChunkY: number, keepRadius = 3): void {
+  const memMB = getTerrainCacheMemoryMB();
+  if (memMB <= MAX_CACHE_MB && chunkCache.size <= (keepRadius * 2 + 1) ** 2 + 4) return;
+
+  const keysToEvict: string[] = [];
+  for (const key of chunkCache.keys()) {
+    const parts = key.split(',');
+    const cx = parseInt(parts[0], 10);
+    const cy = parseInt(parts[1], 10);
+    const dx = Math.abs(cx - playerChunkX);
+    const dy = Math.abs(cy - playerChunkY);
+    if (dx > keepRadius || dy > keepRadius) {
+      keysToEvict.push(key);
+    }
+  }
+
+  for (const key of keysToEvict) {
+    chunkCache.delete(key);
+  }
 }

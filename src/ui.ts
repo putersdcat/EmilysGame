@@ -8,7 +8,7 @@
 import { ASSET_DEFS } from './config/assets.config';
 import { ITEM_DEFS } from './config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
-import { getTerrainCacheSize } from './terrain-cache';
+import { getTerrainCacheSize, getTerrainCacheMemoryMB } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
 import { getTimeOfDay } from './lighting';
 import { getWeatherInfo } from './weather';
@@ -332,7 +332,7 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     `Pos: ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}`,
     `Chunk: ${cx},${cy}`,
     `WU: ${wux},${wuy}`,
-    `Cache: ${getTerrainCacheSize()} chunks`,
+    `Cache: ${getTerrainCacheSize()} chunks (${getTerrainCacheMemoryMB().toFixed(1)}MB)`,
     tpsLabel,
     entropyLabel,
   ].map((l) => `<span>${l}</span>`).join('');
@@ -405,7 +405,7 @@ function syncSidebar(
     if (sbChunk) sbChunk.textContent = `${Math.floor(pos.x / cs)},${Math.floor(pos.y / cs)}`;
     if (sbBiome) sbBiome.textContent = biomeName ?? '—';
     if (sbFps) sbFps.textContent = String(fps);
-    if (sbCache) sbCache.textContent = `${getTerrainCacheSize()}`;
+    if (sbCache) sbCache.textContent = `${getTerrainCacheSize()} (${getTerrainCacheMemoryMB().toFixed(1)}MB)`;
   }
 }
 

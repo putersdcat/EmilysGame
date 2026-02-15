@@ -23,7 +23,7 @@ import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, g
 import { getNpcPersona, SHOP_MERCHANT_PERSONA } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain } from './terrain-cache';
+import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { initMinimap, renderMinimap } from './minimap';
@@ -214,6 +214,12 @@ function maybeLoadChunks(state: GameState): void {
     state.lastChunkX = pcx;
     state.lastChunkY = pcy;
     ensureChunksAround(state);
+    // Evict distant terrain caches to stay under memory budget (#47)
+    evictDistantChunks(pcx, pcy, 3);
+    // Evict distant terrain caches to stay under memory budget (#47)
+    evictDistantChunks(pcx, pcy, 3);
+    // Evict distant terrain caches to stay under memory budget (#47)
+    evictDistantChunks(pcx, pcy, 3);
     // Auto-save on chunk exit
     doSave(state);
   }
