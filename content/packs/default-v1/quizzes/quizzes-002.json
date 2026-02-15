@@ -1,0 +1,152 @@
+{
+  "shardId": "quizzes-002",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-02-15T19:21:58.782Z",
+  "questions": [
+    {
+      "id": "q_technology_hard_100",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does \"HTML\" stand for?",
+      "answers": [
+        "HyperText Markup Language",
+        "High Tech Modern Language",
+        "Home Tool Markup Language",
+        "Hyperlink Text Markup Language"
+      ],
+      "hint": "It's used to create web pages!",
+      "explanation": "HTML (HyperText Markup Language) is the standard language for creating web pages.",
+      "tags": [
+        "web-development",
+        "programming"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_101",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who invented the World Wide Web?",
+      "answers": [
+        "Tim Berners-Lee",
+        "Bill Gates",
+        "Steve Jobs",
+        "Mark Zuckerberg"
+      ],
+      "hint": "A British scientist at CERN.",
+      "explanation": "Tim Berners-Lee invented the World Wide Web in 1989 while working at CERN.",
+      "tags": [
+        "internet",
+        "history"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_102",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does \"AI\" stand for?",
+      "answers": [
+        "Artificial Intelligence",
+        "Automated Information",
+        "Advanced Internet",
+        "Automatic Intelligence"
+      ],
+      "hint": "Machines that can think!",
+      "explanation": "AI (Artificial Intelligence) refers to machines or programs that can perform tasks requiring human intelligence.",
+      "tags": [
+        "ai",
+        "future"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_103",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "How many bits are in a byte?",
+      "answers": [
+        "8",
+        "4",
+        "16",
+        "2"
+      ],
+      "hint": "A byte is made up of this many bits.",
+      "explanation": "A byte consists of 8 bits. A bit is the smallest unit of data (0 or 1).",
+      "tags": [
+        "computing",
+        "data"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_104",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What programming language is named after a type of coffee?",
+      "answers": [
+        "Java",
+        "Python",
+        "Ruby",
+        "Swift"
+      ],
+      "hint": "It's a popular drink too!",
+      "explanation": "Java is a programming language named after Java coffee, from the Indonesian island.",
+      "tags": [
+        "programming",
+        "trivia"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "curator": "content-pipeline-v1"
+      }
+    }
+  ]
+}
