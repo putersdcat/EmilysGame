@@ -1,0 +1,297 @@
+{
+  "shardId": "quizzes-003",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-02-15T19:39:42.093Z",
+  "questions": [
+    {
+      "id": "q_geography_easy_200",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What color are most school buses?",
+      "answers": [
+        "Yellow",
+        "Red",
+        "Blue",
+        "Green"
+      ],
+      "hint": "Think of the color of the sun.",
+      "explanation": "School buses are usually yellow for high visibility.",
+      "tags": [
+        "everyday-knowledge",
+        "colors"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_medium_201",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Which ocean is on the west coast of the United States?",
+      "answers": [
+        "Pacific Ocean",
+        "Atlantic Ocean",
+        "Indian Ocean",
+        "Arctic Ocean"
+      ],
+      "hint": "California touches this ocean.",
+      "explanation": "The Pacific Ocean is on the west coast of the U.S.",
+      "tags": [
+        "oceans",
+        "usa"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_medium_202",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the capital of Japan?",
+      "answers": [
+        "Tokyo",
+        "Beijing",
+        "Seoul",
+        "Bangkok"
+      ],
+      "hint": "It's one of the world's largest cities.",
+      "explanation": "Tokyo is the capital and largest city of Japan.",
+      "tags": [
+        "capitals",
+        "asia"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_203",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Which continent is also a country?",
+      "answers": [
+        "Australia",
+        "Africa",
+        "Europe",
+        "Asia"
+      ],
+      "hint": "It's in the Southern Hemisphere.",
+      "explanation": "Australia is both a continent and a country.",
+      "tags": [
+        "continents",
+        "countries"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_204",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the capital of Canada?",
+      "answers": [
+        "Ottawa",
+        "Toronto",
+        "Montreal",
+        "Vancouver"
+      ],
+      "hint": "It's not the largest city.",
+      "explanation": "Ottawa is the capital of Canada, located in Ontario.",
+      "tags": [
+        "capitals",
+        "north-america"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_easy_205",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we use to type on a computer?",
+      "answers": [
+        "Keyboard",
+        "Mouse",
+        "Screen",
+        "Speaker"
+      ],
+      "hint": "It has letters and numbers on it.",
+      "explanation": "A keyboard is used to type letters and numbers on a computer.",
+      "tags": [
+        "hardware",
+        "basics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_medium_206",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What does \"WWW\" stand for in a website address?",
+      "answers": [
+        "World Wide Web",
+        "Wide World Web",
+        "Web World Wide",
+        "World Web Wide"
+      ],
+      "hint": "It's the system of internet pages.",
+      "explanation": "WWW stands for World Wide Web, invented by Tim Berners-Lee.",
+      "tags": [
+        "internet",
+        "acronyms"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_medium_207",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What company makes the iPhone?",
+      "answers": [
+        "Apple",
+        "Samsung",
+        "Google",
+        "Microsoft"
+      ],
+      "hint": "It's named after a fruit.",
+      "explanation": "Apple Inc. makes the iPhone and other products.",
+      "tags": [
+        "companies",
+        "devices"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_208",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does \"CPU\" stand for?",
+      "answers": [
+        "Central Processing Unit",
+        "Computer Personal Unit",
+        "Central Program Unit",
+        "Computer Processing Unit"
+      ],
+      "hint": "It's the \"brain\" of the computer.",
+      "explanation": "CPU stands for Central Processing Unit - the main chip that runs programs.",
+      "tags": [
+        "hardware",
+        "acronyms"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_technology_hard_209",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who co-founded Microsoft with Bill Gates?",
+      "answers": [
+        "Paul Allen",
+        "Steve Jobs",
+        "Steve Wozniak",
+        "Mark Zuckerberg"
+      ],
+      "hint": "His first name is Paul.",
+      "explanation": "Paul Allen and Bill Gates co-founded Microsoft in 1975.",
+      "tags": [
+        "history",
+        "founders"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    }
+  ]
+}

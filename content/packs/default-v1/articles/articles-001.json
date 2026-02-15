@@ -1,7 +1,7 @@
 {
   "shardId": "articles-001",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T19:24:26.240Z",
+  "createdAt": "2026-02-15T19:42:34.581Z",
   "articles": [
     {
       "id": "article_math_000",
@@ -25,7 +25,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.239Z",
+        "dateIngested": "2026-02-15T19:42:34.580Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -50,7 +50,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -77,7 +77,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -106,7 +106,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -133,7 +133,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -160,7 +160,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -186,7 +186,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -215,7 +215,7 @@
         "source": "public-domain",
         "sourceUrl": "https://en.wikipedia.org/wiki/Ancient_Egypt",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -244,7 +244,7 @@
         "source": "public-domain",
         "sourceUrl": "https://en.wikipedia.org/wiki/Space_Race",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -272,7 +272,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -299,7 +299,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -326,7 +326,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -355,7 +355,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -384,7 +384,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -412,7 +412,419 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:24:26.240Z",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_math_015",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Understanding Decimals",
+      "summary": "Learn about decimal numbers and how they relate to fractions.",
+      "content": "A **decimal** is another way to write a fraction, especially when the denominator is 10, 100, 1000, etc.\n\n**Place Value in Decimals:**\n- The dot (.) is called the decimal point\n- Numbers to the right of the decimal point are parts of a whole\n- 0.5 = 5/10 = 1/2\n- 0.25 = 25/100 = 1/4\n- 0.75 = 75/100 = 3/4\n\n**Decimal Place Names:**\n- First place: tenths (0.1 = 1/10)\n- Second place: hundredths (0.01 = 1/100)\n- Third place: thousandths (0.001 = 1/1000)\n\n**Money Uses Decimals:**\n$1.50 means 1 dollar and 50 cents (50/100 of a dollar)\n\n**Converting Fractions to Decimals:**\nDivide the numerator by the denominator. For example: 3/4 = 3 ÷ 4 = 0.75\n\n**Fun Fact:** Some fractions make repeating decimals! Try 1/3 = 0.333... (the 3s go on forever).",
+      "keyTerms": [
+        "decimal",
+        "decimal point",
+        "tenths",
+        "hundredths",
+        "place value"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_math_016",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Multiplication Tricks",
+      "summary": "Learn quick mental math tricks for multiplication!",
+      "content": "**Multiplying by 10, 100, 1000:**\nJust add zeros! 25 × 10 = 250, 25 × 100 = 2,500\n\n**Multiplying by 11:**\nFor two-digit numbers, add the digits and put the result in the middle.\nExample: 23 × 11 = 2(2+3)3 = 253\n\n**Multiplying by 5:**\nMultiply by 10, then divide by 2.\nExample: 14 × 5 = (14 × 10) ÷ 2 = 140 ÷ 2 = 70\n\n**Multiplying by 9:**\nUse your fingers! Hold out 10 fingers. To multiply 9 × 7, fold down your 7th finger. Fingers to the left = tens (6), fingers to the right = ones (3). Answer: 63!\n\n**Doubling and Halving:**\nIf one number is even, you can double one and halve the other.\nExample: 16 × 5 = 8 × 10 = 80\n\n**Square Numbers:**\nNumbers multiplied by themselves make perfect squares.\n1² = 1, 2² = 4, 3² = 9, 4² = 16, 5² = 25, 6² = 36, 7² = 49, 8² = 64, 9² = 81, 10² = 100",
+      "keyTerms": [
+        "multiplication",
+        "mental math",
+        "tricks",
+        "square number"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_017",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "The Solar System",
+      "summary": "Take a tour of our solar system and all the planets!",
+      "content": "Our **solar system** consists of the Sun and everything that orbits around it.\n\n**The Sun** ☀️\n- A star (giant ball of hot gas)\n- Makes up 99.8% of the solar system's mass!\n- Temperature: 10,000°F on surface, millions inside\n\n**The Inner Planets (Rocky):**\n1. **Mercury** - Smallest, closest to Sun, very hot\n2. **Venus** - Hottest planet (over 800°F!), thick clouds\n3. **Earth** - Our home! The only planet with liquid water\n4. **Mars** - The \"Red Planet,\" has the tallest volcano\n\n**The Outer Planets (Gas Giants):**\n5. **Jupiter** - Largest planet, has a giant red storm\n6. **Saturn** - Beautiful rings made of ice and rock\n7. **Uranus** - Tilted on its side, pale blue-green color\n8. **Neptune** - Farthest planet, windiest in the solar system\n\n**Other Objects:**\n- **Dwarf Planets:** Pluto, Ceres, Eris\n- **Asteroids:** Rocky objects, mostly between Mars and Jupiter\n- **Comets:** Icy objects that develop tails when near the Sun\n- **Moons:** Over 200 moons orbit the planets!\n\n**Fun Facts:**\n- One year on Neptune = 165 Earth years\n- Saturn's rings are only about 30 feet thick\n- Mars has two tiny moons: Phobos and Deimos",
+      "keyTerms": [
+        "solar system",
+        "planet",
+        "Sun",
+        "Mercury",
+        "Venus",
+        "Earth",
+        "Mars",
+        "Jupiter",
+        "Saturn",
+        "Uranus",
+        "Neptune"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_018",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "The Water Cycle",
+      "summary": "How water moves around Earth in a never-ending cycle!",
+      "content": "Water on Earth is always moving in a continuous cycle called the **water cycle**.\n\n**4 Main Steps:**\n\n**1. Evaporation** ☀️💧\nWhen the Sun heats water in oceans, lakes, and rivers, it turns into invisible water vapor (gas) and rises into the air.\n\n**2. Condensation** ☁️\nAs water vapor rises and cools, it turns back into tiny water droplets. These droplets form clouds.\n\n**3. Precipitation** 🌧️❄️\nWhen droplets in clouds get too heavy, they fall as:\n- Rain\n- Snow\n- Sleet\n- Hail\n\n**4. Collection** 🌊\nWater collects in oceans, rivers, lakes, and underground. Then the cycle starts again!\n\n**Bonus Step: Transpiration** 🌱\nPlants also release water vapor from their leaves! This adds moisture to the air.\n\n**Fun Facts:**\n- The water you drink could be millions of years old!\n- The same water has been recycling since Earth formed\n- About 96.5% of Earth's water is in the oceans\n- Only about 1% of Earth's water is available for humans to use\n\n**Why It Matters:**\nThe water cycle gives us fresh water to drink, helps plants grow, and creates weather patterns!",
+      "keyTerms": [
+        "water cycle",
+        "evaporation",
+        "condensation",
+        "precipitation",
+        "collection",
+        "transpiration"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_019",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Dinosaurs: Ancient Giants",
+      "summary": "Learn about the amazing creatures that lived millions of years ago!",
+      "content": "**Dinosaurs** were reptiles that lived on Earth from about 230 to 65 million years ago.\n\n**Popular Dinosaurs:**\n\n**Tyrannosaurus Rex (T-Rex)** 🦖\n- Huge meat-eater with massive jaws\n- 40 feet long, 12 feet tall\n- Tiny arms but powerful bite!\n\n**Triceratops** 🦏\n- Plant-eater with three horns\n- Big bony frill on its head\n- About 30 feet long\n\n**Stegosaurus**\n- Plant-eater with plates on its back\n- Spikes on its tail for defense\n- Small brain (about the size of a walnut!)\n\n**Brachiosaurus** 🦕\n- Giant plant-eater with a long neck\n- One of the tallest dinosaurs\n- Could reach treetops 40 feet high\n\n**Types of Dinosaurs:**\n- **Herbivores:** Plant-eaters (Brachiosaurus, Stegosaurus)\n- **Carnivores:** Meat-eaters (T-Rex, Velociraptor)\n- **Omnivores:** Ate both plants and meat\n\n**What Happened to Them?**\nAbout 65 million years ago, dinosaurs became extinct. Most scientists think a giant asteroid hit Earth, causing climate changes.\n\n**Fun Facts:**\n- Birds are descendants of dinosaurs!\n- Some dinosaurs had feathers\n- The word \"dinosaur\" means \"terrible lizard\"\n- Not all dinosaurs were huge - some were chicken-sized!",
+      "keyTerms": [
+        "dinosaur",
+        "T-Rex",
+        "Triceratops",
+        "herbivore",
+        "carnivore",
+        "extinct",
+        "fossil"
+      ],
+      "readingLevel": 2.8,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_history_020",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Ancient Greece: Birthplace of Democracy",
+      "summary": "Discover the civilization that gave us philosophy, Olympics, and democracy.",
+      "content": "**Ancient Greece** (around 800-146 BCE) was one of the most influential civilizations in history.\n\n**Government:**\nAthens invented **democracy** — a system where citizens vote on decisions. The word \"democracy\" comes from Greek words meaning \"rule by the people.\"\n\n**Philosophy (Love of Wisdom):**\nFamous Greek philosophers:\n- **Socrates:** Taught by asking questions\n- **Plato:** Student of Socrates, founded the Academy\n- **Aristotle:** Studied everything from science to politics\n\n**The Olympic Games** 🏅\nStarted in 776 BCE in Olympia, Greece. Athletes competed in running, wrestling, chariot racing, and more. Winners received olive wreaths, not medals!\n\n**Greek Mythology:**\nGreeks believed in many gods and goddesses:\n- **Zeus:** King of the gods (thunder)\n- **Athena:** Goddess of wisdom\n- **Poseidon:** God of the sea\n- **Apollo:** God of the sun and music\n\n**Architecture:**\nGreek buildings like the **Parthenon** used columns and mathematical proportions. Three column styles: Doric, Ionic, and Corinthian.\n\n**Science & Math:**\n- Pythagoras: Created the Pythagorean theorem\n- Archimedes: Invented machines and studied physics\n- Hippocrates: \"Father of Medicine\"\n\n**Legacy:**\nGreek ideas about democracy, philosophy, art, and science still influence the world today!",
+      "keyTerms": [
+        "Ancient Greece",
+        "democracy",
+        "philosophy",
+        "Olympics",
+        "mythology",
+        "Athens",
+        "Sparta"
+      ],
+      "readingLevel": 6,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_history_021",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "The American Revolution",
+      "summary": "How the thirteen colonies won independence from Britain.",
+      "content": "The **American Revolution** (1775-1783) was when the American colonies fought for independence from Great Britain.\n\n**Why Did It Start?**\n- Britain taxed the colonies without giving them a say (representation)\n- \"No taxation without representation!\" became a famous protest\n- Colonists felt their rights were being violated\n\n**Key Events:**\n\n**1773: Boston Tea Party** ☕\nColonists dumped 342 chests of British tea into Boston Harbor to protest tea taxes.\n\n**1775: Battles of Lexington and Concord** ⚔️\n\"The shot heard 'round the world\" — the first battles of the war.\n\n**1776: Declaration of Independence** 📜\nWritten by Thomas Jefferson, declared freedom on July 4, 1776.\n\n**1781: Battle of Yorktown** 🎖️\nAmerican and French forces defeated the British, ending major fighting.\n\n**Important People:**\n- **George Washington:** Commander of the Continental Army, first president\n- **Benjamin Franklin:** Diplomat, inventor, helped get French support\n- **Thomas Jefferson:** Wrote the Declaration of Independence\n- **Paul Revere:** Famous midnight ride to warn of British troops\n\n**The Outcome:**\nThe colonies won! They created the United States of America and wrote the Constitution.\n\n**Legacy:**\nThe American Revolution inspired other countries to fight for freedom and democracy. Ideas from the Declaration of Independence still influence human rights movements today.",
+      "keyTerms": [
+        "American Revolution",
+        "independence",
+        "Declaration of Independence",
+        "George Washington",
+        "colony"
+      ],
+      "readingLevel": 6.5,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_history_022",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "The Renaissance: A Rebirth of Learning",
+      "summary": "When art, science, and culture flourished in Europe.",
+      "content": "The **Renaissance** (1300-1600) was a period of \"rebirth\" in art, science, and learning that began in Italy.\n\n**Why \"Renaissance\"?**\nThe word means \"rebirth\" in French. People rediscovered ancient Greek and Roman knowledge and created new ideas.\n\n**Famous Artists:**\n\n**Leonardo da Vinci** 🎨\n- Painted the Mona Lisa and The Last Supper\n- Inventor and scientist\n- Designed flying machines and war devices\n\n**Michelangelo** 🗿\n- Painted the Sistine Chapel ceiling\n- Sculpted the statue of David\n- Architect and poet\n\n**Raphael**\n- Painted beautiful religious scenes\n- Master of balance and harmony\n\n**Inventions & Discoveries:**\n- **Printing Press (Gutenberg, 1440):** Made books affordable\n- **Scientific Method:** New way of studying the world\n- **Anatomy:** Artists and doctors studied the human body\n\n**New Ideas:**\n- **Humanism:** Focus on human potential and achievement\n- **Perspective in Art:** Made paintings look 3D\n- **Exploration:** Columbus, Magellan, and others explored the world\n\n**Architecture:**\nBeautiful domes, arches, and columns inspired by ancient Rome.\n\n**Legacy:**\nThe Renaissance shaped modern science, art, and philosophy. It showed that humans could achieve great things through creativity and learning!",
+      "keyTerms": [
+        "Renaissance",
+        "Leonardo da Vinci",
+        "Michelangelo",
+        "humanism",
+        "printing press"
+      ],
+      "readingLevel": 6,
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_language_023",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "The English Alphabet and Phonics",
+      "summary": "Learn about the ABCs and how letters make sounds!",
+      "content": "The **English alphabet** has 26 letters. Each letter makes one or more sounds.\n\n**The Letters:**\nA B C D E F G H I J K L M N O P Q R S T U V W X Y Z\n\n**Vowels and Consonants:**\n\n**Vowels** (5): A, E, I, O, U (and sometimes Y!)\nVowels are special — you can sing them! Try it: \"Ahhh, Eee, Iii, Ooo, Uuu\"\n\n**Consonants** (21): All the other letters\nConsonants need vowels to make words.\n\n**Letter Sounds:**\n- Some letters make one sound: \"B\" says /b/ as in \"ball\"\n- Some letters make multiple sounds: \"C\" says /k/ (cat) or /s/ (cent)\n- Some letters team up: \"TH\" makes a new sound (thing)\n\n**Letter Combinations (Digraphs):**\n- **ch:** chair, cheese\n- **sh:** ship, fish\n- **th:** thing, this\n- **ph:** phone (sounds like /f/)\n\n**Short vs. Long Vowels:**\n- Short A: cat, hat\n- Long A: cake, name (sounds like the letter's name)\n\n**Fun Facts:**\n- \"E\" is the most common letter in English\n- \"Q\" is almost always followed by \"U\"\n- The only word with all five vowels in order is \"facetious\"!\n\n**Practice:**\nCan you think of a word for each letter of the alphabet?",
+      "keyTerms": [
+        "alphabet",
+        "vowel",
+        "consonant",
+        "phonics",
+        "digraph"
+      ],
+      "readingLevel": 1.5,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_language_024",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Types of Sentences",
+      "summary": "Learn about the four types of sentences and how to use them.",
+      "content": "There are **four types of sentences** in English. Each has a different purpose and uses different punctuation.\n\n**1. Declarative Sentence (Statement)** 📝\nTells you something. Ends with a period (.)\n- Example: \"The sky is blue.\"\n- Example: \"Dogs are mammals.\"\n\n**2. Interrogative Sentence (Question)** ❓\nAsks something. Ends with a question mark (?)\n- Example: \"What time is it?\"\n- Example: \"Do you like pizza?\"\n\n**3. Imperative Sentence (Command)** 👉\nTells someone to do something. Usually ends with a period (.)\n- Example: \"Close the door.\"\n- Example: \"Please sit down.\"\n- The subject (you) is usually hidden!\n\n**4. Exclamatory Sentence (Exclamation)** ‼️\nShows strong feeling. Ends with an exclamation point (!)\n- Example: \"What a beautiful day!\"\n- Example: \"I can't believe it!\"\n\n**How to Tell Them Apart:**\n- Look at the punctuation at the end\n- Ask: Is it telling, asking, commanding, or exclaiming?\n\n**Mixed Examples:**\n- \"I love ice cream.\" (Declarative)\n- \"Do you love ice cream?\" (Interrogative)\n- \"Try this ice cream.\" (Imperative)\n- \"This ice cream is amazing!\" (Exclamatory)\n\n**Practice:**\nWhat type of sentence is each?\n1. \"Where is my backpack?\"\n2. \"Please help me find it.\"\n3. \"I found it!\"\n4. \"It was under the bed.\"",
+      "keyTerms": [
+        "sentence",
+        "declarative",
+        "interrogative",
+        "imperative",
+        "exclamatory",
+        "punctuation"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_technology_025",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "How Computers Work",
+      "summary": "Discover what happens inside a computer when you use it!",
+      "content": "A **computer** is a machine that processes information super fast using electricity.\n\n**Main Parts of a Computer:**\n\n**1. CPU (Central Processing Unit)** 🧠\n- The \"brain\" of the computer\n- Does all the calculations and thinking\n- Measured in GHz (billions of operations per second!)\n\n**2. Memory (RAM)** 💾\n- Short-term memory\n- Stores what you're working on right now\n- When you turn off the computer, RAM is cleared\n\n**3. Storage (Hard Drive/SSD)** 💿\n- Long-term memory\n- Saves your files, photos, and programs\n- Keeps data even when computer is off\n\n**4. Input Devices** ⌨️🖱️\n- Keyboard, mouse, microphone\n- How you tell the computer what to do\n\n**5. Output Devices** 🖥️🔊\n- Monitor (screen), speakers, printer\n- How the computer shows you information\n\n**How It Works:**\n1. You type or click (input)\n2. CPU processes your command super fast\n3. RAM temporarily stores the work\n4. Result appears on screen (output)\n5. You can save it to storage\n\n**Binary Code:**\nComputers only understand 1s and 0s (on and off). Everything — pictures, videos, games — is secretly just millions of 1s and 0s!\n\n**Fun Facts:**\n- Modern computers can do billions of calculations per second\n- The first computer filled an entire room!\n- Your phone is more powerful than computers that sent astronauts to the moon",
+      "keyTerms": [
+        "computer",
+        "CPU",
+        "RAM",
+        "storage",
+        "input",
+        "output",
+        "binary"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_geography_026",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Maps and How to Read Them",
+      "summary": "Learn how to read maps and find your way around!",
+      "content": "A **map** is a drawing of a place as seen from above. Maps help us find locations and understand geography.\n\n**Parts of a Map:**\n\n**1. Title** 📍\nTells you what area the map shows.\n\n**2. Legend (or Key)** 🗝️\nExplains what symbols mean. Example:\n- 🏠 = house\n- 🌳 = park\n- ⭐ = capital city\n\n**3. Compass Rose** 🧭\nShows directions:\n- **N** = North (top)\n- **S** = South (bottom)\n- **E** = East (right)\n- **W** = West (left)\n\n**4. Scale** 📏\nShows how distance on the map relates to real distance.\nExample: 1 inch = 10 miles\n\n**5. Grid** 📊\nLetters and numbers help you find locations.\nExample: \"The library is at C4\"\n\n**Types of Maps:**\n\n**Physical Maps** 🏔️\nShow natural features: mountains, rivers, lakes\n\n**Political Maps** 🗺️\nShow borders, cities, and countries\n\n**Road Maps** 🛣️\nHelp you drive from place to place\n\n**Latitude and Longitude:**\n- **Latitude:** Lines running east-west (measure north-south)\n- **Longitude:** Lines running north-south (measure east-west)\n- **Equator:** 0° latitude\n- **Prime Meridian:** 0° longitude\n\n**Using a Map:**\n1. Find the compass rose to orient yourself\n2. Use the legend to understand symbols\n3. Use the scale to measure distance\n4. Use grid coordinates to find specific places\n\n**Fun Fact:** GPS (Global Positioning System) uses satellites to create digital maps and show exactly where you are!",
+      "keyTerms": [
+        "map",
+        "legend",
+        "compass rose",
+        "scale",
+        "latitude",
+        "longitude",
+        "grid"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_art_027",
+      "subject": "art",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Primary and Secondary Colors",
+      "summary": "Learn about colors and how to mix them!",
+      "content": "**Colors** are everywhere! Learning about colors helps you paint, draw, and understand art.\n\n**Primary Colors** 🎨\nThe three colors you CANNOT make by mixing others:\n- **Red** ❤️\n- **Yellow** 💛\n- **Blue** 💙\n\n**Secondary Colors** 🌈\nColors made by mixing two primary colors:\n- **Red + Yellow = Orange** 🧡\n- **Yellow + Blue = Green** 💚\n- **Blue + Red = Purple** 💜\n\n**The Color Wheel:**\nArtists use a color wheel to see how colors relate to each other.\n\n**Warm Colors:** Red, Orange, Yellow (feel hot and energetic)\n**Cool Colors:** Blue, Green, Purple (feel calm and cold)\n\n**Mixing Tips:**\n- Mix equal amounts for bright secondary colors\n- Add white to make colors lighter (tints)\n- Add black to make colors darker (shades)\n- Add gray to make colors duller\n\n**Complementary Colors:**\nColors opposite on the color wheel look great together:\n- Red & Green\n- Blue & Orange\n- Yellow & Purple\n\n**Fun Activity:**\nTry mixing your own secondary colors with paint!\n- Mix red and yellow — do you get orange?\n- Mix yellow and blue — do you get green?\n- Mix blue and red — do you get purple?\n\n**Art Fact:** The primary colors are called \"primary\" because they are the foundation of all other colors!",
+      "keyTerms": [
+        "primary colors",
+        "secondary colors",
+        "color wheel",
+        "mixing",
+        "warm colors",
+        "cool colors"
+      ],
+      "readingLevel": 2,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_science_028",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Magnets and Magnetism",
+      "summary": "Discover the invisible force that attracts and repels!",
+      "content": "**Magnetism** is an invisible force that can pull or push certain materials.\n\n**What is a Magnet?**\nA magnet is an object that creates a magnetic field — an invisible area of force around it.\n\n**Parts of a Magnet:**\nEvery magnet has two ends called **poles**:\n- **North Pole (N)**\n- **South Pole (S)**\n\n**Magnetic Rules:**\n- **Opposite poles attract:** North attracts South\n- **Same poles repel:** North pushes away North, South pushes away South\n\n**Magnetic Materials:**\nOnly certain metals are magnetic:\n- ✅ Iron\n- ✅ Nickel\n- ✅ Cobalt\n- ❌ Copper, aluminum, gold (not magnetic)\n\n**Types of Magnets:**\n1. **Permanent Magnets:** Always magnetic (bar magnets, fridge magnets)\n2. **Temporary Magnets:** Only magnetic when near another magnet (paperclips)\n3. **Electromagnets:** Use electricity to create magnetism (can be turned on/off)\n\n**Magnetic Field:**\nThe space around a magnet where magnetic force works. You can see it by sprinkling iron filings near a magnet!\n\n**Earth is a Giant Magnet!** 🌍\nEarth has a magnetic field with North and South magnetic poles. This is why compasses work — the needle points to Earth's magnetic north!\n\n**Uses of Magnets:**\n- Refrigerator magnets\n- Compasses for navigation\n- Electric motors and generators\n- MRI machines in hospitals\n- Speakers and headphones\n- Credit cards and hard drives\n\n**Fun Experiments:**\n1. Test which objects are magnetic with a magnet\n2. Make a paperclip chain using magnetism\n3. Float a magnet above another using repelling force!",
+      "keyTerms": [
+        "magnet",
+        "magnetism",
+        "pole",
+        "attract",
+        "repel",
+        "magnetic field",
+        "electromagnet"
+      ],
+      "readingLevel": 4,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "article_technology_029",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "The Internet: Connecting the World",
+      "summary": "Learn how the internet works and connects billions of devices!",
+      "content": "The **Internet** is a global network of billions of computers and devices all connected together.\n\n**What Is It?**\nThe Internet is like a giant spider web connecting computers worldwide. It lets us share information instantly across the planet.\n\n**How It Works:**\n\n**1. Your Device** 💻📱\nConnects to the Internet through Wi-Fi or cables.\n\n**2. ISP (Internet Service Provider)** 🌐\nCompanies like Comcast, AT&T that give you Internet access.\n\n**3. Routers** 📡\nDirect data to the right place, like a postal system.\n\n**4. Servers** 🖥️\nPowerful computers that store websites, videos, and files.\n\n**5. Data Packets** 📦\nInformation is broken into small \"packets\" that travel separately and reassemble at their destination.\n\n**Key Technologies:**\n\n**IP Address** 🔢\nEvery device has a unique number (like 192.168.1.1) to identify it.\n\n**Domain Names** 🌍\nEasy-to-remember names (like google.com) instead of numbers.\n\n**HTTP/HTTPS** 🔒\nProtocols for accessing websites. HTTPS is secure (encrypted).\n\n**DNS (Domain Name System)** 📞\nLike a phone book — translates names into IP addresses.\n\n**Timeline:**\n- **1969:** ARPANET created (early Internet)\n- **1983:** TCP/IP protocol standardized\n- **1989:** Tim Berners-Lee invented the World Wide Web\n- **1990s:** Internet becomes public\n- **2000s:** Social media, smartphones, streaming\n\n**Internet vs. Web:**\n- **Internet:** The physical network of cables and computers\n- **Web (WWW):** Websites and pages that run on the Internet\n\n**Fun Facts:**\n- Over 5 billion people use the Internet (2024)\n- Google processes over 8.5 billion searches per day\n- Over 500 hours of video are uploaded to YouTube every minute\n- The Internet weighs about 50 grams (the weight of electrons!)\n\n**Why It Matters:**\nThe Internet revolutionized communication, education, commerce, and entertainment. It's one of the most important inventions in human history!",
+      "keyTerms": [
+        "Internet",
+        "ISP",
+        "server",
+        "router",
+        "IP address",
+        "DNS",
+        "packet",
+        "World Wide Web",
+        "protocol"
+      ],
+      "readingLevel": 6,
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:42:34.581Z",
         "curator": "content-pipeline-v1"
       }
     }

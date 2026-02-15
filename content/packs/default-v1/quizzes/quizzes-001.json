@@ -1,7 +1,7 @@
 {
   "shardId": "quizzes-001",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T19:21:58.782Z",
+  "createdAt": "2026-02-15T19:39:42.093Z",
   "questions": [
     {
       "id": "q_math_easy_000",
@@ -28,7 +28,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -57,7 +57,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -86,7 +86,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -115,7 +115,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -144,7 +144,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -173,7 +173,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -202,7 +202,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -231,7 +231,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -260,7 +260,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -289,7 +289,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -319,7 +319,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -348,7 +348,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -378,7 +378,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -407,7 +407,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -436,7 +436,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -465,7 +465,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -494,7 +494,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -523,7 +523,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -552,7 +552,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -581,7 +581,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -611,7 +611,7 @@
         "source": "public-domain",
         "sourceUrl": "https://en.wikipedia.org/wiki/Water",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -640,7 +640,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -669,7 +669,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -698,7 +698,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -727,7 +727,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -756,7 +756,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -785,7 +785,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -814,7 +814,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -843,7 +843,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -872,7 +872,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -901,7 +901,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -930,7 +930,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -959,7 +959,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -988,7 +988,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1017,7 +1017,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1046,7 +1046,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1075,7 +1075,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1104,7 +1104,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1133,7 +1133,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1162,7 +1162,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1191,7 +1191,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1220,7 +1220,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1249,7 +1249,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1278,7 +1278,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1307,7 +1307,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1336,7 +1336,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1365,7 +1365,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1394,7 +1394,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1423,7 +1423,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1452,7 +1452,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1481,7 +1481,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1510,7 +1510,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1539,7 +1539,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1568,7 +1568,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1597,7 +1597,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1626,7 +1626,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1655,7 +1655,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1684,7 +1684,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1713,7 +1713,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1742,7 +1742,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1771,7 +1771,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1800,7 +1800,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1829,7 +1829,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1858,7 +1858,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1887,7 +1887,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1916,7 +1916,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1945,7 +1945,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -1974,7 +1974,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2003,7 +2003,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2032,7 +2032,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2061,7 +2061,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2090,7 +2090,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2119,7 +2119,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2148,7 +2148,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2177,7 +2177,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2206,7 +2206,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2235,7 +2235,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2264,7 +2264,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2293,7 +2293,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2322,7 +2322,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2351,7 +2351,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2380,7 +2380,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2409,7 +2409,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2438,7 +2438,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2467,7 +2467,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.092Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2496,7 +2496,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2525,7 +2525,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2554,7 +2554,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2583,7 +2583,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2612,7 +2612,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2641,7 +2641,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2670,7 +2670,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2699,7 +2699,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2728,7 +2728,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2757,7 +2757,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2786,7 +2786,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2815,7 +2815,7 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2844,7 +2844,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2873,7 +2873,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -2902,7 +2902,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     }

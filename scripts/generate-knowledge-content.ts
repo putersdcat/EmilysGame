@@ -568,6 +568,704 @@ The **World Wide Web** (WWW) is the system of websites that runs on the Internet
     readingLevel: 4.0,
     source: 'manual-curation',
   },
+
+  // ──── EXPANSION BATCH 1 - Additional Articles to Reach 30+ ────
+
+  // Math
+  {
+    title: 'Understanding Decimals',
+    subject: 'math',
+    ageBand: '8-10',
+    summary: 'Learn about decimal numbers and how they relate to fractions.',
+    content: `A **decimal** is another way to write a fraction, especially when the denominator is 10, 100, 1000, etc.
+
+**Place Value in Decimals:**
+- The dot (.) is called the decimal point
+- Numbers to the right of the decimal point are parts of a whole
+- 0.5 = 5/10 = 1/2
+- 0.25 = 25/100 = 1/4
+- 0.75 = 75/100 = 3/4
+
+**Decimal Place Names:**
+- First place: tenths (0.1 = 1/10)
+- Second place: hundredths (0.01 = 1/100)
+- Third place: thousandths (0.001 = 1/1000)
+
+**Money Uses Decimals:**
+$1.50 means 1 dollar and 50 cents (50/100 of a dollar)
+
+**Converting Fractions to Decimals:**
+Divide the numerator by the denominator. For example: 3/4 = 3 ÷ 4 = 0.75
+
+**Fun Fact:** Some fractions make repeating decimals! Try 1/3 = 0.333... (the 3s go on forever).`,
+    keyTerms: ['decimal', 'decimal point', 'tenths', 'hundredths', 'place value'],
+    readingLevel: 4.0,
+    source: 'educational-commons',
+  },
+  {
+    title: 'Multiplication Tricks',
+    subject: 'math',
+    ageBand: '8-10',
+    summary: 'Learn quick mental math tricks for multiplication!',
+    content: `**Multiplying by 10, 100, 1000:**
+Just add zeros! 25 × 10 = 250, 25 × 100 = 2,500
+
+**Multiplying by 11:**
+For two-digit numbers, add the digits and put the result in the middle.
+Example: 23 × 11 = 2(2+3)3 = 253
+
+**Multiplying by 5:**
+Multiply by 10, then divide by 2.
+Example: 14 × 5 = (14 × 10) ÷ 2 = 140 ÷ 2 = 70
+
+**Multiplying by 9:**
+Use your fingers! Hold out 10 fingers. To multiply 9 × 7, fold down your 7th finger. Fingers to the left = tens (6), fingers to the right = ones (3). Answer: 63!
+
+**Doubling and Halving:**
+If one number is even, you can double one and halve the other.
+Example: 16 × 5 = 8 × 10 = 80
+
+**Square Numbers:**
+Numbers multiplied by themselves make perfect squares.
+1² = 1, 2² = 4, 3² = 9, 4² = 16, 5² = 25, 6² = 36, 7² = 49, 8² = 64, 9² = 81, 10² = 100`,
+    keyTerms: ['multiplication', 'mental math', 'tricks', 'square number'],
+    readingLevel: 3.5,
+    source: 'educational-commons',
+  },
+
+  // Science
+  {
+    title: 'The Solar System',
+    subject: 'science',
+    ageBand: '8-10',
+    summary: 'Take a tour of our solar system and all the planets!',
+    content: `Our **solar system** consists of the Sun and everything that orbits around it.
+
+**The Sun** ☀️
+- A star (giant ball of hot gas)
+- Makes up 99.8% of the solar system's mass!
+- Temperature: 10,000°F on surface, millions inside
+
+**The Inner Planets (Rocky):**
+1. **Mercury** - Smallest, closest to Sun, very hot
+2. **Venus** - Hottest planet (over 800°F!), thick clouds
+3. **Earth** - Our home! The only planet with liquid water
+4. **Mars** - The "Red Planet," has the tallest volcano
+
+**The Outer Planets (Gas Giants):**
+5. **Jupiter** - Largest planet, has a giant red storm
+6. **Saturn** - Beautiful rings made of ice and rock
+7. **Uranus** - Tilted on its side, pale blue-green color
+8. **Neptune** - Farthest planet, windiest in the solar system
+
+**Other Objects:**
+- **Dwarf Planets:** Pluto, Ceres, Eris
+- **Asteroids:** Rocky objects, mostly between Mars and Jupiter
+- **Comets:** Icy objects that develop tails when near the Sun
+- **Moons:** Over 200 moons orbit the planets!
+
+**Fun Facts:**
+- One year on Neptune = 165 Earth years
+- Saturn's rings are only about 30 feet thick
+- Mars has two tiny moons: Phobos and Deimos`,
+    keyTerms: ['solar system', 'planet', 'Sun', 'Mercury', 'Venus', 'Earth', 'Mars', 'Jupiter', 'Saturn', 'Uranus', 'Neptune'],
+    readingLevel: 4.5,
+    source: 'public-domain',
+  },
+  {
+    title: 'The Water Cycle',
+    subject: 'science',
+    ageBand: '5-7',
+    summary: 'How water moves around Earth in a never-ending cycle!',
+    content: `Water on Earth is always moving in a continuous cycle called the **water cycle**.
+
+**4 Main Steps:**
+
+**1. Evaporation** ☀️💧
+When the Sun heats water in oceans, lakes, and rivers, it turns into invisible water vapor (gas) and rises into the air.
+
+**2. Condensation** ☁️
+As water vapor rises and cools, it turns back into tiny water droplets. These droplets form clouds.
+
+**3. Precipitation** 🌧️❄️
+When droplets in clouds get too heavy, they fall as:
+- Rain
+- Snow
+- Sleet
+- Hail
+
+**4. Collection** 🌊
+Water collects in oceans, rivers, lakes, and underground. Then the cycle starts again!
+
+**Bonus Step: Transpiration** 🌱
+Plants also release water vapor from their leaves! This adds moisture to the air.
+
+**Fun Facts:**
+- The water you drink could be millions of years old!
+- The same water has been recycling since Earth formed
+- About 96.5% of Earth's water is in the oceans
+- Only about 1% of Earth's water is available for humans to use
+
+**Why It Matters:**
+The water cycle gives us fresh water to drink, helps plants grow, and creates weather patterns!`,
+    keyTerms: ['water cycle', 'evaporation', 'condensation', 'precipitation', 'collection', 'transpiration'],
+    readingLevel: 2.5,
+    source: 'public-domain',
+  },
+  {
+    title: 'Dinosaurs: Ancient Giants',
+    subject: 'science',
+    ageBand: '5-7',
+    summary: 'Learn about the amazing creatures that lived millions of years ago!',
+    content: `**Dinosaurs** were reptiles that lived on Earth from about 230 to 65 million years ago.
+
+**Popular Dinosaurs:**
+
+**Tyrannosaurus Rex (T-Rex)** 🦖
+- Huge meat-eater with massive jaws
+- 40 feet long, 12 feet tall
+- Tiny arms but powerful bite!
+
+**Triceratops** 🦏
+- Plant-eater with three horns
+- Big bony frill on its head
+- About 30 feet long
+
+**Stegosaurus**
+- Plant-eater with plates on its back
+- Spikes on its tail for defense
+- Small brain (about the size of a walnut!)
+
+**Brachiosaurus** 🦕
+- Giant plant-eater with a long neck
+- One of the tallest dinosaurs
+- Could reach treetops 40 feet high
+
+**Types of Dinosaurs:**
+- **Herbivores:** Plant-eaters (Brachiosaurus, Stegosaurus)
+- **Carnivores:** Meat-eaters (T-Rex, Velociraptor)
+- **Omnivores:** Ate both plants and meat
+
+**What Happened to Them?**
+About 65 million years ago, dinosaurs became extinct. Most scientists think a giant asteroid hit Earth, causing climate changes.
+
+**Fun Facts:**
+- Birds are descendants of dinosaurs!
+- Some dinosaurs had feathers
+- The word "dinosaur" means "terrible lizard"
+- Not all dinosaurs were huge - some were chicken-sized!`,
+    keyTerms: ['dinosaur', 'T-Rex', 'Triceratops', 'herbivore', 'carnivore', 'extinct', 'fossil'],
+    readingLevel: 2.8,
+    source: 'public-domain',
+  },
+
+  // History
+  {
+    title: 'Ancient Greece: Birthplace of Democracy',
+    subject: 'history',
+    ageBand: '11-12+',
+    summary: 'Discover the civilization that gave us philosophy, Olympics, and democracy.',
+    content: `**Ancient Greece** (around 800-146 BCE) was one of the most influential civilizations in history.
+
+**Government:**
+Athens invented **democracy** — a system where citizens vote on decisions. The word "democracy" comes from Greek words meaning "rule by the people."
+
+**Philosophy (Love of Wisdom):**
+Famous Greek philosophers:
+- **Socrates:** Taught by asking questions
+- **Plato:** Student of Socrates, founded the Academy
+- **Aristotle:** Studied everything from science to politics
+
+**The Olympic Games** 🏅
+Started in 776 BCE in Olympia, Greece. Athletes competed in running, wrestling, chariot racing, and more. Winners received olive wreaths, not medals!
+
+**Greek Mythology:**
+Greeks believed in many gods and goddesses:
+- **Zeus:** King of the gods (thunder)
+- **Athena:** Goddess of wisdom
+- **Poseidon:** God of the sea
+- **Apollo:** God of the sun and music
+
+**Architecture:**
+Greek buildings like the **Parthenon** used columns and mathematical proportions. Three column styles: Doric, Ionic, and Corinthian.
+
+**Science & Math:**
+- Pythagoras: Created the Pythagorean theorem
+- Archimedes: Invented machines and studied physics
+- Hippocrates: "Father of Medicine"
+
+**Legacy:**
+Greek ideas about democracy, philosophy, art, and science still influence the world today!`,
+    keyTerms: ['Ancient Greece', 'democracy', 'philosophy', 'Olympics', 'mythology', 'Athens', 'Sparta'],
+    readingLevel: 6.0,
+    source: 'public-domain',
+  },
+  {
+    title: 'The American Revolution',
+    subject: 'history',
+    ageBand: '11-12+',
+    summary: 'How the thirteen colonies won independence from Britain.',
+    content: `The **American Revolution** (1775-1783) was when the American colonies fought for independence from Great Britain.
+
+**Why Did It Start?**
+- Britain taxed the colonies without giving them a say (representation)
+- "No taxation without representation!" became a famous protest
+- Colonists felt their rights were being violated
+
+**Key Events:**
+
+**1773: Boston Tea Party** ☕
+Colonists dumped 342 chests of British tea into Boston Harbor to protest tea taxes.
+
+**1775: Battles of Lexington and Concord** ⚔️
+"The shot heard 'round the world" — the first battles of the war.
+
+**1776: Declaration of Independence** 📜
+Written by Thomas Jefferson, declared freedom on July 4, 1776.
+
+**1781: Battle of Yorktown** 🎖️
+American and French forces defeated the British, ending major fighting.
+
+**Important People:**
+- **George Washington:** Commander of the Continental Army, first president
+- **Benjamin Franklin:** Diplomat, inventor, helped get French support
+- **Thomas Jefferson:** Wrote the Declaration of Independence
+- **Paul Revere:** Famous midnight ride to warn of British troops
+
+**The Outcome:**
+The colonies won! They created the United States of America and wrote the Constitution.
+
+**Legacy:**
+The American Revolution inspired other countries to fight for freedom and democracy. Ideas from the Declaration of Independence still influence human rights movements today.`,
+    keyTerms: ['American Revolution', 'independence', 'Declaration of Independence', 'George Washington', 'colony'],
+    readingLevel: 6.5,
+    source: 'public-domain',
+  },
+  {
+    title: 'The Renaissance: A Rebirth of Learning',
+    subject: 'history',
+    ageBand: '11-12+',
+    summary: 'When art, science, and culture flourished in Europe.',
+    content: `The **Renaissance** (1300-1600) was a period of "rebirth" in art, science, and learning that began in Italy.
+
+**Why "Renaissance"?**
+The word means "rebirth" in French. People rediscovered ancient Greek and Roman knowledge and created new ideas.
+
+**Famous Artists:**
+
+**Leonardo da Vinci** 🎨
+- Painted the Mona Lisa and The Last Supper
+- Inventor and scientist
+- Designed flying machines and war devices
+
+**Michelangelo** 🗿
+- Painted the Sistine Chapel ceiling
+- Sculpted the statue of David
+- Architect and poet
+
+**Raphael**
+- Painted beautiful religious scenes
+- Master of balance and harmony
+
+**Inventions & Discoveries:**
+- **Printing Press (Gutenberg, 1440):** Made books affordable
+- **Scientific Method:** New way of studying the world
+- **Anatomy:** Artists and doctors studied the human body
+
+**New Ideas:**
+- **Humanism:** Focus on human potential and achievement
+- **Perspective in Art:** Made paintings look 3D
+- **Exploration:** Columbus, Magellan, and others explored the world
+
+**Architecture:**
+Beautiful domes, arches, and columns inspired by ancient Rome.
+
+**Legacy:**
+The Renaissance shaped modern science, art, and philosophy. It showed that humans could achieve great things through creativity and learning!`,
+    keyTerms: ['Renaissance', 'Leonardo da Vinci', 'Michelangelo', 'humanism', 'printing press'],
+    readingLevel: 6.0,
+    source: 'public-domain',
+  },
+
+  // Language
+  {
+    title: 'The English Alphabet and Phonics',
+    subject: 'language',
+    ageBand: '5-7',
+    summary: 'Learn about the ABCs and how letters make sounds!',
+    content: `The **English alphabet** has 26 letters. Each letter makes one or more sounds.
+
+**The Letters:**
+A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+**Vowels and Consonants:**
+
+**Vowels** (5): A, E, I, O, U (and sometimes Y!)
+Vowels are special — you can sing them! Try it: "Ahhh, Eee, Iii, Ooo, Uuu"
+
+**Consonants** (21): All the other letters
+Consonants need vowels to make words.
+
+**Letter Sounds:**
+- Some letters make one sound: "B" says /b/ as in "ball"
+- Some letters make multiple sounds: "C" says /k/ (cat) or /s/ (cent)
+- Some letters team up: "TH" makes a new sound (thing)
+
+**Letter Combinations (Digraphs):**
+- **ch:** chair, cheese
+- **sh:** ship, fish
+- **th:** thing, this
+- **ph:** phone (sounds like /f/)
+
+**Short vs. Long Vowels:**
+- Short A: cat, hat
+- Long A: cake, name (sounds like the letter's name)
+
+**Fun Facts:**
+- "E" is the most common letter in English
+- "Q" is almost always followed by "U"
+- The only word with all five vowels in order is "facetious"!
+
+**Practice:**
+Can you think of a word for each letter of the alphabet?`,
+    keyTerms: ['alphabet', 'vowel', 'consonant', 'phonics', 'digraph'],
+    readingLevel: 1.5,
+    source: 'educational-commons',
+  },
+  {
+    title: 'Types of Sentences',
+    subject: 'language',
+    ageBand: '8-10',
+    summary: 'Learn about the four types of sentences and how to use them.',
+    content: `There are **four types of sentences** in English. Each has a different purpose and uses different punctuation.
+
+**1. Declarative Sentence (Statement)** 📝
+Tells you something. Ends with a period (.)
+- Example: "The sky is blue."
+- Example: "Dogs are mammals."
+
+**2. Interrogative Sentence (Question)** ❓
+Asks something. Ends with a question mark (?)
+- Example: "What time is it?"
+- Example: "Do you like pizza?"
+
+**3. Imperative Sentence (Command)** 👉
+Tells someone to do something. Usually ends with a period (.)
+- Example: "Close the door."
+- Example: "Please sit down."
+- The subject (you) is usually hidden!
+
+**4. Exclamatory Sentence (Exclamation)** ‼️
+Shows strong feeling. Ends with an exclamation point (!)
+- Example: "What a beautiful day!"
+- Example: "I can't believe it!"
+
+**How to Tell Them Apart:**
+- Look at the punctuation at the end
+- Ask: Is it telling, asking, commanding, or exclaiming?
+
+**Mixed Examples:**
+- "I love ice cream." (Declarative)
+- "Do you love ice cream?" (Interrogative)
+- "Try this ice cream." (Imperative)
+- "This ice cream is amazing!" (Exclamatory)
+
+**Practice:**
+What type of sentence is each?
+1. "Where is my backpack?"
+2. "Please help me find it."
+3. "I found it!"
+4. "It was under the bed."`,
+    keyTerms: ['sentence', 'declarative', 'interrogative', 'imperative', 'exclamatory', 'punctuation'],
+    readingLevel: 3.5,
+    source: 'educational-commons',
+  },
+
+  // Technology
+  {
+    title: 'How Computers Work',
+    subject: 'technology',
+    ageBand: '8-10',
+    summary: 'Discover what happens inside a computer when you use it!',
+    content: `A **computer** is a machine that processes information super fast using electricity.
+
+**Main Parts of a Computer:**
+
+**1. CPU (Central Processing Unit)** 🧠
+- The "brain" of the computer
+- Does all the calculations and thinking
+- Measured in GHz (billions of operations per second!)
+
+**2. Memory (RAM)** 💾
+- Short-term memory
+- Stores what you're working on right now
+- When you turn off the computer, RAM is cleared
+
+**3. Storage (Hard Drive/SSD)** 💿
+- Long-term memory
+- Saves your files, photos, and programs
+- Keeps data even when computer is off
+
+**4. Input Devices** ⌨️🖱️
+- Keyboard, mouse, microphone
+- How you tell the computer what to do
+
+**5. Output Devices** 🖥️🔊
+- Monitor (screen), speakers, printer
+- How the computer shows you information
+
+**How It Works:**
+1. You type or click (input)
+2. CPU processes your command super fast
+3. RAM temporarily stores the work
+4. Result appears on screen (output)
+5. You can save it to storage
+
+**Binary Code:**
+Computers only understand 1s and 0s (on and off). Everything — pictures, videos, games — is secretly just millions of 1s and 0s!
+
+**Fun Facts:**
+- Modern computers can do billions of calculations per second
+- The first computer filled an entire room!
+- Your phone is more powerful than computers that sent astronauts to the moon`,
+    keyTerms: ['computer', 'CPU', 'RAM', 'storage', 'input', 'output', 'binary'],
+    readingLevel: 4.0,
+    source: 'educational-commons',
+  },
+
+  // Geography
+  {
+    title: 'Maps and How to Read Them',
+    subject: 'geography',
+    ageBand: '8-10',
+    summary: 'Learn how to read maps and find your way around!',
+    content: `A **map** is a drawing of a place as seen from above. Maps help us find locations and understand geography.
+
+**Parts of a Map:**
+
+**1. Title** 📍
+Tells you what area the map shows.
+
+**2. Legend (or Key)** 🗝️
+Explains what symbols mean. Example:
+- 🏠 = house
+- 🌳 = park
+- ⭐ = capital city
+
+**3. Compass Rose** 🧭
+Shows directions:
+- **N** = North (top)
+- **S** = South (bottom)
+- **E** = East (right)
+- **W** = West (left)
+
+**4. Scale** 📏
+Shows how distance on the map relates to real distance.
+Example: 1 inch = 10 miles
+
+**5. Grid** 📊
+Letters and numbers help you find locations.
+Example: "The library is at C4"
+
+**Types of Maps:**
+
+**Physical Maps** 🏔️
+Show natural features: mountains, rivers, lakes
+
+**Political Maps** 🗺️
+Show borders, cities, and countries
+
+**Road Maps** 🛣️
+Help you drive from place to place
+
+**Latitude and Longitude:**
+- **Latitude:** Lines running east-west (measure north-south)
+- **Longitude:** Lines running north-south (measure east-west)
+- **Equator:** 0° latitude
+- **Prime Meridian:** 0° longitude
+
+**Using a Map:**
+1. Find the compass rose to orient yourself
+2. Use the legend to understand symbols
+3. Use the scale to measure distance
+4. Use grid coordinates to find specific places
+
+**Fun Fact:** GPS (Global Positioning System) uses satellites to create digital maps and show exactly where you are!`,
+    keyTerms: ['map', 'legend', 'compass rose', 'scale', 'latitude', 'longitude', 'grid'],
+    readingLevel: 4.5,
+    source: 'educational-commons',
+  },
+
+  // Art
+  {
+    title: 'Primary and Secondary Colors',
+    subject: 'art',
+    ageBand: '5-7',
+    summary: 'Learn about colors and how to mix them!',
+    content: `**Colors** are everywhere! Learning about colors helps you paint, draw, and understand art.
+
+**Primary Colors** 🎨
+The three colors you CANNOT make by mixing others:
+- **Red** ❤️
+- **Yellow** 💛
+- **Blue** 💙
+
+**Secondary Colors** 🌈
+Colors made by mixing two primary colors:
+- **Red + Yellow = Orange** 🧡
+- **Yellow + Blue = Green** 💚
+- **Blue + Red = Purple** 💜
+
+**The Color Wheel:**
+Artists use a color wheel to see how colors relate to each other.
+
+**Warm Colors:** Red, Orange, Yellow (feel hot and energetic)
+**Cool Colors:** Blue, Green, Purple (feel calm and cold)
+
+**Mixing Tips:**
+- Mix equal amounts for bright secondary colors
+- Add white to make colors lighter (tints)
+- Add black to make colors darker (shades)
+- Add gray to make colors duller
+
+**Complementary Colors:**
+Colors opposite on the color wheel look great together:
+- Red & Green
+- Blue & Orange
+- Yellow & Purple
+
+**Fun Activity:**
+Try mixing your own secondary colors with paint!
+- Mix red and yellow — do you get orange?
+- Mix yellow and blue — do you get green?
+- Mix blue and red — do you get purple?
+
+**Art Fact:** The primary colors are called "primary" because they are the foundation of all other colors!`,
+    keyTerms: ['primary colors', 'secondary colors', 'color wheel', 'mixing', 'warm colors', 'cool colors'],
+    readingLevel: 2.0,
+    source: 'educational-commons',
+  },
+
+  // Science - Additional
+  {
+    title: 'Magnets and Magnetism',
+    subject: 'science',
+    ageBand: '8-10',
+    summary: 'Discover the invisible force that attracts and repels!',
+    content: `**Magnetism** is an invisible force that can pull or push certain materials.
+
+**What is a Magnet?**
+A magnet is an object that creates a magnetic field — an invisible area of force around it.
+
+**Parts of a Magnet:**
+Every magnet has two ends called **poles**:
+- **North Pole (N)**
+- **South Pole (S)**
+
+**Magnetic Rules:**
+- **Opposite poles attract:** North attracts South
+- **Same poles repel:** North pushes away North, South pushes away South
+
+**Magnetic Materials:**
+Only certain metals are magnetic:
+- ✅ Iron
+- ✅ Nickel
+- ✅ Cobalt
+- ❌ Copper, aluminum, gold (not magnetic)
+
+**Types of Magnets:**
+1. **Permanent Magnets:** Always magnetic (bar magnets, fridge magnets)
+2. **Temporary Magnets:** Only magnetic when near another magnet (paperclips)
+3. **Electromagnets:** Use electricity to create magnetism (can be turned on/off)
+
+**Magnetic Field:**
+The space around a magnet where magnetic force works. You can see it by sprinkling iron filings near a magnet!
+
+**Earth is a Giant Magnet!** 🌍
+Earth has a magnetic field with North and South magnetic poles. This is why compasses work — the needle points to Earth's magnetic north!
+
+**Uses of Magnets:**
+- Refrigerator magnets
+- Compasses for navigation
+- Electric motors and generators
+- MRI machines in hospitals
+- Speakers and headphones
+- Credit cards and hard drives
+
+**Fun Experiments:**
+1. Test which objects are magnetic with a magnet
+2. Make a paperclip chain using magnetism
+3. Float a magnet above another using repelling force!`,
+    keyTerms: ['magnet', 'magnetism', 'pole', 'attract', 'repel', 'magnetic field', 'electromagnet'],
+    readingLevel: 4.0,
+    source: 'educational-commons',
+  },
+
+  // Technology - Additional
+  {
+    title: 'The Internet: Connecting the World',
+    subject: 'technology',
+    ageBand: '11-12+',
+    summary: 'Learn how the internet works and connects billions of devices!',
+    content: `The **Internet** is a global network of billions of computers and devices all connected together.
+
+**What Is It?**
+The Internet is like a giant spider web connecting computers worldwide. It lets us share information instantly across the planet.
+
+**How It Works:**
+
+**1. Your Device** 💻📱
+Connects to the Internet through Wi-Fi or cables.
+
+**2. ISP (Internet Service Provider)** 🌐
+Companies like Comcast, AT&T that give you Internet access.
+
+**3. Routers** 📡
+Direct data to the right place, like a postal system.
+
+**4. Servers** 🖥️
+Powerful computers that store websites, videos, and files.
+
+**5. Data Packets** 📦
+Information is broken into small "packets" that travel separately and reassemble at their destination.
+
+**Key Technologies:**
+
+**IP Address** 🔢
+Every device has a unique number (like 192.168.1.1) to identify it.
+
+**Domain Names** 🌍
+Easy-to-remember names (like google.com) instead of numbers.
+
+**HTTP/HTTPS** 🔒
+Protocols for accessing websites. HTTPS is secure (encrypted).
+
+**DNS (Domain Name System)** 📞
+Like a phone book — translates names into IP addresses.
+
+**Timeline:**
+- **1969:** ARPANET created (early Internet)
+- **1983:** TCP/IP protocol standardized
+- **1989:** Tim Berners-Lee invented the World Wide Web
+- **1990s:** Internet becomes public
+- **2000s:** Social media, smartphones, streaming
+
+**Internet vs. Web:**
+- **Internet:** The physical network of cables and computers
+- **Web (WWW):** Websites and pages that run on the Internet
+
+**Fun Facts:**
+- Over 5 billion people use the Internet (2024)
+- Google processes over 8.5 billion searches per day
+- Over 500 hours of video are uploaded to YouTube every minute
+- The Internet weighs about 50 grams (the weight of electrons!)
+
+**Why It Matters:**
+The Internet revolutionized communication, education, commerce, and entertainment. It's one of the most important inventions in human history!`,
+    keyTerms: ['Internet', 'ISP', 'server', 'router', 'IP address', 'DNS', 'packet', 'World Wide Web', 'protocol'],
+    readingLevel: 6.0,
+    source: 'educational-commons',
+  },
 ];
 
 // ─── Conversion & Shard Generation ──────────────────────────

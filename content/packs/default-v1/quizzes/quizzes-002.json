@@ -1,7 +1,7 @@
 {
   "shardId": "quizzes-002",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T19:21:58.782Z",
+  "createdAt": "2026-02-15T19:39:42.093Z",
   "questions": [
     {
       "id": "q_technology_hard_100",
@@ -28,7 +28,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -57,7 +57,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -86,7 +86,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -115,7 +115,7 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     },
@@ -144,7 +144,2754 @@
       "provenance": {
         "source": "public-domain",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T19:21:58.782Z",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_105",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 9 + 7?",
+      "answers": [
+        "16",
+        "15",
+        "17",
+        "14"
+      ],
+      "hint": "Try counting up from 9.",
+      "explanation": "9 + 7 = 16. You can count: 10, 11, 12, 13, 14, 15, 16.",
+      "tags": [
+        "addition",
+        "counting"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "sourceUrl": "https://www.games4esl.com/math-quiz/",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_106",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 15 - 7?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "hint": "Count backward from 15.",
+      "explanation": "15 - 7 = 8. Start at 15 and count back 7 steps.",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_107",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 4 × 5?",
+      "answers": [
+        "20",
+        "18",
+        "22",
+        "16"
+      ],
+      "hint": "Think of 4 groups of 5.",
+      "explanation": "4 × 5 = 20. Four groups of five equals twenty.",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_108",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many sides does a square have?",
+      "answers": [
+        "4",
+        "3",
+        "5",
+        "6"
+      ],
+      "hint": "Count the corners too - same number!",
+      "explanation": "A square has 4 equal sides and 4 corners.",
+      "tags": [
+        "geometry",
+        "shapes"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_109",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 6 + 8?",
+      "answers": [
+        "14",
+        "13",
+        "15",
+        "12"
+      ],
+      "hint": "Make 6 into 10 by taking 4 from the 8.",
+      "explanation": "6 + 8 = 14. You can think of it as 10 + 4.",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_110",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 25 + 15?",
+      "answers": [
+        "40",
+        "35",
+        "45",
+        "30"
+      ],
+      "hint": "Add the tens first: 20 + 10 = 30.",
+      "explanation": "25 + 15 = 40. Break it into (20 + 10) + (5 + 5) = 30 + 10.",
+      "tags": [
+        "addition",
+        "place-value"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_111",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 8 × 7?",
+      "answers": [
+        "56",
+        "54",
+        "58",
+        "52"
+      ],
+      "hint": "Think of 8 × 5 = 40, then add 8 × 2.",
+      "explanation": "8 × 7 = 56. This is an important multiplication fact.",
+      "tags": [
+        "multiplication",
+        "times-tables"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_112",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 72 ÷ 8?",
+      "answers": [
+        "9",
+        "8",
+        "10",
+        "7"
+      ],
+      "hint": "What times 8 equals 72?",
+      "explanation": "72 ÷ 8 = 9. Division is the opposite of multiplication.",
+      "tags": [
+        "division"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_113",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 1/2 + 1/4?",
+      "answers": [
+        "3/4",
+        "2/4",
+        "1/3",
+        "2/6"
+      ],
+      "hint": "Convert 1/2 to fourths first.",
+      "explanation": "1/2 = 2/4, so 2/4 + 1/4 = 3/4.",
+      "tags": [
+        "fractions",
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_114",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the perimeter of a rectangle with length 5 and width 3?",
+      "answers": [
+        "16",
+        "15",
+        "18",
+        "14"
+      ],
+      "hint": "Add all four sides: 5 + 5 + 3 + 3.",
+      "explanation": "Perimeter = 2(length + width) = 2(5 + 3) = 2(8) = 16.",
+      "tags": [
+        "geometry",
+        "perimeter"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_115",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 23 × 11?",
+      "answers": [
+        "253",
+        "243",
+        "263",
+        "233"
+      ],
+      "hint": "Multiply by 10, then add the original number.",
+      "explanation": "23 × 11 = 230 + 23 = 253. Quick trick for multiplying by 11!",
+      "tags": [
+        "multiplication",
+        "mental-math"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_116",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the value of 5² + 3²?",
+      "answers": [
+        "34",
+        "32",
+        "36",
+        "30"
+      ],
+      "hint": "5² means 5 × 5, and 3² means 3 × 3.",
+      "explanation": "5² = 25, 3² = 9, so 25 + 9 = 34.",
+      "tags": [
+        "exponents",
+        "squares"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_117",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If x + 7 = 15, what is x?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "22"
+      ],
+      "hint": "Subtract 7 from both sides.",
+      "explanation": "x + 7 = 15, so x = 15 - 7 = 8.",
+      "tags": [
+        "algebra",
+        "equations"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_118",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 3/5 as a decimal?",
+      "answers": [
+        "0.6",
+        "0.5",
+        "0.7",
+        "0.65"
+      ],
+      "hint": "Divide 3 by 5.",
+      "explanation": "3 ÷ 5 = 0.6. You can also think of it as 6/10.",
+      "tags": [
+        "fractions",
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_119",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 15% of 200?",
+      "answers": [
+        "30",
+        "25",
+        "35",
+        "40"
+      ],
+      "hint": "10% of 200 is 20, so 15% is a bit more.",
+      "explanation": "15% = 0.15, so 0.15 × 200 = 30.",
+      "tags": [
+        "percentages",
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_120",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do bees make?",
+      "answers": [
+        "Honey",
+        "Milk",
+        "Silk",
+        "Wax only"
+      ],
+      "hint": "It's sweet and you can eat it!",
+      "explanation": "Bees collect nectar from flowers and turn it into honey.",
+      "tags": [
+        "animals",
+        "nature"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_121",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What color is the sky on a clear day?",
+      "answers": [
+        "Blue",
+        "Green",
+        "Red",
+        "Yellow"
+      ],
+      "hint": "Look up on a sunny day!",
+      "explanation": "The sky appears blue because of how sunlight scatters in the atmosphere.",
+      "tags": [
+        "weather",
+        "light"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_122",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do plants need to grow?",
+      "answers": [
+        "Water and sunlight",
+        "Only water",
+        "Only sunlight",
+        "Only soil"
+      ],
+      "hint": "They need more than one thing!",
+      "explanation": "Plants need water, sunlight, air, and nutrients from soil to grow.",
+      "tags": [
+        "plants",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_123",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many legs does an ant have?",
+      "answers": [
+        "6",
+        "8",
+        "4",
+        "10"
+      ],
+      "hint": "All insects have this many legs.",
+      "explanation": "Ants are insects, and all insects have 6 legs.",
+      "tags": [
+        "insects",
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_124",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What season comes after winter?",
+      "answers": [
+        "Spring",
+        "Summer",
+        "Autumn",
+        "Fall"
+      ],
+      "hint": "Flowers start to bloom in this season.",
+      "explanation": "Spring comes after winter, bringing warmer weather and new plant growth.",
+      "tags": [
+        "seasons",
+        "nature"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_125",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the largest organ in the human body?",
+      "answers": [
+        "Skin",
+        "Liver",
+        "Brain",
+        "Heart"
+      ],
+      "hint": "It covers your whole body!",
+      "explanation": "Skin is the largest organ, protecting your body and helping regulate temperature.",
+      "tags": [
+        "human-body",
+        "anatomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_126",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What gas do humans breathe out?",
+      "answers": [
+        "Carbon dioxide",
+        "Oxygen",
+        "Nitrogen",
+        "Helium"
+      ],
+      "hint": "Plants need this gas for photosynthesis.",
+      "explanation": "We breathe in oxygen and breathe out carbon dioxide as a waste product.",
+      "tags": [
+        "respiration",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_127",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the center of the solar system?",
+      "answers": [
+        "The Sun",
+        "The Earth",
+        "Jupiter",
+        "The Moon"
+      ],
+      "hint": "All planets orbit around this star.",
+      "explanation": "The Sun is the star at the center of our solar system.",
+      "tags": [
+        "astronomy",
+        "solar-system"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_128",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the process by which water turns into vapor?",
+      "answers": [
+        "Evaporation",
+        "Condensation",
+        "Precipitation",
+        "Freezing"
+      ],
+      "hint": "This happens when water gets hot.",
+      "explanation": "Evaporation is when liquid water turns into water vapor (gas).",
+      "tags": [
+        "water-cycle",
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_129",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What type of rock is formed by cooling lava?",
+      "answers": [
+        "Igneous",
+        "Sedimentary",
+        "Metamorphic",
+        "Limestone"
+      ],
+      "hint": "Think of volcanoes!",
+      "explanation": "Igneous rocks form when molten lava or magma cools and hardens.",
+      "tags": [
+        "geology",
+        "rocks"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_130",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the most abundant gas in Earth's atmosphere?",
+      "answers": [
+        "Nitrogen",
+        "Oxygen",
+        "Carbon dioxide",
+        "Argon"
+      ],
+      "hint": "It makes up about 78% of the air.",
+      "explanation": "Nitrogen makes up about 78% of Earth's atmosphere, oxygen is about 21%.",
+      "tags": [
+        "atmosphere",
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_131",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the powerhouse of the cell?",
+      "answers": [
+        "Mitochondria",
+        "Nucleus",
+        "Ribosome",
+        "Chloroplast"
+      ],
+      "hint": "It produces energy for the cell.",
+      "explanation": "Mitochondria generate most of the cell's energy in the form of ATP.",
+      "tags": [
+        "biology",
+        "cells"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_132",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "At what temperature does water boil at sea level (in Celsius)?",
+      "answers": [
+        "100°C",
+        "90°C",
+        "110°C",
+        "212°C"
+      ],
+      "hint": "It's the same as 212°F.",
+      "explanation": "Water boils at 100°C (212°F) at sea level under standard atmospheric pressure.",
+      "tags": [
+        "physics",
+        "temperature"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_133",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What force pulls objects toward the center of the Earth?",
+      "answers": [
+        "Gravity",
+        "Magnetism",
+        "Friction",
+        "Inertia"
+      ],
+      "hint": "Isaac Newton studied this force.",
+      "explanation": "Gravity is the force that attracts objects with mass toward each other.",
+      "tags": [
+        "physics",
+        "forces"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_134",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the chemical formula for table salt?",
+      "answers": [
+        "NaCl",
+        "H₂O",
+        "CO₂",
+        "NaOH"
+      ],
+      "hint": "It contains sodium and chlorine.",
+      "explanation": "Table salt is sodium chloride (NaCl), made of sodium and chlorine atoms.",
+      "tags": [
+        "chemistry",
+        "compounds"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_135",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What country is the Great Wall located in?",
+      "answers": [
+        "China",
+        "Japan",
+        "India",
+        "Korea"
+      ],
+      "hint": "It's in Asia and very long!",
+      "explanation": "The Great Wall of China is one of the world's largest structures.",
+      "tags": [
+        "landmarks",
+        "ancient-history"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_136",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Who sailed across the ocean in 1492?",
+      "answers": [
+        "Christopher Columbus",
+        "Magellan",
+        "Captain Cook",
+        "Vasco da Gama"
+      ],
+      "hint": "There's a rhyme: \"In 1492...\"",
+      "explanation": "Christopher Columbus sailed from Spain and reached the Americas in 1492.",
+      "tags": [
+        "exploration",
+        "voyages"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_137",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a pharaoh?",
+      "answers": [
+        "An ancient Egyptian king",
+        "A Greek god",
+        "A Roman soldier",
+        "A Chinese emperor"
+      ],
+      "hint": "They ruled ancient Egypt.",
+      "explanation": "Pharaohs were the kings of ancient Egypt.",
+      "tags": [
+        "ancient-egypt",
+        "rulers"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_138",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What did the ancient Romans build to carry water?",
+      "answers": [
+        "Aqueducts",
+        "Pyramids",
+        "Temples",
+        "Walls"
+      ],
+      "hint": "The name starts with \"A\".",
+      "explanation": "Aqueducts were bridges that carried water to Roman cities.",
+      "tags": [
+        "ancient-rome",
+        "engineering"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_139",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "In what year did the Titanic sink?",
+      "answers": [
+        "1912",
+        "1910",
+        "1915",
+        "1920"
+      ],
+      "hint": "It was in the early 1900s.",
+      "explanation": "The RMS Titanic sank on April 15, 1912 after hitting an iceberg.",
+      "tags": [
+        "20th-century",
+        "disasters"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_140",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Who wrote the Declaration of Independence?",
+      "answers": [
+        "Thomas Jefferson",
+        "Benjamin Franklin",
+        "George Washington",
+        "John Adams"
+      ],
+      "hint": "He later became the 3rd US President.",
+      "explanation": "Thomas Jefferson was the primary author of the Declaration of Independence in 1776.",
+      "tags": [
+        "american-history",
+        "founding-fathers"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_141",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What was the first civilization to develop writing?",
+      "answers": [
+        "Sumerians",
+        "Egyptians",
+        "Greeks",
+        "Chinese"
+      ],
+      "hint": "They lived in ancient Mesopotamia.",
+      "explanation": "The Sumerians developed cuneiform writing around 3200 BCE in Mesopotamia.",
+      "tags": [
+        "ancient-history",
+        "writing"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_142",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "In what year did World War I begin?",
+      "answers": [
+        "1914",
+        "1912",
+        "1916",
+        "1918"
+      ],
+      "hint": "It lasted from 1914 to 1918.",
+      "explanation": "World War I began in 1914 and ended in 1918.",
+      "tags": [
+        "world-wars",
+        "20th-century"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_143",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who was the first Emperor of Rome?",
+      "answers": [
+        "Augustus",
+        "Julius Caesar",
+        "Nero",
+        "Constantine"
+      ],
+      "hint": "Originally called Octavian.",
+      "explanation": "Augustus (formerly Octavian) became the first Roman Emperor in 27 BCE.",
+      "tags": [
+        "ancient-rome",
+        "emperors"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_144",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What ancient wonder was located in Alexandria, Egypt?",
+      "answers": [
+        "The Lighthouse",
+        "The Pyramids",
+        "The Colossus",
+        "The Hanging Gardens"
+      ],
+      "hint": "It helped ships navigate at night.",
+      "explanation": "The Lighthouse of Alexandria (Pharos) was one of the Seven Wonders of the Ancient World.",
+      "tags": [
+        "ancient-wonders",
+        "architecture"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_145",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is the opposite of \"hot\"?",
+      "answers": [
+        "Cold",
+        "Warm",
+        "Cool",
+        "Freezing"
+      ],
+      "hint": "Ice is this!",
+      "explanation": "Cold is the opposite (antonym) of hot.",
+      "tags": [
+        "vocabulary",
+        "antonyms"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_146",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many vowels are in the English alphabet?",
+      "answers": [
+        "5",
+        "6",
+        "4",
+        "7"
+      ],
+      "hint": "A, E, I, O, U",
+      "explanation": "The 5 vowels are A, E, I, O, and U.",
+      "tags": [
+        "alphabet",
+        "vowels"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_147",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What do we call a word that sounds the same but has a different meaning?",
+      "answers": [
+        "Homophone",
+        "Synonym",
+        "Antonym",
+        "Adjective"
+      ],
+      "hint": "Like \"to,\" \"too,\" and \"two.\"",
+      "explanation": "Homophones are words that sound alike but have different meanings and spellings.",
+      "tags": [
+        "vocabulary",
+        "homophones"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_148",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the plural of \"child\"?",
+      "answers": [
+        "Children",
+        "Childs",
+        "Childes",
+        "Childrens"
+      ],
+      "hint": "This is an irregular plural.",
+      "explanation": "The plural of child is children, not childs.",
+      "tags": [
+        "grammar",
+        "plurals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_149",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What punctuation mark shows strong emotion?",
+      "answers": [
+        "Exclamation point",
+        "Period",
+        "Comma",
+        "Question mark"
+      ],
+      "hint": "It looks like this: !",
+      "explanation": "An exclamation point (!) shows excitement, surprise, or strong emotion.",
+      "tags": [
+        "punctuation",
+        "grammar"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_150",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a metaphor?",
+      "answers": [
+        "A comparison without using \"like\" or \"as\"",
+        "A question",
+        "A type of poem",
+        "A synonym"
+      ],
+      "hint": "Example: \"Time is money.\"",
+      "explanation": "A metaphor directly compares two things without using \"like\" or \"as.\"",
+      "tags": [
+        "figurative-language",
+        "literary-devices"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_151",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an alliteration?",
+      "answers": [
+        "Repetition of the same starting sound",
+        "A rhyming pattern",
+        "A type of verb",
+        "A question"
+      ],
+      "hint": "Example: \"Peter Piper picked...\"",
+      "explanation": "Alliteration is when words in a row start with the same sound.",
+      "tags": [
+        "literary-devices",
+        "poetry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_152",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does the prefix \"bio-\" mean?",
+      "answers": [
+        "Life",
+        "Earth",
+        "Water",
+        "Study"
+      ],
+      "hint": "Biology is the study of...",
+      "explanation": "The prefix \"bio-\" means life (from Greek bios).",
+      "tags": [
+        "prefixes",
+        "etymology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_153",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a haiku?",
+      "answers": [
+        "A Japanese poem with 3 lines",
+        "A type of story",
+        "A long poem",
+        "A play"
+      ],
+      "hint": "It has 5-7-5 syllables.",
+      "explanation": "A haiku is a Japanese poem with 3 lines: 5 syllables, 7 syllables, 5 syllables.",
+      "tags": [
+        "poetry",
+        "forms"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_154",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the subject of a sentence?",
+      "answers": [
+        "Who or what the sentence is about",
+        "The action",
+        "A describing word",
+        "The ending"
+      ],
+      "hint": "In \"The cat ran,\" the subject is \"the cat.\"",
+      "explanation": "The subject is who or what is doing the action in the sentence.",
+      "tags": [
+        "grammar",
+        "sentence-structure"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_easy_155",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What comes next: 1, 2, 3, 4, ...?",
+      "answers": [
+        "5",
+        "6",
+        "3",
+        "10"
+      ],
+      "hint": "Keep counting!",
+      "explanation": "This is counting by ones: 1, 2, 3, 4, 5.",
+      "tags": [
+        "patterns",
+        "sequences"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_easy_156",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "If you have 3 apples and get 2 more, how many do you have?",
+      "answers": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "hint": "Add them together!",
+      "explanation": "3 + 2 = 5 apples.",
+      "tags": [
+        "word-problems",
+        "addition"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_easy_157",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What shape has no corners?",
+      "answers": [
+        "Circle",
+        "Square",
+        "Triangle",
+        "Rectangle"
+      ],
+      "hint": "It's round!",
+      "explanation": "A circle has no corners or straight edges.",
+      "tags": [
+        "shapes",
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_easy_158",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "If today is Monday, what day was yesterday?",
+      "answers": [
+        "Sunday",
+        "Tuesday",
+        "Saturday",
+        "Wednesday"
+      ],
+      "hint": "Think backward one day.",
+      "explanation": "The day before Monday is Sunday.",
+      "tags": [
+        "time",
+        "calendar"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_medium_159",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Which doesn't belong: dog, cat, tree, rabbit?",
+      "answers": [
+        "Tree",
+        "Dog",
+        "Cat",
+        "Rabbit"
+      ],
+      "hint": "One is not an animal.",
+      "explanation": "Tree is a plant; the others are all animals.",
+      "tags": [
+        "categories",
+        "classification"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_medium_160",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "If 5 cats can catch 5 mice in 5 minutes, how many cats are needed to catch 100 mice in 100 minutes?",
+      "answers": [
+        "5",
+        "100",
+        "20",
+        "10"
+      ],
+      "hint": "The rate stays the same!",
+      "explanation": "Each cat catches 1 mouse per 5 minutes, so 5 cats can catch 100 mice in 100 minutes.",
+      "tags": [
+        "reasoning",
+        "rates"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_161",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the next number in the sequence: 1, 1, 2, 3, 5, 8, ...?",
+      "answers": [
+        "13",
+        "11",
+        "12",
+        "10"
+      ],
+      "hint": "Add the previous two numbers.",
+      "explanation": "This is the Fibonacci sequence: each number is the sum of the two before it (5 + 8 = 13).",
+      "tags": [
+        "patterns",
+        "fibonacci"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_162",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If A = 1, B = 2, C = 3, what does \"CAB\" equal?",
+      "answers": [
+        "3-1-2",
+        "1-2-3",
+        "2-3-1",
+        "3-2-1"
+      ],
+      "hint": "Replace each letter with its number.",
+      "explanation": "C = 3, A = 1, B = 2, so CAB = 3-1-2.",
+      "tags": [
+        "codes",
+        "patterns"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_163",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "In a race, you pass the person in 2nd place. What place are you in now?",
+      "answers": [
+        "2nd",
+        "1st",
+        "3rd",
+        "4th"
+      ],
+      "hint": "You took their position.",
+      "explanation": "If you pass the person in 2nd place, you are now in 2nd place.",
+      "tags": [
+        "reasoning",
+        "trick-questions"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_164",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Which is heavier: a pound of feathers or a pound of rocks?",
+      "answers": [
+        "They weigh the same",
+        "Feathers",
+        "Rocks",
+        "Neither"
+      ],
+      "hint": "Look at the word \"pound\" carefully.",
+      "explanation": "They both weigh one pound, so they are equal in weight!",
+      "tags": [
+        "trick-questions",
+        "reasoning"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_easy_165",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is the largest ocean on Earth?",
+      "answers": [
+        "Pacific Ocean",
+        "Atlantic Ocean",
+        "Indian Ocean",
+        "Arctic Ocean"
+      ],
+      "hint": "It's between Asia and the Americas.",
+      "explanation": "The Pacific Ocean is the largest and deepest ocean on Earth.",
+      "tags": [
+        "oceans",
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_easy_166",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is the capital of France?",
+      "answers": [
+        "Paris",
+        "London",
+        "Rome",
+        "Berlin"
+      ],
+      "hint": "It has the Eiffel Tower!",
+      "explanation": "Paris is the capital city of France.",
+      "tags": [
+        "capitals",
+        "europe"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_medium_167",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "On which continent is the Amazon Rainforest?",
+      "answers": [
+        "South America",
+        "Africa",
+        "Asia",
+        "Australia"
+      ],
+      "hint": "It's in Brazil and nearby countries.",
+      "explanation": "The Amazon Rainforest is mostly in Brazil, South America.",
+      "tags": [
+        "biomes",
+        "continents"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_medium_168",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the longest river in the world?",
+      "answers": [
+        "Nile River",
+        "Amazon River",
+        "Mississippi River",
+        "Yangtze River"
+      ],
+      "hint": "It flows through Egypt.",
+      "explanation": "The Nile River in Africa is considered the longest river at about 6,650 km.",
+      "tags": [
+        "rivers",
+        "africa"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_medium_169",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many continents are there?",
+      "answers": [
+        "7",
+        "5",
+        "6",
+        "8"
+      ],
+      "hint": "Count them: Africa, Antarctica, Asia...",
+      "explanation": "There are 7 continents: Africa, Antarctica, Asia, Europe, North America, Australia/Oceania, South America.",
+      "tags": [
+        "continents",
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_170",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the smallest country in the world?",
+      "answers": [
+        "Vatican City",
+        "Monaco",
+        "San Marino",
+        "Liechtenstein"
+      ],
+      "hint": "It's inside Rome, Italy.",
+      "explanation": "Vatican City is the smallest country, with an area of about 0.44 km².",
+      "tags": [
+        "countries",
+        "records"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_171",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Which desert is the largest hot desert in the world?",
+      "answers": [
+        "Sahara Desert",
+        "Arabian Desert",
+        "Gobi Desert",
+        "Kalahari Desert"
+      ],
+      "hint": "It's in North Africa.",
+      "explanation": "The Sahara Desert in Africa is the largest hot desert in the world.",
+      "tags": [
+        "deserts",
+        "africa"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_172",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the tallest mountain in the world?",
+      "answers": [
+        "Mount Everest",
+        "K2",
+        "Kilimanjaro",
+        "Denali"
+      ],
+      "hint": "It's in the Himalayas.",
+      "explanation": "Mount Everest is 8,849 meters (29,032 feet) tall, the highest point on Earth.",
+      "tags": [
+        "mountains",
+        "records"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_173",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Which country has the most people?",
+      "answers": [
+        "India",
+        "China",
+        "USA",
+        "Indonesia"
+      ],
+      "hint": "As of 2024, it surpassed China.",
+      "explanation": "India has the world's largest population as of 2024.",
+      "tags": [
+        "population",
+        "countries"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_hard_174",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What line divides the Earth into Northern and Southern hemispheres?",
+      "answers": [
+        "Equator",
+        "Prime Meridian",
+        "Tropic of Cancer",
+        "Arctic Circle"
+      ],
+      "hint": "It's at 0° latitude.",
+      "explanation": "The Equator is an imaginary line at 0° latitude that divides Earth into hemispheres.",
+      "tags": [
+        "latitude",
+        "hemispheres"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_175",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 11 + 9?",
+      "answers": [
+        "20",
+        "19",
+        "21",
+        "18"
+      ],
+      "hint": "Think of 10 + 10.",
+      "explanation": "11 + 9 = 20. You can think of it as (10 + 10).",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_176",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 100 - 35?",
+      "answers": [
+        "65",
+        "75",
+        "55",
+        "70"
+      ],
+      "hint": "Subtract 30 first, then subtract 5 more.",
+      "explanation": "100 - 35 = 65. Break it into 100 - 30 - 5.",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_177",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 9 × 9?",
+      "answers": [
+        "81",
+        "72",
+        "90",
+        "63"
+      ],
+      "hint": "Nine times nine.",
+      "explanation": "9 × 9 = 81. This is an important multiplication fact.",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_178",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 50% of 80?",
+      "answers": [
+        "40",
+        "30",
+        "50",
+        "60"
+      ],
+      "hint": "50% means half.",
+      "explanation": "50% = 1/2, so 80 ÷ 2 = 40.",
+      "tags": [
+        "percentages"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_179",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the area of a square with side length 6?",
+      "answers": [
+        "36",
+        "24",
+        "30",
+        "42"
+      ],
+      "hint": "Area = side × side.",
+      "explanation": "Area of square = 6 × 6 = 36 square units.",
+      "tags": [
+        "geometry",
+        "area"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_180",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call a baby dog?",
+      "answers": [
+        "Puppy",
+        "Kitten",
+        "Calf",
+        "Chick"
+      ],
+      "hint": "It's cute and fluffy!",
+      "explanation": "A baby dog is called a puppy.",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_181",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many wings does a butterfly have?",
+      "answers": [
+        "4",
+        "2",
+        "6",
+        "8"
+      ],
+      "hint": "Count them: two on each side.",
+      "explanation": "Butterflies have 4 wings - two on the left and two on the right.",
+      "tags": [
+        "insects",
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_182",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the fastest land animal?",
+      "answers": [
+        "Cheetah",
+        "Lion",
+        "Horse",
+        "Leopard"
+      ],
+      "hint": "It can run over 60 mph!",
+      "explanation": "Cheetahs can run up to 70 mph, making them the fastest land animal.",
+      "tags": [
+        "animals",
+        "records"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_183",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the main gas in the air we breathe?",
+      "answers": [
+        "Nitrogen",
+        "Oxygen",
+        "Carbon dioxide",
+        "Hydrogen"
+      ],
+      "hint": "It makes up about 78% of air.",
+      "explanation": "Nitrogen makes up about 78% of Earth's atmosphere.",
+      "tags": [
+        "atmosphere",
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_184",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What do we call animals that eat only plants?",
+      "answers": [
+        "Herbivores",
+        "Carnivores",
+        "Omnivores",
+        "Predators"
+      ],
+      "hint": "Think of cows and horses.",
+      "explanation": "Herbivores are animals that eat only plants (like deer, cows, and rabbits).",
+      "tags": [
+        "animals",
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_185",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What did people use before cars to travel?",
+      "answers": [
+        "Horses and carriages",
+        "Airplanes",
+        "Trains only",
+        "Bicycles only"
+      ],
+      "hint": "Think of animals pulling carts.",
+      "explanation": "Before cars, people used horses and horse-drawn carriages for transportation.",
+      "tags": [
+        "transportation",
+        "daily-life"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_186",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Who was the first president of the United States?",
+      "answers": [
+        "George Washington",
+        "Abraham Lincoln",
+        "Thomas Jefferson",
+        "Benjamin Franklin"
+      ],
+      "hint": "His face is on the $1 bill.",
+      "explanation": "George Washington was the first U.S. president (1789-1797).",
+      "tags": [
+        "american-history",
+        "presidents"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_187",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What was the name of the ship the Pilgrims sailed on?",
+      "answers": [
+        "Mayflower",
+        "Santa Maria",
+        "Titanic",
+        "Nina"
+      ],
+      "hint": "It's also a type of flower.",
+      "explanation": "The Pilgrims sailed to America on the Mayflower in 1620.",
+      "tags": [
+        "american-history",
+        "colonization"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_188",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "In which country did the Industrial Revolution begin?",
+      "answers": [
+        "England",
+        "France",
+        "Germany",
+        "United States"
+      ],
+      "hint": "It started in Great Britain.",
+      "explanation": "The Industrial Revolution began in England in the late 1700s.",
+      "tags": [
+        "industrial-revolution",
+        "innovation"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_189",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who invented the light bulb?",
+      "answers": [
+        "Thomas Edison",
+        "Nikola Tesla",
+        "Alexander Graham Bell",
+        "Benjamin Franklin"
+      ],
+      "hint": "He had a famous laboratory in Menlo Park.",
+      "explanation": "Thomas Edison invented the practical incandescent light bulb in 1879.",
+      "tags": [
+        "inventors",
+        "technology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_190",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a baby cat called?",
+      "answers": [
+        "Kitten",
+        "Puppy",
+        "Cub",
+        "Chick"
+      ],
+      "hint": "It rhymes with \"mitten\".",
+      "explanation": "A baby cat is called a kitten.",
+      "tags": [
+        "vocabulary",
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_191",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What do we call words that rhyme at the end of poem lines?",
+      "answers": [
+        "End rhyme",
+        "Beginning rhyme",
+        "Middle rhyme",
+        "No rhyme"
+      ],
+      "hint": "It happens at the...?",
+      "explanation": "When the last words of lines rhyme, it's called end rhyme.",
+      "tags": [
+        "poetry",
+        "rhyme"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_192",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the superlative form of \"good\"?",
+      "answers": [
+        "Best",
+        "Better",
+        "Gooder",
+        "More good"
+      ],
+      "hint": "Good, better, ...?",
+      "explanation": "The superlative of good is best (not \"most good\" or \"gooder\").",
+      "tags": [
+        "grammar",
+        "comparatives"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_193",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an oxymoron?",
+      "answers": [
+        "Two opposite words together",
+        "A type of rhyme",
+        "A long word",
+        "A question"
+      ],
+      "hint": "Example: \"jumbo shrimp\" or \"deafening silence\".",
+      "explanation": "An oxymoron combines contradictory terms (like \"clearly confused\").",
+      "tags": [
+        "literary-devices",
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_hard_194",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What do we call a word that is spelled the same backward and forward?",
+      "answers": [
+        "Palindrome",
+        "Homophone",
+        "Synonym",
+        "Acronym"
+      ],
+      "hint": "Examples: \"racecar\", \"noon\", \"level\".",
+      "explanation": "A palindrome reads the same backward as forward.",
+      "tags": [
+        "wordplay",
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_easy_195",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What comes next: red, blue, red, blue, ...?",
+      "answers": [
+        "Red",
+        "Blue",
+        "Green",
+        "Yellow"
+      ],
+      "hint": "Look at the pattern!",
+      "explanation": "The pattern alternates: red, blue, red, blue, so red comes next.",
+      "tags": [
+        "patterns",
+        "colors"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_medium_196",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "If all birds have wings, and a robin is a bird, what can we say?",
+      "answers": [
+        "A robin has wings",
+        "A robin can't fly",
+        "A robin is not a bird",
+        "None of these"
+      ],
+      "hint": "Use the first two facts.",
+      "explanation": "If all birds have wings, then a robin (which is a bird) must have wings.",
+      "tags": [
+        "deductive-reasoning",
+        "logic"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_medium_197",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What number comes next: 3, 6, 9, 12, ...?",
+      "answers": [
+        "15",
+        "14",
+        "16",
+        "13"
+      ],
+      "hint": "Count by threes!",
+      "explanation": "This sequence adds 3 each time: 3, 6, 9, 12, 15.",
+      "tags": [
+        "patterns",
+        "skip-counting"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_198",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If you rearrange the letters in \"LISTEN,\" what word do you get?",
+      "answers": [
+        "All of these",
+        "ENLIST",
+        "TINSEL",
+        "SILENT"
+      ],
+      "hint": "All the letters can make more than one word!",
+      "explanation": "LISTEN is an anagram of SILENT, ENLIST, and TINSEL.",
+      "tags": [
+        "anagrams",
+        "wordplay"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_logic_hard_199",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the missing number: 2, 4, 8, 16, ...?",
+      "answers": [
+        "32",
+        "24",
+        "20",
+        "30"
+      ],
+      "hint": "Each number is double the previous one.",
+      "explanation": "This sequence doubles each time: 2, 4, 8, 16, 32.",
+      "tags": [
+        "patterns",
+        "doubling"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T19:39:42.093Z",
         "curator": "content-pipeline-v1"
       }
     }

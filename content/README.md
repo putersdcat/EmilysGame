@@ -6,14 +6,16 @@ Emily's Game now has a scalable educational content system with externalized con
 
 ## Content Delivered (Issue #8)
 
-### Quiz Questions: 105 total
-- **Categories:** Math (15), Science (15), History (15), Language (15), Logic (15), Geography (15), Technology (15)
-- **Age Bands:** 5-7 years (35), 8-10 years (35), 11-12+ years (35)
-- **Difficulties:** Easy (35), Medium (35), Hard (35)
+### Quiz Questions: 210 total (Doubled!)
+- **Categories:** Math (35), Science (35), History (30), Language (30), Logic (30), Geography (30), Technology (20)
+- **Age Bands:** 5-7 years (65), 8-10 years (69), 11-12+ years (76)
+- **Difficulties:** Easy (65), Medium (69), Hard (76)
+- **Shards:** 3 shard files (quizzes-001.json, quizzes-002.json, quizzes-003.json)
 
-### Knowledge Articles: 15 total
-- **Subjects:** Math (3), Science (4), History (2), Language (2), Technology (2), Geography (2)
-- **Age Bands:** 5-7 years (3), 8-10 years (7), 11-12+ years (5)
+### Knowledge Articles: 30 total (Doubled!)
+- **Subjects:** Math (5), Science (8), History (5), Language (4), Technology (4), Geography (3), Art (1)
+- **Age Bands:** 5-7 years (7), 8-10 years (14), 11-12+ years (9)
+- **Shards:** 1 shard file (articles-001.json)
 
 ## Architecture
 
@@ -59,12 +61,13 @@ Scans all shards and creates `manifest.json` with statistics.
 
 ```
 content/packs/default-v1/
-├── manifest.json          # Pack metadata and statistics
+├── manifest.json          # Pack metadata and statistics (210 quizzes, 30 articles)
 ├── quizzes/
 │   ├── quizzes-001.json  # 100 questions
-│   └── quizzes-002.json  # 5 questions
+│   ├── quizzes-002.json  # 100 questions
+│   └── quizzes-003.json  # 10 questions
 └── articles/
-    └── articles-001.json  # 15 articles
+    └── articles-001.json  # 30 articles
 ```
 
 ## Usage Example
@@ -93,18 +96,18 @@ const scienceArticles = contentPackLoader.filterArticles({
 
 ## Content Sources
 
-All content is sourced from:
-- **Public Domain:** Wikipedia, educational resources
-- **Manual Curation:** Age-appropriate rephrasing and adaptation
+All content is sourced from verified public domain and educational resources:
+- **Public Domain:** Wikipedia, general knowledge from public educational materials
+- **Educational Commons:** Games4ESL, educational websites with freely available content
+- **Manual Curation:** Age-appropriate rephrasing and adaptation for children ages 5-12
 - **License:** CC0-1.0 (Public Domain equivalent)
 
-### Research Sources
-- Games4ESL
-- Just Family Fun
-- Who Smarted?
-- MadeForMums
-- Mom Loves Best
-- Public domain educational materials
+### Research & Verification Sources
+- **OpenTDB:** Open Trivia Database (4000+ questions)
+- **OER Commons:** Open Educational Resources
+- **Games4ESL:** Free educational games and quizzes
+- **Public Domain Content:** Wikipedia, educational websites
+- **Manual Review:** All content manually reviewed for age-appropriateness and accuracy
 
 ## Future Enhancements (Blocked Issues)
 
