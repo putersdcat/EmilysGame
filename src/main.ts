@@ -17,7 +17,7 @@ import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionRes
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, type UIState } from './ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
@@ -57,6 +57,14 @@ import {
   serializeStatus, deserializeStatus, resetTickCounter,
   type PlayerStatus,
 } from './status';
+import {
+  createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
+  nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
+  startDucking, stopDucking, setBiome as musicSetBiome,
+  serializeMusicSettings, deserializeMusicSettings,
+  getCurrentTrackInfo,
+  type MusicState,
+} from './music';
 import type { FacingPose } from './sprites';
 
 
@@ -106,6 +114,8 @@ interface GameState {
   status: PlayerStatus;
   // Unlocked cosmetic IDs (#66)
   unlockedCosmetics: string[];
+  // Music state (#74)
+  music: MusicState;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -369,6 +379,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     pendingTrade: null,
     status: createPlayerStatus(),
     unlockedCosmetics: save?.unlockedCosmetics ?? [],
+    music: createMusicState(),
   };
 
   // Sync unlocked cosmetics to customizer
@@ -712,6 +723,8 @@ function update(state: GameState, input: InputManager): void {
     const chunk = state.chunks.get(cKey);
     const biomeId = chunk?.biomeId ?? 0;
     tickStatus(state.status, state.player.isMoving, biomeId);
+    // Music biome awareness (#74) — switch tracks on biome change
+    musicSetBiome(state.music, biomeId);
   }
 
   // --- Auto-save every 30s ---
@@ -831,6 +844,7 @@ function buildSaveData(state: GameState): SaveData {
     discoveredWildlife: getDiscoveredSpeciesArray(),
     playerStatus: serializeStatus(state.status),
     unlockedCosmetics: state.unlockedCosmetics,
+    musicSettings: serializeMusicSettings(state.music),
   };
 }
 
@@ -867,6 +881,8 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Restore unlocked cosmetics (#66)
   state.unlockedCosmetics = data.unlockedCosmetics ?? [];
   setUnlockedCosmetics(state.unlockedCosmetics);
+  // Restore music settings (#74)
+  state.music.settings = deserializeMusicSettings(data.musicSettings);
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -1012,6 +1028,8 @@ function resetGameState(state: GameState): void {
   resetTickCounter();
   state.unlockedCosmetics = [];
   setUnlockedCosmetics([]);
+  // Keep music settings across new game — just stop playback
+  musicStop(state.music);
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1277,6 +1295,16 @@ function renderFrame(
 
     // Status bars (#70)
     syncStatusBars(state.status);
+
+    // Music ducking sync (#74) — duck when paused (quiz/dialog active)
+    if (state.paused && !state.music.ducking) {
+      startDucking(state.music);
+    } else if (!state.paused && state.music.ducking) {
+      stopDucking(state.music);
+    }
+
+    // Music UI sync (#74)
+    syncMusicUI(state.music);
   }
 
   // Minimap (self-throttling to ~6fps)
@@ -1459,6 +1487,19 @@ async function main(): Promise<void> {
       }
     },
     checkUnlocks: () => checkCosmeticUnlocks(state),
+    // Music helpers (#74)
+    musicPlay: () => musicPlay(state.music),
+    musicPause: () => musicPause(state.music),
+    musicStop: () => musicStop(state.music),
+    musicNext: () => nextTrack(state.music),
+    musicToggle: () => togglePlayPause(state.music),
+    getMusicState: () => ({
+      playState: state.music.playState,
+      track: getCurrentTrackInfo(state.music),
+      volume: state.music.settings.volume,
+      muted: state.music.settings.muted,
+      ducking: state.music.ducking,
+    }),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -1497,6 +1538,30 @@ async function main(): Promise<void> {
   window.addEventListener('keydown', (e) => {
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
       openCustomizer();
+    }
+  });
+
+  // ─── Wire Music Controls (#74) ─────────────────────────────
+  document.getElementById('btnMusicPlayPause')?.addEventListener('click', () => {
+    togglePlayPause(state.music);
+  });
+  document.getElementById('btnMusicNext')?.addEventListener('click', () => {
+    nextTrack(state.music);
+  });
+  document.getElementById('btnMusicPrev')?.addEventListener('click', () => {
+    prevTrack(state.music);
+  });
+  document.getElementById('btnMusicMute')?.addEventListener('click', () => {
+    toggleMute(state.music);
+  });
+  document.getElementById('musicVolume')?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    musicSetVolume(state.music, val / 100);
+  });
+  // 'M' key toggles play/pause
+  window.addEventListener('keydown', (e) => {
+    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey) {
+      togglePlayPause(state.music);
     }
   });
 

@@ -18,6 +18,7 @@ import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
 import type { PlayerStatus } from './status';
+import type { MusicState } from './music';
 import { getDebuffs } from './status';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -636,5 +637,43 @@ export function syncStatusBars(status: PlayerStatus): void {
     debuffEl.textContent = debuffs.activeDebuffs.length > 0
       ? debuffs.activeDebuffs.join(' · ')
       : '';
+  }
+}
+
+// ─── Music UI Sync (#74) ─────────────────────────────────────
+
+let _lastMusicSyncFrame = 0;
+
+export function syncMusicUI(music: MusicState): void {
+  // Throttle to every 10th call
+  if (++_lastMusicSyncFrame % 10 !== 0) return;
+
+  const trackEl = document.getElementById('sbMusicTrack');
+  const playBtn = document.getElementById('btnMusicPlayPause');
+  const muteBtn = document.getElementById('btnMusicMute');
+  const volSlider = document.getElementById('musicVolume') as HTMLInputElement | null;
+
+  if (trackEl) {
+    if (music.currentTrackId) {
+      // Find track name from the playlist or tracks array
+      const track = music.playlist.find(t => t.id === music.currentTrackId);
+      trackEl.textContent = track ? track.name : music.currentTrackId;
+    } else {
+      trackEl.textContent = music.playState === 'stopped' ? 'No track' : '—';
+    }
+  }
+
+  if (playBtn) {
+    playBtn.textContent = music.playState === 'playing' ? '⏸' : '▶';
+    playBtn.classList.toggle('active', music.playState === 'playing');
+  }
+
+  if (muteBtn) {
+    muteBtn.textContent = music.settings.muted ? '🔇' : '🔊';
+    muteBtn.classList.toggle('active', music.settings.muted);
+  }
+
+  if (volSlider && document.activeElement !== volSlider) {
+    volSlider.value = String(Math.round(music.settings.volume * 100));
   }
 }

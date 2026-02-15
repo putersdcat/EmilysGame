@@ -153,6 +153,72 @@
       image-rendering: -webkit-optimize-contrast;
     }
 
+    /* Music Player (#74) */
+    .sb-music-track {
+      font-size: 0.75rem;
+      color: #aab;
+      text-align: center;
+      padding: 2px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sb-music-controls {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 0;
+    }
+    .sb-music-btn {
+      width: 32px; height: 28px;
+      border: 1px solid rgba(100,100,140,0.4);
+      border-radius: 4px;
+      background: rgba(30,30,50,0.6);
+      color: #ccd;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .sb-music-btn:hover {
+      background: rgba(60,60,100,0.6);
+      border-color: #88ccff;
+    }
+    .sb-music-btn.active {
+      background: rgba(40,80,140,0.5);
+      border-color: #88ccff;
+    }
+    .sb-music-play {
+      width: 40px;
+      font-size: 16px;
+    }
+    .sb-music-volume-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 4px;
+    }
+    .sb-music-vol-label {
+      font-size: 0.65rem;
+      color: #778;
+      min-width: 20px;
+    }
+    .sb-music-volume {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(100,100,140,0.3);
+      border-radius: 2px;
+      outline: none;
+    }
+    .sb-music-volume::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #88ccff;
+      cursor: pointer;
+    }
+
     .sb-inv-slot .qty {
       position: absolute;
       bottom: 1px;
@@ -1187,6 +1253,21 @@
       <div class="sb-section">
         <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
         <div class="sb-inv-grid" id="sbInvGrid"></div>
+      </div>
+      <!-- Music Player (#74) -->
+      <div class="sb-section" id="sbMusicSection">
+        <div class="sb-header"><span class="icon">🎵</span> Music</div>
+        <div class="sb-music-track" id="sbMusicTrack">No track</div>
+        <div class="sb-music-controls">
+          <button id="btnMusicPrev" class="sb-music-btn" title="Previous track">⏮</button>
+          <button id="btnMusicPlayPause" class="sb-music-btn sb-music-play" title="Play / Pause">▶</button>
+          <button id="btnMusicNext" class="sb-music-btn" title="Next track">⏭</button>
+          <button id="btnMusicMute" class="sb-music-btn" title="Mute / Unmute">🔊</button>
+        </div>
+        <div class="sb-music-volume-row">
+          <span class="sb-music-vol-label">Vol</span>
+          <input type="range" id="musicVolume" class="sb-music-volume" min="0" max="100" value="50" title="Music volume">
+        </div>
       </div>
       <!-- Save/Load -->
       <div class="sb-section">

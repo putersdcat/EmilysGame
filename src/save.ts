@@ -42,6 +42,8 @@ export interface SaveData {
   playerStatus?: { energy: number; hydration: number; cleanliness: number };
   /** Unlocked cosmetic IDs for progression-gated customizer (#66) */
   unlockedCosmetics?: string[];
+  /** Music settings (#74) */
+  musicSettings?: { volume: number; muted: boolean; enabled: boolean };
 }
 
 export interface ResolvedCell {
