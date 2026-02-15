@@ -28,8 +28,4 @@ export default defineConfig(({ mode }) => ({
   },
   // Include .wasm files as assets
   assetsInclude: ['**/*.wasm'],
-  // Define environment variables for GitHub Pages mode
-  define: mode === 'pages' ? {
-    'import.meta.env.VITE_GITHUB_PAGES': JSON.stringify('true'),
-  } : {},
 }));
