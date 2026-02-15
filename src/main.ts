@@ -24,7 +24,7 @@ import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, g
 import { getNpcPersona, SHOP_MERCHANT_PERSONA } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks } from './terrain-cache';
+import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { initMinimap, renderMinimap } from './minimap';
@@ -1583,6 +1583,19 @@ function setupExtraKeys(state: GameState): void {
           const idx = types.indexOf(cur);
           setWeather(types[(idx + 1) % types.length]);
           invalidateShadowCache(); // #83 - weather affects shadow opacity
+        }
+        break;
+      case 'B': // Shift+B: cycle terrain blend intensity (#84)
+        if (e.shiftKey) {
+          const steps = [0, 0.5, 1.0, 1.5, 2.0];
+          const curBlend = getBlendIntensity();
+          let nextIdx = 0;
+          for (let i = 0; i < steps.length; i++) {
+            if (curBlend < steps[i] + 0.01) { nextIdx = i; break; }
+            if (i === steps.length - 1) nextIdx = 0;
+          }
+          nextIdx = (nextIdx + 1) % steps.length;
+          setBlendIntensity(steps[nextIdx]);
         }
         break;
       case 'f':

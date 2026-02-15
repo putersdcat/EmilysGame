@@ -281,6 +281,7 @@ export function tickWaterAnimation(): void {
 // Uses per-tile-type dominant colors to create smooth terrain transitions.
 // Applied to the terrain cache so it renders once, not per-frame.
 // TODO: DOC - auto-tile transition gradient blending algorithm
+// TODO: DOC - per-pair blend rules, feather curves, noise-modulated edges (#84)
 
 /** Dominant colors for each base tile type (used for gradient edge blending) */
 const TILE_DOMINANT_COLORS: Record<string, string> = {
@@ -296,14 +297,76 @@ const TILE_DOMINANT_COLORS: Record<string, string> = {
   wooden_fence: '#A0522D',
 };
 
-/** Gradient blend depth as fraction of half tile width (how far the blend reaches) */
-const BLEND_DEPTH = 0.35;
+// ─── Per-Pair Blend Rules (#84) ──────────────────────────────
+// Configurable blend intensity per terrain pair.
+// Keys are "typeA→typeB" (order-independent — lookup normalizes).
 
-/** Shore/beach overlay alpha for water↔land transitions */
-const SHORE_ALPHA = 0.45;
+/** Blend rule for a specific terrain pair */
+export interface BlendRule {
+  /** Gradient opacity (0-1). Higher = more prominent blend */
+  alpha: number;
+  /** Blend reach as fraction of half-tile (0-1). Higher = wider gradient */
+  depth: number;
+  /** Number of gradient color stops for feather curve (2=linear, 3+=smoother) */
+  featherStops: number;
+  /** Noise amplitude for edge distortion (0 = straight edge, 0.3 = organic) */
+  noiseAmp: number;
+}
 
-/** General transition gradient alpha */
-const TRANSITION_ALPHA = 0.25;
+/** Default blend rule for pairs without explicit config */
+const DEFAULT_BLEND: BlendRule = { alpha: 0.25, depth: 0.35, featherStops: 2, noiseAmp: 0 };
+
+/** Per-pair blend config. Order-independent: getBlendRule normalizes keys. */
+const BLEND_RULES: Record<string, BlendRule> = {
+  // High-contrast land transitions — wider blends, more feathering
+  'dirt→grass':        { alpha: 0.35, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },
+  'rock→grass':        { alpha: 0.30, depth: 0.45, featherStops: 3, noiseAmp: 0.20 },
+  'sand→grass':        { alpha: 0.35, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },
+  'dirt→rock':         { alpha: 0.28, depth: 0.40, featherStops: 3, noiseAmp: 0.15 },
+  'dirt→sand':         { alpha: 0.30, depth: 0.45, featherStops: 3, noiseAmp: 0.20 },
+  'rock→sand':         { alpha: 0.28, depth: 0.40, featherStops: 3, noiseAmp: 0.15 },
+  // Shore transitions — strong blends with foam
+  'grass→water':       { alpha: 0.50, depth: 0.55, featherStops: 5, noiseAmp: 0.30 },
+  'dirt→water':        { alpha: 0.45, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },
+  'sand→water':        { alpha: 0.45, depth: 0.55, featherStops: 5, noiseAmp: 0.30 },
+  'rock→water':        { alpha: 0.40, depth: 0.45, featherStops: 3, noiseAmp: 0.20 },
+  // Structure transitions — subtle, clean edges
+  'stone_floor→grass': { alpha: 0.20, depth: 0.30, featherStops: 2, noiseAmp: 0.05 },
+  'stone_floor→dirt':  { alpha: 0.18, depth: 0.28, featherStops: 2, noiseAmp: 0.05 },
+  'stone_floor→sand':  { alpha: 0.20, depth: 0.30, featherStops: 2, noiseAmp: 0.05 },
+};
+
+/** Global blend intensity multiplier (0=off, 1=normal, 2=exaggerated). Tunable. */
+export let blendIntensity = 1.0;
+
+/** Set the global blend intensity multiplier. Invalidates terrain cache. */
+export function setBlendIntensity(v: number): void {
+  blendIntensity = Math.max(0, Math.min(2, v));
+  clearTerrainCache();
+}
+
+/** Get the current global blend intensity (for debug display). */
+export function getBlendIntensity(): number { return blendIntensity; }
+
+/**
+ * Look up the blend rule for a terrain pair (order-independent).
+ * Falls back to DEFAULT_BLEND if no specific rule exists.
+ */
+function getBlendRule(typeA: string, typeB: string): BlendRule {
+  return BLEND_RULES[`${typeA}→${typeB}`]
+      ?? BLEND_RULES[`${typeB}→${typeA}`]
+      ?? DEFAULT_BLEND;
+}
+
+/**
+ * Deterministic blend noise for a cell edge.
+ * Returns a value in [-1, 1] based on cell coords + edge direction.
+ * Used to modulate blend depth for organic-looking edges.
+ */
+function blendNoise(cx: number, cy: number, edgeIdx: number): number {
+  const h = ((cx * 374761393 + cy * 668265263 + edgeIdx * 1103515245) >>> 0);
+  return (h / 2147483648) - 1; // [-1, 1]
+}
 
 /** Edge darkening line alpha (subtle definition line at boundary) */
 const EDGE_LINE_ALPHA = 0.08;
@@ -362,11 +425,15 @@ function isShoreTransition(typeA: string, typeB: string): boolean {
 
 /**
  * Render soft gradient blends at tile-type boundaries within a chunk.
+ * Enhanced with per-pair blend rules, multi-stop feathering, and
+ * noise-modulated edges for organic transitions (#84).
+ *
  * For each cell edge where adjacent tile types differ:
- * 1. Draw a gradient triangle fading the neighbor's color into this cell
- * 2. For water↔land edges, add extra shore/foam effect
- * 3. Draw subtle dark edge line for definition
- * 4. Corner blending for diagonal neighbors (bitmask-aware) (#47)
+ * 1. Look up per-pair BlendRule for alpha, depth, feather, noise
+ * 2. Draw gradient with multi-stop feather curve into this cell
+ * 3. For water↔land edges, add extra shore/foam effect
+ * 4. Draw subtle dark edge line for definition
+ * 5. Corner blending for diagonal neighbors (bitmask-aware) (#47)
  */
 function renderAutoTileTransitions(
   ctx: CanvasRenderingContext2D,
@@ -377,8 +444,9 @@ function renderAutoTileTransitions(
   const DX = [1, 0, -1, 0];
   const DY = [0, 1, 0, -1];
 
-  // Diamond vertex offsets from cell center (lsx, lsy):
-  // Top: (0, -HALF_TH), Right: (HALF_TW, 0), Bottom: (0, HALF_TH), Left: (-HALF_TW, 0)
+  // Global cell offset for noise continuity across chunks
+  const gxOff = chunk.chunkX * SIZE;
+  const gyOff = chunk.chunkY * SIZE;
 
   for (let cy = 0; cy < SIZE; cy++) {
     for (let cx = 0; cx < SIZE; cx++) {
@@ -396,10 +464,17 @@ function renderAutoTileTransitions(
         const nbColor = getDominantColor(nbType);
         if (!nbColor) continue;
 
+        const rule = getBlendRule(myType, nbType);
         const shore = isShoreTransition(myType, nbType);
-        const alpha = shore ? SHORE_ALPHA : TRANSITION_ALPHA;
 
-        // Draw gradient triangle: neighbor's color fading into this cell from the shared edge
+        // Noise-modulated depth for organic edge shape
+        const noise = blendNoise(gxOff + cx, gyOff + cy, ni);
+        const depth = Math.max(0.1, rule.depth + noise * rule.noiseAmp);
+        const alpha = rule.alpha * blendIntensity;
+
+        if (alpha <= 0) continue;
+
+        // Draw multi-stop feathered gradient: neighbor's color fading into this cell
         ctx.save();
         ctx.globalAlpha = alpha;
 
@@ -412,43 +487,40 @@ function renderAutoTileTransitions(
         ctx.closePath();
         ctx.clip();
 
-        // Create gradient from edge toward center, fading the neighbor's color
+        // Create gradient from edge toward center
         let gx0: number, gy0: number, gx1: number, gy1: number;
-        const depth = BLEND_DEPTH;
 
         switch (ni) {
-          case 0: // east edge (top→right), gradient goes left (from right edge toward center)
-            gx0 = lsx + HALF_TW;
-            gy0 = lsy;
-            gx1 = lsx + HALF_TW * (1 - depth);
-            gy1 = lsy;
+          case 0: // east edge → gradient goes left
+            gx0 = lsx + HALF_TW;           gy0 = lsy;
+            gx1 = lsx + HALF_TW * (1 - depth); gy1 = lsy;
             break;
-          case 1: // south edge (right→bottom), gradient goes up-left
-            gx0 = lsx;
-            gy0 = lsy + HALF_TH;
-            gx1 = lsx;
-            gy1 = lsy + HALF_TH * (1 - depth);
+          case 1: // south edge → gradient goes up
+            gx0 = lsx;           gy0 = lsy + HALF_TH;
+            gx1 = lsx;           gy1 = lsy + HALF_TH * (1 - depth);
             break;
-          case 2: // west edge (bottom→left), gradient goes right (from left edge toward center)
-            gx0 = lsx - HALF_TW;
-            gy0 = lsy;
-            gx1 = lsx - HALF_TW * (1 - depth);
-            gy1 = lsy;
+          case 2: // west edge → gradient goes right
+            gx0 = lsx - HALF_TW;           gy0 = lsy;
+            gx1 = lsx - HALF_TW * (1 - depth); gy1 = lsy;
             break;
-          case 3: // north edge (left→top), gradient goes down-right
-            gx0 = lsx;
-            gy0 = lsy - HALF_TH;
-            gx1 = lsx;
-            gy1 = lsy - HALF_TH * (1 - depth);
+          case 3: // north edge → gradient goes down
+            gx0 = lsx;           gy0 = lsy - HALF_TH;
+            gx1 = lsx;           gy1 = lsy - HALF_TH * (1 - depth);
             break;
           default:
-            gx0 = gx1 = lsx;
-            gy0 = gy1 = lsy;
+            gx0 = gx1 = lsx; gy0 = gy1 = lsy;
         }
 
         const grad = ctx.createLinearGradient(gx0, gy0, gx1, gy1);
-        grad.addColorStop(0, nbColor);
-        grad.addColorStop(1, nbColor + '00'); // fully transparent
+        // Multi-stop feather curve: more stops = smoother rolloff
+        const stops = rule.featherStops;
+        for (let si = 0; si < stops; si++) {
+          const t = si / (stops - 1); // 0..1
+          // Smooth hermite curve: slow start, fast middle, slow end
+          const opacity = 1 - (3 * t * t - 2 * t * t * t);
+          const hexAlpha = Math.round(opacity * 255).toString(16).padStart(2, '0');
+          grad.addColorStop(t, nbColor + hexAlpha);
+        }
         ctx.fillStyle = grad;
 
         // Fill the gradient across the clipped diamond
@@ -456,7 +528,7 @@ function renderAutoTileTransitions(
 
         // Shore foam effect: white sparkle along water↔land edges
         if (shore && nbType === 'water') {
-          ctx.globalAlpha = 0.2;
+          ctx.globalAlpha = 0.2 * blendIntensity;
           ctx.strokeStyle = '#FFFFFF';
           ctx.lineWidth = 1;
           ctx.setLineDash([2, 3]);
@@ -514,26 +586,12 @@ function renderAutoTileTransitions(
       }
 
       // --- Pass 2: Diagonal corner transitions (#47 bitmask-aware) ---
-      // Handles the case where both adjacent cardinal neighbors match our type,
-      // but the diagonal neighbor differs — needs a corner-only radial blend.
-      // Diagonal offsets: 0=NE(+1,-1), 1=SE(+1,+1), 2=SW(-1,+1), 3=NW(-1,-1)
       const DIAG_DX = [1, 1, -1, -1];
       const DIAG_DY = [-1, 1, 1, -1];
-      // The two cardinal neighbors flanking each diagonal corner
-      // NE: flanked by E(+1,0) and N(0,-1)
-      // SE: flanked by E(+1,0) and S(0,+1)
-      // SW: flanked by W(-1,0) and S(0,+1)
-      // NW: flanked by W(-1,0) and N(0,-1)
       const FLANK_A_DX = [1, 1, -1, -1];
       const FLANK_A_DY = [0, 0, 0, 0];
       const FLANK_B_DX = [0, 0, 0, 0];
       const FLANK_B_DY = [-1, 1, 1, -1];
-
-      // Corner vertex positions on the diamond (midpoints of edges)
-      // NE: midpoint of Top→Right
-      // SE: midpoint of Right→Bottom
-      // SW: midpoint of Bottom→Left
-      // NW: midpoint of Left→Top
       const CORNER_X = [HALF_TW / 2, HALF_TW / 2, -HALF_TW / 2, -HALF_TW / 2];
       const CORNER_Y = [-HALF_TH / 2, HALF_TH / 2, HALF_TH / 2, -HALF_TH / 2];
 
@@ -541,8 +599,6 @@ function renderAutoTileTransitions(
         const diagType = getBaseTileType(chunk, cx + DIAG_DX[di], cy + DIAG_DY[di], allChunks);
         if (diagType === null || diagType === myType) continue;
 
-        // Only draw corner blend if BOTH flanking cardinal neighbors match our type
-        // (otherwise the cardinal pass already handled those edges)
         const flankA = getBaseTileType(chunk, cx + FLANK_A_DX[di], cy + FLANK_A_DY[di], allChunks);
         const flankB = getBaseTileType(chunk, cx + FLANK_B_DX[di], cy + FLANK_B_DY[di], allChunks);
         if (flankA !== myType || flankB !== myType) continue;
@@ -550,11 +606,15 @@ function renderAutoTileTransitions(
         const diagColor = getDominantColor(diagType);
         if (!diagColor) continue;
 
+        const rule = getBlendRule(myType, diagType);
         const cornerX = lsx + CORNER_X[di];
         const cornerY = lsy + CORNER_Y[di];
         const shore = isShoreTransition(myType, diagType);
-        const alpha = shore ? SHORE_ALPHA * 0.6 : TRANSITION_ALPHA * 0.7;
+        // Corner blends are subtler than edge blends
+        const alpha = (shore ? rule.alpha * 0.6 : rule.alpha * 0.7) * blendIntensity;
         const radius = Math.min(HALF_TW, HALF_TH) * 0.5;
+
+        if (alpha <= 0) continue;
 
         ctx.save();
         ctx.globalAlpha = alpha;
@@ -568,10 +628,15 @@ function renderAutoTileTransitions(
         ctx.closePath();
         ctx.clip();
 
-        // Radial gradient at the corner point
+        // Radial gradient at the corner point with feathering
         const grad = ctx.createRadialGradient(cornerX, cornerY, 0, cornerX, cornerY, radius);
-        grad.addColorStop(0, diagColor);
-        grad.addColorStop(1, diagColor + '00');
+        const stops = Math.max(2, rule.featherStops - 1);
+        for (let si = 0; si < stops; si++) {
+          const t = si / (stops - 1);
+          const opacity = 1 - (3 * t * t - 2 * t * t * t);
+          const hexAlpha = Math.round(opacity * 255).toString(16).padStart(2, '0');
+          grad.addColorStop(t, diagColor + hexAlpha);
+        }
         ctx.fillStyle = grad;
         ctx.fillRect(cornerX - radius, cornerY - radius, radius * 2, radius * 2);
 
