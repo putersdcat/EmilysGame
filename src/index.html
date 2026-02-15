@@ -693,6 +693,57 @@
     .cust-random-btn:hover { background: rgba(200,100,200,0.5); }
 
     /* ── Subject Selection Overlay ── */
+    /* ── Age Selection Overlay (#92) ── */
+    #ageOverlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none; justify-content: center; align-items: center;
+      z-index: 101;
+    }
+    .age-modal {
+      background: linear-gradient(135deg, #1a1632 0%, #2a2045 100%);
+      border: 2px solid #6688cc; border-radius: 12px;
+      padding: 28px 32px; width: 420px; max-width: 90vw;
+      color: #e0e0e0;
+    }
+    .age-modal h3 {
+      color: #ffdd88; font: bold 18px monospace; text-align: center;
+      margin-bottom: 4px;
+    }
+    .age-modal .subtitle {
+      color: #aaa; font: 12px monospace; text-align: center;
+      margin-bottom: 18px;
+    }
+    .age-band-option {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; margin: 6px 0;
+      border: 2px solid rgba(100,100,140,0.3); border-radius: 8px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .age-band-option:hover { background: rgba(100,130,200,0.15); border-color: rgba(100,130,200,0.5); }
+    .age-band-option.selected {
+      background: rgba(100,130,200,0.25);
+      border-color: #4a7fcc;
+    }
+    .age-band-icon { font-size: 28px; }
+    .age-band-info { display: flex; flex-direction: column; }
+    .age-band-label { font: bold 14px monospace; color: #fff; }
+    .age-band-range { font: 11px monospace; color: #999; }
+    .age-confirm-btn {
+      display: block; margin: 18px auto 0; padding: 10px 32px;
+      background: #4a7fcc; border: none; border-radius: 6px;
+      color: #fff; font: bold 14px monospace; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .age-confirm-btn:hover { background: #5a9fdd; }
+    .age-confirm-btn:disabled { background: #555; cursor: default; }
+    .age-skip-btn {
+      display: block; margin: 8px auto 0; padding: 6px 20px;
+      background: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
+      color: #888; font: 11px monospace; cursor: pointer;
+    }
+    .age-skip-btn:hover { color: #bbb; border-color: rgba(255,255,255,0.4); }
+
     #subjectOverlay {
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.8);
@@ -1190,6 +1241,17 @@
   </div>
 
   <!-- Subject Selection Overlay (shown on new game) -->
+  <!-- Age Band Selection (#92) -->
+  <div id="ageOverlay">
+    <div class="age-modal">
+      <h3>👋 How Old Are You?</h3>
+      <div class="subtitle">This helps us pick the right content for you!</div>
+      <div id="ageBandList"></div>
+      <button id="ageConfirm" class="age-confirm-btn" disabled>Continue ➡️</button>
+      <button id="ageSkip" class="age-skip-btn">Skip (show everything)</button>
+    </div>
+  </div>
+
   <div id="subjectOverlay">
     <div class="subject-modal">
       <h3>📚 Choose Your Subjects</h3>

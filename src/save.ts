@@ -52,6 +52,8 @@ export interface SaveData {
   streakHistory?: ('correct' | 'wrong' | 'idk')[];
   /** Fog-of-war: visited cell coordinates (#114) */
   visitedFog?: number[][];
+  /** Age band profile for content filtering (#92) */
+  ageBand?: string;
 }
 
 export interface ResolvedCell {
