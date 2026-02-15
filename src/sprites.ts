@@ -11,7 +11,7 @@ export type FacingPose = 'front' | 'back' | 'side';
 export interface CharacterVariation {
   name: string;
   hairColor: string;
-  hairStyle: 'straight' | 'pigtails' | 'wavy';
+  hairStyle: 'straight' | 'pigtails' | 'wavy' | 'ponytail';
   dressColor: string;
   skinTone: string;
 }
@@ -43,38 +43,69 @@ export const characterVariations: Record<string, CharacterVariation> = {
   },
 };
 
-/**
- * Generate SVG for idle (standing) character pose.
- */
-export function generateIdleCharacterSVG(variation: CharacterVariation): string {
-  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+// ─── Hair darken helper for subtle shading ──────────────────
+function darkenColor(hex: string, amount: number = 0.2): string {
+  const c = parseInt(hex.slice(1), 16);
+  const r = Math.max(0, ((c >> 16) & 0xff) * (1 - amount)) | 0;
+  const g = Math.max(0, ((c >> 8) & 0xff) * (1 - amount)) | 0;
+  const b = Math.max(0, (c & 0xff) * (1 - amount)) | 0;
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
 
-  // Hair positioning based on style
-  let hairSVG = '';
+// ─── Front-facing hair helper ─────────────────────────────────
+
+/** Generate front-facing hair SVG. Shared by idle + walk. */
+function getFrontHairSVG(hairStyle: string, hairColor: string): string {
+  const shadow = darkenColor(hairColor, 0.15);
   if (hairStyle === 'pigtails') {
-    hairSVG = `
+    return `
       <!-- Left pigtail -->
-      <circle cx="20" cy="18" r="8" fill="${hairColor}"/>
+      <circle cx="20" cy="18" r="8" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <ellipse cx="18" cy="25" rx="6" ry="8" fill="${hairColor}"/>
       <!-- Right pigtail -->
-      <circle cx="44" cy="18" r="8" fill="${hairColor}"/>
+      <circle cx="44" cy="18" r="8" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <ellipse cx="46" cy="25" rx="6" ry="8" fill="${hairColor}"/>
       <!-- Main head -->
       <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
     `;
   } else if (hairStyle === 'straight') {
-    hairSVG = `
-      <!-- Main hair -->
-      <path d="M 18 24 Q 18 10, 32 8 Q 46 10, 46 24" fill="${hairColor}"/>
+    return `
+      <!-- Straight hair -->
+      <path d="M 18 24 Q 18 10, 32 8 Q 46 10, 46 24" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
+      <!-- Subtle fringe detail -->
+      <path d="M 22 20 Q 27 17 32 18 Q 37 17 42 20" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.4"/>
+    `;
+  } else if (hairStyle === 'ponytail') {
+    return `
+      <!-- Ponytail - hair cap with pulled-back shape -->
+      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
+      <!-- Lifted crown (hair pulled back) -->
+      <path d="M 20 22 Q 22 10, 32 9 Q 42 10, 44 22" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Ponytail tail behind head -->
+      <ellipse cx="32" cy="38" rx="5" ry="10" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Bow at base of ponytail -->
+      <path d="M 26 28 Q 29 26 32 28 Q 35 26 38 28" fill="#E84393" stroke="#C0392B" stroke-width="0.5"/>
+      <circle cx="32" cy="27" r="1.5" fill="#E84393"/>
     `;
   } else {
-    hairSVG = `
+    // wavy
+    return `
       <!-- Wavy hair -->
-      <path d="M 18 24 Q 15 10, 32 8 Q 49 10, 46 24" fill="${hairColor}"/>
+      <path d="M 18 24 Q 15 10, 32 8 Q 49 10, 46 24" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
+      <!-- Wave details -->
+      <path d="M 20 22 Q 24 19 28 22 Q 32 19 36 22 Q 40 19 44 22" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.4"/>
     `;
   }
+}
+
+/**
+ * Generate SVG for idle (standing) character pose.
+ */
+export function generateIdleCharacterSVG(variation: CharacterVariation): string {
+  const { hairColor, hairStyle, dressColor, skinTone } = variation;
+  const hairSVG = getFrontHairSVG(hairStyle, hairColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
@@ -126,27 +157,7 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
   // Subtle vertical bounce for natural walking motion (1-2px)
   const bodyBounce = [0, -1, -2, -1, 0, -1][frame] || 0;
 
-  // Hair positioning based on style
-  let hairSVG = '';
-  if (hairStyle === 'pigtails') {
-    hairSVG = `
-      <circle cx="20" cy="18" r="8" fill="${hairColor}"/>
-      <ellipse cx="18" cy="25" rx="6" ry="8" fill="${hairColor}"/>
-      <circle cx="44" cy="18" r="8" fill="${hairColor}"/>
-      <ellipse cx="46" cy="25" rx="6" ry="8" fill="${hairColor}"/>
-      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
-    `;
-  } else if (hairStyle === 'straight') {
-    hairSVG = `
-      <path d="M 18 24 Q 18 10, 32 8 Q 46 10, 46 24" fill="${hairColor}"/>
-      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
-    `;
-  } else {
-    hairSVG = `
-      <path d="M 18 24 Q 15 10, 32 8 Q 49 10, 46 24" fill="${hairColor}"/>
-      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
-    `;
-  }
+  const hairSVG = getFrontHairSVG(hairStyle, hairColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
@@ -204,26 +215,44 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
  * Back view shows fuller hair coverage (no face visible).
  */
 function getBackHairSVG(hairStyle: string, hairColor: string): string {
+  const shadow = darkenColor(hairColor, 0.15);
   if (hairStyle === 'pigtails') {
     return `
       <!-- Back pigtails - visible from behind -->
-      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <ellipse cx="18" cy="28" rx="7" ry="10" fill="${hairColor}"/>
       <ellipse cx="46" cy="28" rx="7" ry="10" fill="${hairColor}"/>
     `;
   } else if (hairStyle === 'straight') {
     return `
       <!-- Back straight hair - flows down -->
-      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <rect x="18" y="24" width="28" height="20" rx="4" fill="${hairColor}"/>
+      <!-- Subtle strand lines -->
+      <path d="M 24 28 L 24 42 M 32 28 L 32 44 M 40 28 L 40 42" stroke="${shadow}" stroke-width="0.6" opacity="0.3"/>
+    `;
+  } else if (hairStyle === 'ponytail') {
+    return `
+      <!-- Back view ponytail - prominent tail hanging down -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Ponytail bundle hanging down center of back -->
+      <ellipse cx="32" cy="42" rx="6" ry="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <ellipse cx="32" cy="52" rx="4" ry="6" fill="${hairColor}"/>
+      <!-- Bow at base of cap  -->
+      <path d="M 25 28 Q 28.5 24 32 28 Q 35.5 24 39 28" fill="#E84393" stroke="#C0392B" stroke-width="0.5"/>
+      <circle cx="32" cy="27" r="2" fill="#E84393"/>
+      <!-- Tail strand detail -->
+      <path d="M 32 34 L 32 52" stroke="${shadow}" stroke-width="0.6" opacity="0.3"/>
     `;
   } else {
     // wavy
     return `
       <!-- Back wavy hair - flowing waves -->
-      <circle cx="32" cy="24" r="15" fill="${hairColor}"/>
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <path d="M 18 28 Q 20 38 18 44 M 25 30 Q 27 40 25 46 M 32 30 Q 34 42 32 48 M 39 30 Q 41 40 39 46 M 46 28 Q 44 38 46 44" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
       <rect x="18" y="24" width="28" height="18" rx="4" fill="${hairColor}"/>
+      <!-- Wave highlights -->
+      <path d="M 22 30 Q 24 28 26 30 M 34 30 Q 36 28 38 30" stroke="${shadow}" stroke-width="0.7" opacity="0.3" fill="none"/>
     `;
   }
 }
@@ -329,26 +358,42 @@ export function generateBackWalkingCharacterSVG(variation: CharacterVariation, f
  * Profile view — hair flows behind (to the left, character faces right).
  */
 function getSideHairSVG(hairStyle: string, hairColor: string): string {
+  const shadow = darkenColor(hairColor, 0.15);
   if (hairStyle === 'pigtails') {
     return `
       <!-- Side pigtail (visible one behind head) -->
-      <ellipse cx="22" cy="28" rx="6" ry="9" fill="${hairColor}"/>
+      <ellipse cx="22" cy="28" rx="6" ry="9" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <!-- Main hair cap -->
-      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
     `;
   } else if (hairStyle === 'straight') {
     return `
       <!-- Side straight hair flows behind -->
-      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <rect x="18" y="22" width="16" height="18" rx="4" fill="${hairColor}"/>
+      <!-- Strand detail -->
+      <path d="M 22 26 L 22 38 M 28 26 L 28 40" stroke="${shadow}" stroke-width="0.6" opacity="0.3"/>
+    `;
+  } else if (hairStyle === 'ponytail') {
+    return `
+      <!-- Side view ponytail - tail extending behind head -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Ponytail hanging behind - prominent flowing shape -->
+      <path d="M 24 26 Q 18 30 16 40 Q 15 48 18 52" stroke="${hairColor}" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <path d="M 24 26 Q 18 30 16 40 Q 15 48 18 52" stroke="${shadow}" stroke-width="1" fill="none" opacity="0.3" stroke-linecap="round"/>
+      <!-- Bow at tie point -->
+      <path d="M 21 26 Q 23 23 25 26 Q 27 23 29 26" fill="#E84393" stroke="#C0392B" stroke-width="0.5"/>
+      <circle cx="25" cy="25" r="1.5" fill="#E84393"/>
     `;
   } else {
     // wavy
     return `
       <!-- Side wavy hair -->
-      <circle cx="32" cy="22" r="14" fill="${hairColor}"/>
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
       <path d="M 20 26 Q 18 36 20 42 M 26 28 Q 24 38 26 44" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
       <rect x="18" y="22" width="16" height="14" rx="4" fill="${hairColor}"/>
+      <!-- Wave accents -->
+      <path d="M 21 28 Q 23 26 25 28" stroke="${shadow}" stroke-width="0.7" opacity="0.3" fill="none"/>
     `;
   }
 }

@@ -11,7 +11,7 @@ import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
-import { characterVariations, loadCharacterSprite, clearVariationCache, type CharacterVariation } from './sprites';
+import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
@@ -1726,6 +1726,20 @@ async function main(): Promise<void> {
     speakTest: (text: string) => speakLine(state.voice, text, null),
     // Save/load helpers
     save: () => doSave(state),
+    saveGame: () => doSave(state),
+    loadGame: () => {
+      const saveData = loadGame();
+      if (saveData) {
+        if (saveData.playerVariation) {
+          state.playerVariation = deserializeVariation(saveData.playerVariation);
+        }
+      }
+    },
+    // Sprite helpers (#86)
+    loadCharacterSpriteAsync,
+    generateIdleCharacterSVG,
+    clearVariationCache,
+    showCustomizer: () => showCustomizer(state.playerVariation),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

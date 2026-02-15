@@ -51,6 +51,7 @@ export const HAIR_STYLES: { name: string; value: CharacterVariation['hairStyle']
   { name: '✂️ Straight',  value: 'straight' },
   { name: '🎀 Pigtails',  value: 'pigtails' },
   { name: '🌊 Wavy',      value: 'wavy' },
+  { name: '🎀 Ponytail',  value: 'ponytail' },
 ];
 
 // ─── Default Variation ───────────────────────────────────────
