@@ -214,6 +214,13 @@ function syncQuiz(quiz: QuizState): void {
 
   if (questionEl) questionEl.textContent = quiz.displayText;
 
+  // Show/hide repeat button based on voice support (#94)
+  const repeatBtn = document.getElementById('quizRepeat');
+  if (repeatBtn) {
+    const voiceSupported = typeof speechSynthesis !== 'undefined';
+    repeatBtn.style.display = voiceSupported ? 'inline-block' : 'none';
+  }
+
   if (choicesEl) {
     choicesEl.innerHTML = '';
     quiz.choices.forEach((choice: string, i: number) => {
@@ -231,8 +238,12 @@ function syncQuiz(quiz: QuizState): void {
       }
 
       const marker = selected ? '▸ ' : '  ';
-      // Don't use letter label for "I don't know"
-      const label = isIdkOption ? `${marker}${choice}` : `${marker}${String.fromCharCode(65 + i)}) ${choice}`;
+      // Show both numeric key hint and letter label (#94)
+      const numHint = isIdkOption ? '' : `${i + 1}. `;
+      const letterLabel = isIdkOption ? '' : `${String.fromCharCode(65 + i)}) `;
+      const label = isIdkOption
+        ? `${marker}${choice}`
+        : `${marker}${numHint}${letterLabel}${choice}`;
       div.textContent = label;
       choicesEl.appendChild(div);
     });
@@ -261,7 +272,7 @@ function syncQuiz(quiz: QuizState): void {
   if (navEl) {
     navEl.textContent = quiz.result !== 'pending'
       ? (quiz.result === 'idk' ? 'Space to open Book' : 'Space to continue')
-      : '↑↓ Navigate • Space to select';
+      : '↑↓ Navigate • 1-9 Quick Select • R Repeat • Space to select';
   }
 }
 
