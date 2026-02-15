@@ -17,7 +17,7 @@ import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
@@ -92,6 +92,33 @@ import {
   type VoiceState,
 } from './npc-voice';
 import type { FacingPose } from './sprites';
+
+
+// ─── Extra Key Queue (numeric + R for quiz accessibility, #94) ───
+
+/** Keys pressed this frame — consumed by quiz input block, cleared each frame */
+const _extraKeyQueue: Set<string> = new Set();
+
+function _setupExtraKeyCapture(): void {
+  window.addEventListener('keydown', (e) => {
+    // Capture 1-9 and R/r for quiz accessibility
+    if (/^[1-9r]$/i.test(e.key)) {
+      _extraKeyQueue.add(e.key.toLowerCase());
+    }
+  });
+}
+
+function _consumeExtraKey(key: string): boolean {
+  if (_extraKeyQueue.has(key)) {
+    _extraKeyQueue.delete(key);
+    return true;
+  }
+  return false;
+}
+
+function _clearExtraKeys(): void {
+  _extraKeyQueue.clear();
+}
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -535,6 +562,29 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   return { state, renderer, input, hasSaveData: !!save };
 }
 
+// ─── Quiz Accessibility Helpers (#94) ────────────────────────
+
+/** Should auto-read be enabled based on player's age band? */
+function _shouldAutoRead(state: GameState): boolean {
+  const band = state.ageProfile.ageBand;
+  // Auto-read for young bands (5-7 always, 8-10 if voice enabled)
+  if (band === '5-7') return true;
+  if (band === '8-10' && state.voice.settings.enabled) return true;
+  return false;
+}
+
+/** Auto-read the current quiz question aloud via TTS (#94) */
+function _autoReadQuizQuestion(state: GameState): void {
+  if (!_shouldAutoRead(state)) return;
+  if (!state.quiz.active || !state.quiz.displayText) return;
+  // Small delay so quiz overlay renders first
+  setTimeout(() => {
+    if (state.quiz.active) {
+      speakLine(state.voice, state.quiz.displayText, null);
+    }
+  }, 300);
+}
+
 // ─── Update ──────────────────────────────────────────────────
 
 function update(state: GameState, input: InputManager): void {
@@ -562,6 +612,25 @@ function update(state: GameState, input: InputManager): void {
   if (state.quiz.active) {
     if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
+
+    // ── Numeric keys 1-9 select quiz choice directly (#94) ──
+    for (let n = 1; n <= 9; n++) {
+      if (_consumeExtraKey(String(n))) {
+        if (state.quiz.result === 'pending') {
+          if (quizSelectIndex(state.quiz, n - 1)) {
+            playSfx(state.sfx, 'menu_navigate');
+          }
+        }
+      }
+    }
+
+    // ── R key repeats question readout (#94) ──
+    if (_consumeExtraKey('r')) {
+      if (state.quiz.displayText && state.voice.settings.enabled) {
+        speakLine(state.voice, state.quiz.displayText, null);
+      }
+    }
+
     if (justKeys.interact) {
       if (state.quiz.result !== 'pending') {
         if (state.quiz.result === 'correct') {
@@ -656,6 +725,8 @@ function update(state: GameState, input: InputManager): void {
           state.pendingQuiz = null;
           startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
           playSfx(state.sfx, 'quiz_start');
+          // Auto-read question for young age bands (#94)
+          _autoReadQuizQuestion(state);
           // state.paused stays true for quiz
         } else if (state.pendingTrade) {
           // Open trade panel directly (no quiz pending)
@@ -906,6 +977,7 @@ function update(state: GameState, input: InputManager): void {
 
   // Snapshot input for edge detection next frame
   input.endFrame();
+  _clearExtraKeys(); // Clear numeric/R key queue (#94)
 }
 
 function handleInteraction(result: InteractionResult, state: GameState): void {
@@ -1901,6 +1973,7 @@ function setupExtraKeys(state: GameState): void {
 async function main(): Promise<void> {
   const { state, renderer, input, hasSaveData } = await init();
   setupExtraKeys(state);
+  _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
   // Wire HTML HUD buttons
   wireHudButtons(
@@ -2065,6 +2138,14 @@ async function main(): Promise<void> {
     getAgeProfile: () => state.ageProfile,
     getAgeProfileDebug: () => getAgeProfileDebug(state.ageProfile),
     setAgeBand: (band: AgeBand) => setAgeBand(state.ageProfile, band),
+    // Quiz accessibility debug (#94)
+    quizRepeatRead: () => {
+      if (state.quiz.active && state.quiz.displayText) {
+        speakLine(state.voice, state.quiz.displayText, null);
+      }
+    },
+    shouldAutoRead: () => _shouldAutoRead(state),
+    quizSelectIndex: (idx: number) => quizSelectIndex(state.quiz, idx),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -2076,6 +2157,13 @@ async function main(): Promise<void> {
 
   // Wire Book of Knowledge UI
   wireBookUI(state.knowledge, () => { state.paused = false; });
+
+  // Wire Quiz Repeat button (#94)
+  document.getElementById('quizRepeat')?.addEventListener('click', () => {
+    if (state.quiz.active && state.quiz.displayText) {
+      speakLine(state.voice, state.quiz.displayText, null);
+    }
+  });
 
   // Wire HUD book button
   document.getElementById('btnBook')?.addEventListener('click', () => {

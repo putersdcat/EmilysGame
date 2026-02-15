@@ -311,6 +311,17 @@ export function quizNavigate(state: QuizState, delta: number): void {
 }
 
 /**
+ * Jump to a specific choice index (0-based). Used by numeric key shortcuts (#94).
+ * Returns true if the index is valid and selection changed.
+ */
+export function quizSelectIndex(state: QuizState, index: number): boolean {
+  if (!state.active || state.result !== 'pending') return false;
+  if (index < 0 || index >= state.choices.length) return false;
+  state.selectedIndex = index;
+  return true;
+}
+
+/**
  * Submit the current selection.
  * Returns 'correct', 'wrong', or 'idk'.
  */
