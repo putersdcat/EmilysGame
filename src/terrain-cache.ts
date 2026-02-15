@@ -14,6 +14,7 @@ import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
 import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
 import { getEmojiSprite } from './emoji-cache';
+import { cellJitter } from './utils';
 import type { ChunkData } from './gen';
 
 // --- Chunk canvas cache ---
@@ -79,11 +80,13 @@ export function getCachedTerrain(
       const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
       const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
 
+      // Global cell coords for tile variants and jitter (#82)
+      const globalCX = chunk.chunkX * SIZE + cx;
+      const globalCY = chunk.chunkY * SIZE + cy;
+
       if (def.tileType) {
         // Use tile variants for visual variety (grass/dirt/rock have multiple patterns)
         let tileCanvas: HTMLCanvasElement | undefined;
-        const globalCX = chunk.chunkX * SIZE + cx;
-        const globalCY = chunk.chunkY * SIZE + cy;
         if (def.tileType === 'grass') {
           tileCanvas = getGrassVariant(globalCX, globalCY);
         } else if (def.tileType === 'dirt') {
@@ -107,7 +110,10 @@ export function getCachedTerrain(
       } else {
         const sprite = getEmojiSprite(def.emoji, biome.tintHue);
         const size = sprite.width * def.scale;
-        ctx.drawImage(sprite, lsx - size / 2, lsy - size / 2, size, size);
+        // Deterministic sub-cell jitter for small props (#82)
+        const jr = def.jitter ?? 0;
+        const { dx: jdx, dy: jdy } = cellJitter(globalCX, globalCY, jr, HALF_TW, HALF_TH);
+        ctx.drawImage(sprite, lsx + jdx - size / 2, lsy + jdy - size / 2, size, size);
       }
     }
   }

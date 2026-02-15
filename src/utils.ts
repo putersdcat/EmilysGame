@@ -65,6 +65,32 @@ export function seededRandom(seed: number): () => number {
   };
 }
 
+// ─── Deterministic Cell Jitter (#82) ────────────────────────
+
+/**
+ * Compute per-cell deterministic sub-tile offset for placement jitter.
+ * Returns pixel offsets (dx, dy) based on world-space cell coords and jitter range.
+ * Isometric: dy range is half of dx range for visual consistency.
+ * @param gx Global cell X
+ * @param gy Global cell Y
+ * @param jitterRange 0-1 fraction of half-tile-width for max offset
+ * @param halfTW Half tile width in pixels (default 32)
+ * @param halfTH Half tile height in pixels (default 16)
+ */
+export function cellJitter(
+  gx: number, gy: number, jitterRange: number,
+  halfTW = 32, halfTH = 16
+): { dx: number; dy: number } {
+  if (jitterRange <= 0) return { dx: 0, dy: 0 };
+  // Two independent hashes for X and Y axes
+  const hx = ((gx * 374761393 + gy * 668265263) >>> 0) / 4294967296; // 0-1
+  const hy = ((gx * 1274126177 + gy * 1103515245) >>> 0) / 4294967296; // 0-1
+  return {
+    dx: (hx * 2 - 1) * jitterRange * halfTW,  // ±jitterRange * halfTW pixels
+    dy: (hy * 2 - 1) * jitterRange * halfTH,  // ±jitterRange * halfTH pixels
+  };
+}
+
 // ─── Perlin Noise (2D) ──────────────────────────────────────
 
 /**

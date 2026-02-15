@@ -11,6 +11,7 @@ import { getBiome } from './config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
+import { cellJitter } from './utils';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
@@ -273,8 +274,13 @@ export class IsometricRenderer {
           const gx = chunk.chunkX * size + cx;
           const gy = chunk.chunkY * size + cy;
           const { x: sx, y: sy } = this.gridToScreen(gx, gy, camera);
+          // Deterministic sub-cell jitter for small props (#82)
+          const jr = def ? (def.jitter ?? 0) : 0;
+          const { dx: jdx, dy: jdy } = cellJitter(gx, gy, jr);
+          const jsx = sx + jdx;
+          const jsy = sy + jdy;
 
-          if (!this.isVisible(sx, sy)) continue;
+          if (!this.isVisible(jsx, jsy)) continue;
 
           // Draw elevated (non-base) objects
           if (!isBase) {
@@ -282,14 +288,14 @@ export class IsometricRenderer {
             if (def.tileType) {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-              cmd.sx = sx; cmd.sy = sy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
+              cmd.sx = jsx; cmd.sy = jsy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
               cmd.tileType = def.tileType; cmd.shadow = def.shadow;
             } else {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey;
               cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
               cmd.emoji = def.emoji;
-              cmd.sx = sx; cmd.sy = sy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
+              cmd.sx = jsx; cmd.sy = jsy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
               cmd.shadow = def.shadow;
             }
           }
@@ -300,8 +306,11 @@ export class IsometricRenderer {
             const itemDef = ASSET_DEFS[cell.itemId];
             if (itemDef) {
               const cmd = jsPool[jsPoolIdx++];
+              // Item jitter uses item's own jitter range (#82)
+              const ijr = itemDef.jitter ?? 0;
+              const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
               cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
-              cmd.sx = sx; cmd.sy = sy - 2; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
+              cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
             }
           }
         }

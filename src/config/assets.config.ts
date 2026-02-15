@@ -24,6 +24,7 @@ export interface AssetDef {
   interactable: boolean;    // Can the player interact (Space)?
   description: string;      // Short tooltip / dev reference
   tileType?: TileType;      // SVG tile type for ground rendering (if available)
+  jitter?: number;           // 0-1 sub-cell placement jitter range (fraction of half-tile). 0 = centered. (#82)
 }
 
 // ─── Master Asset Library ────────────────────────────────────
@@ -61,22 +62,22 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   flower: {
     emoji: '🌼', category: 'plant', height: 1, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Wildflower',
+    description: 'Wildflower', jitter: 0.35,
   },
   flower_pink: {
     emoji: '🌸', category: 'plant', height: 1, layer: 'base',
     scale: 0.55, shadow: false, walkable: true, interactable: false,
-    description: 'Cherry blossom',
+    description: 'Cherry blossom', jitter: 0.35,
   },
   flower_red: {
     emoji: '🌺', category: 'plant', height: 1, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Red hibiscus',
+    description: 'Red hibiscus', jitter: 0.35,
   },
   sunflower: {
     emoji: '🌻', category: 'plant', height: 2, layer: 'base',
     scale: 0.65, shadow: false, walkable: true, interactable: false,
-    description: 'Sunflower',
+    description: 'Sunflower', jitter: 0.25,
   },
   bush: {
     emoji: '🌿', category: 'plant', height: 3, layer: 'mid',
@@ -106,12 +107,12 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   stump: {
     emoji: '🪵', category: 'plant', height: 1, layer: 'base',
     scale: 0.5, shadow: false, walkable: true, interactable: false,
-    description: 'Tree stump',
+    description: 'Tree stump', jitter: 0.20,
   },
   mushroom: {
     emoji: '🍄', category: 'plant', height: 0, layer: 'base',
     scale: 0.35, shadow: false, walkable: true, interactable: true,
-    description: 'Tiny mushroom cluster',
+    description: 'Tiny mushroom cluster', jitter: 0.35,
   },
 
   // --- Obstacles (block movement, may require items) ---
@@ -177,22 +178,22 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   coin: {
     emoji: '💰', category: 'collectible', height: 1, layer: 'mid',
     scale: 0.6, shadow: false, walkable: true, interactable: true,
-    description: 'Gold coin',
+    description: 'Gold coin', jitter: 0.20,
   },
   key: {
     emoji: '🔑', category: 'collectible', height: 1, layer: 'mid',
     scale: 0.6, shadow: false, walkable: true, interactable: true,
-    description: 'Key (unlocks doors)',
+    description: 'Key (unlocks doors)', jitter: 0.15,
   },
   crowbar: {
     emoji: '🛠️', category: 'collectible', height: 1, layer: 'mid',
     scale: 0.6, shadow: false, walkable: true, interactable: true,
-    description: 'Crowbar (removes barricades)',
+    description: 'Crowbar (removes barricades)', jitter: 0.15,
   },
   potion: {
     emoji: '🧪', category: 'collectible', height: 1, layer: 'mid',
     scale: 0.6, shadow: false, walkable: true, interactable: true,
-    description: 'Speed potion',
+    description: 'Speed potion', jitter: 0.15,
   },
 
   // --- NPCs ---
@@ -226,12 +227,12 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   chicken: {
     emoji: '🐔', category: 'plant', height: 1, layer: 'base',
     scale: 0.5, shadow: false, walkable: true, interactable: false,
-    description: 'Chicken pecking around',
+    description: 'Chicken pecking around', jitter: 0.20,
   },
   rooster: {
     emoji: '🐓', category: 'plant', height: 1, layer: 'base',
     scale: 0.55, shadow: false, walkable: true, interactable: false,
-    description: 'Rooster strutting',
+    description: 'Rooster strutting', jitter: 0.20,
   },
   pig: {
     emoji: '🐖', category: 'plant', height: 2, layer: 'base',
@@ -256,12 +257,12 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   rabbit: {
     emoji: '🐇', category: 'plant', height: 1, layer: 'base',
     scale: 0.4, shadow: false, walkable: true, interactable: false,
-    description: 'Wild rabbit',
+    description: 'Wild rabbit', jitter: 0.25,
   },
   duck: {
     emoji: '🦆', category: 'plant', height: 1, layer: 'base',
     scale: 0.5, shadow: false, walkable: true, interactable: false,
-    description: 'Duck waddling',
+    description: 'Duck waddling', jitter: 0.20,
   },
   fox: {
     emoji: '🦊', category: 'plant', height: 2, layer: 'mid',
@@ -288,17 +289,17 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   tulip: {
     emoji: '🌷', category: 'plant', height: 1, layer: 'base',
     scale: 0.5, shadow: false, walkable: true, interactable: false,
-    description: 'Tulip',
+    description: 'Tulip', jitter: 0.30,
   },
   clover: {
     emoji: '🍀', category: 'plant', height: 0, layer: 'base',
     scale: 0.4, shadow: false, walkable: true, interactable: false,
-    description: 'Lucky clover patch',
+    description: 'Lucky clover patch', jitter: 0.35,
   },
   wheat: {
     emoji: '🌾', category: 'plant', height: 2, layer: 'base',
     scale: 0.6, shadow: false, walkable: true, interactable: false,
-    description: 'Wheat sheaf',
+    description: 'Wheat sheaf', jitter: 0.20,
   },
   cactus: {
     emoji: '🌵', category: 'plant', height: 4, layer: 'mid',
@@ -308,17 +309,17 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   seedling: {
     emoji: '🌱', category: 'plant', height: 0, layer: 'base',
     scale: 0.35, shadow: false, walkable: true, interactable: false,
-    description: 'Tiny seedling',
+    description: 'Tiny seedling', jitter: 0.35,
   },
   wilted_flower: {
     emoji: '🥀', category: 'plant', height: 1, layer: 'base',
     scale: 0.45, shadow: false, walkable: true, interactable: false,
-    description: 'Wilted rose',
+    description: 'Wilted rose', jitter: 0.30,
   },
   maple_leaf: {
     emoji: '🍁', category: 'plant', height: 0, layer: 'base',
     scale: 0.35, shadow: false, walkable: true, interactable: false,
-    description: 'Fallen maple leaf',
+    description: 'Fallen maple leaf', jitter: 0.35,
   },
 
   // --- Structure emojis (#58) ---
@@ -347,7 +348,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   sparkle: {
     emoji: '✨', category: 'plant', height: 0, layer: 'overlay',
     scale: 0.4, shadow: false, walkable: true, interactable: false,
-    description: 'Magical sparkle',
+    description: 'Magical sparkle', jitter: 0.35,
   },
   campfire: {
     emoji: '🔥', category: 'interactive', height: 2, layer: 'mid',
