@@ -14,6 +14,7 @@ import { getTimeOfDay } from './lighting';
 import { getWeatherInfo } from './weather';
 import { isFlashlightOn } from './local-lights';
 import { getEntropyStats } from './gen';
+import { perfStats } from './perf';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
@@ -335,6 +336,7 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     `Cache: ${getTerrainCacheSize()} chunks (${getTerrainCacheMemoryMB().toFixed(1)}MB)`,
     tpsLabel,
     entropyLabel,
+    `Perf: W:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)}ms`,
   ].map((l) => `<span>${l}</span>`).join('');
 }
 

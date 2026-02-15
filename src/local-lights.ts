@@ -73,6 +73,28 @@ const LIGHT_CONFIG = {
 
 let pointLights: PointLight[] = [];
 let coneLights: ConeLight[] = [];
+
+// Object pools to avoid GC pressure from creating new light objects every frame (#79)
+let _pointPoolIdx = 0;
+const _pointPool: PointLight[] = [];
+let _conePoolIdx = 0;
+const _conePool: ConeLight[] = [];
+
+function _getPointLight(): PointLight {
+  if (_pointPoolIdx < _pointPool.length) return _pointPool[_pointPoolIdx++];
+  const p: PointLight = { wx: 0, wy: 0, radius: 0, color: [0, 0, 0], intensity: 0, flicker: false, flickerPhase: 0 };
+  _pointPool.push(p);
+  _pointPoolIdx++;
+  return p;
+}
+
+function _getConeLight(): ConeLight {
+  if (_conePoolIdx < _conePool.length) return _conePool[_conePoolIdx++];
+  const c: ConeLight = { wx: 0, wy: 0, angle: 0, spread: 0, reach: 0, color: [0, 0, 0], intensity: 0 };
+  _conePool.push(c);
+  _conePoolIdx++;
+  return c;
+}
 let flashlightEnabled = false;
 let frameCounter = 0;
 
@@ -239,21 +261,24 @@ function tintPointLights(ctx: CanvasRenderingContext2D, cam: Camera, timeMul: nu
 export function clearLights(): void {
   pointLights.length = 0;
   coneLights.length = 0;
+  _pointPoolIdx = 0;
+  _conePoolIdx = 0;
 }
 
 /**
  * Register a point light source (bonfire, torch, etc.)
  */
 export function addPointLight(wx: number, wy: number, options?: Partial<PointLight>): void {
-  pointLights.push({
-    wx,
-    wy,
-    radius: options?.radius ?? LIGHT_CONFIG.bonfireRadius,
-    color: options?.color ?? [...LIGHT_CONFIG.bonfireColor],
-    intensity: options?.intensity ?? LIGHT_CONFIG.bonfireIntensity,
-    flicker: options?.flicker ?? true,
-    flickerPhase: options?.flickerPhase ?? (wx * 13.7 + wy * 29.3), // Deterministic per position
-  });
+  const p = _getPointLight();
+  p.wx = wx;
+  p.wy = wy;
+  p.radius = options?.radius ?? LIGHT_CONFIG.bonfireRadius;
+  const col = options?.color ?? LIGHT_CONFIG.bonfireColor;
+  p.color[0] = col[0]; p.color[1] = col[1]; p.color[2] = col[2];
+  p.intensity = options?.intensity ?? LIGHT_CONFIG.bonfireIntensity;
+  p.flicker = options?.flicker ?? true;
+  p.flickerPhase = options?.flickerPhase ?? (wx * 13.7 + wy * 29.3);
+  pointLights.push(p);
 }
 
 /**
@@ -267,26 +292,20 @@ export function addFlashlight(wx: number, wy: number, facingDx: number, facingDy
   // facingDx/facingDy are grid directions: (1,0)=right, (0,1)=down, etc.
   const isoAngle = Math.atan2(facingDx + facingDy, facingDx - facingDy);
 
-  coneLights.push({
-    wx,
-    wy,
-    angle: isoAngle,
-    spread: LIGHT_CONFIG.flashlightSpread,
-    reach: LIGHT_CONFIG.flashlightReach,
-    color: [...LIGHT_CONFIG.flashlightColor],
-    intensity: LIGHT_CONFIG.flashlightIntensity,
-  });
+  const cone = _getConeLight();
+  cone.wx = wx;
+  cone.wy = wy;
+  cone.angle = isoAngle;
+  cone.spread = LIGHT_CONFIG.flashlightSpread;
+  cone.reach = LIGHT_CONFIG.flashlightReach;
+  cone.color[0] = LIGHT_CONFIG.flashlightColor[0];
+  cone.color[1] = LIGHT_CONFIG.flashlightColor[1];
+  cone.color[2] = LIGHT_CONFIG.flashlightColor[2];
+  cone.intensity = LIGHT_CONFIG.flashlightIntensity;
+  coneLights.push(cone);
 
   // Also add a small ambient glow at the player's feet (flashlight spill)
-  pointLights.push({
-    wx,
-    wy,
-    radius: 50,
-    color: [...LIGHT_CONFIG.flashlightColor],
-    intensity: 0.35,
-    flicker: false,
-    flickerPhase: 0,
-  });
+  addPointLight(wx, wy, { radius: 50, color: LIGHT_CONFIG.flashlightColor, intensity: 0.35, flicker: false, flickerPhase: 0 });
 }
 
 /** After multiply darken, restore brightness where lights are using additive blend */

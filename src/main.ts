@@ -5,6 +5,7 @@
  */
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './config/game.config';
+import { perfStats, perfSmooth } from './perf';
 import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
@@ -214,10 +215,6 @@ function maybeLoadChunks(state: GameState): void {
     state.lastChunkX = pcx;
     state.lastChunkY = pcy;
     ensureChunksAround(state);
-    // Evict distant terrain caches to stay under memory budget (#47)
-    evictDistantChunks(pcx, pcy, 3);
-    // Evict distant terrain caches to stay under memory budget (#47)
-    evictDistantChunks(pcx, pcy, 3);
     // Evict distant terrain caches to stay under memory budget (#47)
     evictDistantChunks(pcx, pcy, 3);
     // Auto-save on chunk exit
@@ -1354,6 +1351,8 @@ function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
 ): void {
+  const _t0 = performance.now();
+
   // World render (WASM if available, JS fallback)
   renderer.renderAuto(
     state.chunks,
@@ -1364,11 +1363,20 @@ function renderFrame(
     state.ui.showDebug,
   );
 
+  const _t1 = performance.now();
+  perfStats.render = perfSmooth(perfStats.render, _t1 - _t0);
+
   // Ambient particles (butterflies, sparkles, leaves, birds)
   updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
 
+  const _t2 = performance.now();
+  perfStats.particles = perfSmooth(perfStats.particles, _t2 - _t1);
+
   // Wildlife layer: draw creatures after terrain/objects, before lighting
   renderWildlife(renderer, state);
+
+  const _t3 = performance.now();
+  perfStats.wildlife = perfSmooth(perfStats.wildlife, _t3 - _t2);
 
   // Update thought bubble position (anchored above player sprite screen position)
   const playerScreen = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
@@ -1377,24 +1385,35 @@ function renderFrame(
   // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
   tickLighting();
 
-  // Local lights: collect bonfire positions from visible chunks + player flashlight
-  // renderLocalLights also handles the darkness overlay (replaces updateAndRenderLighting rendering)
+  // Local lights: bonfire positions cached per chunk to avoid 5625+ cell scans every frame (#79)
   clearLights();
-  const cs = WORLD_CONFIG.chunkSize;
+  const cs2 = WORLD_CONFIG.chunkSize;
   for (const [, chunk] of state.chunks) {
     if (!chunk.generated) continue;
-    const baseGX = chunk.chunkX * cs;
-    const baseGY = chunk.chunkY * cs;
-    for (let cy = 0; cy < cs; cy++) {
-      for (let cx = 0; cx < cs; cx++) {
-        if (chunk.cells[cy][cx].assetKey === 'bonfire') {
-          addPointLight(baseGX + cx, baseGY + cy);
+    // lazily cache bonfire positions per chunk
+    let bonfires = (chunk as any)._bonfireCache as { gx: number; gy: number }[] | undefined;
+    if (bonfires === undefined) {
+      bonfires = [];
+      const baseGX = chunk.chunkX * cs2;
+      const baseGY = chunk.chunkY * cs2;
+      for (let cy = 0; cy < cs2; cy++) {
+        for (let cx = 0; cx < cs2; cx++) {
+          if (chunk.cells[cy][cx].assetKey === 'bonfire') {
+            bonfires.push({ gx: baseGX + cx, gy: baseGY + cy });
+          }
         }
       }
+      (chunk as any)._bonfireCache = bonfires;
+    }
+    for (let i = 0; i < bonfires.length; i++) {
+      addPointLight(bonfires[i].gx, bonfires[i].gy);
     }
   }
   addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
   renderLocalLights(renderer.getCtx(), state.camera);
+
+  const _t4 = performance.now();
+  perfStats.lighting = perfSmooth(perfStats.lighting, _t4 - _t3);
 
   // Weather effects (rain, fog, clouds, lightning)
   updateAndRenderWeather(renderer.getCtx());
@@ -1402,6 +1421,9 @@ function renderFrame(
   if (didLightningStrike()) {
     playSfx(state.sfx, 'thunder');
   }
+
+  const _t5 = performance.now();
+  perfStats.weather = perfSmooth(perfStats.weather, _t5 - _t4);
 
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active || state.trade.active) {

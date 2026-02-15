@@ -213,9 +213,10 @@ export function updateAndRenderParticles(
     }
   }
 
-  // --- Update & render each particle ---
+  // --- Update & render each particle, write-compaction for dead particles (#79) ---
   ctx.save();
-  for (let i = particles.length - 1; i >= 0; i--) {
+  let writeIdx = 0;
+  for (let i = 0; i < particles.length; i++) {
     const p = particles[i];
 
     // Lifecycle
@@ -268,9 +269,11 @@ export function updateAndRenderParticles(
 
     // Kill if off-screen or expired
     if (p.life <= 0 || p.sx < -margin || p.sx > cw + margin || p.sy < -margin || p.sy > ch + margin) {
-      particles.splice(i, 1);
-      continue;
+      continue; // Skip dead particles (write-compaction)
     }
+
+    // Keep alive — compact
+    particles[writeIdx++] = p;
 
     // --- Render ---
     ctx.globalAlpha = p.opacity * 0.85; // Overall particle opacity
@@ -299,6 +302,7 @@ export function updateAndRenderParticles(
       ctx.fillText(p.emoji, p.sx, p.sy);
     }
   }
+  particles.length = writeIdx; // Trim dead particles
   ctx.restore();
 }
 

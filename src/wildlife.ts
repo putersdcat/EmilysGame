@@ -9,6 +9,7 @@ import { WORLD_CONFIG } from './config/game.config';
 import {
   SPECIES, type SpeciesDef, type TimeSlot,
   MAX_WILDLIFE_PER_CHUNK, INTERACT_RANGE, BIOME_DENSITY,
+  getSpecies,
 } from './config/wildlife.config';
 import type { ChunkData } from './gen';
 import { getCycleProgress } from './lighting';
@@ -298,7 +299,7 @@ export function updateWildlife(
 
 /** Tick a single wildlife entity's behavior */
 function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): void {
-  const species = SPECIES.find(s => s.id === entity.speciesId);
+  const species = getSpecies(entity.speciesId);  // O(1) Map lookup (#79)
   if (!species) return;
 
   // Advance animation phase
@@ -453,7 +454,7 @@ export function interactWithWildlife(
 
 /** Get the animation offset for a wildlife entity (used by renderer) */
 export function getAnimationOffset(entity: WildlifeEntity): { dx: number; dy: number } {
-  const species = SPECIES.find(s => s.id === entity.speciesId);
+  const species = getSpecies(entity.speciesId);  // O(1) Map lookup instead of linear find (#79)
   if (!species) return { dx: 0, dy: 0 };
 
   const t = entity.animPhase;
