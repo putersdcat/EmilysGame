@@ -17,6 +17,8 @@ import { getEntropyStats } from './gen';
 import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
+import type { PlayerStatus } from './status';
+import { getDebuffs } from './status';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -597,4 +599,42 @@ function initLlmConfigPanel(): void {
     setTimeout(() => { applyBtn.textContent = 'Apply'; }, 1500);
     console.log('[UI] LLM config applied:', newSettings.mode, newSettings.url);
   });
+}
+
+// ─── Status Bar Sync (#70) ────────────────────────────────────
+
+let lastStatusSyncFrame = 0;
+
+/** Sync survival status bars in sidebar. Call from game loop. */
+export function syncStatusBars(status: PlayerStatus): void {
+  // Throttle to every 12th call
+  lastStatusSyncFrame++;
+  if (lastStatusSyncFrame % 12 !== 0) return;
+
+  const bars: Array<{ id: string; valId: string; value: number }> = [
+    { id: 'sbEnergy', valId: 'sbEnergyVal', value: status.energy },
+    { id: 'sbHydration', valId: 'sbHydrationVal', value: status.hydration },
+    { id: 'sbCleanliness', valId: 'sbCleanlinessVal', value: status.cleanliness },
+  ];
+
+  for (const bar of bars) {
+    const fill = document.getElementById(bar.id);
+    const val = document.getElementById(bar.valId);
+    if (fill) {
+      fill.style.width = `${Math.max(0, Math.min(100, bar.value))}%`;
+      // Add warning classes
+      fill.classList.toggle('critical', bar.value <= 15);
+      fill.classList.toggle('low', bar.value > 15 && bar.value <= 30);
+    }
+    if (val) val.textContent = String(Math.round(bar.value));
+  }
+
+  // Debuff list
+  const debuffs = getDebuffs(status);
+  const debuffEl = document.getElementById('sbDebuffs');
+  if (debuffEl) {
+    debuffEl.textContent = debuffs.activeDebuffs.length > 0
+      ? debuffs.activeDebuffs.join(' · ')
+      : '';
+  }
 }

@@ -38,6 +38,8 @@ export interface SaveData {
   playerVariation?: { hairColor: string; hairStyle: string; dressColor: string; skinTone: string };
   /** Wildlife: discovered species IDs */
   discoveredWildlife?: string[];
+  /** Player survival status (#70) */
+  playerStatus?: { energy: number; hydration: number; cleanliness: number };
 }
 
 export interface ResolvedCell {

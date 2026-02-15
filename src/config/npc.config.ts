@@ -48,6 +48,9 @@ export const NPC_PERSONAS: NpcPersona[] = [
       { gives: 'key', wants: 'coin', cost: 15, description: 'Buy a key for 15 coins' },
       { gives: 'crowbar', wants: 'coin', cost: 20, description: 'Buy a crowbar for 20 coins' },
       { gives: 'potion', wants: 'coin', cost: 10, description: 'Buy a speed potion for 10 coins' },
+      { gives: 'snack', wants: 'coin', cost: 3, description: 'Buy a trail snack for 3 coins' },
+      { gives: 'water', wants: 'coin', cost: 4, description: 'Buy fresh water for 4 coins' },
+      { gives: 'soap', wants: 'coin', cost: 6, description: 'Buy soap for 6 coins' },
     ],
     canQuiz: false,
     quizDifficulty: 'easy',
@@ -158,6 +161,8 @@ export const BIOME_NPC_PERSONAS: NpcPersona[] = [
     ],
     trades: [
       { gives: 'mushroom', wants: 'coin', cost: 3, description: 'Buy a mushroom for 3 coins' },
+      { gives: 'snack', wants: 'coin', cost: 2, description: 'Buy farm snack for 2 coins' },
+      { gives: 'water', wants: 'coin', cost: 3, description: 'Buy well water for 3 coins' },
     ],
     canQuiz: true,
     quizDifficulty: 'easy',

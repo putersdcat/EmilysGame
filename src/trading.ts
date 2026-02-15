@@ -225,6 +225,7 @@ const ITEM_EMOJI: Record<string, string> = {
   snack: '🍎',
   map_scroll: '🗺️',
   torch: '🔥',
+  soap: '🧼',
 };
 
 function getItemEmoji(itemId: string): string {

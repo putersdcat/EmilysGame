@@ -17,7 +17,7 @@ import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionRes
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, type UIState } from './ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
@@ -51,6 +51,11 @@ import {
   createTradeState, openTrade, closeTrade, tradeNavigate,
   executeTrade, syncTradeDOM, type TradeState,
 } from './trading';
+import {
+  createPlayerStatus, tickStatus, getDebuffs, useStatusItem,
+  serializeStatus, deserializeStatus, resetTickCounter,
+  type PlayerStatus,
+} from './status';
 import type { FacingPose } from './sprites';
 
 
@@ -96,6 +101,8 @@ interface GameState {
   trade: TradeState;
   // Pending trade to open after dialog closes (NPC persona id)
   pendingTrade: string | null;
+  // Player survival status (#70)
+  status: PlayerStatus;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -357,6 +364,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     pendingGateQuiz: null,
     trade: createTradeState(),
     pendingTrade: null,
+    status: createPlayerStatus(),
   };
 
   // Restore inventory from save
@@ -555,8 +563,11 @@ function update(state: GameState, input: InputManager): void {
   const isMoving = mv.dx !== 0 || mv.dy !== 0;
 
   if (isMoving) {
-    const newX = state.player.x + mv.dx * state.player.speed;
-    const newY = state.player.y + mv.dy * state.player.speed;
+    // Apply survival status speed debuff (#70)
+    const debuffs = getDebuffs(state.status);
+    const effectiveSpeed = state.player.speed * debuffs.speedMult;
+    const newX = state.player.x + mv.dx * effectiveSpeed;
+    const newY = state.player.y + mv.dy * effectiveSpeed;
 
     // Collision check
     if (isWalkable(Math.round(newX), Math.round(newY), state.chunks)) {
@@ -683,6 +694,16 @@ function update(state: GameState, input: InputManager): void {
   // --- Toggle Debug (F3) ---
   // Handled in extended input listener below
 
+  // --- Survival Status tick (#70) ---
+  // tickStatus self-throttles internally (every 300 frames)
+  {
+    const cs = WORLD_CONFIG.chunkSize;
+    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
+    const chunk = state.chunks.get(cKey);
+    const biomeId = chunk?.biomeId ?? 0;
+    tickStatus(state.status, state.player.isMoving, biomeId);
+  }
+
   // --- Auto-save every 30s ---
   if (state.frameCount % (60 * 30) === 0) {
     doSave(state);
@@ -798,6 +819,7 @@ function buildSaveData(state: GameState): SaveData {
     discoveryPoints: state.knowledge.discoveryPoints,
     playerVariation: serializeVariation(state.playerVariation),
     discoveredWildlife: getDiscoveredSpeciesArray(),
+    playerStatus: serializeStatus(state.status),
   };
 }
 
@@ -828,6 +850,9 @@ function applySaveData(state: GameState, data: SaveData): void {
   if (data.discoveredWildlife) {
     restoreDiscoveredSpecies(data.discoveredWildlife);
   }
+  // Restore survival status (#70)
+  state.status = deserializeStatus(data.playerStatus);
+  resetTickCounter();
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -946,6 +971,8 @@ function resetGameState(state: GameState): void {
   state.pendingGateQuiz = null;
   state.trade = createTradeState();
   state.pendingTrade = null;
+  state.status = createPlayerStatus();
+  resetTickCounter();
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1208,6 +1235,9 @@ function renderFrame(
     if (state.trade.active) {
       syncTradeDOM(state.trade, state.inventory);
     }
+
+    // Status bars (#70)
+    syncStatusBars(state.status);
   }
 
   // Minimap (self-throttling to ~6fps)
@@ -1307,6 +1337,26 @@ function setupExtraKeys(state: GameState): void {
           toggleFlashlight();
         }
         break;
+      case 'e':
+      case 'E':
+        // Use/consume best available status item (#70)
+        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active && !state.trade.active) {
+          const consumables = ['snack', 'water_flask', 'soap', 'mushroom', 'bandage', 'potion'];
+          for (const itemId of consumables) {
+            if (state.inventory.hasItem(itemId)) {
+              const result = useStatusItem(state.status, itemId);
+              if (result && result !== 'Already at full status!') {
+                state.inventory.removeItem(itemId, 1);
+                addToast(state.ui, result, '#88ccff', 2000);
+                break;
+              } else if (result === 'Already at full status!') {
+                addToast(state.ui, '✨ All stats are full!', '#aaa', 1200);
+                break;
+              }
+            }
+          }
+        }
+        break;
     }
   });
 }
@@ -1352,6 +1402,13 @@ async function main(): Promise<void> {
     getCycleProgress,
     toggleFlashlight,
     state,
+    // Status helpers (#70)
+    getDebuffs: () => getDebuffs(state.status),
+    useStatusItem: (itemId: string) => {
+      const result = useStatusItem(state.status, itemId);
+      if (result) addToast(state.ui, result, '#88ccff', 2000);
+      return result;
+    },
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
