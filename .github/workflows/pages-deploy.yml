@@ -1,8 +1,7 @@
-name: Deploy — GitHub Pages
+name: Deploy — GitHub Pages (Manual)
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:  # Manual trigger only
 
 concurrency:
   group: pages
@@ -36,8 +35,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Build for GitHub Pages
+        run: npm run build:pages
+        env:
+          # GitHub Pages mode - bypasses LLM integration
+          NODE_ENV: production
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npm run build-wasm && vite",
     "build": "npm run build-wasm && vite build",
+    "build:pages": "npm run build-wasm && vite build --mode pages",
     "build-wasm": "cd wasm && npx asc assembly/index.ts --target release && cd .. && node -e \"const fs=require('fs');fs.mkdirSync('public/wasm',{recursive:true});fs.copyFileSync('wasm/build/release.wasm','public/wasm/release.wasm')\"",
     "build-wasm:debug": "cd wasm && npx asc assembly/index.ts --target debug",
     "preview": "vite preview",
