@@ -74,9 +74,6 @@ function _rebuildArticleList(): void {
 function _convertPackArticle(pa: KnowledgeArticlePack): KnowledgeArticle {
   return {
     id: pa.id,
-    // Cast subject — packs may include 'geography'/'art' which aren't
-    // in the static SubjectId type yet. They'll be ignored in browse
-    // grouping until #119 adds those subjects. Articles still searchable.
     subject: pa.subject as SubjectId,
     title: pa.title,
     summary: pa.summary,

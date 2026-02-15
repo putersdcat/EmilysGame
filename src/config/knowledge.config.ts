@@ -6,7 +6,7 @@
 
 // ─── Subjects ────────────────────────────────────────────────
 
-export type SubjectId = 'math' | 'science' | 'history' | 'language' | 'technology';
+export type SubjectId = 'math' | 'science' | 'history' | 'language' | 'technology' | 'geography' | 'art';
 
 export interface SubjectDef {
   id: SubjectId;
@@ -22,6 +22,8 @@ export const SUBJECTS: SubjectDef[] = [
   { id: 'history',    name: 'History',       icon: '🏛️', color: '#ffb74d', description: 'Stories from the past' },
   { id: 'language',   name: 'Language',      icon: '📖', color: '#ce93d8', description: 'Words and communication' },
   { id: 'technology', name: 'Technology',    icon: '💻', color: '#90a4ae', description: 'Computers and inventions' },
+  { id: 'geography',  name: 'Geography',     icon: '🌍', color: '#66bb6a', description: 'Places and the natural world' },
+  { id: 'art',        name: 'Art',           icon: '🎨', color: '#ef5350', description: 'Creativity and expression' },
 ];
 
 // ─── Articles ────────────────────────────────────────────────
