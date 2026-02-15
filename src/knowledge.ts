@@ -70,7 +70,7 @@ export function toggleSubject(state: KnowledgeState, subjectId: SubjectId): void
   if (idx >= 0) {
     state.selectedSubjects.splice(idx, 1);
   } else {
-    if (state.selectedSubjects.length < 5) {
+    if (state.selectedSubjects.length < SUBJECTS.length) {
       state.selectedSubjects.push(subjectId);
     }
   }
@@ -168,6 +168,8 @@ export function getQuizBias(state: KnowledgeState): Record<string, number> {
     history: 'history',
     language: 'language',
     technology: 'logic', // technology maps to logic quizzes
+    geography: 'science', // geography maps to science quizzes for now
+    art: 'language', // art maps to language quizzes for now
   };
   for (const s of state.selectedSubjects) {
     bias[subjectToCategory[s]] = 2; // 2x weight for selected subjects
