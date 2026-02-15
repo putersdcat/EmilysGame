@@ -1,0 +1,2808 @@
+{
+  "shardId": "quizzes-004",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-02-15T20:48:10.024Z",
+  "questions": [
+    {
+      "id": "q_science_easy_300",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do birds have that helps them fly?",
+      "answers": [
+        "Wings",
+        "Legs",
+        "Beaks",
+        "Tails"
+      ],
+      "hint": "Flap flap!",
+      "explanation": "Birds use wings to fly",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_301",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Is a tomato a fruit or vegetable?",
+      "answers": [
+        "Fruit",
+        "Vegetable",
+        "Both",
+        "Neither"
+      ],
+      "hint": "Has seeds!",
+      "explanation": "Tomatoes are fruits (they have seeds)",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_302",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call water falling from the sky?",
+      "answers": [
+        "Rain",
+        "Snow",
+        "Hail",
+        "Sleet"
+      ],
+      "hint": "Drops of water",
+      "explanation": "Rain is water falling from clouds",
+      "tags": [
+        "weather"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_303",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many wings does a bee have?",
+      "answers": [
+        "4",
+        "2",
+        "6",
+        "8"
+      ],
+      "hint": "Two pairs",
+      "explanation": "Bees have 4 wings",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_304",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What animal is the tallest?",
+      "answers": [
+        "Giraffe",
+        "Elephant",
+        "Horse",
+        "Bear"
+      ],
+      "hint": "Long neck",
+      "explanation": "Giraffes are the tallest land animals",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_305",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do caterpillars turn into?",
+      "answers": [
+        "Butterflies or moths",
+        "Birds",
+        "Beetles",
+        "Flies"
+      ],
+      "hint": "Beautiful wings",
+      "explanation": "Caterpillars become butterflies or moths",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_306",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is steam?",
+      "answers": [
+        "Water vapor",
+        "Ice",
+        "Liquid",
+        "Solid"
+      ],
+      "hint": "Hot gas",
+      "explanation": "Steam is water in gas form",
+      "tags": [
+        "states-of-matter"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_307",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do bees collect from flowers?",
+      "answers": [
+        "Nectar and pollen",
+        "Water",
+        "Leaves",
+        "Stems"
+      ],
+      "hint": "Make honey!",
+      "explanation": "Bees collect nectar and pollen",
+      "tags": [
+        "insects",
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_308",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many teeth do adults usually have?",
+      "answers": [
+        "32",
+        "28",
+        "30",
+        "24"
+      ],
+      "hint": "Including wisdom teeth",
+      "explanation": "Adults have 32 teeth total",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_309",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the smallest bone in the human body?",
+      "answers": [
+        "Stapes (in ear)",
+        "Toe bone",
+        "Finger bone",
+        "Wrist bone"
+      ],
+      "hint": "In your ear",
+      "explanation": "The stapes in the ear is the smallest bone",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_310",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What planet has rings?",
+      "answers": [
+        "Saturn",
+        "Jupiter",
+        "Mars",
+        "Venus"
+      ],
+      "hint": "Most visible rings",
+      "explanation": "Saturn has prominent rings",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_311",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the boiling point of water (Fahrenheit)?",
+      "answers": [
+        "212°F",
+        "100°F",
+        "200°F",
+        "180°F"
+      ],
+      "hint": "Also 100°C",
+      "explanation": "Water boils at 212°F or 100°C",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_312",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an ecosystem?",
+      "answers": [
+        "Living and non-living things interacting",
+        "A type of animal",
+        "A habitat",
+        "A plant"
+      ],
+      "hint": "Environment system",
+      "explanation": "Ecosystems include all living and non-living parts",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_313",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the outer layer of Earth called?",
+      "answers": [
+        "Crust",
+        "Mantle",
+        "Core",
+        "Surface"
+      ],
+      "hint": "Thin outer layer",
+      "explanation": "Earth's crust is the outer rocky layer",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_314",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is chlorophyll?",
+      "answers": [
+        "Green pigment in plants",
+        "A vitamin",
+        "A mineral",
+        "An animal"
+      ],
+      "hint": "Makes plants green",
+      "explanation": "Chlorophyll is the green pigment for photosynthesis",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_315",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How long does it take Earth to orbit the Sun?",
+      "answers": [
+        "365 days",
+        "360 days",
+        "300 days",
+        "400 days"
+      ],
+      "hint": "One year",
+      "explanation": "Earth takes 365 days (1 year) to orbit the Sun",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_316",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a carnivore?",
+      "answers": [
+        "Meat eater",
+        "Plant eater",
+        "Eats both",
+        "Eats nothing"
+      ],
+      "hint": "Like lions",
+      "explanation": "Carnivores eat only meat",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_317",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the freezing point of water (Celsius)?",
+      "answers": [
+        "0°C",
+        "32°C",
+        "100°C",
+        "-10°C"
+      ],
+      "hint": "Also 32°F",
+      "explanation": "Water freezes at 0°C or 32°F",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_318",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What are the three states of matter?",
+      "answers": [
+        "Solid, liquid, gas",
+        "Hot, cold, warm",
+        "Big, small, tiny",
+        "Hard, soft, medium"
+      ],
+      "hint": "Ice, water, steam",
+      "explanation": "Matter exists as solid, liquid, or gas",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_319",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is evaporation?",
+      "answers": [
+        "Liquid to gas",
+        "Gas to liquid",
+        "Solid to liquid",
+        "Liquid to solid"
+      ],
+      "hint": "Water drying up",
+      "explanation": "Evaporation is liquid becoming gas",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_320",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is E=mc²?",
+      "answers": [
+        "Energy equals mass times speed of light squared",
+        "A math problem",
+        "A chemistry formula",
+        "A biology term"
+      ],
+      "hint": "Einstein's equation",
+      "explanation": "Einstein's famous equation relates energy and mass",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_321",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What are prokaryotic cells?",
+      "answers": [
+        "Cells without nucleus",
+        "Cells with nucleus",
+        "Plant cells",
+        "Animal cells"
+      ],
+      "hint": "Like bacteria",
+      "explanation": "Prokaryotes have no nucleus (bacteria)",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_322",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the periodic table?",
+      "answers": [
+        "Chart of elements",
+        "A calendar",
+        "A time table",
+        "A chart of animals"
+      ],
+      "hint": "Chemistry chart",
+      "explanation": "The periodic table organizes chemical elements",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_323",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is mitosis?",
+      "answers": [
+        "Cell division",
+        "Cell death",
+        "Cell growth",
+        "Cell eating"
+      ],
+      "hint": "One cell becomes two",
+      "explanation": "Mitosis is cell division for growth",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_324",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an isotope?",
+      "answers": [
+        "Same element, different neutrons",
+        "Different element",
+        "A molecule",
+        "A compound"
+      ],
+      "hint": "Atomic variants",
+      "explanation": "Isotopes have same protons but different neutrons",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_325",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the Richter scale?",
+      "answers": [
+        "Measures earthquakes",
+        "Measures temperature",
+        "Measures wind",
+        "Measures rain"
+      ],
+      "hint": "Earthquake strength",
+      "explanation": "Richter scale measures earthquake magnitude",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_326",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a light-year?",
+      "answers": [
+        "Distance light travels in a year",
+        "Time measurement",
+        "Star brightness",
+        "Planet distance"
+      ],
+      "hint": "Distance, not time!",
+      "explanation": "Light-year is about 9.5 trillion kilometers",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_327",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an exothermic reaction?",
+      "answers": [
+        "Releases heat",
+        "Absorbs heat",
+        "No heat change",
+        "Needs light"
+      ],
+      "hint": "Gets hot!",
+      "explanation": "Exothermic reactions release energy as heat",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_328",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a food chain?",
+      "answers": [
+        "Energy transfer between organisms",
+        "A restaurant",
+        "A cooking method",
+        "A type of diet"
+      ],
+      "hint": "Who eats whom",
+      "explanation": "Food chains show energy flow through ecosystems",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_329",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the difference between mass and weight?",
+      "answers": [
+        "Mass is matter amount, weight is gravity force",
+        "No difference",
+        "Mass is heavier",
+        "Weight is bigger"
+      ],
+      "hint": "Mass stays same everywhere",
+      "explanation": "Mass is constant; weight changes with gravity",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_330",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 100 - 25?",
+      "answers": [
+        "75",
+        "85",
+        "65",
+        "50"
+      ],
+      "hint": "Count back",
+      "explanation": "100 - 25 = 75",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_331",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many sides does a pentagon have?",
+      "answers": [
+        "5",
+        "4",
+        "6",
+        "8"
+      ],
+      "hint": "Penta means five",
+      "explanation": "A pentagon has 5 sides",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_332",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 12 x 12?",
+      "answers": [
+        "144",
+        "124",
+        "164",
+        "134"
+      ],
+      "hint": "Dozen x dozen",
+      "explanation": "12 x 12 = 144",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_333",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a right angle?",
+      "answers": [
+        "90 degrees",
+        "45 degrees",
+        "180 degrees",
+        "60 degrees"
+      ],
+      "hint": "Think corner of square",
+      "explanation": "Right angle = 90 degrees",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_334",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 1/4 + 1/4?",
+      "answers": [
+        "1/2",
+        "2/4",
+        "1/8",
+        "2/8"
+      ],
+      "hint": "Add numerators",
+      "explanation": "1/4 + 1/4 = 2/4 = 1/2",
+      "tags": [
+        "fractions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_335",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the perimeter of a square with side 6?",
+      "answers": [
+        "24",
+        "36",
+        "12",
+        "18"
+      ],
+      "hint": "Add all 4 sides",
+      "explanation": "6+6+6+6=24",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_336",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 50% of 200?",
+      "answers": [
+        "100",
+        "50",
+        "150",
+        "75"
+      ],
+      "hint": "Half of it",
+      "explanation": "50% = half, so 200/2 = 100",
+      "tags": [
+        "percent"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_337",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the square root of 64?",
+      "answers": [
+        "8",
+        "6",
+        "10",
+        "7"
+      ],
+      "hint": "What x itself = 64?",
+      "explanation": "8 x 8 = 64",
+      "tags": [
+        "exponents"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_338",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 15% of 100?",
+      "answers": [
+        "15",
+        "10",
+        "20",
+        "25"
+      ],
+      "hint": "Move decimal",
+      "explanation": "15% of 100 = 15",
+      "tags": [
+        "percent"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_339",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the next prime after 7?",
+      "answers": [
+        "11",
+        "9",
+        "10",
+        "8"
+      ],
+      "hint": "Skip 8, 9, 10",
+      "explanation": "11 is only divisible by 1 and itself",
+      "tags": [
+        "primes"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_340",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 3 cubed?",
+      "answers": [
+        "27",
+        "9",
+        "81",
+        "24"
+      ],
+      "hint": "3x3x3",
+      "explanation": "3^3 = 3x3x3 = 27",
+      "tags": [
+        "exponents"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_341",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the area of a triangle with base 10 and height 6?",
+      "answers": [
+        "30",
+        "60",
+        "16",
+        "20"
+      ],
+      "hint": "Half base x height",
+      "explanation": "(10x6)/2 = 30",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_342",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 0.25 as a fraction?",
+      "answers": [
+        "1/4",
+        "1/2",
+        "2/5",
+        "1/3"
+      ],
+      "hint": "25/100",
+      "explanation": "0.25 = 25/100 = 1/4",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_343",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the GCF of 12 and 18?",
+      "answers": [
+        "6",
+        "3",
+        "9",
+        "12"
+      ],
+      "hint": "Largest common factor",
+      "explanation": "Factors of 12: 1,2,3,4,6,12. Factors of 18: 1,2,3,6,9,18. GCF=6",
+      "tags": [
+        "factors"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_344",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many degrees in a triangle?",
+      "answers": [
+        "180",
+        "90",
+        "360",
+        "270"
+      ],
+      "hint": "Half a circle",
+      "explanation": "All triangles have angles totaling 180 degrees",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_345",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 7 x 8?",
+      "answers": [
+        "56",
+        "54",
+        "48",
+        "63"
+      ],
+      "hint": "Count by 7s",
+      "explanation": "7 x 8 = 56",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_346",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What comes next: 2,4,6,8,__?",
+      "answers": [
+        "10",
+        "12",
+        "9",
+        "7"
+      ],
+      "hint": "Add 2 each time",
+      "explanation": "Pattern adds 2",
+      "tags": [
+        "patterns"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_347",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an obtuse angle?",
+      "answers": [
+        "Greater than 90 degrees",
+        "Less than 90 degrees",
+        "Exactly 90 degrees",
+        "Exactly 180 degrees"
+      ],
+      "hint": "Larger than right angle",
+      "explanation": "Obtuse angles are between 90 and 180 degrees",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_348",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 9 x 9?",
+      "answers": [
+        "81",
+        "72",
+        "90",
+        "63"
+      ],
+      "hint": "Nine squared",
+      "explanation": "9 x 9 = 81",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_349",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the LCM of 4 and 6?",
+      "answers": [
+        "12",
+        "24",
+        "8",
+        "6"
+      ],
+      "hint": "Least common multiple",
+      "explanation": "Multiples of 4: 4,8,12... Multiples of 6: 6,12... LCM=12",
+      "tags": [
+        "multiples"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_350",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 20% of 50?",
+      "answers": [
+        "10",
+        "5",
+        "15",
+        "20"
+      ],
+      "hint": "One fifth",
+      "explanation": "20% = 1/5, so 50/5 = 10",
+      "tags": [
+        "percent"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_351",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many millimeters in a centimeter?",
+      "answers": [
+        "10",
+        "100",
+        "1000",
+        "5"
+      ],
+      "hint": "Milli is smaller",
+      "explanation": "1 cm = 10 mm",
+      "tags": [
+        "measurement"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_352",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is 144 divided by 12?",
+      "answers": [
+        "12",
+        "10",
+        "14",
+        "16"
+      ],
+      "hint": "Dozen",
+      "explanation": "144 / 12 = 12",
+      "tags": [
+        "division"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_353",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is an even number?",
+      "answers": [
+        "Divisible by 2",
+        "Divisible by 3",
+        "Odd number",
+        "Prime number"
+      ],
+      "hint": "Ends in 0,2,4,6,8",
+      "explanation": "Even numbers divide evenly by 2",
+      "tags": [
+        "number-sense"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_hard_354",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is 3/4 as a decimal?",
+      "answers": [
+        "0.75",
+        "0.34",
+        "0.50",
+        "0.25"
+      ],
+      "hint": "Divide 3 by 4",
+      "explanation": "3/4 = 0.75",
+      "tags": [
+        "decimals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_355",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the diameter of a circle?",
+      "answers": [
+        "Width across center",
+        "Half the radius",
+        "Around the edge",
+        "Area inside"
+      ],
+      "hint": "Straight across middle",
+      "explanation": "Diameter goes through center point",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_medium_356",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a negative number?",
+      "answers": [
+        "Less than zero",
+        "Greater than zero",
+        "Equal to zero",
+        "A fraction"
+      ],
+      "hint": "Below zero",
+      "explanation": "Negative numbers are less than 0",
+      "tags": [
+        "integers"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_357",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What shape has no corners?",
+      "answers": [
+        "Circle",
+        "Triangle",
+        "Square",
+        "Pentagon"
+      ],
+      "hint": "Round shape",
+      "explanation": "Circles have no corners or sides",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_358",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a fraction?",
+      "answers": [
+        "Part of a whole",
+        "Whole number",
+        "Decimal",
+        "Percentage"
+      ],
+      "hint": "Like slices of pizza",
+      "explanation": "Fractions show parts of a whole",
+      "tags": [
+        "fractions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_math_easy_359",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 1000 - 1?",
+      "answers": [
+        "999",
+        "1001",
+        "990",
+        "900"
+      ],
+      "hint": "Almost 1000",
+      "explanation": "1000 - 1 = 999",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_360",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do plants need to grow?",
+      "answers": [
+        "Water, sunlight, air",
+        "Only water",
+        "Only sunlight",
+        "Only soil"
+      ],
+      "hint": "Three things",
+      "explanation": "Plants need water, sunlight, and air (CO2)",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_361",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is evaporation?",
+      "answers": [
+        "Liquid to gas",
+        "Gas to liquid",
+        "Solid to liquid",
+        "Liquid to solid"
+      ],
+      "hint": "Water drying up",
+      "explanation": "Evaporation is liquid becoming gas",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_362",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What gas do humans breathe in?",
+      "answers": [
+        "Oxygen",
+        "Carbon dioxide",
+        "Nitrogen",
+        "Helium"
+      ],
+      "hint": "We need it to live",
+      "explanation": "We breathe in oxygen, breathe out CO2",
+      "tags": [
+        "body"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_363",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is gravity?",
+      "answers": [
+        "Force pulling objects down",
+        "Type of energy",
+        "A planet",
+        "Weightlessness"
+      ],
+      "hint": "Keeps us on ground",
+      "explanation": "Gravity pulls objects toward Earth",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_364",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the largest ocean?",
+      "answers": [
+        "Pacific",
+        "Atlantic",
+        "Indian",
+        "Arctic"
+      ],
+      "hint": "Largest by far",
+      "explanation": "Pacific Ocean is the biggest",
+      "tags": [
+        "earth"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_365",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is condensation?",
+      "answers": [
+        "Gas to liquid",
+        "Liquid to gas",
+        "Solid to liquid",
+        "Liquid to solid"
+      ],
+      "hint": "Water droplets forming",
+      "explanation": "Condensation is gas becoming liquid",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_366",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "How many bones in adult human body?",
+      "answers": [
+        "206",
+        "180",
+        "250",
+        "150"
+      ],
+      "hint": "More than 200",
+      "explanation": "Adults have 206 bones",
+      "tags": [
+        "body"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_367",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an herbivore?",
+      "answers": [
+        "Plant eater",
+        "Meat eater",
+        "Eats both",
+        "Eats nothing"
+      ],
+      "hint": "Veg only",
+      "explanation": "Herbivores only eat plants",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_368",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the center of an atom?",
+      "answers": [
+        "Nucleus",
+        "Electron",
+        "Proton",
+        "Neutron"
+      ],
+      "hint": "The core",
+      "explanation": "Nucleus is at atom center",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_369",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What season comes after winter?",
+      "answers": [
+        "Spring",
+        "Summer",
+        "Fall",
+        "Autumn"
+      ],
+      "hint": "Flowers bloom",
+      "explanation": "Spring follows winter",
+      "tags": [
+        "seasons"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_370",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is metamorphosis?",
+      "answers": [
+        "Life cycle change",
+        "A rock type",
+        "A disease",
+        "A plant"
+      ],
+      "hint": "Caterpillar to butterfly",
+      "explanation": "Metamorphosis is transformation in life cycle",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_371",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What makes the sky blue?",
+      "answers": [
+        "Light scattering",
+        "Water",
+        "Clouds",
+        "Sun color"
+      ],
+      "hint": "Light bending",
+      "explanation": "Blue light scatters more in atmosphere",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_372",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a carnivore?",
+      "answers": [
+        "Meat eater",
+        "Plant eater",
+        "Eats both",
+        "Eats nothing"
+      ],
+      "hint": "Hunters",
+      "explanation": "Carnivores eat meat",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_373",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an ecosystem?",
+      "answers": [
+        "Living and nonliving things interacting",
+        "A type of animal",
+        "A plant",
+        "A rock formation"
+      ],
+      "hint": "Community of life",
+      "explanation": "Ecosystems include all organisms and environment",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_374",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What part of plant makes seeds?",
+      "answers": [
+        "Flower",
+        "Leaf",
+        "Stem",
+        "Root"
+      ],
+      "hint": "Colorful part",
+      "explanation": "Flowers produce seeds",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_375",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the fastest land animal?",
+      "answers": [
+        "Cheetah",
+        "Lion",
+        "Horse",
+        "Gazelle"
+      ],
+      "hint": "Big cat",
+      "explanation": "Cheetahs run up to 70 mph",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_376",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a renewable resource?",
+      "answers": [
+        "Can be replaced",
+        "Cannot be replaced",
+        "A type of rock",
+        "A metal"
+      ],
+      "hint": "Grows back",
+      "explanation": "Renewable resources can be replenished",
+      "tags": [
+        "environment"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_377",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is camouflage?",
+      "answers": [
+        "Blending in with surroundings",
+        "Being very loud",
+        "Running fast",
+        "Sleeping"
+      ],
+      "hint": "Hiding in plain sight",
+      "explanation": "Camouflage helps animals hide",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_378",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What gas do plants release?",
+      "answers": [
+        "Oxygen",
+        "Carbon dioxide",
+        "Nitrogen",
+        "Methane"
+      ],
+      "hint": "We breathe it",
+      "explanation": "Plants release oxygen during photosynthesis",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_easy_379",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a habitat?",
+      "answers": [
+        "Where organism lives",
+        "What organism eats",
+        "How organism moves",
+        "When organism sleeps"
+      ],
+      "hint": "Its home",
+      "explanation": "Habitat is where animal or plant lives",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_380",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an omnivore?",
+      "answers": [
+        "Eats plants and meat",
+        "Only plants",
+        "Only meat",
+        "Eats nothing"
+      ],
+      "hint": "Eats everything",
+      "explanation": "Omnivores eat both plants and animals",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_381",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the boiling point of water?",
+      "answers": [
+        "100 degrees Celsius",
+        "0 degrees Celsius",
+        "50 degrees Celsius",
+        "200 degrees Celsius"
+      ],
+      "hint": "Steam forms",
+      "explanation": "Water boils at 100C or 212F",
+      "tags": [
+        "matter"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_382",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the freezing point of water?",
+      "answers": [
+        "0 degrees Celsius",
+        "100 degrees Celsius",
+        "50 degrees Celsius",
+        "-10 degrees Celsius"
+      ],
+      "hint": "Ice forms",
+      "explanation": "Water freezes at 0C or 32F",
+      "tags": [
+        "matter"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_383",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is adaptation?",
+      "answers": [
+        "Trait helping survival",
+        "A type of food",
+        "A season",
+        "A disease"
+      ],
+      "hint": "Helps organism survive",
+      "explanation": "Adaptations help organisms survive in environment",
+      "tags": [
+        "evolution"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_384",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a producer in food chain?",
+      "answers": [
+        "Plant that makes food",
+        "Animal that hunts",
+        "Animal that is hunted",
+        "Decomposer"
+      ],
+      "hint": "Makes own food",
+      "explanation": "Producers create energy from sunlight",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_385",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is pollution?",
+      "answers": [
+        "Harmful substances in environment",
+        "Clean air",
+        "Fresh water",
+        "Healthy soil"
+      ],
+      "hint": "Makes environment dirty",
+      "explanation": "Pollution harms air, water, or land",
+      "tags": [
+        "environment"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_386",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a vertebrate?",
+      "answers": [
+        "Has backbone",
+        "No backbone",
+        "Has wings",
+        "Lives in water"
+      ],
+      "hint": "Has spine",
+      "explanation": "Vertebrates have backbones",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_387",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What causes day and night?",
+      "answers": [
+        "Earth rotating",
+        "Sun moving",
+        "Moon moving",
+        "Clouds"
+      ],
+      "hint": "Earth spins",
+      "explanation": "Earth rotation causes day and night",
+      "tags": [
+        "earth"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_hard_388",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is an invertebrate?",
+      "answers": [
+        "No backbone",
+        "Has backbone",
+        "Only insects",
+        "Only fish"
+      ],
+      "hint": "No spine",
+      "explanation": "Invertebrates lack backbones",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_science_medium_389",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the water cycle?",
+      "answers": [
+        "Water moving through Earth",
+        "Rain only",
+        "Ocean currents",
+        "Drinking water"
+      ],
+      "hint": "Evaporation, condensation, precipitation",
+      "explanation": "Water cycle is continuous movement of water",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_easy_390",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Who was the first president of USA?",
+      "answers": [
+        "George Washington",
+        "Abraham Lincoln",
+        "Thomas Jefferson",
+        "John Adams"
+      ],
+      "hint": "On dollar bill",
+      "explanation": "George Washington was first president",
+      "tags": [
+        "american-history"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_391",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a noun?",
+      "answers": [
+        "Person, place, or thing",
+        "Action word",
+        "Describing word",
+        "Connecting word"
+      ],
+      "hint": "Name of something",
+      "explanation": "Nouns name people, places, and things",
+      "tags": [
+        "grammar"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_hard_392",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "When did World War II end?",
+      "answers": [
+        "1945",
+        "1918",
+        "1950",
+        "1939"
+      ],
+      "hint": "Mid 1940s",
+      "explanation": "WWII ended in 1945",
+      "tags": [
+        "world-history"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_393",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a verb?",
+      "answers": [
+        "Action word",
+        "Person, place, thing",
+        "Describing word",
+        "Name"
+      ],
+      "hint": "What you do",
+      "explanation": "Verbs show actions",
+      "tags": [
+        "grammar"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_394",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who wrote Romeo and Juliet?",
+      "answers": [
+        "William Shakespeare",
+        "Charles Dickens",
+        "Mark Twain",
+        "Jane Austen"
+      ],
+      "hint": "Famous English playwright",
+      "explanation": "Shakespeare wrote Romeo and Juliet",
+      "tags": [
+        "literature"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_395",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What year did Columbus sail to America?",
+      "answers": [
+        "1492",
+        "1776",
+        "1620",
+        "1500"
+      ],
+      "hint": "Late 1400s",
+      "explanation": "Columbus sailed in 1492",
+      "tags": [
+        "exploration"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_easy_396",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is an adjective?",
+      "answers": [
+        "Describing word",
+        "Action word",
+        "Person or thing",
+        "Connecting word"
+      ],
+      "hint": "Tells about noun",
+      "explanation": "Adjectives describe nouns",
+      "tags": [
+        "grammar"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_geography_easy_397",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the capital of France?",
+      "answers": [
+        "Paris",
+        "London",
+        "Rome",
+        "Berlin"
+      ],
+      "hint": "City of lights",
+      "explanation": "Paris is capital of France",
+      "tags": [
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_history_medium_398",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Who invented the light bulb?",
+      "answers": [
+        "Thomas Edison",
+        "Benjamin Franklin",
+        "Nikola Tesla",
+        "Alexander Bell"
+      ],
+      "hint": "American inventor",
+      "explanation": "Edison invented practical light bulb",
+      "tags": [
+        "inventions"
+      ],
+      "provenance": {
+        "source": "educational-commons",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    },
+    {
+      "id": "q_language_medium_399",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a synonym?",
+      "answers": [
+        "Same meaning word",
+        "Opposite word",
+        "Rhyming word",
+        "Long word"
+      ],
+      "hint": "Similar meaning",
+      "explanation": "Synonyms mean the same thing",
+      "tags": [
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "public-domain",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-15T20:48:10.024Z",
+        "curator": "content-pipeline-v1"
+      }
+    }
+  ]
+}
