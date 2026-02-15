@@ -9,7 +9,7 @@ import { perfStats, perfSmooth } from './perf';
 import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
-import { IsometricRenderer, type Camera } from './render';
+import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, type ChunkData, type BorderConstraints } from './gen';
@@ -628,6 +628,7 @@ function update(state: GameState, input: InputManager): void {
       if (!advanceDialog(state.ui)) {
         closeDialog(state.ui);
         cancelSpeech(state.voice); // Stop voice on dialog close (#76)
+        setDialogNpc(null); // Stop mouth animation (#113)
         playSfx(state.sfx, 'dialog_close');
         // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
         if (state.pendingQuiz) {
@@ -652,6 +653,7 @@ function update(state: GameState, input: InputManager): void {
       } else {
         playSfx(state.sfx, 'dialog_advance');
         // Speak the new dialog line (#76)
+        setDialogNpc(_lastDialogNpcId); // Reset mouth cycle for new line (#113)
         const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
         if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : _lastDialogNpcId);
       }
@@ -913,6 +915,7 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       playSfx(state.sfx, 'dialog_open');
       // Speak greeting line (#76)
       _lastDialogNpcId = result.npcId;
+      setDialogNpc(result.npcId); // Start mouth animation (#113)
       speakLine(state.voice, result.greeting, result.npcId);
 
       // Feed NPC greeting into entropy pool (#4)
@@ -1812,6 +1815,14 @@ async function main(): Promise<void> {
     getNpcSprite,
     hasNpcSprite,
     NPC_APPEARANCES,
+    // NPC mouth animation (#113)
+    setDialogNpc,
+    getDialogState: () => ({
+      active: state.ui.dialog.active,
+      npcName: state.ui.dialog.npcName,
+      currentLine: state.ui.dialog.currentLine,
+      lastDialogNpcId: _lastDialogNpcId,
+    }),
     // Quiz streak helpers (#103)
     getStreakDebug: () => getStreakDebugInfo(state.streak),
     getStreakState: () => state.streak,

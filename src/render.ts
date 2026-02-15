@@ -55,6 +55,45 @@ interface DrawCmd {
   npcFlipX?: boolean;
 }
 
+// ─── NPC Mouth Animation (#113) ─────────────────────────────
+// Terrence-and-Philip style mouth flapping during dialog.
+// Module-level state — zero allocation in hot path.
+const MOUTH_CYCLE: MouthState[] = ['closed', 'open', 'wide', 'open'];
+const MOUTH_FRAME_MS = 180; // ms per mouth frame
+let _dialogNpcId: string | null = null;    // npcId of NPC currently in dialog
+let _mouthCycleIdx = 0;                     // index into MOUTH_CYCLE
+let _mouthLastTick = 0;                     // timestamp of last mouth advance
+let _headBobPhase = 0;                      // head bob oscillation phase (radians)
+
+/** Set the NPC currently speaking (pass null when dialog closes). */
+export function setDialogNpc(npcId: string | null): void {
+  _dialogNpcId = npcId;
+  _mouthCycleIdx = 0;
+  _mouthLastTick = performance.now();
+  _headBobPhase = 0;
+}
+
+/** Get current mouth state for the given NPC cell (hot path — no alloc). */
+function getNpcMouthState(cellNpcId: string | undefined): MouthState {
+  if (!cellNpcId || cellNpcId !== _dialogNpcId) return 'closed';
+  // Advance mouth cycle based on elapsed time
+  const now = performance.now();
+  const elapsed = now - _mouthLastTick;
+  if (elapsed >= MOUTH_FRAME_MS) {
+    const steps = Math.floor(elapsed / MOUTH_FRAME_MS);
+    _mouthCycleIdx = (_mouthCycleIdx + steps) % MOUTH_CYCLE.length;
+    _mouthLastTick = now - (elapsed % MOUTH_FRAME_MS); // keep remainder
+  }
+  return MOUTH_CYCLE[_mouthCycleIdx];
+}
+
+/** Get head bob Y offset for speaking NPC (1-2px vertical oscillation). */
+function getHeadBob(cellNpcId: string | undefined): number {
+  if (!cellNpcId || cellNpcId !== _dialogNpcId) return 0;
+  _headBobPhase += 0.05; // advance per render call
+  return Math.sin(_headBobPhase) * 1.5; // ±1.5px
+}
+
 // Pre-allocated DrawCmd pool for JS render path (avoids GC pressure)
 const JS_CMD_POOL_SIZE = 8192;
 const jsPool: DrawCmd[] = [];
@@ -325,14 +364,15 @@ export class IsometricRenderer {
             if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
               // Determine facing: stored on cell if set, else face toward player
               const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
-              // Mouth state: future hook for dialog animation
-              const mouth: MouthState = 'closed';
+              // Mouth animation: cycle during active dialog (#113)
+              const mouth: MouthState = getNpcMouthState(cell.npcId);
+              const headBob = getHeadBob(cell.npcId);
               const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey;
               cmd.type = CMD_NPC;
               cmd.emoji = def.emoji; // fallback
-              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = 0;
+              cmd.sx = jsx; cmd.sy = drawSy + headBob; cmd.scale = drawScale; cmd.tint = 0;
               cmd.shadow = def.shadow;
               cmd.npcImg = npcImg;
               cmd.npcFlipX = facing === 'west';
