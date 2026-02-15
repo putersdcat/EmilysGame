@@ -5,7 +5,8 @@
  */
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './config/game.config';
-import { getBiome } from './config/biomes.config';
+import { getBiome, BIOME_DEFS } from './config/biomes.config';
+import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, type Camera } from './render';
 import { InputManager } from './input';
@@ -1574,6 +1575,9 @@ async function main(): Promise<void> {
     getCycleProgress,
     toggleFlashlight,
     state,
+    // Asset/biome metadata (#58)
+    getAssetDefs: () => ASSET_DEFS,
+    getBiomeDefs: () => BIOME_DEFS,
     // Status helpers (#70)
     getDebuffs: () => getDebuffs(state.status),
     useStatusItem: (itemId: string) => {

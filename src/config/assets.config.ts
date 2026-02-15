@@ -221,6 +221,140 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.65, shadow: true, walkable: false, interactable: true,
     description: 'Mysterious black cat',
   },
+
+  // --- Farm Animals (ambient decoration, walkable) (#58) ---
+  chicken: {
+    emoji: '🐔', category: 'plant', height: 1, layer: 'base',
+    scale: 0.5, shadow: false, walkable: true, interactable: false,
+    description: 'Chicken pecking around',
+  },
+  rooster: {
+    emoji: '🐓', category: 'plant', height: 1, layer: 'base',
+    scale: 0.55, shadow: false, walkable: true, interactable: false,
+    description: 'Rooster strutting',
+  },
+  pig: {
+    emoji: '🐖', category: 'plant', height: 2, layer: 'base',
+    scale: 0.6, shadow: true, walkable: true, interactable: false,
+    description: 'Pig rooting around',
+  },
+  cow: {
+    emoji: '🐄', category: 'plant', height: 3, layer: 'mid',
+    scale: 0.75, shadow: true, walkable: true, interactable: false,
+    description: 'Cow grazing',
+  },
+  sheep: {
+    emoji: '🐑', category: 'plant', height: 2, layer: 'base',
+    scale: 0.6, shadow: true, walkable: true, interactable: false,
+    description: 'Fluffy sheep',
+  },
+  goat: {
+    emoji: '🐐', category: 'plant', height: 2, layer: 'base',
+    scale: 0.6, shadow: true, walkable: true, interactable: false,
+    description: 'Playful goat',
+  },
+  rabbit: {
+    emoji: '🐇', category: 'plant', height: 1, layer: 'base',
+    scale: 0.4, shadow: false, walkable: true, interactable: false,
+    description: 'Wild rabbit',
+  },
+  duck: {
+    emoji: '🦆', category: 'plant', height: 1, layer: 'base',
+    scale: 0.5, shadow: false, walkable: true, interactable: false,
+    description: 'Duck waddling',
+  },
+  fox: {
+    emoji: '🦊', category: 'plant', height: 2, layer: 'mid',
+    scale: 0.55, shadow: true, walkable: true, interactable: false,
+    description: 'Sly fox',
+  },
+  deer: {
+    emoji: '🦌', category: 'plant', height: 3, layer: 'mid',
+    scale: 0.7, shadow: true, walkable: true, interactable: false,
+    description: 'Graceful deer',
+  },
+  horse: {
+    emoji: '🐎', category: 'plant', height: 4, layer: 'mid',
+    scale: 0.8, shadow: true, walkable: true, interactable: false,
+    description: 'Horse galloping',
+  },
+  dog: {
+    emoji: '🐕', category: 'plant', height: 2, layer: 'base',
+    scale: 0.55, shadow: true, walkable: true, interactable: false,
+    description: 'Friendly dog',
+  },
+
+  // --- Additional Plants (#58) ---
+  tulip: {
+    emoji: '🌷', category: 'plant', height: 1, layer: 'base',
+    scale: 0.5, shadow: false, walkable: true, interactable: false,
+    description: 'Tulip',
+  },
+  clover: {
+    emoji: '🍀', category: 'plant', height: 0, layer: 'base',
+    scale: 0.4, shadow: false, walkable: true, interactable: false,
+    description: 'Lucky clover patch',
+  },
+  wheat: {
+    emoji: '🌾', category: 'plant', height: 2, layer: 'base',
+    scale: 0.6, shadow: false, walkable: true, interactable: false,
+    description: 'Wheat sheaf',
+  },
+  cactus: {
+    emoji: '🌵', category: 'plant', height: 4, layer: 'mid',
+    scale: 0.8, shadow: true, walkable: false, interactable: false,
+    description: 'Prickly cactus (blocks movement)',
+  },
+  seedling: {
+    emoji: '🌱', category: 'plant', height: 0, layer: 'base',
+    scale: 0.35, shadow: false, walkable: true, interactable: false,
+    description: 'Tiny seedling',
+  },
+  wilted_flower: {
+    emoji: '🥀', category: 'plant', height: 1, layer: 'base',
+    scale: 0.45, shadow: false, walkable: true, interactable: false,
+    description: 'Wilted rose',
+  },
+  maple_leaf: {
+    emoji: '🍁', category: 'plant', height: 0, layer: 'base',
+    scale: 0.35, shadow: false, walkable: true, interactable: false,
+    description: 'Fallen maple leaf',
+  },
+
+  // --- Structure emojis (#58) ---
+  house: {
+    emoji: '🏠', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.4, shadow: true, walkable: false, interactable: true,
+    description: 'Small house',
+  },
+  hut: {
+    emoji: '🛖', category: 'obstacle', height: 6, layer: 'high',
+    scale: 1.2, shadow: true, walkable: false, interactable: true,
+    description: 'Rustic hut',
+  },
+  shop: {
+    emoji: '🏪', category: 'obstacle', height: 7, layer: 'high',
+    scale: 1.3, shadow: true, walkable: false, interactable: true,
+    description: 'Small shop',
+  },
+  fence: {
+    emoji: '🚧', category: 'obstacle', height: 2, layer: 'mid',
+    scale: 0.7, shadow: false, walkable: false, interactable: false,
+    description: 'Wooden fence segment',
+  },
+
+  // --- Effects & particles (#58) ---
+  sparkle: {
+    emoji: '✨', category: 'plant', height: 0, layer: 'overlay',
+    scale: 0.4, shadow: false, walkable: true, interactable: false,
+    description: 'Magical sparkle',
+  },
+  campfire: {
+    emoji: '🔥', category: 'interactive', height: 2, layer: 'mid',
+    scale: 0.7, shadow: true, walkable: false, interactable: false,
+    description: 'Small campfire',
+  },
+
   // Biome-specific NPCs (Doc 05 §4.2)
   npc_farmer: {
     emoji: '👨\u200D🌾', category: 'npc', height: 4, layer: 'mid',
