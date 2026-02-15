@@ -355,6 +355,11 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.7, shadow: true, walkable: false, interactable: true,
     description: 'Small campfire',
   },
+  biomass_fire: {
+    emoji: '🔥', category: 'interactive', height: 3, layer: 'mid',
+    scale: 0.8, shadow: true, walkable: false, interactable: false,
+    description: 'Smoldering biomass pile (greenish glow)',
+  },
 
   // Biome-specific NPCs (Doc 05 §4.2)
   npc_farmer: {

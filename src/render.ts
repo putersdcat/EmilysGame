@@ -12,6 +12,7 @@ import { getIsoTile, type TileType } from './tiles';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
 import { cellJitter } from './utils';
+import { FIRE_VARIANTS, getFireAnimation } from './config/fire.config';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
@@ -63,6 +64,7 @@ let jsPoolIdx = 0;
 // Instead of iterating all 1024 cells per chunk per frame,
 // we iterate only ~50-100 non-base objects. Huge perf win.
 interface ObjectCellRef { cx: number; cy: number; }
+let _renderFrameCount = 0;
 const objectCellCache = new Map<string, ObjectCellRef[]>();
 
 function getObjectCells(key: string, chunk: ChunkData): ObjectCellRef[] {
@@ -238,6 +240,7 @@ export class IsometricRenderer {
     // --- Layer 1: cached base terrain (one drawImage per chunk) ---
     // Data-driven draw commands using pre-allocated pool (no per-frame alloc)
     jsPoolIdx = 0;
+    _renderFrameCount++;
     const size = WORLD_CONFIG.chunkSize;
     const maxCmds = RENDER_CONFIG.maxDrawCmds; // draw call budget for graceful degradation
 
@@ -285,17 +288,26 @@ export class IsometricRenderer {
           // Draw elevated (non-base) objects
           if (!isBase) {
             const depthKey = gy + def.height * 0.1;
+            // Fire animation: scale pulse + vertical wobble (#81)
+            const fireVariant = FIRE_VARIANTS[cell.assetKey];
+            let drawScale = def.scale;
+            let drawSy = jsy;
+            if (fireVariant) {
+              const fa = getFireAnimation(fireVariant, gx, gy, _renderFrameCount);
+              drawScale *= fa.scaleMultiplier;
+              drawSy += fa.dyOffset;
+            }
             if (def.tileType) {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-              cmd.sx = jsx; cmd.sy = jsy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
+              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.tileType = def.tileType; cmd.shadow = def.shadow;
             } else {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey;
               cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
               cmd.emoji = def.emoji;
-              cmd.sx = jsx; cmd.sy = jsy; cmd.scale = def.scale; cmd.tint = biome.tintHue;
+              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.shadow = def.shadow;
             }
           }

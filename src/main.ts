@@ -40,6 +40,7 @@ import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './local-lights';
+import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -1394,28 +1395,39 @@ function renderFrame(
   // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
   tickLighting();
 
-  // Local lights: bonfire positions cached per chunk to avoid 5625+ cell scans every frame (#79)
+  // Local lights: fire positions cached per chunk to avoid 5625+ cell scans every frame (#79, #81)
   clearLights();
   const cs2 = WORLD_CONFIG.chunkSize;
   for (const [, chunk] of state.chunks) {
     if (!chunk.generated) continue;
-    // lazily cache bonfire positions per chunk
-    let bonfires = (chunk as any)._bonfireCache as { gx: number; gy: number }[] | undefined;
-    if (bonfires === undefined) {
-      bonfires = [];
+    // lazily cache fire positions per chunk (bonfire, campfire, biomass_fire)
+    let fires = (chunk as any)._fireCache as { gx: number; gy: number; key: string }[] | undefined;
+    if (fires === undefined) {
+      fires = [];
       const baseGX = chunk.chunkX * cs2;
       const baseGY = chunk.chunkY * cs2;
       for (let cy = 0; cy < cs2; cy++) {
         for (let cx = 0; cx < cs2; cx++) {
-          if (chunk.cells[cy][cx].assetKey === 'bonfire') {
-            bonfires.push({ gx: baseGX + cx, gy: baseGY + cy });
+          const ak = chunk.cells[cy][cx].assetKey;
+          if (FIRE_ASSET_KEYS.has(ak)) {
+            fires.push({ gx: baseGX + cx, gy: baseGY + cy, key: ak });
           }
         }
       }
-      (chunk as any)._bonfireCache = bonfires;
+      (chunk as any)._fireCache = fires;
     }
-    for (let i = 0; i < bonfires.length; i++) {
-      addPointLight(bonfires[i].gx, bonfires[i].gy);
+    for (let i = 0; i < fires.length; i++) {
+      const f = fires[i];
+      const variant = FIRE_VARIANTS[f.key];
+      if (variant) {
+        addPointLight(f.gx, f.gy, {
+          radius: variant.lightRadius,
+          color: variant.lightColor,
+          intensity: variant.lightIntensity,
+        });
+      } else {
+        addPointLight(f.gx, f.gy);
+      }
     }
   }
   addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);

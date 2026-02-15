@@ -1349,44 +1349,88 @@ function placeBonfires(
   const MIN_SPACING = 6; // Minimum grid distance between bonfires
   const placed: Array<{ x: number; y: number }> = [];
 
+  // Fire variant selection weights by biome (#81)
+  const FIRE_WEIGHTS: Record<string, Array<{ key: string; weight: number }>> = {
+    meadow:  [{ key: 'bonfire', weight: 0.5 }, { key: 'campfire', weight: 0.4 }, { key: 'biomass_fire', weight: 0.1 }],
+    forest:  [{ key: 'bonfire', weight: 0.3 }, { key: 'campfire', weight: 0.3 }, { key: 'biomass_fire', weight: 0.4 }],
+    cave:    [{ key: 'bonfire', weight: 0.6 }, { key: 'campfire', weight: 0.3 }, { key: 'biomass_fire', weight: 0.1 }],
+    castle:  [{ key: 'bonfire', weight: 0.7 }, { key: 'campfire', weight: 0.2 }, { key: 'biomass_fire', weight: 0.1 }],
+  };
+
+  function pickFireVariant(): string {
+    const weights = FIRE_WEIGHTS[_biome.name] || FIRE_WEIGHTS.meadow;
+    const r = rng();
+    let cumulative = 0;
+    for (const w of weights) {
+      cumulative += w.weight;
+      if (r < cumulative) return w.key;
+    }
+    return 'bonfire';
+  }
+
+  // Safe-zone check: fire must be near a structure or NPC (#81)
+  function isNearStructure(cx: number, cy: number): boolean {
+    const radius = 4;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const nx = cx + dx, ny = cy + dy;
+        if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
+        const ak = cells[ny][nx].assetKey;
+        if (ak === 'house' || ak === 'hut' || ak === 'shop' || ak === 'fence' ||
+            cells[ny][nx].npcId) return true;
+      }
+    }
+    return false;
+  }
+
   // Collect candidate walkable cells away from edges
-  const candidates: Array<{ x: number; y: number }> = [];
+  const candidates: Array<{ x: number; y: number; nearStructure: boolean }> = [];
   for (let y = 3; y < size - 3; y++) {
     for (let x = 3; x < size - 3; x++) {
       const cell = cells[y][x];
       if (!cell.walkable) continue;
-      // Prefer non-terrain ground (grass/dirt) but allow any walkable
       if (cell.assetKey === 'water' || cell.assetKey === 'bridge') continue;
-      // Check that surrounding cells have at least 3 walkable neighbors (open area)
       let walkableNeighbors = 0;
-      for (const [dx, dy] of [[-1,0],[1,0],[0,-1],[0,1]] as const) {
-        const nx = x + dx, ny = y + dy;
+      for (const [ddx, ddy] of [[-1,0],[1,0],[0,-1],[0,1]] as const) {
+        const nx = x + ddx, ny = y + ddy;
         if (ny >= 0 && ny < size && nx >= 0 && nx < size && cells[ny][nx].walkable) {
           walkableNeighbors++;
         }
       }
-      if (walkableNeighbors >= 3) candidates.push({ x, y });
+      if (walkableNeighbors >= 3) {
+        candidates.push({ x, y, nearStructure: isNearStructure(x, y) });
+      }
     }
   }
 
-  // Shuffle candidates
-  for (let i = candidates.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-  }
+  // Sort: prefer structure-adjacent candidates first (#81 safe-zone rule)
+  candidates.sort((a, b) => (b.nearStructure ? 1 : 0) - (a.nearStructure ? 1 : 0));
 
-  // Place bonfires with spacing constraint
-  for (const c of candidates) {
+  // Shuffle within each group (structure-adjacent first, then non-adjacent)
+  const split = candidates.findIndex(c => !c.nearStructure);
+  const structureCands = split === -1 ? candidates : candidates.slice(0, split);
+  const openCands = split === -1 ? [] : candidates.slice(split);
+  for (const group of [structureCands, openCands]) {
+    for (let i = group.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [group[i], group[j]] = [group[j], group[i]];
+    }
+  }
+  const sortedCandidates = [...structureCands, ...openCands];
+
+  // Place fires with spacing constraint
+  for (const c of sortedCandidates) {
     if (placed.length >= target) break;
     const tooClose = placed.some(p =>
       Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < MIN_SPACING
     );
     if (tooClose) continue;
 
+    const fireKey = pickFireVariant();
     cells[c.y][c.x] = {
-      assetKey: 'bonfire',
+      assetKey: fireKey,
       walkable: false,
-      interactable: false,
+      interactable: fireKey === 'campfire', // campfires are interactable
     };
     placed.push(c);
   }

@@ -55,7 +55,7 @@ export const BIOME_DEFS: BiomeDef[] = [
       rabbit: 0.04, fox: 0.03, deer: 0.04, horse: 0.02, dog: 0.01,
       sparkle: 0.01, stump: 0.02,
     },
-    obstacleWeights: { tree: 0.25, tree_pine: 0.25, bush: 0.2, rock: 0.1, barricade: 0.05, quiz_gate: 0.05, hut: 0.05, campfire: 0.05 },
+    obstacleWeights: { tree: 0.25, tree_pine: 0.25, bush: 0.2, rock: 0.1, barricade: 0.05, quiz_gate: 0.05, hut: 0.05, campfire: 0.04, biomass_fire: 0.01 },
     featureWeights: { chest: 0.2, npc_merchant: 0.1, npc_villager: 0.1, coin: 0.4, mushroom: 0.2 },
     collectibleRate: 0.8,
     npcRate: 0.7,
