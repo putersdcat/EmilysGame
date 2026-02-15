@@ -48,6 +48,8 @@ export interface SaveData {
   sfxSettings?: { sfxVolume: number; ambienceVolume: number; sfxMuted: boolean; ambienceMuted: boolean; sfxEnabled: boolean };
   /** NPC voice settings (#76) */
   voiceSettings?: { enabled: boolean; volume: number };
+  /** Quiz streak history for adaptive difficulty (#103) */
+  streakHistory?: ('correct' | 'wrong' | 'idk')[];
 }
 
 export interface ResolvedCell {

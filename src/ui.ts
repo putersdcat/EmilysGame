@@ -343,7 +343,14 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
         getShadowDebugInfo(),
     `Blend: intensity=${getBlendIntensity().toFixed(2)}`,
     (() => { const ps = getParticleStats(); return `Particles: ${ps.total} (\u{1F98B}${ps.butterfly} \u{2728}${ps.sparkle} \u{1F343}${ps.leaf} \u{1F426}${ps.bird})`; })(),
-  ].map((l) => `<span>${l}</span>`).join('');
+    // Streak debug (#103) — read from __gameDebug if available
+    (() => {
+      const dbg = (window as any).__gameDebug;
+      if (!dbg?.getStreakDebug) return '';
+      const s = dbg.getStreakDebug();
+      return `Streak: ${s.zone} cc:${s.consecutiveCorrect} cw:${s.consecutiveWrong} wr:${isNaN(s.windowRate) ? '-' : (s.windowRate * 100).toFixed(0) + '%'} [${s.lastReason}]`;
+    })(),
+  ].filter(Boolean).map((l) => `<span>${l}</span>`).join('');
 }
 
 // ─── Sidebar Sync ────────────────────────────────────────────

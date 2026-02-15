@@ -2,8 +2,9 @@
  * quiz.ts - Quiz overlay system.
  * Manages quiz flow: pick question, present choices, verify answer,
  * optionally rephrase via LLM.
- * Difficulty scales with player distance from spawn (Doc 05 §9.1).
- * TODO: DOC - quiz flow diagram
+ * Difficulty scales with player distance from spawn (Doc 05 §9.1)
+ * and adapts via streak-aware modulation (#103).
+ * TODO: DOC - quiz flow diagram, streak model
  */
 
 import { getQuestions, type QuizQuestion, type QuizDifficulty } from './config/quiz.config';
@@ -14,6 +15,174 @@ import { shuffle } from './utils';
 // ─── Difficulty Scaling ──────────────────────────────────────
 
 const DIFFICULTY_ORDER: QuizDifficulty[] = ['easy', 'medium', 'hard'];
+
+// ─── Streak-Aware Difficulty (#103) ──────────────────────────
+
+/** Rolling window size for streak tracking */
+const STREAK_WINDOW = 10;
+/** Consecutive correct answers to trigger upshift */
+const HOT_STREAK_THRESHOLD = 4;
+/** Consecutive wrong answers to trigger downshift */
+const COLD_STREAK_THRESHOLD = 3;
+/** Window correct rate above which we consider hot */
+const HOT_RATE_THRESHOLD = 0.80;
+/** Window correct rate below which we consider cold */
+const COLD_RATE_THRESHOLD = 0.30;
+/** Correct answers after cold streak to allow re-ramp */
+const RECOVERY_CORRECT_NEEDED = 2;
+
+export type QuizOutcome = 'correct' | 'wrong' | 'idk';
+export type StreakZone = 'hot' | 'cold' | 'normal';
+
+export interface StreakState {
+  /** Rolling window of recent outcomes (most recent at end) */
+  history: QuizOutcome[];
+  /** Current consecutive correct answers (resets on wrong) */
+  consecutiveCorrect: number;
+  /** Current consecutive wrong answers (resets on correct) */
+  consecutiveWrong: number;
+  /** Whether player is in recovery from a cold streak */
+  recovering: boolean;
+  /** Correct answers accumulated during recovery phase */
+  recoveryCorrect: number;
+  /** Reason code for last difficulty modulation decision */
+  lastReason: string;
+}
+
+/** Create initial streak state */
+export function createStreakState(): StreakState {
+  return {
+    history: [],
+    consecutiveCorrect: 0,
+    consecutiveWrong: 0,
+    recovering: false,
+    recoveryCorrect: 0,
+    lastReason: 'initial',
+  };
+}
+
+/**
+ * Record a quiz outcome and update streak counters.
+ * "I don't know" is neutral — doesn't affect streak but is recorded.
+ */
+export function recordQuizResult(streak: StreakState, outcome: QuizOutcome): void {
+  streak.history.push(outcome);
+  // Trim to window size
+  if (streak.history.length > STREAK_WINDOW) {
+    streak.history.shift();
+  }
+
+  if (outcome === 'correct') {
+    streak.consecutiveCorrect++;
+    streak.consecutiveWrong = 0;
+    if (streak.recovering) {
+      streak.recoveryCorrect++;
+      if (streak.recoveryCorrect >= RECOVERY_CORRECT_NEEDED) {
+        streak.recovering = false;
+        streak.recoveryCorrect = 0;
+      }
+    }
+  } else if (outcome === 'wrong') {
+    streak.consecutiveWrong++;
+    streak.consecutiveCorrect = 0;
+    // Enter recovery mode after cold streak threshold
+    if (streak.consecutiveWrong >= COLD_STREAK_THRESHOLD) {
+      streak.recovering = true;
+      streak.recoveryCorrect = 0;
+    }
+  }
+  // 'idk' is neutral — no streak effect
+}
+
+/**
+ * Compute the window-based correct rate (ignoring 'idk').
+ * Returns NaN if no scored answers in window.
+ */
+export function getWindowRate(streak: StreakState): number {
+  const scored = streak.history.filter(o => o !== 'idk');
+  if (scored.length === 0) return NaN;
+  const correct = scored.filter(o => o === 'correct').length;
+  return correct / scored.length;
+}
+
+/** Classify current streak zone */
+export function getStreakZone(streak: StreakState): StreakZone {
+  // Check consecutive thresholds first (strongest signal)
+  if (streak.consecutiveCorrect >= HOT_STREAK_THRESHOLD) return 'hot';
+  if (streak.consecutiveWrong >= COLD_STREAK_THRESHOLD) return 'cold';
+  // Then check window rate if enough data
+  const rate = getWindowRate(streak);
+  if (!isNaN(rate) && streak.history.length >= 5) {
+    if (rate >= HOT_RATE_THRESHOLD) return 'hot';
+    if (rate <= COLD_RATE_THRESHOLD) return 'cold';
+  }
+  return 'normal';
+}
+
+/**
+ * Modulate a base difficulty using streak state.
+ * Returns adjusted difficulty and updates streak.lastReason.
+ * Rules:
+ *  - Hot streak → upshift +1 (bounded at 'hard')
+ *  - Cold streak → downshift -1 (bounded at 'easy')
+ *  - Recovering → force easy until recovery complete
+ *  - Normal → no change
+ */
+export function modulateDifficulty(
+  baseDifficulty: QuizDifficulty,
+  streak: StreakState,
+): QuizDifficulty {
+  const baseIdx = DIFFICULTY_ORDER.indexOf(baseDifficulty);
+  const zone = getStreakZone(streak);
+
+  // Recovery override: force downshift regardless of zone
+  if (streak.recovering) {
+    const recoveryIdx = Math.max(0, baseIdx - 1);
+    const result = DIFFICULTY_ORDER[recoveryIdx];
+    streak.lastReason = `recovery(${streak.recoveryCorrect}/${RECOVERY_CORRECT_NEEDED})→${result}`;
+    return result;
+  }
+
+  switch (zone) {
+    case 'hot': {
+      const upIdx = Math.min(DIFFICULTY_ORDER.length - 1, baseIdx + 1);
+      const result = DIFFICULTY_ORDER[upIdx];
+      streak.lastReason = `hot(${streak.consecutiveCorrect}cc,${(getWindowRate(streak) * 100).toFixed(0)}%wr)→${result}`;
+      return result;
+    }
+    case 'cold': {
+      const downIdx = Math.max(0, baseIdx - 1);
+      const result = DIFFICULTY_ORDER[downIdx];
+      streak.lastReason = `cold(${streak.consecutiveWrong}cw,${(getWindowRate(streak) * 100).toFixed(0)}%wr)→${result}`;
+      return result;
+    }
+    default: {
+      streak.lastReason = `normal→${baseDifficulty}`;
+      return baseDifficulty;
+    }
+  }
+}
+
+/** Get debug-friendly streak summary */
+export function getStreakDebugInfo(streak: StreakState): {
+  zone: StreakZone;
+  windowRate: number;
+  consecutiveCorrect: number;
+  consecutiveWrong: number;
+  recovering: boolean;
+  historyLength: number;
+  lastReason: string;
+} {
+  return {
+    zone: getStreakZone(streak),
+    windowRate: getWindowRate(streak),
+    consecutiveCorrect: streak.consecutiveCorrect,
+    consecutiveWrong: streak.consecutiveWrong,
+    recovering: streak.recovering,
+    historyLength: streak.history.length,
+    lastReason: streak.lastReason,
+  };
+}
 
 /**
  * Map chunk Manhattan distance from spawn to a base difficulty.

@@ -17,7 +17,7 @@ import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
@@ -136,6 +136,8 @@ interface GameState {
   sfx: SfxState;
   // NPC voice state (#76)
   voice: VoiceState;
+  // Quiz streak state (#103)
+  streak: StreakState;
 }
 
 // Track NPC id for voice lines during dialog (#76)
@@ -410,6 +412,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     music: createMusicState(),
     sfx: createSfxState(),
     voice: createVoiceState(),
+    streak: createStreakState(),
   };
 
   // Sync unlocked cosmetics to customizer
@@ -567,6 +570,8 @@ function update(state: GameState, input: InputManager): void {
         }
       } else {
         quizSubmit(state.quiz);
+        // Record outcome for streak tracking (#103)
+        recordQuizResult(state.streak, state.quiz.result as 'correct' | 'wrong' | 'idk');
         // Feed quiz answer text into entropy pool (#4)
         if (state.quiz.question && state.quiz.selectedIndex >= 0) {
           const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
@@ -752,7 +757,8 @@ function update(state: GameState, input: InputManager): void {
       checkCosmeticUnlocks(state);
       // Queue a quiz if species has a quiz category
       if (species.quizCategory) {
-        const diff = getDifficultyForPosition(state.player.x, state.player.y);
+        const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
+        const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
         state.pendingQuiz = {
           difficulty: diff,
           npcId: `wildlife_${species.id}`,
@@ -872,10 +878,12 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
 
       // If NPC can quiz, queue quiz to start when dialog closes (not via setTimeout race)
       // Difficulty = max(NPC preference, distance-based scaling) — Doc 05 §9.1
+      // Then modulate via streak (#103)
       if (persona?.canQuiz) {
         const bias = getQuizBias(state.knowledge);
         const distDiff = getDifficultyForPosition(state.player.x, state.player.y);
-        const finalDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
+        const baseDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
+        const finalDifficulty = modulateDifficulty(baseDifficulty, state.streak);
         state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
       }
 
@@ -901,7 +909,8 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       playSfx(state.sfx, 'dialog_open');
       _lastDialogNpcId = null;
       speakLine(state.voice, result.message, null);
-      const gateDiff = getDifficultyForPosition(state.player.x, state.player.y);
+      const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
+      const gateDiff = modulateDifficulty(baseGateDiff, state.streak); // #103 streak modulation
       const gateBias = getQuizBias(state.knowledge);
       state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
       state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
@@ -970,6 +979,7 @@ function buildSaveData(state: GameState): SaveData {
     musicSettings: serializeMusicSettings(state.music),
     sfxSettings: serializeSfxSettings(state.sfx),
     voiceSettings: serializeVoiceSettings(state.voice),
+    streakHistory: [...state.streak.history],
   };
 }
 
@@ -1012,6 +1022,13 @@ function applySaveData(state: GameState, data: SaveData): void {
   if (data.sfxSettings) deserializeSfxSettings(state.sfx, data.sfxSettings);
   // Restore voice settings (#76)
   if (data.voiceSettings) deserializeVoiceSettings(state.voice, data.voiceSettings);
+  // Restore streak history (#103)
+  if (data.streakHistory) {
+    state.streak = createStreakState();
+    for (const outcome of data.streakHistory) {
+      recordQuizResult(state.streak, outcome);
+    }
+  }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -1149,6 +1166,7 @@ function resetGameState(state: GameState): void {
   state.quiz = createQuizState();
   state.knowledge = createKnowledgeState();
   state.quizStats = { answered: 0, correct: 0 };
+  state.streak = createStreakState(); // #103 reset streak
   state.pendingQuiz = null;
   state.pendingGateQuiz = null;
   state.trade = createTradeState();
@@ -1750,6 +1768,9 @@ async function main(): Promise<void> {
     getNpcSprite,
     hasNpcSprite,
     NPC_APPEARANCES,
+    // Quiz streak helpers (#103)
+    getStreakDebug: () => getStreakDebugInfo(state.streak),
+    getStreakState: () => state.streak,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
