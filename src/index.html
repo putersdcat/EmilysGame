@@ -219,6 +219,48 @@
       cursor: pointer;
     }
 
+    /* SFX & Ambience controls (#75) */
+    .sb-sfx-controls { padding: 2px 0; }
+    .sb-sfx-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px;
+    }
+    .sb-sfx-label {
+      font-size: 0.65rem;
+      color: #778;
+      min-width: 50px;
+    }
+    .sb-sfx-volume {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(100,100,140,0.3);
+      border-radius: 2px;
+      outline: none;
+    }
+    .sb-sfx-volume::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #aaddff;
+      cursor: pointer;
+    }
+    .sb-sfx-btn {
+      background: none;
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 4px;
+      color: #ccd;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 2px 4px;
+      min-width: 24px;
+      text-align: center;
+    }
+    .sb-sfx-btn:hover { background: rgba(100,100,140,0.3); }
+
     .sb-inv-slot .qty {
       position: absolute;
       bottom: 1px;
@@ -1267,6 +1309,22 @@
         <div class="sb-music-volume-row">
           <span class="sb-music-vol-label">Vol</span>
           <input type="range" id="musicVolume" class="sb-music-volume" min="0" max="100" value="50" title="Music volume">
+        </div>
+      </div>
+      <!-- SFX & Ambience (#75) -->
+      <div class="sb-section" id="sbSfxSection">
+        <div class="sb-header"><span class="icon">🔔</span> Sound FX</div>
+        <div class="sb-sfx-controls">
+          <div class="sb-sfx-row">
+            <span class="sb-sfx-label">SFX</span>
+            <input type="range" id="sfxVolume" class="sb-sfx-volume" min="0" max="100" value="70" title="SFX volume">
+            <button id="btnSfxMute" class="sb-sfx-btn" title="Mute SFX">🔊</button>
+          </div>
+          <div class="sb-sfx-row">
+            <span class="sb-sfx-label">Ambience</span>
+            <input type="range" id="ambienceVolume" class="sb-sfx-volume" min="0" max="100" value="40" title="Ambience volume">
+            <button id="btnAmbienceMute" class="sb-sfx-btn" title="Mute ambience">🔊</button>
+          </div>
         </div>
       </div>
       <!-- Save/Load -->

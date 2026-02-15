@@ -44,6 +44,8 @@ export interface SaveData {
   unlockedCosmetics?: string[];
   /** Music settings (#74) */
   musicSettings?: { volume: number; muted: boolean; enabled: boolean };
+  /** SFX & ambience settings (#75) */
+  sfxSettings?: { sfxVolume: number; ambienceVolume: number; sfxMuted: boolean; ambienceMuted: boolean; sfxEnabled: boolean };
 }
 
 export interface ResolvedCell {

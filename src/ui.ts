@@ -19,6 +19,7 @@ import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
 import type { PlayerStatus } from './status';
 import type { MusicState } from './music';
+import type { SfxState } from './sfx';
 import { getDebuffs } from './status';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -675,5 +676,31 @@ export function syncMusicUI(music: MusicState): void {
 
   if (volSlider && document.activeElement !== volSlider) {
     volSlider.value = String(Math.round(music.settings.volume * 100));
+  }
+}
+// ─── SFX UI Sync (#75) ──────────────────────────────────────
+
+let _lastSfxSyncFrame = 0;
+
+export function syncSfxUI(sfx: SfxState): void {
+  // Throttle to every 10th call
+  if (++_lastSfxSyncFrame % 10 !== 0) return;
+
+  const sfxMuteBtn = document.getElementById('btnSfxMute');
+  const ambienceMuteBtn = document.getElementById('btnAmbienceMute');
+  const sfxSlider = document.getElementById('sfxVolume') as HTMLInputElement | null;
+  const ambSlider = document.getElementById('ambienceVolume') as HTMLInputElement | null;
+
+  if (sfxMuteBtn) {
+    sfxMuteBtn.textContent = sfx.settings.sfxMuted ? '🔇' : '🔊';
+  }
+  if (ambienceMuteBtn) {
+    ambienceMuteBtn.textContent = sfx.settings.ambienceMuted ? '🔇' : '🔊';
+  }
+  if (sfxSlider && document.activeElement !== sfxSlider) {
+    sfxSlider.value = String(Math.round(sfx.settings.sfxVolume * 100));
+  }
+  if (ambSlider && document.activeElement !== ambSlider) {
+    ambSlider.value = String(Math.round(sfx.settings.ambienceVolume * 100));
   }
 }

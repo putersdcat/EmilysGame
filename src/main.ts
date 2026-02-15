@@ -17,7 +17,7 @@ import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionRes
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, getDifficultyForPosition, blendDifficulty, type QuizState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, type UIState } from './ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
 import { getNpcPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
@@ -36,7 +36,7 @@ import { showCustomizer, createDefaultVariation, serializeVariation, deserialize
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
-import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
+import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './local-lights';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
@@ -65,6 +65,12 @@ import {
   getCurrentTrackInfo,
   type MusicState,
 } from './music';
+import {
+  createSfxState, playSfx, updateAmbience, stopAmbience,
+  setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
+  serializeSfxSettings, deserializeSfxSettings,
+  type SfxState,
+} from './sfx';
 import type { FacingPose } from './sprites';
 
 
@@ -116,6 +122,8 @@ interface GameState {
   unlockedCosmetics: string[];
   // Music state (#74)
   music: MusicState;
+  // SFX & ambience state (#75)
+  sfx: SfxState;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -380,6 +388,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     status: createPlayerStatus(),
     unlockedCosmetics: save?.unlockedCosmetics ?? [],
     music: createMusicState(),
+    sfx: createSfxState(),
   };
 
   // Sync unlocked cosmetics to customizer
@@ -402,6 +411,14 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     // Restore entropy buffer from auto-save (#4)
     if (save.entropyBuffer) {
       restoreEntropyBuffer(save.entropyBuffer);
+    }
+    // Restore music settings (#74)
+    if (save.musicSettings) {
+      state.music.settings = deserializeMusicSettings(save.musicSettings);
+    }
+    // Restore SFX settings (#75)
+    if (save.sfxSettings) {
+      deserializeSfxSettings(state.sfx, save.sfxSettings);
     }
   }
 
@@ -460,8 +477,8 @@ function update(state: GameState, input: InputManager): void {
 
   // --- Quiz Input (edge-detected) ---
   if (state.quiz.active) {
-    if (justKeys.up) quizNavigate(state.quiz, -1);
-    if (justKeys.down) quizNavigate(state.quiz, 1);
+    if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
+    if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.interact) {
       if (state.quiz.result !== 'pending') {
         if (state.quiz.result === 'correct') {
@@ -469,6 +486,7 @@ function update(state: GameState, input: InputManager): void {
           for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
           addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
           state.quizStats.correct++;
+          playSfx(state.sfx, 'quiz_correct');
           checkCosmeticUnlocks(state);
 
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
@@ -477,11 +495,15 @@ function update(state: GameState, input: InputManager): void {
             resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
             state.pendingGateQuiz = null;
             addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
+            playSfx(state.sfx, 'gate_open');
           }
         } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
           // Wrong answer — gate stays closed
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
+          playSfx(state.sfx, 'quiz_wrong');
+        } else if (state.quiz.result === 'wrong') {
+          playSfx(state.sfx, 'quiz_wrong');
         } else if (state.quiz.result === 'idk') {
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
@@ -536,17 +558,20 @@ function update(state: GameState, input: InputManager): void {
     if (justKeys.interact) {
       if (!advanceDialog(state.ui)) {
         closeDialog(state.ui);
+        playSfx(state.sfx, 'dialog_close');
         // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
         if (state.pendingQuiz) {
           const pq = state.pendingQuiz;
           state.pendingQuiz = null;
           startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
+          playSfx(state.sfx, 'quiz_start');
           // state.paused stays true for quiz
         } else if (state.pendingTrade) {
           // Open trade panel directly (no quiz pending)
           const persona = getNpcPersona(state.pendingTrade);
           state.pendingTrade = null;
           if (persona && openTrade(state.trade, persona)) {
+            playSfx(state.sfx, 'shop_open');
             // state.paused stays true for trade
           } else {
             state.paused = false;
@@ -554,6 +579,8 @@ function update(state: GameState, input: InputManager): void {
         } else {
           state.paused = false;
         }
+      } else {
+        playSfx(state.sfx, 'dialog_advance');
       }
     }
     input.endFrame();
@@ -562,12 +589,15 @@ function update(state: GameState, input: InputManager): void {
 
   // --- Trade Input (edge-detected) ---
   if (state.trade.active) {
-    if (justKeys.up) tradeNavigate(state.trade, 'up');
-    if (justKeys.down) tradeNavigate(state.trade, 'down');
+    if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
+    if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.interact) {
       const result = executeTrade(state.trade, state.inventory);
       if (result.ok) {
         addToast(state.ui, result.message, '#4caf50');
+        playSfx(state.sfx, 'shop_buy');
+      } else {
+        playSfx(state.sfx, 'shop_fail');
       }
       // Don't close — let player buy multiple items
     }
@@ -592,6 +622,9 @@ function update(state: GameState, input: InputManager): void {
     if (isWalkable(Math.round(newX), Math.round(newY), state.chunks)) {
       state.player.x = newX;
       state.player.y = newY;
+    } else {
+      // Wall bump SFX (#75) — debounce handles frame-spam
+      playSfx(state.sfx, 'wall_bump');
     }
 
     // Direction (left/right flip)
@@ -635,6 +668,7 @@ function update(state: GameState, input: InputManager): void {
     const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
     if (collected && collected.type === 'collect') {
       addToast(state.ui, collected.message, '#ffd700', 1200);
+      playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
     }
 
     // Camera follow (smooth)
@@ -676,6 +710,7 @@ function update(state: GameState, input: InputManager): void {
         species.fact,
       ]);
       state.paused = true;
+      playSfx(state.sfx, 'wildlife_discover');
       // Make creature flee after inspection
       entity.behavior = 'flee';
       entity.fleeCooldown = 180;
@@ -727,6 +762,15 @@ function update(state: GameState, input: InputManager): void {
     musicSetBiome(state.music, biomeId);
   }
 
+  // --- Ambience update (#75) — resolves based on time-of-day + weather ---
+  // Throttle to every 60th frame (~1s at 60fps) to avoid churn
+  if (state.frameCount % 60 === 0) {
+    const cycleProgress = getCycleProgress();
+    const timeSlot: 'day' | 'dusk' | 'night' = cycleProgress < 0.65 ? 'day' : cycleProgress < 0.80 ? 'dusk' : 'night';
+    const weatherInfo = getWeatherInfo();
+    updateAmbience(state.sfx, timeSlot, weatherInfo.type);
+  }
+
   // --- Auto-save every 30s ---
   if (state.frameCount % (60 * 30) === 0) {
     doSave(state);
@@ -760,18 +804,22 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
     case 'collect':
       state.inventory.addItem(result.itemId, 1);
       addToast(state.ui, result.message, '#ffd700');
+      playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
       break;
 
     case 'chest':
       for (const itemId of result.items) state.inventory.addItem(itemId, 1);
       addToast(state.ui, result.message, '#ffaa00');
+      playSfx(state.sfx, 'open_chest');
       break;
 
     case 'obstacle':
       if (result.resolved) {
         addToast(state.ui, result.message, '#4caf50');
+        playSfx(state.sfx, 'obstacle_resolved');
       } else {
         addToast(state.ui, result.message, '#f44336');
+        playSfx(state.sfx, 'obstacle_blocked');
       }
       break;
 
@@ -780,6 +828,7 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       const npcName = persona?.displayName || 'Stranger';
       showDialog(state.ui, npcName, [result.greeting]);
       state.paused = true;
+      playSfx(state.sfx, 'dialog_open');
 
       // Feed NPC greeting into entropy pool (#4)
       feedEntropy(result.greeting);
@@ -803,12 +852,14 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
     case 'sign':
       showDialog(state.ui, 'Sign', [result.message]);
       state.paused = true;
+      playSfx(state.sfx, 'dialog_open');
       break;
 
     case 'quiz_gate': {
       // Quiz gate — show dialog then trigger distance-based quiz (Doc 05 §3.5)
       showDialog(state.ui, 'Quiz Gate', [result.message]);
       state.paused = true;
+      playSfx(state.sfx, 'dialog_open');
       const gateDiff = getDifficultyForPosition(state.player.x, state.player.y);
       const gateBias = getQuizBias(state.knowledge);
       state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
@@ -845,6 +896,7 @@ function buildSaveData(state: GameState): SaveData {
     playerStatus: serializeStatus(state.status),
     unlockedCosmetics: state.unlockedCosmetics,
     musicSettings: serializeMusicSettings(state.music),
+    sfxSettings: serializeSfxSettings(state.sfx),
   };
 }
 
@@ -883,6 +935,8 @@ function applySaveData(state: GameState, data: SaveData): void {
   setUnlockedCosmetics(state.unlockedCosmetics);
   // Restore music settings (#74)
   state.music.settings = deserializeMusicSettings(data.musicSettings);
+  // Restore SFX settings (#75)
+  if (data.sfxSettings) deserializeSfxSettings(state.sfx, data.sfxSettings);
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
@@ -1030,6 +1084,8 @@ function resetGameState(state: GameState): void {
   setUnlockedCosmetics([]);
   // Keep music settings across new game — just stop playback
   musicStop(state.music);
+  // Keep SFX settings across new game — just stop ambience
+  stopAmbience(state.sfx);
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1268,6 +1324,10 @@ function renderFrame(
 
   // Weather effects (rain, fog, clouds, lightning)
   updateAndRenderWeather(renderer.getCtx());
+  // Thunder SFX on lightning strike (#75)
+  if (didLightningStrike()) {
+    playSfx(state.sfx, 'thunder');
+  }
 
   // UI overlay - throttle DOM sync to every 4th frame
   if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active || state.trade.active) {
@@ -1305,6 +1365,9 @@ function renderFrame(
 
     // Music UI sync (#74)
     syncMusicUI(state.music);
+
+    // SFX UI sync (#75)
+    syncSfxUI(state.sfx);
   }
 
   // Minimap (self-throttling to ~6fps)
@@ -1415,6 +1478,8 @@ function setupExtraKeys(state: GameState): void {
               if (result && result !== 'Already at full status!') {
                 state.inventory.removeItem(itemId, 1);
                 addToast(state.ui, result, '#88ccff', 2000);
+                // SFX based on consumable type (#75)
+                playSfx(state.sfx, itemId === 'water_flask' ? 'drink_water' : 'eat_food');
                 break;
               } else if (result === 'Already at full status!') {
                 addToast(state.ui, '✨ All stats are full!', '#aaa', 1200);
@@ -1500,6 +1565,18 @@ async function main(): Promise<void> {
       muted: state.music.settings.muted,
       ducking: state.music.ducking,
     }),
+    // SFX helpers (#75)
+    playSfx: (id: string) => playSfx(state.sfx, id),
+    getSfxState: () => ({
+      sfxVolume: state.sfx.settings.sfxVolume,
+      ambienceVolume: state.sfx.settings.ambienceVolume,
+      sfxMuted: state.sfx.settings.sfxMuted,
+      ambienceMuted: state.sfx.settings.ambienceMuted,
+      sfxEnabled: state.sfx.settings.sfxEnabled,
+      activeAmbience: state.sfx.activeAmbienceId,
+    }),
+    // Save/load helpers
+    save: () => doSave(state),
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -1563,6 +1640,22 @@ async function main(): Promise<void> {
     if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey) {
       togglePlayPause(state.music);
     }
+  });
+
+  // ─── Wire SFX Controls (#75) ──────────────────────────────
+  document.getElementById('btnSfxMute')?.addEventListener('click', () => {
+    toggleSfxMute(state.sfx);
+  });
+  document.getElementById('btnAmbienceMute')?.addEventListener('click', () => {
+    toggleAmbienceMute(state.sfx);
+  });
+  document.getElementById('sfxVolume')?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    setSfxVolume(state.sfx, val / 100);
+  });
+  document.getElementById('ambienceVolume')?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    setAmbienceVolume(state.sfx, val / 100);
   });
 
   // ─── Main Menu / New Game Flow ─────────────────────────────

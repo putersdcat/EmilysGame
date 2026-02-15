@@ -82,6 +82,7 @@ const fogPuffs: FogPuff[] = [];
 
 // Lightning flash state
 let lightningFlash = 0; // 0 = none, >0 = frames remaining
+let _lightningTriggered = false; // Set to true on lightning strike, consumed by didLightningStrike()
 let lightningAlpha = 0;
 
 // Simple seeded RNG for weather transitions (deterministic per session)
@@ -189,6 +190,7 @@ function updateAndRenderLightning(ctx: CanvasRenderingContext2D, intensity: numb
   if (lightningFlash === 0 && weatherRand() < 0.005 * intensity) {
     lightningFlash = 4 + Math.floor(weatherRand() * 5);
     lightningAlpha = 0.5 + weatherRand() * 0.35;
+    _lightningTriggered = true;
   }
 
   if (lightningFlash > 0) {
@@ -392,6 +394,15 @@ export function isRaining(): boolean {
 /** Check if foggy (for ambient particle modifiers) */
 export function isFoggy(): boolean {
   return currentWeather.type === 'fog' && currentWeather.intensity > 0.3;
+}
+
+/** Returns true once per lightning strike (consumes the flag) */
+export function didLightningStrike(): boolean {
+  if (_lightningTriggered) {
+    _lightningTriggered = false;
+    return true;
+  }
+  return false;
 }
 
 /** Force a specific weather type (for debug). Duration in frames. */
