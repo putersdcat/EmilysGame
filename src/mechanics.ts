@@ -7,6 +7,7 @@
 
 import { ASSET_DEFS, OBSTACLE_TEMPLATES, QUIZ_GATE_ASSET, type ObstacleTemplate } from './config/assets.config';
 import { NPC_DEFS } from './config/npc.config';
+import { facingTowardPlayer } from './npc-sprites';
 import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';
@@ -118,6 +119,10 @@ export function interact(
     const greeting = npcDef
       ? npcDef.greetings[Math.floor(Math.random() * npcDef.greetings.length)]
       : 'Hello, traveler!';
+    // NPC faces toward player on interaction (#85)
+    const chunk = chunks.get(chunkKey)!;
+    chunk.cells[ly][lx].npcFacing = facingTowardPlayer(tx, ty, playerX, playerY);
+    invalidateObjectCache(chunkKey);
     return { type: 'npc', npcId: cell.npcId, greeting };
   }
 

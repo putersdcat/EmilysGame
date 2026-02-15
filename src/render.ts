@@ -14,6 +14,7 @@ import type { ChunkData } from './gen';
 import { cellJitter } from './utils';
 import { FIRE_VARIANTS, getFireAnimation } from './config/fire.config';
 import { getShadowParams } from './shadows';
+import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from './npc-sprites';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
@@ -32,6 +33,7 @@ const CMD_SHADOW_EMOJI = 1;
 const CMD_PLAYER = 2;
 const CMD_ITEM = 3;
 const CMD_TILE = 4;
+const CMD_NPC = 5;  // Paper-cut NPC sprite (#85)
 
 interface DrawCmd {
   sortKey: number;
@@ -47,6 +49,9 @@ interface DrawCmd {
   shadow?: boolean;
   // Tile-specific fields
   tileType?: TileType;
+  // NPC sprite fields (#85)
+  npcImg?: HTMLImageElement | null;
+  npcFlipX?: boolean;
 }
 
 // Pre-allocated DrawCmd pool for JS render path (avoids GC pressure)
@@ -314,7 +319,23 @@ export class IsometricRenderer {
               drawScale *= fa.scaleMultiplier;
               drawSy += fa.dyOffset;
             }
-            if (def.tileType) {
+
+            // NPC paper-cut sprite path (#85)
+            if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
+              // Determine facing: stored on cell if set, else face toward player
+              const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
+              // Mouth state: future hook for dialog animation
+              const mouth: MouthState = 'closed';
+              const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
+              const cmd = jsPool[jsPoolIdx++];
+              cmd.sortKey = depthKey;
+              cmd.type = CMD_NPC;
+              cmd.emoji = def.emoji; // fallback
+              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = 0;
+              cmd.shadow = def.shadow;
+              cmd.npcImg = npcImg;
+              cmd.npcFlipX = facing === 'west';
+            } else if (def.tileType) {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
               cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
@@ -398,6 +419,15 @@ export class IsometricRenderer {
           this.drawShadow(cmd.sx, cmd.sy, 1.0);
           if (cmd.img) {
             this.drawSprite(cmd.img, cmd.sx, cmd.sy, cmd.scale, cmd.flipX ?? false);
+          } else {
+            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          }
+          break;
+        case CMD_NPC:
+          // Paper-cut NPC sprite with emoji fallback (#85)
+          if (cmd.shadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+          if (cmd.npcImg) {
+            this.drawSprite(cmd.npcImg, cmd.sx, cmd.sy - 8, cmd.scale, cmd.npcFlipX ?? false);
           } else {
             this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
           }

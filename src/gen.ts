@@ -42,6 +42,7 @@ export interface CellData {
   walkable: boolean;
   interactable: boolean;
   npcId?: string;
+  npcFacing?: 'south' | 'north' | 'east' | 'west';  // NPC direction (#85)
   itemId?: string;
   resolved?: boolean;
 }

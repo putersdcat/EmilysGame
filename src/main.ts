@@ -27,6 +27,7 @@ import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from '
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
+import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
 import { initMinimap, renderMinimap } from './minimap';
 import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
@@ -337,6 +338,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
   preloadEmojiSprites();
+
+  // Preload NPC paper-cut sprites (#85)
+  preloadNpcSprites();
 
   // Initialize minimap canvas
   initMinimap();
@@ -1740,6 +1744,12 @@ async function main(): Promise<void> {
     generateIdleCharacterSVG,
     clearVariationCache,
     showCustomizer: () => showCustomizer(state.playerVariation),
+    // NPC sprite helpers (#85)
+    generateNpcSVG,
+    loadNpcSpriteAsync,
+    getNpcSprite,
+    hasNpcSprite,
+    NPC_APPEARANCES,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
