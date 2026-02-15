@@ -1063,6 +1063,9 @@ const NPC_ID_MAP: Record<string, string> = {
  *   - 'item'       → place a collectible (coin, key, potion) based on biome feature weights
  *   - 'decoration' → place a biome-appropriate decorative object
  *   - 'feature'    → place a chest or sign (special interactive)
+ *
+ * NPC Cap (#104): Max 1 NPC per world unit (5×5 slot). When multiple NPC anchors
+ * exist, the first eligible one wins. Priority: gate-adjacent > junction > pool.
  */
 export function populateAnchors(
   cells: CellData[][],
@@ -1071,6 +1074,13 @@ export function populateAnchors(
   rng: () => number,
   difficulty?: DifficultyProfile,
 ): void {
+  // #104: Track which world-unit slots already have an NPC placed
+  const npcPlacedInUnit = new Set<string>();
+  // Debug counters
+  let npcAttempts = 0;
+  let npcPlaced = 0;
+  let npcDropped = 0;
+
   for (let gy = 0; gy < GRID_DIM; gy++) {
     for (let gx = 0; gx < GRID_DIM; gx++) {
       const template = grid[gy][gx];
@@ -1078,6 +1088,7 @@ export function populateAnchors(
 
       const baseX = gx * WU_SIZE;
       const baseY = gy * WU_SIZE;
+      const unitKey = `${gy},${gx}`;
 
       for (const anchor of template.anchors) {
         const cx = baseX + anchor.x;
@@ -1090,7 +1101,16 @@ export function populateAnchors(
 
         switch (anchor.role) {
           case 'npc':
-            placeNpcAtCell(cells, cx, cy, biome, rng, difficulty);
+            npcAttempts++;
+            // #104: enforce max-1 NPC per world unit
+            if (npcPlacedInUnit.has(unitKey)) {
+              npcDropped++;
+              break;
+            }
+            if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty)) {
+              npcPlacedInUnit.add(unitKey);
+              npcPlaced++;
+            }
             break;
           case 'item':
             placeItemAtCell(cells, cx, cy, biome, rng);
@@ -1105,22 +1125,27 @@ export function populateAnchors(
       }
     }
   }
+
+  // Debug logging for NPC population (#104)
+  if (typeof window !== 'undefined' && (window as any).__DEBUG_GEN) {
+    console.log(`[gen] NPC pop: ${npcPlaced} placed, ${npcDropped} dropped (cap), ${npcAttempts} attempts`);
+  }
 }
 
 function placeNpcAtCell(
   cells: CellData[][], cx: number, cy: number,
   biome: BiomeDef, rng: () => number,
   difficulty?: DifficultyProfile,
-): void {
+): boolean {
   // Respect biome NPC rate (skip some NPCs at random)
-  if (rng() > biome.npcRate * 0.3) return; // ~30% chance per anchor × npcRate
+  if (rng() > biome.npcRate * 0.3) return false; // ~30% chance per anchor × npcRate
 
   const size = cells.length;
 
   // Clearance check: don't place NPCs in narrow 1-cell corridors (Doc 05 §4.3)
   // Need at least 2 walkable cardinal neighbors to ensure player can pass
   const walkableNeighbors = countWalkableNeighbors(cells, cx, cy, size);
-  if (walkableNeighbors < 2) return;
+  if (walkableNeighbors < 2) return false;
 
   // Difficulty-aware NPC selection: higher guardianRatio biases toward guardians
   const guardianRatio = difficulty?.guardianRatio ?? 0.1;
@@ -1155,6 +1180,7 @@ function placeNpcAtCell(
     interactable: true,
     npcId,
   };
+  return true;
 }
 
 /**

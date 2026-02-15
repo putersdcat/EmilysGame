@@ -1822,6 +1822,101 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       { x: 2, y: 2, role: 'decoration' },
     ],
   },
+
+  // ─────────── Themed Structure Templates (#99) ───────────────
+
+  // --- Homestead Compound (fenced farmyard with gate, inner yard) ---
+  // Inspired by Stardew Valley farm layouts — a cozy enclosure with animals and farmer NPC
+  {
+    name: 'homestead_compound',
+    cells: [
+      ['wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence'],
+      ['wooden_fence', 'dirt',         'grass',        'dirt',         'wooden_fence'],
+      ['wooden_fence', 'grass',        'dirt',         'grass',        'wooden_fence'],
+      ['wooden_fence', 'dirt',         'grass',        'dirt',         'wooden_fence'],
+      ['wooden_fence', 'wooden_fence', 'door_gate',    'wooden_fence', 'wooden_fence'],
+    ],
+    edgeTags: { n: 'fence', s: 'gate', e: 'fence', w: 'fence' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'fence',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'enclosure',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 2 }],  // Enter through gate to center
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },        // Farmer or beekeeper
+      { x: 1, y: 1, role: 'item' },        // Harvest pickup
+      { x: 3, y: 1, role: 'decoration' },  // Crop / flower
+      { x: 1, y: 3, role: 'decoration' },  // Hay bale / plant
+      { x: 3, y: 3, role: 'item' },        // Coin / produce
+    ],
+  },
+
+  // --- Seller Cart Yard (merchant stall at a crossroads clearing) ---
+  // Inspired by Zelda merchant spots / RPG roadside vendors
+  {
+    name: 'seller_cart_yard',
+    cells: [
+      ['grass',        'grass',        'dirt',         'grass',        'grass'],
+      ['grass',        'dirt',         'dirt',         'dirt',         'grass'],
+      ['dirt',         'dirt',         'stone_floor',  'dirt',         'dirt'],
+      ['grass',        'dirt',         'dirt',         'dirt',         'grass'],
+      ['grass',        'grass',        'dirt',         'grass',        'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: false,
+    terminator: false,
+    minPassability: 1.0,
+    category: 'structural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'forest', 'castle'],
+    movementChannels: [
+      [{ x: 2, y: 0 }, { x: 2, y: 4 }],  // N-S through center
+      [{ x: 0, y: 2 }, { x: 4, y: 2 }],  // E-W through center
+    ],
+    anchors: [
+      { x: 2, y: 2, role: 'npc' },        // Merchant — always a merchant
+      { x: 1, y: 1, role: 'item' },        // Wares on display left
+      { x: 3, y: 1, role: 'item' },        // Wares on display right
+      { x: 1, y: 3, role: 'decoration' },  // Cart decoration
+      { x: 3, y: 3, role: 'decoration' },  // Barrel / crate
+    ],
+  },
+
+  // --- Inn Compound (walled social hub with multiple rooms) ---
+  // Inspired by Elder Scrolls taverns / RPG inn layouts — larger footprint
+  {
+    name: 'inn_compound',
+    cells: [
+      ['stone_wall',   'stone_wall',   'stone_wall',   'stone_wall',   'stone_wall'],
+      ['stone_wall',   'stone_floor',  'stone_floor',  'stone_floor',  'stone_wall'],
+      ['stone_wall',   'stone_floor',  'stone_floor',  'stone_floor',  'stone_wall'],
+      ['stone_wall',   'stone_floor',  'stone_floor',  'stone_floor',  'stone_wall'],
+      ['stone_wall',   'stone_wall',   'door_gate',    'stone_wall',   'stone_wall'],
+    ],
+    edgeTags: { n: 'wall', s: 'gate', e: 'wall', w: 'wall' },
+    rotatable: true,
+    terminator: true,
+    chainType: 'wall',
+    minPassability: 0.36,
+    category: 'structural',
+    connectivity: 'enclosure',
+    biomeAffinity: ['meadow', 'forest', 'castle'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 1 }],  // Enter through door
+    ],
+    anchors: [
+      { x: 2, y: 1, role: 'npc' },        // Innkeeper
+      { x: 1, y: 2, role: 'feature' },     // Fireplace / hearth
+      { x: 3, y: 2, role: 'decoration' },  // Table
+      { x: 1, y: 3, role: 'item' },        // Food / potion
+      { x: 3, y: 3, role: 'decoration' },  // Bench
+    ],
+  },
 ];
 
 // ─── Template Selection ──────────────────────────────────────
@@ -1829,9 +1924,9 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    meadow_base: 0.20,
+    meadow_base: 0.18,
     meadow_garden: 0.06,
-    dirt_clearing: 0.09,
+    dirt_clearing: 0.08,
     mixed_terrain: 0.05,
     sandy_patch: 0.04,
     forest_clearing: 0.04,
@@ -1853,27 +1948,31 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     shore_corner_ne: 0.01,
     bridge_ns: 0.02,
     bridge_ew: 0.02,
-    fence_enclosure: 0.06,
+    fence_enclosure: 0.05,
     rocky_outcrop: 0.03,
     wall_gate: 0.01,
     wall_segment: 0.01,
     wall_corner: 0.005,
     wall_end: 0.005,
-    fenced_yard: 0.04,
+    fenced_yard: 0.03,
     market_square: 0.04,
     spiral_path: 0.03,
     water_garden: 0.03,
     wall_bastion: 0.02,
     wall_corner_capped: 0.02,
-    fenced_garden: 0.04,
+    fenced_garden: 0.03,
     fence_row: 0.03,
     beach_cove: 0.02,
     sand_path: 0.03,
+    // #99 Themed Structures
+    homestead_compound: 0.05,
+    seller_cart_yard: 0.04,
+    inn_compound: 0.03,
   },
   forest: {
-    meadow_base: 0.06,
+    meadow_base: 0.05,
     dirt_clearing: 0.05,
-    forest_clearing: 0.10,
+    forest_clearing: 0.09,
     forest_dense: 0.08,
     mixed_terrain: 0.05,
     rocky_outcrop: 0.06,
@@ -1908,6 +2007,10 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     fenced_garden: 0.02,
     fence_row: 0.02,
     beach_cove: 0.02,
+    // #99 Themed Structures
+    homestead_compound: 0.04,
+    seller_cart_yard: 0.03,
+    inn_compound: 0.03,
   },
   cave: {
     rock_cluster: 0.08,
@@ -1942,14 +2045,14 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_corner_capped: 0.04,
   },
   castle: {
-    wall_segment: 0.10,
-    wall_gate: 0.08,
+    wall_segment: 0.09,
+    wall_gate: 0.07,
     wall_corner: 0.06,
     wall_end: 0.03,
-    guard_tower: 0.07,
-    castle_courtyard: 0.08,
+    guard_tower: 0.06,
+    castle_courtyard: 0.07,
     castle_corridor: 0.07,
-    castle_hall: 0.08,
+    castle_hall: 0.07,
     ruins: 0.04,
     fence_enclosure: 0.04,
     dirt_clearing: 0.03,
@@ -1975,6 +2078,9 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_bastion: 0.05,
     wall_corner_capped: 0.04,
     fenced_garden: 0.02,
+    // #99 Themed Structures
+    seller_cart_yard: 0.03,
+    inn_compound: 0.04,
   },
 };
 
