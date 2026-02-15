@@ -37,6 +37,12 @@ import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather } from './weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight } from './local-lights';
+import {
+  updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
+  clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
+} from './wildlife';
+import { getSpecies } from './config/wildlife.config';
+import { getEmojiSprite } from './emoji-cache';
 import type { FacingPose } from './sprites';
 
 
@@ -364,6 +370,17 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Expose state for debugging / E2E tests
   (window as any).__gameState = state;
+  // Expose wildlife + lighting module functions for E2E tests (#68)
+  (window as any).__wildlife = {
+    getVisibleWildlife,
+    interactWithWildlife,
+    clearWildlife,
+    getDiscoveredSpeciesArray,
+    restoreDiscoveredSpecies,
+    updateWildlife,
+    getWildlifeStats,
+  };
+  (window as any).__lighting = { setTimeOfDay, getCycleProgress };
 
   return { state, renderer, input, hasSaveData: !!save };
 }
@@ -555,24 +572,51 @@ function update(state: GameState, input: InputManager): void {
       dx: hasFacing ? state.player.facingDx : state.player.direction,
       dy: hasFacing ? state.player.facingDy : 0,
     };
-    let result = interact(
-      state.player.x, state.player.y,
-      facingDir, state.chunks, state.inventory,
+
+    // Wildlife interaction check (before tile-based interactions)
+    const wildlifeHit = interactWithWildlife(
+      state.player.x, state.player.y, facingDir.dx, facingDir.dy,
     );
-
-    // Fallback: try all 4 cardinal neighbors if facing dir had nothing
-    if (result.type === 'none') {
-      const dirs = [
-        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-        { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
-      ];
-      for (const d of dirs) {
-        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
-        if (result.type !== 'none') break;
+    if (wildlifeHit) {
+      const { species, entity } = wildlifeHit;
+      // Show creature dialog with fun fact
+      showDialog(state.ui, species.name, [
+        `You spotted a ${species.name}! ${species.emoji}`,
+        species.fact,
+      ]);
+      state.paused = true;
+      // Make creature flee after inspection
+      entity.behavior = 'flee';
+      entity.fleeCooldown = 180;
+      // Queue a quiz if species has a quiz category
+      if (species.quizCategory) {
+        const diff = getDifficultyForPosition(state.player.x, state.player.y);
+        state.pendingQuiz = {
+          difficulty: diff,
+          npcId: `wildlife_${species.id}`,
+          bias: { [species.quizCategory]: 2.0 },
+        };
       }
-    }
+    } else {
+      let result = interact(
+        state.player.x, state.player.y,
+        facingDir, state.chunks, state.inventory,
+      );
 
-    handleInteraction(result, state);
+      // Fallback: try all 4 cardinal neighbors if facing dir had nothing
+      if (result.type === 'none') {
+        const dirs = [
+          { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+          { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+        ];
+        for (const d of dirs) {
+          result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
+          if (result.type !== 'none') break;
+        }
+      }
+
+      handleInteraction(result, state);
+    }
   }
 
   // --- Toggle Debug (F3) ---
@@ -581,6 +625,11 @@ function update(state: GameState, input: InputManager): void {
   // --- Auto-save every 30s ---
   if (state.frameCount % (60 * 30) === 0) {
     doSave(state);
+  }
+
+  // --- Wildlife update (throttled to every 3rd frame for perf) ---
+  if (state.frameCount % 3 === 0) {
+    updateWildlife(state.chunks, state.player.x, state.player.y);
   }
 
   // Snapshot input for edge detection next frame
@@ -668,6 +717,7 @@ function buildSaveData(state: GameState): SaveData {
     readArticles: [...state.knowledge.readArticles],
     discoveryPoints: state.knowledge.discoveryPoints,
     playerVariation: serializeVariation(state.playerVariation),
+    discoveredWildlife: getDiscoveredSpeciesArray(),
   };
 }
 
@@ -694,12 +744,17 @@ function applySaveData(state: GameState, data: SaveData): void {
     state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
     state.lastAnimFrame = -1; // force sprite reload
   }
+  // Restore discovered wildlife
+  if (data.discoveredWildlife) {
+    restoreDiscoveredSpecies(data.discoveredWildlife);
+  }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
   clearTerrainCache();
   clearParticles();
   clearWeather();
+  clearWildlife();
 }
 
 function doSave(state: GameState): void {
@@ -854,6 +909,46 @@ function showPauseMenu(state: GameState): void {
     window.location.reload();
   };
 }
+// ─── Wildlife Rendering ──────────────────────────────────────
+
+function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
+  const wildlife = getVisibleWildlife(state.camera, state.player.x, state.player.y);
+  if (wildlife.length === 0) return;
+
+  const ctx = renderer.getCtx();
+  const cw = RENDER_CONFIG.canvasWidth;
+  const ch = RENDER_CONFIG.canvasHeight;
+
+  for (const entity of wildlife) {
+    const species = getSpecies(entity.speciesId);
+    if (!species) continue;
+
+    const anim = getAnimationOffset(entity);
+    const { x: sx, y: sy } = renderer.gridToScreen(entity.worldX, entity.worldY, state.camera);
+
+    // Viewport cull
+    if (sx < -64 || sx > cw + 64 || sy < -64 || sy > ch + 64) continue;
+
+    // Draw emoji sprite with animation offset
+    const sprite = getEmojiSprite(species.emoji, 0);
+    const size = sprite.width * species.scale;
+    const drawX = sx + anim.dx - size / 2;
+    const drawY = sy + anim.dy - size / 2;
+
+    // Fleeing creatures fade out
+    if (entity.behavior === 'flee') {
+      const fadeT = entity.fleeCooldown / 120;
+      ctx.globalAlpha = Math.max(0.15, fadeT);
+    }
+
+    ctx.drawImage(sprite, drawX, drawY, size, size);
+
+    if (entity.behavior === 'flee') {
+      ctx.globalAlpha = 1.0;
+    }
+  }
+}
+
 // ─── Render ──────────────────────────────────────────────────
 
 function renderFrame(
@@ -872,6 +967,9 @@ function renderFrame(
 
   // Ambient particles (butterflies, sparkles, leaves, birds)
   updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
+
+  // Wildlife layer: draw creatures after terrain/objects, before lighting
+  renderWildlife(renderer, state);
 
   // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
   tickLighting();

@@ -36,6 +36,8 @@ export interface SaveData {
   discoveryPoints?: number;
   /** Player sprite customization */
   playerVariation?: { hairColor: string; hairStyle: string; dressColor: string; skinTone: string };
+  /** Wildlife: discovered species IDs */
+  discoveredWildlife?: string[];
 }
 
 export interface ResolvedCell {
