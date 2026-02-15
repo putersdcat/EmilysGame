@@ -50,6 +50,8 @@ export interface SaveData {
   voiceSettings?: { enabled: boolean; volume: number };
   /** Quiz streak history for adaptive difficulty (#103) */
   streakHistory?: ('correct' | 'wrong' | 'idk')[];
+  /** Fog-of-war: visited cell coordinates (#114) */
+  visitedFog?: number[][];
 }
 
 export interface ResolvedCell {

@@ -453,6 +453,35 @@ export function isFlashlightOn(): boolean {
 }
 
 /**
+ * Check if a world position is illuminated by the flashlight cone.
+ * Used by wildlife renderer for glowing-eyes reveal mechanic (#114).
+ */
+export function isInFlashlightCone(
+  targetWx: number, targetWy: number,
+  playerWx: number, playerWy: number,
+  facingDx: number, facingDy: number,
+): boolean {
+  if (!flashlightEnabled) return false;
+  const dx = targetWx - playerWx;
+  const dy = targetWy - playerWy;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  // Check reach (in grid units, convert pixel reach → grid units)
+  const reachGrid = LIGHT_CONFIG.flashlightReach / RENDER_CONFIG.tileWidth * 2;
+  if (dist > reachGrid || dist < 0.1) return false;
+  // Check angle: dot product between facing and target direction
+  const ndx = dx / dist;
+  const ndy = dy / dist;
+  const fLen = Math.sqrt(facingDx * facingDx + facingDy * facingDy);
+  if (fLen < 0.01) return false;
+  const fdx = facingDx / fLen;
+  const fdy = facingDy / fLen;
+  const dot = ndx * fdx + ndy * fdy;
+  // Cone half-angle check (spread / 2), with some generous margin
+  const halfSpread = LIGHT_CONFIG.flashlightSpread / 2 + 0.15;
+  return dot >= Math.cos(halfSpread);
+}
+
+/**
  * Get bonfire light config for world gen to use.
  */
 export function getBonfireConfig() {

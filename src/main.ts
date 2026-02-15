@@ -46,12 +46,14 @@ import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './local-lights';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 import { invalidateShadowCache } from './shadows';
+import { updateFog, renderFog, toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, serializeVisited, deserializeVisited, getFogDebugInfo } from './fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
+  getTimeSlot,
 } from './wildlife';
 import { getSpecies } from './config/wildlife.config';
 import { getEmojiSprite } from './emoji-cache';
@@ -483,6 +485,10 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     if (save.voiceSettings) {
       deserializeVoiceSettings(state.voice, save.voiceSettings);
     }
+    // Restore fog-of-war visited cells (#114)
+    if (save.visitedFog) {
+      deserializeVisited(save.visitedFog);
+    }
   }
 
   // Generate initial chunks
@@ -865,6 +871,11 @@ function update(state: GameState, input: InputManager): void {
     updateWildlife(state.chunks, state.player.x, state.player.y);
   }
 
+  // --- Fog-of-war: reveal cells around player (#114) ---
+  if (state.frameCount % 6 === 0) {
+    updateFog(state.player.x, state.player.y, isFlashlightOn());
+  }
+
   // --- Thought Bubble triggers (throttled to every 30th frame for perf) ---
   if (state.frameCount % 30 === 0 && !state.paused) {
     checkBubbleTriggers(state);
@@ -1025,6 +1036,7 @@ function buildSaveData(state: GameState): SaveData {
     sfxSettings: serializeSfxSettings(state.sfx),
     voiceSettings: serializeVoiceSettings(state.voice),
     streakHistory: [...state.streak.history],
+    visitedFog: serializeVisited(),
   };
 }
 
@@ -1073,6 +1085,10 @@ function applySaveData(state: GameState, data: SaveData): void {
     for (const outcome of data.streakHistory) {
       recordQuizResult(state.streak, outcome);
     }
+  }
+  // Restore fog-of-war visited cells (#114)
+  if (data.visitedFog) {
+    deserializeVisited(data.visitedFog);
   }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
@@ -1378,6 +1394,13 @@ function checkBubbleTriggers(state: GameState): void {
 
 // ─── Wildlife Rendering ──────────────────────────────────────
 
+// Track creatures revealed by flashlight this session (#114)
+const _revealedCreatures = new Set<string>(); // chunkKey_localId keys
+
+// Glowing eyes animation state (module-level, avoid per-frame alloc)
+let _eyeBlinkTimer = 0;
+let _eyeSwayPhase = 0;
+
 function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
   const wildlife = getVisibleWildlife(state.camera, state.player.x, state.player.y);
   if (wildlife.length === 0) return;
@@ -1385,6 +1408,12 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
   const ctx = renderer.getCtx();
   const cw = RENDER_CONFIG.canvasWidth;
   const ch = RENDER_CONFIG.canvasHeight;
+  const timeSlot = getTimeSlot();
+  const isNight = timeSlot === 'night';
+
+  // Advance eye animation
+  _eyeBlinkTimer = (_eyeBlinkTimer + 1) % 240; // blink every ~4s at 60fps
+  _eyeSwayPhase += 0.03;
 
   for (const entity of wildlife) {
     const species = getSpecies(entity.speciesId);
@@ -1396,7 +1425,70 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
     // Viewport cull
     if (sx < -64 || sx > cw + 64 || sy < -64 || sy > ch + 64) continue;
 
-    // Draw emoji sprite with animation offset
+    // Glowing eyes mechanic: nocturnal creatures at night (#114)
+    const isNocturnal = species.time.includes('night');
+    const entityKey = `${entity.chunkKey}_${entity.localId}`;
+    const wasRevealed = _revealedCreatures.has(entityKey);
+
+    if (isNight && isNocturnal && !wasRevealed) {
+      // Check if flashlight is revealing this creature
+      const inCone = isInFlashlightCone(
+        entity.worldX, entity.worldY,
+        state.player.x, state.player.y,
+        state.player.facingDx, state.player.facingDy,
+      );
+
+      if (inCone) {
+        // Reveal! Flash of discovery
+        _revealedCreatures.add(entityKey);
+        // Brief bright aura
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ffffaa';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        // Show discovery toast
+        addToast(state.ui, `👀 You spotted a ${species.name}! ${species.emoji}`, '#ffee44', 3000);
+      } else {
+        // Draw glowing eyes (two small dots)
+        const eyeSize = 2.5;
+        const eyeSpacing = 5;
+        const eyeY = sy + anim.dy - 4;
+        const eyeX = sx + anim.dx;
+        // Slight sway
+        const sway = Math.sin(_eyeSwayPhase + entity.localId * 1.7) * 1.2;
+        // Blink: briefly close eyes (~12 frames every ~240 frames)
+        const blinkOffset = (entity.localId * 37) % 240;
+        const blinkPhase = (_eyeBlinkTimer + blinkOffset) % 240;
+        const isBlinking = blinkPhase > 228;
+
+        if (!isBlinking) {
+          ctx.save();
+          // Additive blend for glow effect
+          ctx.globalCompositeOperation = 'lighter';
+          // Outer glow
+          ctx.globalAlpha = 0.35;
+          ctx.fillStyle = '#ffdd44';
+          ctx.beginPath();
+          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
+          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
+          ctx.fill();
+          // Inner bright
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = '#ffff88';
+          ctx.beginPath();
+          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
+          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        continue; // Don't render full sprite
+      }
+    }
+
+    // Normal sprite rendering (day, or revealed creatures)
     const sprite = getEmojiSprite(species.emoji, 0);
     const size = sprite.width * species.scale;
     const drawX = sx + anim.dx - size / 2;
@@ -1458,6 +1550,9 @@ function renderFrame(
   const _t3 = performance.now();
   perfStats.wildlife = perfSmooth(perfStats.wildlife, _t3 - _t2);
 
+  // Fog-of-war overlay: darken unexplored areas (#114)
+  renderFog(renderer.getCtx(), state.camera);
+
   // Update thought bubble position (anchored above player sprite screen position)
   const playerScreen = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
   updateBubblePosition(playerScreen.x, playerScreen.y);
@@ -1502,6 +1597,27 @@ function renderFrame(
   }
   addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
   renderLocalLights(renderer.getCtx(), state.camera);
+
+  // Night desaturation: CSS filter on canvas element for GPU-composited grayscale (#114)
+  // Smooth ramp: full color during day, desaturated at night
+  const cycleT = getCycleProgress();
+  let desatFactor = 0; // 0 = full color, 1 = full desaturation 
+  if (cycleT >= 0.80) {
+    desatFactor = 0.75; // Full night: heavy desaturation
+  } else if (cycleT >= 0.65) {
+    // Dusk transition: 0 → 0.75 over dusk phase
+    desatFactor = ((cycleT - 0.65) / 0.15) * 0.75;
+  } else if (cycleT < 0.08) {
+    // Dawn: fade back 0.75 → 0 
+    desatFactor = (1 - cycleT / 0.08) * 0.75;
+  }
+  if (desatFactor > 0.01) {
+    const sat = 1 - desatFactor;
+    const bright = 1 - desatFactor * 0.15; // slight brightness reduction at night
+    renderer.getCanvas().style.filter = `saturate(${sat.toFixed(2)}) brightness(${bright.toFixed(2)})`;
+  } else {
+    renderer.getCanvas().style.filter = '';
+  }
 
   const _t4 = performance.now();
   perfStats.lighting = perfSmooth(perfStats.lighting, _t4 - _t3);
@@ -1739,6 +1855,7 @@ async function main(): Promise<void> {
     setTimeOfDay,
     getCycleProgress,
     toggleFlashlight,
+    isFlashlightOn,
     state,
     // Asset/biome metadata (#58)
     getAssetDefs: () => ASSET_DEFS,
@@ -1845,6 +1962,15 @@ async function main(): Promise<void> {
     tilesAtLOD,
     getBiomePalette,
     getChunkClimate,
+    // Fog-of-war debug (#114)
+    toggleFog,
+    isFogEnabled,
+    setFogEnabled,
+    getVisitedCount,
+    getFogDebug: getFogDebugInfo,
+    getTimeSlot,
+    // Night mode debug (#114)
+    getRevealedCreatures: () => _revealedCreatures.size,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
