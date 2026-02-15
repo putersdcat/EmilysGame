@@ -47,6 +47,10 @@ import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
   clearBubbles, getBubbleState, resetCooldowns,
 } from './thought-bubbles';
+import {
+  createTradeState, openTrade, closeTrade, tradeNavigate,
+  executeTrade, syncTradeDOM, type TradeState,
+} from './trading';
 import type { FacingPose } from './sprites';
 
 
@@ -88,6 +92,10 @@ interface GameState {
   pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
   // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
   pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
+  // NPC trading state
+  trade: TradeState;
+  // Pending trade to open after dialog closes (NPC persona id)
+  pendingTrade: string | null;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -347,6 +355,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     lastChunkY: Math.floor(startY / size),
     pendingQuiz: null,
     pendingGateQuiz: null,
+    trade: createTradeState(),
+    pendingTrade: null,
   };
 
   // Restore inventory from save
@@ -389,6 +399,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   (window as any).__bubbles = {
     triggerHint, tickBubbles, dismissBubble, clearBubbles,
     getBubbleState, resetCooldowns, updateBubblePosition,
+  };
+  // Expose trade functions for E2E tests (#72)
+  (window as any).__trade = {
+    openTrade, closeTrade, tradeNavigate, executeTrade, syncTradeDOM,
+    createTradeState,
   };
 
   return { state, renderer, input, hasSaveData: !!save };
@@ -464,7 +479,18 @@ function update(state: GameState, input: InputManager): void {
           state.quizStats.answered++;
         }
         quizClose(state.quiz);
-        state.paused = state.knowledge.bookOpen;
+        // After quiz, open trade panel if NPC had trades, otherwise unpause
+        if (state.pendingTrade && !state.knowledge.bookOpen) {
+          const tradePersona = getNpcPersona(state.pendingTrade);
+          state.pendingTrade = null;
+          if (tradePersona && openTrade(state.trade, tradePersona)) {
+            state.paused = true;
+          } else {
+            state.paused = state.knowledge.bookOpen;
+          }
+        } else {
+          state.paused = state.knowledge.bookOpen;
+        }
       } else {
         quizSubmit(state.quiz);
         // Feed quiz answer text into entropy pool (#4)
@@ -483,17 +509,43 @@ function update(state: GameState, input: InputManager): void {
     if (justKeys.interact) {
       if (!advanceDialog(state.ui)) {
         closeDialog(state.ui);
-        // Start pending quiz if NPC queued one, otherwise unpause
+        // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
         if (state.pendingQuiz) {
           const pq = state.pendingQuiz;
           state.pendingQuiz = null;
           startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
           // state.paused stays true for quiz
+        } else if (state.pendingTrade) {
+          // Open trade panel directly (no quiz pending)
+          const persona = getNpcPersona(state.pendingTrade);
+          state.pendingTrade = null;
+          if (persona && openTrade(state.trade, persona)) {
+            // state.paused stays true for trade
+          } else {
+            state.paused = false;
+          }
         } else {
           state.paused = false;
         }
       }
     }
+    input.endFrame();
+    return;
+  }
+
+  // --- Trade Input (edge-detected) ---
+  if (state.trade.active) {
+    if (justKeys.up) tradeNavigate(state.trade, 'up');
+    if (justKeys.down) tradeNavigate(state.trade, 'down');
+    if (justKeys.interact) {
+      const result = executeTrade(state.trade, state.inventory);
+      if (result.ok) {
+        addToast(state.ui, result.message, '#4caf50');
+      }
+      // Don't close — let player buy multiple items
+    }
+    // Escape handled in global keydown handler
+    syncTradeDOM(state.trade, state.inventory);
     input.endFrame();
     return;
   }
@@ -696,6 +748,11 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
         const finalDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
         state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
       }
+
+      // If NPC has trades, queue trade panel to open after dialog + optional quiz
+      if (persona && persona.trades.length > 0) {
+        state.pendingTrade = result.npcId;
+      }
       break;
     }
 
@@ -887,6 +944,8 @@ function resetGameState(state: GameState): void {
   state.quizStats = { answered: 0, correct: 0 };
   state.pendingQuiz = null;
   state.pendingGateQuiz = null;
+  state.trade = createTradeState();
+  state.pendingTrade = null;
   state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
   state.playerVariation = createDefaultVariation();
@@ -1127,7 +1186,7 @@ function renderFrame(
   updateAndRenderWeather(renderer.getCtx());
 
   // UI overlay - throttle DOM sync to every 4th frame
-  if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active) {
+  if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active || state.trade.active) {
     // Get current biome name from chunk map
     const cs = WORLD_CONFIG.chunkSize;
     const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
@@ -1144,6 +1203,11 @@ function renderFrame(
       state.quizStats,
       biomeName,
     );
+
+    // Trade panel DOM sync
+    if (state.trade.active) {
+      syncTradeDOM(state.trade, state.inventory);
+    }
   }
 
   // Minimap (self-throttling to ~6fps)
@@ -1200,7 +1264,11 @@ function setupExtraKeys(state: GameState): void {
           state.quiz.active;
         if (overlayBlocks) break;
 
-        if (state.knowledge.bookOpen) {
+        if (state.trade.active) {
+          closeTrade(state.trade);
+          syncTradeDOM(state.trade, state.inventory);
+          state.paused = false;
+        } else if (state.knowledge.bookOpen) {
           state.knowledge.bookOpen = false;
           state.knowledge.currentArticleId = null;
           state.paused = false;
@@ -1210,6 +1278,7 @@ function setupExtraKeys(state: GameState): void {
           closeDialog(state.ui);
           state.pendingQuiz = null;
           state.pendingGateQuiz = null;
+          state.pendingTrade = null;
           state.paused = false;
         } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
           document.getElementById('pauseMenu')!.style.display = 'none';

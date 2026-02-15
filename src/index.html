@@ -364,6 +364,52 @@
     #dialogOverlay .npc-text { color: #e0e0e0; font: 13px monospace; margin-top: 6px; line-height: 1.4; }
     #dialogOverlay .npc-hint { color: #888; font: 12px monospace; text-align: right; margin-top: 6px; }
 
+    /* Trade panel overlay */
+    #tradeOverlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none; align-items: center; justify-content: center;
+      z-index: 15; pointer-events: auto;
+    }
+    #tradeBox {
+      background: rgba(25,20,40,0.96);
+      border: 2px solid #aa8833; border-radius: 10px;
+      padding: 16px 20px; min-width: 320px; max-width: 420px;
+      box-shadow: 0 0 20px rgba(170,136,51,0.3);
+    }
+    #tradeNpcName {
+      color: #ffcc00; font: bold 16px monospace;
+      text-align: center; margin-bottom: 8px;
+    }
+    #tradeCoins {
+      color: #ffd700; font: 13px monospace;
+      text-align: center; margin-bottom: 10px;
+    }
+    .trade-item {
+      color: #e0e0e0; font: 13px monospace;
+      padding: 6px 8px; border-radius: 4px;
+      margin: 2px 0; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .trade-item.selected {
+      background: rgba(170,136,51,0.3);
+      color: #fff;
+    }
+    .trade-item.unaffordable {
+      color: #777; text-decoration: line-through;
+    }
+    .trade-item.selected.unaffordable {
+      background: rgba(170,60,60,0.25);
+    }
+    #tradeResult {
+      font: 13px monospace; text-align: center;
+      margin-top: 8px; min-height: 18px;
+    }
+    #tradeHint {
+      color: #888; font: 11px monospace;
+      text-align: center; margin-top: 8px;
+    }
+
     /* Quiz overlay (centered modal) */
     #quizOverlay {
       position: absolute; inset: 0;
@@ -999,6 +1045,17 @@
         <div class="npc-name" id="dialogName"></div>
         <div class="npc-text" id="dialogText"></div>
         <div class="npc-hint" id="dialogHint"></div>
+      </div>
+
+      <!-- Trade panel modal -->
+      <div id="tradeOverlay">
+        <div id="tradeBox">
+          <div id="tradeNpcName"></div>
+          <div id="tradeCoins"></div>
+          <div id="tradeList"></div>
+          <div id="tradeResult"></div>
+          <div id="tradeHint"></div>
+        </div>
       </div>
 
       <!-- Quiz modal -->
