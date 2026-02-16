@@ -130,8 +130,11 @@ test.describe('Injury & Bandaid System (#109)', () => {
       state.injury.injured = true;
     });
 
-    // Wait for status bars to sync (throttled every 12 frames)
-    await page.waitForTimeout(500);
+    // Wait for debuffs bar to contain 'Injured' (UI syncs every 4th frame)
+    await page.waitForFunction(() => {
+      const el = document.getElementById('sbDebuffs');
+      return el?.textContent?.includes('Injured');
+    }, { timeout: 3000 }).catch(() => {});
 
     const debuffsText = await page.locator('#sbDebuffs').textContent();
     expect(debuffsText).toContain('Injured');

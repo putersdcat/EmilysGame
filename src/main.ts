@@ -77,6 +77,7 @@ import {
 } from './status';
 import {
   initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
+  triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
 } from './debuff-visuals';
 import {
   createInjuryState, rollInjury, applyBandaid, applyWoundQuizBonus,
@@ -1024,7 +1025,16 @@ function update(state: GameState, input: InputManager): void {
         playSfx(state.sfx, 'ouch');
         triggerHint('ouch_injury');
         setTransientExpression(state, 'surprised', 3000);
+        triggerInjuryFlash(); // (#109 Phase 3) red screen flash
         addToast(state.ui, '🤕 Ouch! You got hurt!', '#f44336', 2500);
+        // Achievement milestones (#109 Phase 3)
+        if (state.injury.injuryCount === 5) {
+          addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
+        } else if (state.injury.injuryCount === 10) {
+          addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
+        } else if (state.injury.injuryCount === 25) {
+          addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+        }
       }
     }
 
@@ -2183,6 +2193,7 @@ function renderFrame(
   // Debuff visual effects (#110): fly particles + dehydration blur
   updateFlies(state.status);
   updateBlurOverlay(state.status);
+  updateInjuryFlash(); // (#109 Phase 3) injury red flash
   const playerScreenDbf = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
   renderFlies(renderer.getCtx(), playerScreenDbf.x, playerScreenDbf.y);
 
@@ -2668,6 +2679,9 @@ async function main(): Promise<void> {
     startInsectQuiz: () => _startInsectQuiz(state),
     getStreamDrinkCount: () => (state as any)._streamDrinkCount ?? 0,
     getDiarrheaActive: () => ((state as any)._diarrheaUntil ?? 0) > state.frameCount,
+    // Injury flash debug (#109 Phase 3)
+    triggerInjuryFlash,
+    getInjuryFlashAlpha,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

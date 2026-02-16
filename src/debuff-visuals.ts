@@ -2,6 +2,7 @@
  * debuff-visuals.ts - Visual debuff effects for survival system (#110).
  * - Blur overlay when dehydrated (CSS backdrop-filter)
  * - Fly particles when dirty (canvas-rendered, orbit player)
+ * - Injury screen flash (red overlay, fades out) (#109 Phase 3)
  * TODO: DOC - debuff visual effects
  */
 
@@ -144,14 +145,48 @@ export function renderFlies(
 
 // ─── Debug / Testing ─────────────────────────────────────────
 
+/** Trigger injury screen flash. Call once when injury occurs. */
+let injuryFlashAlpha = 0;
+let injuryFlashEl: HTMLElement | null = null;
+
+export function triggerInjuryFlash(): void {
+  injuryFlashAlpha = 0.45;
+  if (!injuryFlashEl) {
+    injuryFlashEl = document.getElementById('injuryFlash');
+  }
+}
+
+/**
+ * Update injury flash — call every frame.
+ * Fades smoothly to 0 then hides.
+ */
+export function updateInjuryFlash(): void {
+  if (!injuryFlashEl) {
+    injuryFlashEl = document.getElementById('injuryFlash');
+    if (!injuryFlashEl) return;
+  }
+  if (injuryFlashAlpha <= 0.01) {
+    injuryFlashEl.style.display = 'none';
+    injuryFlashAlpha = 0;
+    return;
+  }
+  injuryFlashEl.style.display = 'block';
+  injuryFlashEl.style.background = `rgba(255, 0, 0, ${injuryFlashAlpha.toFixed(3)})`;
+  injuryFlashAlpha *= 0.92; // Smooth decay
+}
+
+export function getInjuryFlashAlpha(): number { return injuryFlashAlpha; }
+
 export function getDebuffVisualsState(): {
   blurStrength: number;
   flyCount: number;
   flyTargetCount: number;
+  injuryFlashAlpha: number;
 } {
   return {
     blurStrength: currentBlurStrength,
     flyCount: flies.length,
     flyTargetCount,
+    injuryFlashAlpha,
   };
 }
