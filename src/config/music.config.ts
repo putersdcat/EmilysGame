@@ -7,13 +7,6 @@
 
 // ─── Track Types ────────────────────────────────────────────
 
-export interface MusicNote {
-  /** Note name or 'REST' */
-  note: string;
-  /** Duration in beats (1 = quarter note at track tempo) */
-  duration: number;
-}
-
 export interface MusicTrack {
   id: string;
   name: string;
@@ -29,11 +22,6 @@ export interface MusicTrack {
   style?: string;
   /** Track origin — always 'midi' now */
   source?: 'midi';
-  // Legacy fields kept optional for JSON compat with preloaded track data
-  melodyWave?: OscillatorType;
-  bassWave?: OscillatorType;
-  melody?: MusicNote[];
-  bass?: MusicNote[];
 }
 
 // ─── Settings ───────────────────────────────────────────────
