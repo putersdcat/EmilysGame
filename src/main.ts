@@ -66,7 +66,8 @@ import {
 import { HINTS } from './config/hints.config';
 import {
   createTradeState, openTrade, closeTrade, tradeNavigate,
-  executeTrade, syncTradeDOM, type TradeState,
+  executeTrade, executeSell, toggleTradeMode, getSellPrice, getSellableItems,
+  syncTradeDOM, type TradeState,
 } from './trading';
 import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
@@ -561,10 +562,10 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     getBubbleState, resetCooldowns, updateBubblePosition,
     HINTS,
   };
-  // Expose trade functions for E2E tests (#72)
+  // Expose trade functions for E2E tests (#72, #112)
   (window as any).__trade = {
     openTrade, closeTrade, tradeNavigate, executeTrade, syncTradeDOM,
-    createTradeState,
+    createTradeState, toggleTradeMode, executeSell, getSellPrice, getSellableItems,
   };
 
   return { state, renderer, input, hasSaveData: !!save };
@@ -766,14 +767,24 @@ function update(state: GameState, input: InputManager): void {
     if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.interact) {
-      const result = executeTrade(state.trade, state.inventory);
-      if (result.ok) {
-        addToast(state.ui, result.message, '#4caf50');
-        playSfx(state.sfx, 'shop_buy');
+      if (state.trade.mode === 'sell') {
+        const result = executeSell(state.trade, state.inventory);
+        if (result.ok) {
+          addToast(state.ui, result.message, '#ffab40');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
+        }
       } else {
-        playSfx(state.sfx, 'shop_fail');
+        const result = executeTrade(state.trade, state.inventory);
+        if (result.ok) {
+          addToast(state.ui, result.message, '#4caf50');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
+        }
       }
-      // Don't close — let player buy multiple items
+      // Don't close — let player buy/sell multiple items
     }
     // Escape handled in global keydown handler
     syncTradeDOM(state.trade, state.inventory);
@@ -2070,6 +2081,14 @@ function setupExtraKeys(state: GameState): void {
         if (e.shiftKey) {
           setTimeOfDay(getCycleProgress() + 0.1);
           invalidateShadowCache(); // #83 - force shadow recalc after time jump
+        }
+        break;
+      case 'Tab': // Toggle buy/sell mode in trade panel (#112)
+        if (state.trade.active) {
+          e.preventDefault();
+          toggleTradeMode(state.trade);
+          syncTradeDOM(state.trade, state.inventory);
+          playSfx(state.sfx, 'menu_navigate');
         }
         break;
       case 'W': // Shift+W: cycle weather
