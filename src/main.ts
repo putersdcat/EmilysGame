@@ -20,7 +20,7 @@ import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './save';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import {
@@ -33,7 +33,7 @@ import {
 } from './config/tiles.config';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
-import { clearObjectCache } from './render';
+import { clearObjectCache, invalidateObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { preloadAssetSprites, hasAssetSprite } from './asset-sprites';
 import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
@@ -101,6 +101,7 @@ import {
   createSfxState, playSfx, updateAmbience, stopAmbience,
   setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
   serializeSfxSettings, deserializeSfxSettings,
+  initSampledSfxPipeline, updateListenerPosition,
   type SfxState,
 } from './sfx';
 import {
@@ -406,6 +407,8 @@ function ensureChunksAround(state: GameState): void {
         const bc = collectBorderConstraints(state.chunks, cx, cy);
         const chunk = generateChunkSync(cx, cy, bc);
         state.chunks.set(key, chunk);
+        // Re-apply any resolved cells from save data
+        applyResolvedToChunk(key, chunk);
         // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
         invalidateChunkTerrain(chunkKey(cx - 1, cy));
         invalidateChunkTerrain(chunkKey(cx + 1, cy));
@@ -442,6 +445,61 @@ function collectBorderConstraints(
     eTraversal: eastChunk?.borderEdges?.wTraversal,
     wTraversal: westChunk?.borderEdges?.eTraversal,
   };
+}
+
+// ─── Resolved Cells Persistence ──────────────────────────────
+// Tracks cells mutated during gameplay (chests opened, doors unlocked, quiz gates passed)
+// so they survive save/load across chunk regeneration.
+
+/** Pending resolved cells keyed by chunkKey, applied after chunk generation */
+const _pendingResolved = new Map<string, ResolvedCell[]>();
+
+/** Store resolved cells from save data for deferred application after chunk gen */
+function setPendingResolvedCells(cells: ResolvedCell[]): void {
+  _pendingResolved.clear();
+  for (const rc of cells) {
+    let arr = _pendingResolved.get(rc.chunkKey);
+    if (!arr) {
+      arr = [];
+      _pendingResolved.set(rc.chunkKey, arr);
+    }
+    arr.push(rc);
+  }
+}
+
+/** Apply any pending resolved cells to a freshly generated chunk */
+function applyResolvedToChunk(key: string, chunk: ChunkData): void {
+  const cells = _pendingResolved.get(key);
+  if (!cells) return;
+  for (const rc of cells) {
+    if (rc.ly >= 0 && rc.ly < chunk.cells.length &&
+        rc.lx >= 0 && rc.lx < chunk.cells[0].length) {
+      const def = ASSET_DEFS[rc.newAssetKey];
+      chunk.cells[rc.ly][rc.lx] = {
+        assetKey: rc.newAssetKey,
+        walkable: def?.walkable ?? true,
+        interactable: false,
+        resolved: true,
+      };
+    }
+  }
+  invalidateObjectCache(key);
+}
+
+/** Scan all loaded chunks and collect cells with resolved=true */
+function collectResolvedCells(chunks: Map<string, ChunkData>): ResolvedCell[] {
+  const result: ResolvedCell[] = [];
+  for (const [key, chunk] of chunks) {
+    for (let ly = 0; ly < chunk.cells.length; ly++) {
+      for (let lx = 0; lx < chunk.cells[ly].length; lx++) {
+        const cell = chunk.cells[ly][lx];
+        if (cell.resolved) {
+          result.push({ chunkKey: key, lx, ly, newAssetKey: cell.assetKey });
+        }
+      }
+    }
+  }
+  return result;
 }
 
 /** Only call ensureChunksAround when player crosses a chunk boundary */
@@ -725,6 +783,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     state.inventory.addItem('snack', 2);
     state.inventory.addItem('water_flask', 1);
   }
+
+  // Prepare resolved cells from save for application during chunk generation
+  setPendingResolvedCells(save?.resolvedCells ?? []);
 
   // Generate initial chunks
   ensureChunksAround(state);
@@ -1256,6 +1317,11 @@ function update(state: GameState, input: InputManager): void {
     updateAmbience(state.sfx, timeSlot, weatherInfo.type);
   }
 
+  // --- Positional audio listener update (#108) — every 10th frame ---
+  if (state.frameCount % 10 === 0) {
+    updateListenerPosition(state.sfx, state.player.x, state.player.y);
+  }
+
   // --- Auto-save every 30s ---
   if (state.frameCount % (60 * 30) === 0) {
     doSave(state);
@@ -1474,7 +1540,7 @@ function buildSaveData(state: GameState): SaveData {
     },
     inventory: state.inventory.serialize(),
     visitedChunks: Array.from(state.chunks.keys()),
-    resolvedCells: [], // TODO: track resolved cells
+    resolvedCells: collectResolvedCells(state.chunks),
     quizStats: state.quizStats,
     wordlistSeed: '',
     entropyBuffer: getEntropyBuffer(), // Persist entropy pool (#4)
@@ -1555,10 +1621,19 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Force camera + chunk reload
   state.camera.x = data.player.x;
   state.camera.y = data.player.y;
+  // Store resolved cells for deferred application after chunk regeneration
+  setPendingResolvedCells(data.resolvedCells ?? []);
+  // Clear chunks so they regenerate with resolved cells applied
+  state.chunks.clear();
   clearTerrainCache();
+  clearObjectCache();
   clearParticles();
   clearWeather();
   clearWildlife();
+  // Regenerate chunks around new player position
+  state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
+  state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
+  ensureChunksAround(state);
 }
 
 function doSave(state: GameState): void {
@@ -1888,6 +1963,7 @@ function resetGameState(state: GameState): void {
   clearParticles();
   clearWeather();
   clearBubbles();
+  _pendingResolved.clear(); // Clear resolved cells for fresh game
   deleteSave();
   ensureChunksAround(state);
 }
@@ -3045,6 +3121,9 @@ async function main(): Promise<void> {
       console.log(`[Music] ${getTotalTrackCount()} total tracks available (${getTotalTrackCount() - 4} MIDI)`);
     }
   });
+
+  // Load sampled SFX in background (oscillator SFX work immediately as fallback)
+  initSampledSfxPipeline(state.sfx).catch(e => console.warn('[SFX] Sample init failed:', e));
 
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
