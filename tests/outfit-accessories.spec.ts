@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
 
-const URL = 'http://localhost:5175/?test=1';
+const URL = 'http://localhost:5173/?test=1';
 
 async function waitForGame(page: Page) {
   await page.goto(URL);

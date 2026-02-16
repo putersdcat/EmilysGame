@@ -14,6 +14,13 @@ test.describe('Main Menu Visual', () => {
     await skipBtn.waitFor({ state: 'visible', timeout: 5000 });
     await skipBtn.click();
 
+    // Dismiss Welcome Splash (#117 Phase 1) if it appears
+    const welcomeDismiss = page.locator('#welcomeDismiss');
+    if (await welcomeDismiss.isVisible({ timeout: 5000 }).catch(() => false)) {
+      await welcomeDismiss.click();
+      await page.waitForTimeout(500);
+    }
+
     // Wait for main menu (LLM health checks ~3-9s + 400ms + init)
     const mainMenu = page.locator('#mainMenu');
     await mainMenu.waitFor({ state: 'visible', timeout: 30000 });
