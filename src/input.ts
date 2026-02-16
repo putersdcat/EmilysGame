@@ -2,6 +2,7 @@
  * input.ts - Unified input handling: keyboard, touch, and gamepad.
  * Manages WASD/Arrow keys, virtual touch D-pad, and Gamepad API.
  * Supports edge detection (justPressed) for single-fire actions.
+ * Touch overlay auto-shows only on iOS/iPadOS/Tesla UA; auto-hides when idle (#126).
  * TODO: DOC - touch overlay layout, gamepad button mapping, input unification
  */
 
@@ -15,6 +16,17 @@ export interface InputState {
 
 /** Which input device is currently dominant */
 export type InputDevice = 'keyboard' | 'touch' | 'gamepad';
+
+/**
+ * Should touch controls auto-show without user opt-in?
+ * Only on Apple mobile (iPhone/iPad/iPod) or Tesla in-car browser.
+ * Other touch-capable devices (Windows laptops, Android) default to hidden.
+ * TODO: DOC - UA detection for touch auto-show
+ */
+export function shouldAutoShowTouchOverlay(): boolean {
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod|Tesla/i.test(ua);
+}
 
 // Gamepad axis deadzone
 const GP_DEADZONE = 0.3;
@@ -59,6 +71,11 @@ export class InputManager {
   private joystickOriginY = 0;
   private joystickKnob: HTMLElement | null = null;
 
+  // ── Touch idle/slide state (#126) ──
+  private _touchIdleTimer: ReturnType<typeof setTimeout> | null = null;
+  private _touchIdle = true; // start hidden, slide in on first touch
+  private static readonly TOUCH_IDLE_MS = 1200;
+
   // ── Gamepad state ──
   private gamepadState: InputState = { up: false, down: false, left: false, right: false, interact: false };
   private _gamepadConnected = false;
@@ -75,8 +92,8 @@ export class InputManager {
   constructor() {
     this.setupListeners();
     this.setupGamepad();
-    // Auto-detect touch device and show overlay if appropriate
-    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+    // (#126) Only auto-show touch overlay on Apple mobile / Tesla UA
+    if (shouldAutoShowTouchOverlay()) {
       this.enableTouchControls();
     }
   }
@@ -171,14 +188,16 @@ export class InputManager {
   //  TOUCH CONTROLS — Virtual joystick + action button
   // ═══════════════════════════════════════════════════════════════
 
-  /** Create and show touch overlay with joystick + action button */
+  /** Create and show touch overlay with joystick + action button.
+   *  (#126) Starts idle-hidden; slides in on touch, slides out after 1200ms idle. */
   enableTouchControls(): void {
     if (this._touchEnabled) return;
     this._touchEnabled = true;
+    this._touchIdle = true; // start idle (slid off-screen)
 
-    // Hide on keyboard activity auto (user can re-enable via options)
     const overlay = document.createElement('div');
     overlay.id = 'touchControlsOverlay';
+    overlay.classList.add('touch-idle'); // start hidden
     overlay.innerHTML = `
       <div class="touch-joystick-zone" id="touchJoystickZone">
         <div class="touch-joystick-ring">
@@ -187,6 +206,7 @@ export class InputManager {
       </div>
       <div class="touch-action-zone">
         <button class="touch-action-btn" id="touchActionBtn">✋</button>
+        <button class="touch-flashlight-btn" id="touchFlashlightBtn">🔦</button>
         <button class="touch-menu-btn" id="touchMenuBtn">☰</button>
       </div>
     `;
@@ -201,7 +221,7 @@ export class InputManager {
     jzone.addEventListener('touchend', (e) => this.onJoystickEnd(e), { passive: false });
     jzone.addEventListener('touchcancel', (e) => this.onJoystickEnd(e), { passive: false });
 
-    // Action button
+    // Action button (interact / Space equivalent)
     const actionBtn = document.getElementById('touchActionBtn')!;
     actionBtn.addEventListener('touchstart', (e) => {
       e.preventDefault();
@@ -209,25 +229,48 @@ export class InputManager {
       this.touchState.interact = true;
       this.pressQueue.interact = true;
       actionBtn.classList.add('active');
+      this.wakeFromIdle();
     }, { passive: false });
     actionBtn.addEventListener('touchend', (e) => {
       e.preventDefault();
       this.touchState.interact = false;
       actionBtn.classList.remove('active');
+      this.startIdleTimer();
+    }, { passive: false });
+
+    // Flashlight button → dispatch 'f' key
+    const flashBtn = document.getElementById('touchFlashlightBtn')!;
+    flashBtn.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      this.wakeFromIdle();
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
+    }, { passive: false });
+    flashBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.startIdleTimer();
     }, { passive: false });
 
     // Menu button → trigger Escape
     const menuBtn = document.getElementById('touchMenuBtn')!;
     menuBtn.addEventListener('touchstart', (e) => {
       e.preventDefault();
+      this.wakeFromIdle();
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     }, { passive: false });
+    menuBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.startIdleTimer();
+    }, { passive: false });
+
+    // Initial idle → slide in after a short delay so user sees the animation
+    setTimeout(() => this.startIdleTimer(), 300);
   }
 
   /** Remove touch overlay */
   disableTouchControls(): void {
     if (!this._touchEnabled) return;
     this._touchEnabled = false;
+    if (this._touchIdleTimer) { clearTimeout(this._touchIdleTimer); this._touchIdleTimer = null; }
     this.touchOverlay?.remove();
     this.touchOverlay = null;
     this.joystickKnob = null;
@@ -236,9 +279,31 @@ export class InputManager {
     this.touchAnalogY = 0;
   }
 
+  // ── Touch idle/slide helpers (#126) ──
+
+  /** Wake controls from idle — slide into view immediately */
+  private wakeFromIdle(): void {
+    if (this._touchIdleTimer) { clearTimeout(this._touchIdleTimer); this._touchIdleTimer = null; }
+    if (this._touchIdle && this.touchOverlay) {
+      this._touchIdle = false;
+      this.touchOverlay.classList.remove('touch-idle');
+    }
+  }
+
+  /** Start the idle timer — after TOUCH_IDLE_MS, slide controls off-screen */
+  private startIdleTimer(): void {
+    if (this._touchIdleTimer) clearTimeout(this._touchIdleTimer);
+    this._touchIdleTimer = setTimeout(() => {
+      this._touchIdle = true;
+      this.touchOverlay?.classList.add('touch-idle');
+      this._touchIdleTimer = null;
+    }, InputManager.TOUCH_IDLE_MS);
+  }
+
   private onJoystickStart(e: TouchEvent): void {
     e.preventDefault();
     this._activeDevice = 'touch';
+    this.wakeFromIdle();
     const touch = e.changedTouches[0];
     this.joystickTouchId = touch.identifier;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -268,6 +333,7 @@ export class InputManager {
         if (this.joystickKnob) {
           this.joystickKnob.style.transform = 'translate(-50%, -50%)';
         }
+        this.startIdleTimer();
         return;
       }
     }
@@ -325,8 +391,8 @@ export class InputManager {
       this.resetInput(this.gamepadState);
       this.gpAnalogX = 0;
       this.gpAnalogY = 0;
-      // Re-show touch controls on touch device
-      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+      // Re-show touch controls on matching UA device
+      if (shouldAutoShowTouchOverlay()) {
         this.enableTouchControls();
       }
     });

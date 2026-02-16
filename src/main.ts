@@ -10,7 +10,7 @@ import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
-import { InputManager } from './input';
+import { InputManager, shouldAutoShowTouchOverlay } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
@@ -1799,7 +1799,7 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
     }
   };
 
-  // Touch controls toggle (#124)
+  // Touch controls toggle (#124, #126 — UA-based auto-show)
   const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
 
   // Fog of War toggle (#127)
@@ -1815,10 +1815,11 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   }
   const optGamepadStatus = document.getElementById('optGamepadStatus');
   if (optTouch && inputMgr) {
-    // Set current value
-    optTouch.value = inputMgr.touchEnabled ? 'on' : 'off';
-    if (!inputMgr.touchEnabled && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
-      optTouch.value = 'auto'; // was auto-detected but not forced
+    // (#126) Determine current state: 'auto' means UA-matched, 'on' means forced, 'off' means disabled
+    if (inputMgr.touchEnabled) {
+      optTouch.value = shouldAutoShowTouchOverlay() ? 'auto' : 'on';
+    } else {
+      optTouch.value = 'off';
     }
     optTouch.onchange = () => {
       if (!inputMgr) return;
@@ -1827,8 +1828,8 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
       } else if (optTouch.value === 'off') {
         inputMgr.disableTouchControls();
       } else {
-        // Auto: enable if touch device
-        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        // Auto: only enable if UA matches (#126)
+        if (shouldAutoShowTouchOverlay()) {
           inputMgr.enableTouchControls();
         } else {
           inputMgr.disableTouchControls();
@@ -2820,6 +2821,8 @@ async function main(): Promise<void> {
     toggleFlashlight,
     isFlashlightOn,
     state,
+    // Input manager for touch/gamepad testing (#126)
+    inputMgr: input,
     // Asset/biome metadata (#58)
     getAssetDefs: () => ASSET_DEFS,
     getBiomeDefs: () => BIOME_DEFS,
