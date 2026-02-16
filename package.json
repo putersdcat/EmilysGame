@@ -12,8 +12,19 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "npx playwright test --reporter=line",
+    "test:core": "npx playwright test tests/core/ --reporter=line",
+    "test:audio": "npx playwright test tests/audio/ --reporter=line",
+    "test:rendering": "npx playwright test tests/rendering/ --reporter=line",
+    "test:sprites": "npx playwright test tests/sprites/ --reporter=line",
+    "test:world-gen": "npx playwright test tests/world-gen/ --reporter=line",
+    "test:education": "npx playwright test tests/education/ --reporter=line",
+    "test:ui": "npx playwright test tests/ui/ --reporter=line",
+    "test:gameplay": "npx playwright test tests/gameplay/ --reporter=line",
+    "test:perf": "npx playwright test tests/perf/ --reporter=line",
+    "test:quick": "npx playwright test tests/core/ tests/audio/ --reporter=line",
     "screenshot": "tsx scripts/capture-screenshot.ts",
-    "convert-midi": "tsx scripts/convert-midi.ts"
+    "convert-midi": "tsx scripts/convert-midi.ts",
+    "generate-sfx": "tsx scripts/generate-sfx-samples.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
