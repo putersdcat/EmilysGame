@@ -52,6 +52,8 @@ export const HAIR_STYLES: { name: string; value: CharacterVariation['hairStyle']
   { name: '🎀 Pigtails',  value: 'pigtails' },
   { name: '🌊 Wavy',      value: 'wavy' },
   { name: '🎀 Ponytail',  value: 'ponytail' },
+  { name: '🪢 Braids',    value: 'braids' },
+  { name: '⚡ Spiky',     value: 'spiky' },
 ];
 
 export const ACCESSORIES: { name: string; value: Accessory }[] = [

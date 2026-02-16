@@ -17,7 +17,7 @@ export type Accessory = 'none' | 'bow' | 'crown' | 'glasses';
 export interface CharacterVariation {
   name: string;
   hairColor: string;
-  hairStyle: 'straight' | 'pigtails' | 'wavy' | 'ponytail';
+  hairStyle: 'straight' | 'pigtails' | 'wavy' | 'ponytail' | 'braids' | 'spiky';
   dressColor: string;
   skinTone: string;
   accessory?: Accessory;
@@ -207,6 +207,39 @@ function getFrontHairSVG(hairStyle: string, hairColor: string): string {
       <path d="M 26 28 Q 29 26 32 28 Q 35 26 38 28" fill="#E84393" stroke="#C0392B" stroke-width="0.5"/>
       <circle cx="32" cy="27" r="1.5" fill="#E84393"/>
     `;
+  } else if (hairStyle === 'braids') {
+    return `
+      <!-- Braids - two thick braids with bands -->
+      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
+      <!-- Left braid -->
+      <path d="M 20 26 Q 18 32 17 38 Q 16 44 18 50" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 20 28 L 17 32 L 20 36 L 17 40 L 20 44 L 17 48" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <!-- Left braid bands -->
+      <rect x="15" y="30" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <rect x="14" y="42" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <!-- Right braid -->
+      <path d="M 44 26 Q 46 32 47 38 Q 48 44 46 50" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 44 28 L 47 32 L 44 36 L 47 40 L 44 44 L 47 48" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <!-- Right braid bands -->
+      <rect x="43" y="30" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <rect x="44" y="42" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <!-- Fringe -->
+      <path d="M 22 18 Q 27 15 32 16 Q 37 15 42 18" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.4"/>
+    `;
+  } else if (hairStyle === 'spiky') {
+    return `
+      <!-- Spiky hair - angular messy punk look -->
+      <circle cx="32" cy="24" r="14" fill="${hairColor}"/>
+      <!-- Spikes pointing up -->
+      <path d="M 20 20 L 18 8 L 24 16" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 26 18 L 26 6 L 32 14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 32 16 L 34 4 L 38 14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 38 18 L 42 6 L 44 16" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 42 20 L 48 10 L 46 20" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Side tufts -->
+      <path d="M 18 24 L 12 18 L 18 22" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 46 24 L 52 18 L 46 22" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+    `;
   } else {
     // wavy
     return `
@@ -355,6 +388,34 @@ function getBackHairSVG(hairStyle: string, hairColor: string): string {
       <!-- Tail strand detail -->
       <path d="M 32 34 L 32 52" stroke="${shadow}" stroke-width="0.6" opacity="0.3"/>
     `;
+  } else if (hairStyle === 'braids') {
+    return `
+      <!-- Back braids - two prominent braids down the back -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Left braid -->
+      <path d="M 22 28 Q 20 36 19 44 Q 18 50 20 56" stroke="${hairColor}" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M 22 30 L 19 34 L 22 38 L 19 42 L 22 46 L 19 50 L 22 54" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <rect x="17" y="34" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <rect x="16" y="46" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <!-- Right braid -->
+      <path d="M 42 28 Q 44 36 45 44 Q 46 50 44 56" stroke="${hairColor}" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <path d="M 42 30 L 45 34 L 42 38 L 45 42 L 42 46 L 45 50 L 42 54" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <rect x="41" y="34" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+      <rect x="42" y="46" width="6" height="2.5" rx="1" fill="#E84393" opacity="0.8"/>
+    `;
+  } else if (hairStyle === 'spiky') {
+    return `
+      <!-- Back spiky hair -->
+      <circle cx="32" cy="24" r="15" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Spikes visible from behind -->
+      <path d="M 22 18 L 18 6 L 26 14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 28 16 L 28 4 L 34 12" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 34 16 L 36 2 L 40 12" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 40 18 L 46 6 L 44 16" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Side tufts -->
+      <path d="M 18 22 L 10 16 L 18 20" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 46 22 L 54 16 L 46 20" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+    `;
   } else {
     // wavy
     return `
@@ -501,6 +562,29 @@ function getSideHairSVG(hairStyle: string, hairColor: string): string {
       <!-- Bow at tie point -->
       <path d="M 21 26 Q 23 23 25 26 Q 27 23 29 26" fill="#E84393" stroke="#C0392B" stroke-width="0.5"/>
       <circle cx="25" cy="25" r="1.5" fill="#E84393"/>
+    `;
+  } else if (hairStyle === 'braids') {
+    return `
+      <!-- Side view braids - one braid visible hanging -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Visible braid hanging from side -->
+      <path d="M 22 26 Q 18 34 16 42 Q 15 48 17 54" stroke="${hairColor}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M 22 28 L 18 32 L 22 36 L 18 40 L 22 44 L 18 48 L 22 52" stroke="${shadow}" stroke-width="0.8" fill="none" opacity="0.5"/>
+      <!-- Braid bands -->
+      <rect x="15" y="32" width="5" height="2" rx="1" fill="#E84393" opacity="0.8"/>
+      <rect x="14" y="44" width="5" height="2" rx="1" fill="#E84393" opacity="0.8"/>
+    `;
+  } else if (hairStyle === 'spiky') {
+    return `
+      <!-- Side view spiky hair -->
+      <circle cx="32" cy="22" r="14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Spikes from side profile -->
+      <path d="M 24 18 L 20 6 L 28 14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 30 16 L 30 4 L 36 12" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 36 16 L 40 4 L 40 14" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <path d="M 40 18 L 48 8 L 44 18" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
+      <!-- Back tuft -->
+      <path d="M 20 22 L 12 14 L 18 20" fill="${hairColor}" stroke="${shadow}" stroke-width="0.5"/>
     `;
   } else {
     // wavy
