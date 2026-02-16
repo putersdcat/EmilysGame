@@ -38,6 +38,13 @@ import type { TileType } from './tiles';
 
 // --- Types ---
 
+/** Mood category derived from entropy seed — biases template selection (#46) */
+export interface MoodProfile {
+  category: 'open' | 'river-heavy' | 'enclosed' | 'path-heavy' | 'fortified' | 'sparse';
+  /** Weight modifiers for template categories. Applied additively to biome weights. */
+  modifiers: Record<string, number>;
+}
+
 export interface CellData {
   assetKey: string;
   walkable: boolean;
@@ -54,6 +61,11 @@ export interface ChunkBorderEdges {
   s: EdgeTag[];
   e: EdgeTag[];
   w: EdgeTag[];
+  /** Traversal walkability per border position (#46) */
+  nTraversal?: boolean[];
+  sTraversal?: boolean[];
+  eTraversal?: boolean[];
+  wTraversal?: boolean[];
 }
 
 /** Constraints from already-generated neighboring chunks. */
@@ -62,6 +74,11 @@ export interface BorderConstraints {
   s?: EdgeTag[]; // north border edge tags from chunk below
   e?: EdgeTag[]; // west border edge tags from chunk to the east
   w?: EdgeTag[]; // east border edge tags from chunk to the west
+  /** Traversal continuity from neighbors (#46) */
+  nTraversal?: boolean[];
+  sTraversal?: boolean[];
+  eTraversal?: boolean[];
+  wTraversal?: boolean[];
 }
 
 export interface ChunkData {
@@ -77,6 +94,10 @@ export interface ChunkData {
   borderEdges?: ChunkBorderEdges;
   /** Chunk-level climate derived from noise fields (#101) */
   climate?: { moisture: number; temperature: number };
+  /** Mood profile derived from entropy seed (#46) */
+  mood?: MoodProfile;
+  /** Biome transition flags for border zones (#46) */
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean };
 }
 
 // --- Entropy State ---
@@ -234,6 +255,120 @@ function selectBiomeCoherent(chunkX: number, chunkY: number): BiomeDef {
   return getBiome(3);                              // castle (~25%)
 }
 
+// --- Mood Profile System (#46) ---
+// Derives a "mood" from the entropy seed that biases template selection weights.
+// Deterministic: same seed → same mood.
+
+const MOOD_CATEGORIES: MoodProfile['category'][] = [
+  'open', 'river-heavy', 'enclosed', 'path-heavy', 'fortified', 'sparse',
+];
+
+/** Modifier tables per mood category. Values are additive to biome weights. */
+const MOOD_MODIFIERS: Record<MoodProfile['category'], Record<string, number>> = {
+  'open': {
+    meadow_base: 0.3, forest_clearing: 0.2, dirt_clearing: 0.2,
+  },
+  'river-heavy': {
+    river_straight_ns: 0.4, river_straight_ew: 0.4, river_bend_ne: 0.4, river_bend_nw: 0.4,
+    river_end_pond: 0.4, river_t_junction: 0.4, river_crossroads: 0.4, river_island: 0.4,
+    bridge_ns: 0.3, bridge_ew: 0.3,
+    shore_n: 0.2, shore_corner_ne: 0.2,
+    water_garden: 0.3,
+  },
+  'enclosed': {
+    fence_enclosure: 0.3, fenced_yard: 0.3, fenced_garden: 0.3, fence_row: 0.3,
+    wall_segment: 0.3, wall_gate: 0.3, wall_corner: 0.3, wall_end: 0.3,
+    wall_bastion: 0.3, wall_corner_capped: 0.3,
+  },
+  'path-heavy': {
+    dirt_path_ns: 0.4, dirt_path_ew: 0.4,
+    path_bend_ne: 0.3, path_t_junction: 0.3, path_crossroads: 0.3, path_dead_end: 0.3,
+    spiral_path: 0.3, sand_path: 0.3,
+  },
+  'fortified': {
+    wall_segment: 0.4, wall_gate: 0.4, wall_corner: 0.4, wall_end: 0.4,
+    guard_tower: 0.3, gatehouse: 0.3,
+    fortified_passage: 0.3, wall_bastion: 0.3, wall_t_junction: 0.3,
+  },
+  'sparse': {
+    meadow_base: 0.5, dirt_clearing: 0.3, sandy_patch: 0.2,
+    // sparse applies a global -0.1 penalty handled in buildBiomeCandidatePool
+  },
+};
+
+/**
+ * Derive a mood profile from a seed string.
+ * Uses character frequency analysis to deterministically select a mood category.
+ */
+export function deriveMood(seed: string): MoodProfile {
+  if (!seed || seed.length === 0) {
+    return { category: 'open', modifiers: { ...MOOD_MODIFIERS['open'] } };
+  }
+
+  // Character frequency analysis: count vowels, consonants, digits, symbols
+  let vowels = 0, consonants = 0, digits = 0, symbols = 0;
+  const vowelSet = new Set('aeiouAEIOU');
+  const letterRe = /[a-zA-Z]/;
+
+  for (let i = 0; i < seed.length; i++) {
+    const ch = seed[i];
+    if (vowelSet.has(ch)) vowels++;
+    else if (letterRe.test(ch)) consonants++;
+    else if (ch >= '0' && ch <= '9') digits++;
+    else symbols++;
+  }
+
+  // Weight each category based on char frequency ratios
+  const total = seed.length || 1;
+  const vRatio = vowels / total;
+  const cRatio = consonants / total;
+  const dRatio = digits / total;
+  const sRatio = symbols / total;
+
+  // Score each mood
+  const scores: number[] = [
+    vRatio * 3 + 0.1,                                // open: vowel-heavy
+    dRatio * 4 + sRatio * 2 + 0.05,                  // river-heavy: digits/symbols
+    cRatio * 3 + sRatio + 0.05,                       // enclosed: consonant-heavy
+    (vRatio + cRatio) * 2 + 0.1,                      // path-heavy: balanced letters
+    cRatio * 2 + dRatio * 2 + 0.05,                   // fortified: consonants + digits
+    sRatio * 3 + (1 - vRatio - cRatio) * 2 + 0.05,   // sparse: symbol-heavy
+  ];
+
+  // Add deterministic salt from hash to break ties and add variety
+  const hash = fastHash(seed);
+  for (let i = 0; i < scores.length; i++) {
+    scores[i] += ((hash >>> (i * 5)) & 0x1F) / 31 * 0.3;
+  }
+
+  // Pick highest scoring category
+  let bestIdx = 0;
+  for (let i = 1; i < scores.length; i++) {
+    if (scores[i] > scores[bestIdx]) bestIdx = i;
+  }
+
+  const category = MOOD_CATEGORIES[bestIdx];
+  return { category, modifiers: { ...MOOD_MODIFIERS[category] } };
+}
+
+// --- Biome Transition Detection (#46) ---
+
+/**
+ * Detect biome transitions by comparing the biome at (cx, cy) with its 4 neighbors.
+ * Returns flags indicating which borders are transition zones.
+ */
+export function detectBiomeTransitions(
+  cx: number, cy: number,
+): { n: boolean; s: boolean; e: boolean; w: boolean } {
+  const myBiome = selectBiomeCoherent(cx, cy);
+  return {
+    n: selectBiomeCoherent(cx, cy - 1).id !== myBiome.id,
+    s: selectBiomeCoherent(cx, cy + 1).id !== myBiome.id,
+    e: selectBiomeCoherent(cx + 1, cy).id !== myBiome.id,
+    w: selectBiomeCoherent(cx - 1, cy).id !== myBiome.id,
+  };
+}
+
 // --- World Unit Grid Constants ---
 
 const WU_SIZE = WORLD_CONFIG.worldUnitSize;
@@ -260,7 +395,9 @@ export async function generateChunk(
 
   const biome = selectBiomeCoherent(chunkX, chunkY);
   const climate = getChunkClimate(chunkX, chunkY);
-  const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY);
+  const mood = deriveMood(entropyText);
+  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY);
+  const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY, undefined, mood, biomeTransitions);
 
   return {
     chunkX, chunkY,
@@ -269,6 +406,8 @@ export async function generateChunk(
     cells, seed: entropyText, generated: true,
     borderEdges,
     climate,
+    mood,
+    biomeTransitions,
   };
 }
 
@@ -294,9 +433,11 @@ export function generateChunkSync(
   const featureSeed = fastHash(seedText + '_features');
   const biome = selectBiomeCoherent(chunkX, chunkY);
   const climate = getChunkClimate(chunkX, chunkY);
+  const mood = deriveMood(seedText);
+  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY);
 
   const { cells, borderEdges } = generateGridChunk(
-    size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints,
+    size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints, mood, biomeTransitions,
   );
 
   return {
@@ -306,6 +447,8 @@ export function generateChunkSync(
     cells, seed: seedText, generated: true,
     borderEdges,
     climate,
+    mood,
+    biomeTransitions,
   };
 }
 
@@ -324,6 +467,8 @@ function generateGridChunk(
   chunkX: number,
   chunkY: number,
   borderConstraints?: BorderConstraints,
+  mood?: MoodProfile,
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): GridChunkResult {
   const rng = seededRandom(featureSeed);
   const chunkDist = Math.abs(chunkX) + Math.abs(chunkY); // Manhattan distance from origin
@@ -333,7 +478,7 @@ function generateGridChunk(
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
 
   // Phase 2: solve world unit grid (AC-3 constraint propagation)
-  const { grid, borderEdges } = solveWorldUnitGrid(biome, rng, borderConstraints);
+  const { grid, borderEdges } = solveWorldUnitGrid(biome, rng, borderConstraints, mood, biomeTransitions);
 
   // Phase 3: stamp solved templates onto cell grid
   stampWorldUnitGrid(cells, grid);
@@ -654,9 +799,11 @@ function solveWorldUnitGrid(
   biome: BiomeDef,
   rng: () => number,
   borderConstraints?: BorderConstraints,
+  mood?: MoodProfile,
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): SolveResult {
   const allRotations = getAllRotations();
-  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations);
+  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations, mood, biomeTransitions);
   const fallback = findFallbackTemplate(allRotations);
 
   // Phase 2a: Initialize possibility sets
@@ -703,12 +850,35 @@ function solveWorldUnitGrid(
 function buildBiomeCandidatePool(
   biome: BiomeDef,
   allRotations: Map<string, RotatedTemplate[]>,
+  mood?: MoodProfile,
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): WeightedCandidate[] {
   const pool: WeightedCandidate[] = [];
   const biomeWeights = BIOME_TEMPLATE_WEIGHTS[biome.name] ?? {};
+  const hasTransition = biomeTransitions && (biomeTransitions.n || biomeTransitions.s || biomeTransitions.e || biomeTransitions.w);
 
   for (const [templateName, rotations] of allRotations.entries()) {
-    const weight = biomeWeights[templateName] ?? 0.01;
+    let weight = biomeWeights[templateName] ?? 0.01;
+
+    // Apply mood modifiers (#46): additive bias from mood profile
+    if (mood) {
+      const mod = mood.modifiers[templateName];
+      if (mod !== undefined) {
+        weight += mod;
+      } else if (mood.category === 'sparse') {
+        // Sparse mood penalizes everything not explicitly boosted
+        weight = Math.max(0.005, weight - 0.1);
+      }
+    }
+
+    // Biome transition: slightly widen pool by boosting low-weight templates (#46)
+    if (hasTransition && weight < 0.02) {
+      weight += 0.01;
+    }
+
+    // Floor to prevent zero weights
+    weight = Math.max(0.005, weight);
+
     for (const rot of rotations) {
       pool.push({ template: rot, weight });
     }
@@ -734,8 +904,10 @@ function applyBorderConstraints(
   if (bc.n) {
     for (let gx = 0; gx < GRID_DIM && gx < bc.n.length; gx++) {
       const requiredTag = bc.n[gx];
+      const requiredTraversal = bc.nTraversal?.[gx];
       slots[0][gx].candidates = slots[0][gx].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.n, requiredTag),
+        c => edgesCompatible(c.template.edgeTags.n, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.n === requiredTraversal),
       );
     }
   }
@@ -744,8 +916,10 @@ function applyBorderConstraints(
     const lastRow = GRID_DIM - 1;
     for (let gx = 0; gx < GRID_DIM && gx < bc.s.length; gx++) {
       const requiredTag = bc.s[gx];
+      const requiredTraversal = bc.sTraversal?.[gx];
       slots[lastRow][gx].candidates = slots[lastRow][gx].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.s, requiredTag),
+        c => edgesCompatible(c.template.edgeTags.s, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.s === requiredTraversal),
       );
     }
   }
@@ -753,8 +927,10 @@ function applyBorderConstraints(
   if (bc.w) {
     for (let gy = 0; gy < GRID_DIM && gy < bc.w.length; gy++) {
       const requiredTag = bc.w[gy];
+      const requiredTraversal = bc.wTraversal?.[gy];
       slots[gy][0].candidates = slots[gy][0].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.w, requiredTag),
+        c => edgesCompatible(c.template.edgeTags.w, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.w === requiredTraversal),
       );
     }
   }
@@ -763,8 +939,10 @@ function applyBorderConstraints(
     const lastCol = GRID_DIM - 1;
     for (let gy = 0; gy < GRID_DIM && gy < bc.e.length; gy++) {
       const requiredTag = bc.e[gy];
+      const requiredTraversal = bc.eTraversal?.[gy];
       slots[gy][lastCol].candidates = slots[gy][lastCol].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.e, requiredTag),
+        c => edgesCompatible(c.template.edgeTags.e, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.e === requiredTraversal),
       );
     }
   }
@@ -1037,6 +1215,11 @@ function extractGridBorderEdges(
     s: Array.from({ length: GRID_DIM }, (_, gx) => grid[GRID_DIM - 1]?.[gx]?.edgeTags.s ?? 'open'),
     e: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[GRID_DIM - 1]?.edgeTags.e ?? 'open'),
     w: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[0]?.edgeTags.w ?? 'open'),
+    // Traversal walkability per border position (#46)
+    nTraversal: Array.from({ length: GRID_DIM }, (_, gx) => grid[0]?.[gx]?.traversalChannels.n ?? true),
+    sTraversal: Array.from({ length: GRID_DIM }, (_, gx) => grid[GRID_DIM - 1]?.[gx]?.traversalChannels.s ?? true),
+    eTraversal: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[GRID_DIM - 1]?.traversalChannels.e ?? true),
+    wTraversal: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[0]?.traversalChannels.w ?? true),
   };
 }
 

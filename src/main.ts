@@ -12,7 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
@@ -436,6 +436,11 @@ function collectBorderConstraints(
     s: southChunk?.borderEdges?.n,  // north border of chunk below
     e: eastChunk?.borderEdges?.w,   // west border of chunk to the east
     w: westChunk?.borderEdges?.e,   // east border of chunk to the west
+    // Traversal continuity from neighbors (#46)
+    nTraversal: northChunk?.borderEdges?.sTraversal,
+    sTraversal: southChunk?.borderEdges?.nTraversal,
+    eTraversal: eastChunk?.borderEdges?.wTraversal,
+    wTraversal: westChunk?.borderEdges?.eTraversal,
   };
 }
 
@@ -2889,6 +2894,17 @@ async function main(): Promise<void> {
       'barricade', 'sparkle', 'bridge',
       'chicken', 'rooster', 'pig', 'cow', 'sheep', 'goat', 'rabbit', 'duck', 'fox', 'deer', 'horse', 'dog',
     ],
+    // Mood + biome transitions debug (#46)
+    deriveMood,
+    detectBiomeTransitions,
+    getChunkMood: (cx: number, cy: number) => {
+      const key = chunkKey(cx, cy);
+      return state.chunks.get(key)?.mood ?? null;
+    },
+    getChunkTransitions: (cx: number, cy: number) => {
+      const key = chunkKey(cx, cy);
+      return state.chunks.get(key)?.biomeTransitions ?? null;
+    },
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
