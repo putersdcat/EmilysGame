@@ -84,8 +84,8 @@ test.describe('Particle Density Rebalance - Issue #78', () => {
     const butterflyMatch = text?.match(/🦋(\d+)/);
     if (butterflyMatch) {
       const count = parseInt(butterflyMatch[1]);
-      // max butterflies is 12 in config
-      expect(count).toBeLessThanOrEqual(12);
+      // max butterflies is 5 in config (#134)
+      expect(count).toBeLessThanOrEqual(5);
     }
   });
 

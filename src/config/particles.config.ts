@@ -20,7 +20,7 @@ export interface ParticleTypeCap {
 }
 
 export const PARTICLE_CAPS: Record<string, ParticleTypeCap> = {
-  butterfly: { max: 12, spawnRate: 0.25, baseSize: 14, sizeVariance: 4, enabled: true },
+  butterfly: { max: 5, spawnRate: 0.12, baseSize: 14, sizeVariance: 4, enabled: true }, // #134: reduced from 12/0.25
   sparkle:   { max: 20, spawnRate: 0.45, baseSize: 3,  sizeVariance: 3, enabled: true },
   leaf:      { max: 10, spawnRate: 0.18, baseSize: 14, sizeVariance: 4, enabled: true },
   bird:      { max: 3,  spawnRate: 0.02, baseSize: 18, sizeVariance: 6, enabled: true },
@@ -45,7 +45,7 @@ export const PARTICLE_LIMITS = {
  */
 export const TIME_SPAWN_MODIFIERS: Record<string, Record<string, number>> = {
   // Butterflies love daytime, vanish at night
-  butterfly: { Dawn: 0.4, Morning: 0.8, Day: 1.0, Afternoon: 0.9, Dusk: 0.3, Evening: 0.0, Night: 0.0, 'Late Night': 0.0 },
+  butterfly: { Dawn: 0.3, Morning: 0.6, Day: 0.8, Afternoon: 0.7, Dusk: 0.2, Evening: 0.0, Night: 0.0, 'Late Night': 0.0 }, // #134: reduced time modifiers
   // Sparkles shine more at twilight/night
   sparkle:   { Dawn: 0.6, Morning: 0.4, Day: 0.3, Afternoon: 0.4, Dusk: 0.8, Evening: 1.0, Night: 1.0, 'Late Night': 0.8 },
   // Leaves are wind-driven, always present, slightly less at night
@@ -61,7 +61,7 @@ export const TIME_SPAWN_MODIFIERS: Record<string, Record<string, number>> = {
  * Missing biome = 1.0 default.
  */
 export const BIOME_SPAWN_MODIFIERS: Record<string, Record<string, number>> = {
-  butterfly: { forest: 1.2, meadow: 1.5, swamp: 0.3, desert: 0.1, tundra: 0.0, cave: 0.0 },
+  butterfly: { forest: 0.8, meadow: 1.0, swamp: 0.2, desert: 0.05, tundra: 0.0, cave: 0.0 }, // #134: reduced biome modifiers
   sparkle:   { forest: 0.5, meadow: 0.3, swamp: 1.2, desert: 0.0, tundra: 0.5, cave: 1.5 },
   leaf:      { forest: 1.5, meadow: 0.5, swamp: 0.8, desert: 0.0, tundra: 0.2, cave: 0.0 },
   bird:      { forest: 1.0, meadow: 1.3, swamp: 0.5, desert: 0.3, tundra: 0.2, cave: 0.0 },

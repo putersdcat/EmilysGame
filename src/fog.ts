@@ -35,7 +35,7 @@ const visitedCells = new Set<string>();
 // Offscreen canvas for fog compositing (avoids per-cell draw calls)
 let fogCanvas: OffscreenCanvas | null = null;
 let fogCtx: OffscreenCanvasRenderingContext2D | null = null;
-let fogEnabled = true;
+let fogEnabled = false; // #139: default OFF — user can enable via options
 
 // ─── Core API ───────────────────────────────────────────────
 

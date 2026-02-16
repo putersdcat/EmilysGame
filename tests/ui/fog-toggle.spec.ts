@@ -55,13 +55,13 @@ test.describe('Fog-of-War Toggle (#127)', () => {
     expect(options).toContain('Off');
   });
 
-  test('fog toggle defaults to On', async ({ page }) => {
+  test('fog toggle defaults to Off (#139)', async ({ page }) => {
     await waitForGame(page);
     await openOptions(page);
     await page.waitForSelector('#optionsOverlay', { state: 'visible', timeout: 3000 });
     
     const fogSelect = page.locator('#optFogOfWar');
-    await expect(fogSelect).toHaveValue('on');
+    await expect(fogSelect).toHaveValue('off');
   });
 
   test('toggling to Off disables fog system', async ({ page }) => {
@@ -87,9 +87,9 @@ test.describe('Fog-of-War Toggle (#127)', () => {
     
     // Verify fog starts enabled
     const fogEnabledBefore = await page.evaluate(() => {
-      return (window as any).__gameDebug?.state ? true : true; // fog is enabled by default
+      return (window as any).__gameDebug?.isFogEnabled?.() ?? false; // #139: fog is OFF by default
     });
-    expect(fogEnabledBefore).toBe(true);
+    expect(fogEnabledBefore).toBe(false);
     
     // Open pause menu → Options
     await page.keyboard.press('Escape');
