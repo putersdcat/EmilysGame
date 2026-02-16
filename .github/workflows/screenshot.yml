@@ -1,16 +1,8 @@
-name: Auto Screenshot
+name: Update README Screenshot (Manual)
 
-# Run on push to main, or manually via workflow_dispatch
+# Manual-only workflow to refresh docs/game-screenshot.png
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-  workflow_dispatch: # Allow manual trigger
-  schedule:
-    # Run weekly on Sundays at 00:00 UTC to keep screenshot fresh
-    - cron: '0 0 * * 0'
+  workflow_dispatch:
 
 jobs:
   capture-screenshot:
