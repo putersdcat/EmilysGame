@@ -10,6 +10,7 @@ import path from 'node:path';
 
 const SRC_DIR = path.resolve(process.cwd(), 'node_modules', 'piano-mp3', 'piano-mp3');
 const OUT_DIR = path.resolve(process.cwd(), 'public', 'audio', 'piano-mp3');
+const SAMPLE_PUBLIC_PATH = './audio/piano-mp3';
 
 const SAMPLE_REGEX = /^[A-G](b)?\d\.mp3$/;
 
@@ -46,7 +47,7 @@ function main(): void {
         source: 'piano-mp3',
         copied,
         totalAvailable: files.length,
-        sampleDirectory: OUT_DIR,
+        sampleDirectory: SAMPLE_PUBLIC_PATH,
       },
       null,
       2
