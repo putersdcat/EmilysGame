@@ -117,6 +117,35 @@ export const SFX_DEFS: SfxDef[] = [
       { freq: 1200, duration: 0.12, wave: 'sine', gain: 0.06, delay: 0.2 },
     ],
   },
+  // #110 Phase 3 — Stream drinking & desperation SFX
+  {
+    id: 'stream_drink',
+    category: 'interaction',
+    notes: [
+      { freq: 200, duration: 0.08, wave: 'triangle', gain: 0.1 },
+      { freq: 300, duration: 0.1, wave: 'sine', gain: 0.12, delay: 0.1 },
+      { freq: 250, duration: 0.08, wave: 'triangle', gain: 0.1, delay: 0.22 },
+      { freq: 400, duration: 0.06, wave: 'sine', gain: 0.08, delay: 0.32 },
+    ],
+  },
+  {
+    id: 'diarrhea_gurgle',
+    category: 'interaction',
+    notes: [
+      { freq: 80, duration: 0.2, wave: 'sawtooth', gain: 0.08, slideTo: 120 },
+      { freq: 100, duration: 0.15, wave: 'sawtooth', gain: 0.06, delay: 0.25, slideTo: 60 },
+      { freq: 90, duration: 0.18, wave: 'triangle', gain: 0.07, delay: 0.45, slideTo: 130 },
+    ],
+  },
+  {
+    id: 'eat_worms',
+    category: 'interaction',
+    notes: [
+      { freq: 150, duration: 0.1, wave: 'square', gain: 0.06, slideTo: 100 },
+      { freq: 200, duration: 0.08, wave: 'triangle', gain: 0.08, delay: 0.12 },
+      { freq: 120, duration: 0.15, wave: 'sawtooth', gain: 0.05, delay: 0.22, slideTo: 80 },
+    ],
+  },
 
   // ─── UI SFX ──────────────────────────────────────────────
   {

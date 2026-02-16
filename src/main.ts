@@ -72,6 +72,7 @@ import {
 import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
   serializeStatus, deserializeStatus, resetTickCounter,
+  CRITICAL_THRESHOLD,
   type PlayerStatus,
 } from './status';
 import {
@@ -318,6 +319,63 @@ function _startHygieneQuiz(state: GameState): void {
   };
   state.paused = true;
   (state as any)._hygieneQuiz = true;
+}
+
+// ─── Insect Safety Quiz (#110 Phase 3) ───────────────────────
+
+/** Insect safety quiz questions for eat worms interaction */
+const INSECT_QUESTIONS = [
+  {
+    question: 'Is it safe to eat insects?',
+    answers: ['Some insects are safe if cooked, but many are not', 'All insects are safe to eat', 'No insects are ever safe', 'Only butterflies are safe'],
+  },
+  {
+    question: 'Why do some people eat insects?',
+    answers: ['They are high in protein and sustainable', 'They taste like candy', 'There is no reason', 'Insects have magic powers'],
+  },
+  {
+    question: 'What should you NEVER eat from the ground?',
+    answers: ['Unknown berries, mushrooms, or bugs', 'Grass', 'Dirt', 'Leaves'],
+  },
+  {
+    question: 'What is the safest way to prepare insects for eating?',
+    answers: ['Cook them thoroughly first', 'Eat them raw and alive', 'Wash them with soap', 'Freeze them for a minute'],
+  },
+];
+
+/**
+ * Start an insect safety quiz after eating worms.
+ * Correct → bonus energy; Wrong → just the tiny +5
+ */
+function _startInsectQuiz(state: GameState): void {
+  const iq = INSECT_QUESTIONS[Math.floor(Math.random() * INSECT_QUESTIONS.length)];
+  const shuffled = [...iq.answers];
+  const correctAnswer = shuffled[0];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const correctIdx = shuffled.indexOf(correctAnswer);
+
+  state.quiz.active = true;
+  state.quiz.displayText = `🐛 Insect Safety: ${iq.question}`;
+  state.quiz.choices = [...shuffled, "I don't know 📖"];
+  state.quiz.correctIndex = correctIdx;
+  state.quiz.selectedIndex = 0;
+  state.quiz.result = 'pending';
+  state.quiz.npcId = null;
+  state.quiz.difficulty = 'easy';
+  state.quiz.question = {
+    id: `insect_${Date.now()}`,
+    question: iq.question,
+    answers: iq.answers,
+    category: 'science',
+    difficulty: 'easy',
+    correctIndex: 0 as const,
+    hint: 'Think about food safety!',
+  };
+  state.paused = true;
+  (state as any)._insectQuiz = true;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -782,6 +840,13 @@ function update(state: GameState, input: InputManager): void {
             (state as any)._hygieneQuiz = false;
           }
 
+          // Insect safety quiz bonus — extra energy (#110 Phase 3)
+          if ((state as any)._insectQuiz) {
+            state.status.energy = Math.min(100, state.status.energy + 10);
+            addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
+            (state as any)._insectQuiz = false;
+          }
+
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
           if (state.pendingGateQuiz) {
             const g = state.pendingGateQuiz;
@@ -801,9 +866,11 @@ function update(state: GameState, input: InputManager): void {
           setTransientExpression(state, 'surprised', 1500);
           (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
           (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
+          (state as any)._insectQuiz = false; // Clear insect flag (#110 P3)
         } else if (state.quiz.result === 'idk') {
           (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
           (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
+          (state as any)._insectQuiz = false; // Clear insect flag (#110 P3)
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
           const questionText = state.quiz.question?.question || '';
@@ -871,6 +938,12 @@ function update(state: GameState, input: InputManager): void {
           // Auto-read question for young age bands (#94)
           _autoReadQuizQuestion(state);
           // state.paused stays true for quiz
+        } else if ((state as any)._pendingInsectQuiz) {
+          // Insect safety quiz after eating worms (#110 Phase 3)
+          (state as any)._pendingInsectQuiz = false;
+          _startInsectQuiz(state);
+          playSfx(state.sfx, 'quiz_start');
+          _autoReadQuizQuestion(state);
         } else if (state.pendingTrade) {
           // Open trade panel directly (no quiz pending)
           const persona = getNpcPersona(state.pendingTrade);
@@ -931,10 +1004,11 @@ function update(state: GameState, input: InputManager): void {
   const isMoving = mv.dx !== 0 || mv.dy !== 0;
 
   if (isMoving) {
-    // Apply survival status + injury speed debuffs (#70, #109)
+    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110)
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
-    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult;
+    const diarrheaMult = ((state as any)._diarrheaUntil ?? 0) > state.frameCount ? 0.7 : 1.0;
+    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
     const newX = state.player.x + mv.dx * effectiveSpeed;
     const newY = state.player.y + mv.dy * effectiveSpeed;
 
@@ -1074,6 +1148,11 @@ function update(state: GameState, input: InputManager): void {
           result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
           if (result.type !== 'none') break;
         }
+      }
+
+      // Eat worms desperation: if no interaction found and energy critically low (#110 Phase 3)
+      if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
+        result = { type: 'eat_worms', message: 'You found a worm in the ground... 🐛 Gulp!' };
       }
 
       handleInteraction(result, state);
@@ -1249,6 +1328,43 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       }
       // Start hygiene quiz for bonus full restore
       _startHygieneQuiz(state);
+      break;
+    }
+
+    // --- Stream drinking (#110 Phase 3) ---
+    case 'stream_drink': {
+      playSfx(state.sfx, 'stream_drink');
+      const hydrationGain = 20;
+      state.status.hydration = Math.min(100, state.status.hydration + hydrationGain);
+
+      // Track stream drink count for diarrhea risk
+      const drinkCount = ((state as any)._streamDrinkCount ?? 0) + 1;
+      (state as any)._streamDrinkCount = drinkCount;
+
+      // 20% diarrhea chance after 3+ stream drinks
+      if (drinkCount >= 3 && Math.random() < 0.2) {
+        (state as any)._diarrheaUntil = state.frameCount + 1800; // ~30 seconds at 60fps
+        addToast(state.ui, '🤢 Eww! Stomach rumbling... shouldn\'t have drunk so much!', '#ff8844', 3500);
+        playSfx(state.sfx, 'diarrhea_gurgle');
+        triggerHint('stream_eww');
+      } else {
+        addToast(state.ui, `💧 Refreshing stream water! +${hydrationGain} hydration`, '#4fc3f7', 2500);
+      }
+      break;
+    }
+
+    // --- Eat worms desperation (#110 Phase 3) ---
+    case 'eat_worms': {
+      playSfx(state.sfx, 'eat_worms');
+      const energyGain = 5;
+      state.status.energy = Math.min(100, state.status.energy + energyGain);
+      addToast(state.ui, '🐛 Gross! But you got a tiny bit of energy... +5', '#8bc34a', 3000);
+
+      // Queue insect safety quiz
+      (state as any)._pendingInsectQuiz = true;
+      showDialog(state.ui, '🐛 Yuck!', ['That was disgusting... but is it actually safe to eat insects?']);
+      state.paused = true;
+      _lastDialogNpcId = null;
       break;
     }
 
@@ -1881,12 +1997,23 @@ function checkBubbleTriggers(state: GameState): void {
           triggerHint('outhouse_near');
         }
       }
+      // Water proximity — drink from stream (#110 Phase 3)
+      if (cell2.assetKey === 'water') {
+        if (hydration <= LOW) {
+          triggerHint('near_water');
+        }
+      }
     }
   }
 
   // Injury-specific hints (#109)
   if (state.injury.injured) {
     triggerHint('need_bandaid');
+  }
+
+  // Starving desperation hint (#110 Phase 3)
+  if (energy <= CRIT) {
+    triggerHint('starving_worms');
   }
 
   // Dirty hint — outhouse needed (#110)
@@ -2536,6 +2663,11 @@ async function main(): Promise<void> {
     // Outhouse/hygiene debug (#110)
     startHygieneQuiz: () => _startHygieneQuiz(state),
     getHygieneQuizActive: () => (state as any)._hygieneQuiz === true,
+    // Stream/worm debug (#110 Phase 3)
+    getInsectQuestions: () => INSECT_QUESTIONS,
+    startInsectQuiz: () => _startInsectQuiz(state),
+    getStreamDrinkCount: () => (state as any)._streamDrinkCount ?? 0,
+    getDiarrheaActive: () => ((state as any)._diarrheaUntil ?? 0) > state.frameCount,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

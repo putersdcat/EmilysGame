@@ -318,6 +318,35 @@ export const HINTS: Record<string, HintDef> = {
     cooldown: 90000,
     emoji: '🔦',
   },
+
+  // ── Stream & desperation hints (#110 Phase 3) ──
+  near_water: {
+    id: 'near_water',
+    text: 'Water! I could drink from that stream...',
+    type: 'thought',
+    priority: 4,
+    duration: 3000,
+    cooldown: 45000,
+    emoji: '💧',
+  },
+  stream_eww: {
+    id: 'stream_eww',
+    text: 'Eww... my tummy feels weird. Maybe I drank too much stream water!',
+    type: 'speech',
+    priority: 8,
+    duration: 3500,
+    cooldown: 30000,
+    emoji: '🤢',
+  },
+  starving_worms: {
+    id: 'starving_worms',
+    text: 'SO hungry... I could eat a worm right now! Press Space on the ground...',
+    type: 'thought',
+    priority: 9,
+    duration: 4000,
+    cooldown: 20000,
+    emoji: '🐛',
+  },
 };
 
 /** Maximum number of bubbles that can be queued at once. */

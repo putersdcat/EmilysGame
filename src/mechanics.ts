@@ -26,6 +26,8 @@ export type InteractionResult =
   | { type: 'shop'; message: string; shopAsset: string }
   | { type: 'campfire'; message: string }
   | { type: 'outhouse'; message: string }
+  | { type: 'stream_drink'; message: string }
+  | { type: 'eat_worms'; message: string }
   | { type: 'structure'; assetKey: string; message: string };
 
 // ─── Collision Check ─────────────────────────────────────────
@@ -96,6 +98,12 @@ export function interact(
 
   const { cell, chunkKey, lx, ly } = hit;
   const def = ASSET_DEFS[cell.assetKey];
+
+  // --- Stream drinking: water tiles are interactable from adjacent (#110 Phase 3) ---
+  if (cell.assetKey === 'water') {
+    return { type: 'stream_drink', message: 'You scoop up some water from the stream...' };
+  }
+
   if (!def?.interactable && !cell.itemId) return { type: 'none' };
 
   // --- Collectible on ground ---
