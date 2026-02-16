@@ -1083,6 +1083,88 @@
       margin-bottom: 24px;
     }
 
+    /* ── Welcome Splash + Controls Guide (#117) ── */
+    #welcomeSplash {
+      position: fixed; inset: 0;
+      background: radial-gradient(ellipse at 50% 30%, #1a1a3e 0%, #0a0a1a 70%, #050510 100%);
+      display: none; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 100;
+      animation: menuFadeIn 0.5s ease;
+    }
+    .welcome-container {
+      text-align: center;
+      max-width: 480px; width: 90%;
+    }
+    .welcome-header {
+      font-size: 2.2rem; color: #ffdd88;
+      text-shadow: 0 0 20px rgba(255,221,136,0.4);
+      margin-bottom: 8px;
+    }
+    .welcome-sub {
+      font: 13px monospace; color: #8899bb;
+      margin-bottom: 24px;
+    }
+    .controls-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 12px; margin-bottom: 28px;
+    }
+    .control-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      background: rgba(40,35,65,0.7);
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 8px; text-align: left;
+    }
+    .control-key {
+      display: inline-block; min-width: 48px;
+      padding: 4px 8px; text-align: center;
+      background: rgba(80,70,120,0.6);
+      border: 1px solid rgba(140,130,180,0.5);
+      border-radius: 4px; font: bold 13px monospace;
+      color: #ddd;
+    }
+    .control-desc {
+      font: 12px monospace; color: #aab;
+    }
+    .welcome-intro {
+      font: 12px monospace; color: #7788aa;
+      line-height: 1.6; margin-bottom: 28px;
+      padding: 0 16px;
+    }
+
+    /* ── Bug Report Modal (#117) ── */
+    #bugReportModal {
+      position: fixed; inset: 0;
+      background: rgba(5,5,15,0.9);
+      display: none; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 55;
+      backdrop-filter: blur(3px);
+    }
+    .bug-container {
+      max-width: 400px; width: 90%;
+      background: rgba(30,25,55,0.95);
+      border: 1px solid rgba(100,100,140,0.4);
+      border-radius: 12px; padding: 24px;
+      text-align: center;
+    }
+    .bug-title {
+      font-size: 1.4rem; color: #ff8888;
+      margin-bottom: 12px;
+    }
+    .bug-desc {
+      width: 100%; min-height: 80px;
+      background: rgba(20,15,40,0.8);
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 6px; padding: 10px;
+      color: #ccc; font: 12px monospace;
+      resize: vertical; margin-bottom: 16px;
+    }
+    .bug-buttons {
+      display: flex; gap: 10px; justify-content: center;
+    }
+
     /* ── Thought / Speech Bubbles ── */
     .thought-bubble {
       position: absolute;
@@ -1203,7 +1285,66 @@
         <button id="pauseResume" class="menu-btn primary">▶ Resume</button>
         <button id="pauseSave" class="menu-btn">💾 Save Game</button>
         <button id="pauseCustomize" class="menu-btn">🎨 Customize</button>
+        <button id="pauseControls" class="menu-btn">🎮 Controls</button>
+        <button id="pauseBugReport" class="menu-btn">🐛 Report Bug</button>
         <button id="pauseMainMenu" class="menu-btn danger">🏠 Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Welcome Alpha Tester Splash (#117) -->
+  <div id="welcomeSplash">
+    <div class="welcome-container">
+      <div class="welcome-header">🌟 Welcome, Alpha Tester!</div>
+      <div class="welcome-sub">Emily's Game — An isometric learning adventure</div>
+      <div class="welcome-intro">
+        Explore a procedurally generated world, discover wildlife, trade with NPCs,
+        answer quiz questions, and grow your Book of Knowledge!
+      </div>
+      <div class="controls-grid">
+        <div class="control-item"><span class="control-key">WASD</span><span class="control-desc">Move around</span></div>
+        <div class="control-item"><span class="control-key">Space</span><span class="control-desc">Interact / Talk</span></div>
+        <div class="control-item"><span class="control-key">B</span><span class="control-desc">Open Book</span></div>
+        <div class="control-item"><span class="control-key">F</span><span class="control-desc">Toggle Flashlight</span></div>
+        <div class="control-item"><span class="control-key">M</span><span class="control-desc">Toggle Minimap</span></div>
+        <div class="control-item"><span class="control-key">Esc</span><span class="control-desc">Pause Menu</span></div>
+        <div class="control-item"><span class="control-key">T</span><span class="control-desc">Open Trade</span></div>
+        <div class="control-item"><span class="control-key">C</span><span class="control-desc">Customize</span></div>
+      </div>
+      <button id="welcomeDismiss" class="menu-btn primary" style="width:220px;margin:0 auto">🎮 Let's Play!</button>
+    </div>
+  </div>
+
+  <!-- Controls Guide Overlay (re-accessible from pause menu) (#117) -->
+  <div id="controlsGuide" style="display:none; position:fixed; inset:0; background:rgba(5,5,15,0.9); z-index:55; backdrop-filter:blur(3px); justify-content:center; align-items:center; flex-direction:column;">
+    <div class="welcome-container">
+      <div class="welcome-header" style="font-size:1.6rem">🎮 Controls</div>
+      <div class="controls-grid" style="margin-top:20px">
+        <div class="control-item"><span class="control-key">WASD</span><span class="control-desc">Move around</span></div>
+        <div class="control-item"><span class="control-key">Space</span><span class="control-desc">Interact / Talk</span></div>
+        <div class="control-item"><span class="control-key">B</span><span class="control-desc">Open Book</span></div>
+        <div class="control-item"><span class="control-key">F</span><span class="control-desc">Toggle Flashlight</span></div>
+        <div class="control-item"><span class="control-key">M</span><span class="control-desc">Toggle Minimap</span></div>
+        <div class="control-item"><span class="control-key">Esc</span><span class="control-desc">Pause Menu</span></div>
+        <div class="control-item"><span class="control-key">T</span><span class="control-desc">Open Trade</span></div>
+        <div class="control-item"><span class="control-key">C</span><span class="control-desc">Customize</span></div>
+        <div class="control-item"><span class="control-key">1-9</span><span class="control-desc">Quiz Choices</span></div>
+        <div class="control-item"><span class="control-key">R</span><span class="control-desc">Repeat Quiz</span></div>
+      </div>
+      <button id="controlsClose" class="menu-btn primary" style="width:180px;margin:16px auto 0">← Back</button>
+    </div>
+  </div>
+
+  <!-- Bug Report Modal (#117) -->
+  <div id="bugReportModal">
+    <div class="bug-container">
+      <div class="bug-title">🐛 Report a Bug</div>
+      <p style="font:12px monospace;color:#8899bb;margin-bottom:12px">Describe what happened:</p>
+      <textarea id="bugDescription" class="bug-desc" placeholder="I was walking near the forest and..."></textarea>
+      <p style="font:11px monospace;color:#666;margin-bottom:16px">A screenshot + game state will be included automatically.</p>
+      <div class="bug-buttons">
+        <button id="bugSubmit" class="menu-btn primary" style="width:140px">📎 Download</button>
+        <button id="bugCancel" class="menu-btn" style="width:140px">Cancel</button>
       </div>
     </div>
   </div>

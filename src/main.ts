@@ -1417,6 +1417,77 @@ function resetGameState(state: GameState): void {
   ensureChunksAround(state);
 }
 
+// ─── Bug Report Capture (#117) ──────────────────────────────
+
+function captureBugReport(state: GameState, description: string): void {
+  // Capture canvas screenshot
+  const canvas = document.querySelector('#gameContainer canvas') as HTMLCanvasElement | null;
+  const screenshotDataUrl = canvas ? canvas.toDataURL('image/png') : '';
+
+  // Build metadata
+  const cs = WORLD_CONFIG.chunkSize;
+  const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
+  const chunk = state.chunks.get(cKey);
+  const metadata = {
+    timestamp: new Date().toISOString(),
+    description,
+    player: {
+      x: Math.round(state.player.x * 100) / 100,
+      y: Math.round(state.player.y * 100) / 100,
+      biome: chunk?.biomeName ?? 'unknown',
+      biomeId: chunk?.biomeId ?? -1,
+    },
+    status: { ...state.status },
+    inventory: state.inventory.serialize().map((s) => ({ id: s.itemId, qty: s.quantity })),
+    timeOfDay: getCycleProgress(),
+    frameCount: state.frameCount,
+    platform: navigator.userAgent,
+  };
+
+  // Bundle into a downloadable JSON + embedded screenshot
+  const report = {
+    version: '1.0',
+    ...metadata,
+    screenshot: screenshotDataUrl,
+  };
+
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bug-report-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ─── Welcome Splash (#117) ──────────────────────────────────
+
+const FIRST_RUN_KEY = 'emilys_game_first_run';
+
+function shouldShowWelcome(): boolean {
+  return !localStorage.getItem(FIRST_RUN_KEY);
+}
+
+function showWelcomeSplash(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!shouldShowWelcome()) {
+      resolve();
+      return;
+    }
+
+    const splash = document.getElementById('welcomeSplash')!;
+    splash.style.display = 'flex';
+
+    document.getElementById('welcomeDismiss')!.onclick = () => {
+      splash.style.display = 'none';
+      localStorage.setItem(FIRST_RUN_KEY, '1');
+      resolve();
+    };
+  });
+}
+
 /** Show pause menu overlay (Escape during gameplay) */
 function showPauseMenu(state: GameState): void {
   state.paused = true;
@@ -1449,6 +1520,33 @@ function showPauseMenu(state: GameState): void {
   document.getElementById('pauseMainMenu')!.onclick = () => {
     doSave(state);
     window.location.reload();
+  };
+
+  // Controls guide (#117)
+  document.getElementById('pauseControls')!.onclick = () => {
+    const guide = document.getElementById('controlsGuide')!;
+    guide.style.display = 'flex';
+    document.getElementById('controlsClose')!.onclick = () => {
+      guide.style.display = 'none';
+    };
+  };
+
+  // Bug reporter (#117)
+  document.getElementById('pauseBugReport')!.onclick = () => {
+    const modal = document.getElementById('bugReportModal')!;
+    modal.style.display = 'flex';
+    const descEl = document.getElementById('bugDescription') as HTMLTextAreaElement;
+    descEl.value = '';
+
+    document.getElementById('bugCancel')!.onclick = () => {
+      modal.style.display = 'none';
+    };
+
+    document.getElementById('bugSubmit')!.onclick = () => {
+      captureBugReport(state, descEl.value);
+      modal.style.display = 'none';
+      addToast(state.ui, '🐛 Bug report downloaded!', '#ff8888', 2500);
+    };
   };
 }
 // ─── Thought Bubble Triggers ─────────────────────────────────
@@ -2308,6 +2406,9 @@ async function main(): Promise<void> {
 
   // ─── Main Menu / New Game Flow ─────────────────────────────
   if (!isTestMode()) {
+    // Welcome splash for first-time players (#117)
+    await showWelcomeSplash();
+
     const choice = await showMainMenu(hasSaveData);
 
     if (choice === 'new-game') {
