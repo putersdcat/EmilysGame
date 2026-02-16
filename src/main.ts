@@ -1801,6 +1801,18 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
 
   // Touch controls toggle (#124)
   const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
+
+  // Fog of War toggle (#127)
+  const FOG_PREF_KEY = 'emilys_game_fog_enabled';
+  const optFog = document.getElementById('optFogOfWar') as HTMLSelectElement | null;
+  if (optFog) {
+    optFog.value = isFogEnabled() ? 'on' : 'off';
+    optFog.onchange = () => {
+      const enabled = optFog.value === 'on';
+      setFogEnabled(enabled);
+      localStorage.setItem(FOG_PREF_KEY, enabled ? '1' : '0');
+    };
+  }
   const optGamepadStatus = document.getElementById('optGamepadStatus');
   if (optTouch && inputMgr) {
     // Set current value
@@ -2766,6 +2778,11 @@ async function main(): Promise<void> {
   setupExtraKeys(state, input);
   _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
+  // Restore fog-of-war preference from localStorage (#127)
+  const fogPref = localStorage.getItem('emilys_game_fog_enabled');
+  if (fogPref !== null) {
+    setFogEnabled(fogPref === '1');
+  }
   // Wire HTML HUD buttons
   wireHudButtons(
     () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
