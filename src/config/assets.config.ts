@@ -338,6 +338,22 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 1.3, shadow: true, walkable: false, interactable: true,
     description: 'Small shop',
   },
+  // Themed shop variants (#112 Phase 2)
+  shop_general: {
+    emoji: '🏬', category: 'obstacle', height: 7, layer: 'high',
+    scale: 1.3, shadow: true, walkable: false, interactable: true,
+    description: 'General Store — sells everything an adventurer needs',
+  },
+  shop_snack: {
+    emoji: '🍿', category: 'obstacle', height: 6, layer: 'high',
+    scale: 1.1, shadow: true, walkable: false, interactable: true,
+    description: 'Snack Stand — tasty treats and refreshments',
+  },
+  shop_trading: {
+    emoji: '🛒', category: 'obstacle', height: 7, layer: 'high',
+    scale: 1.2, shadow: true, walkable: false, interactable: true,
+    description: 'Trading Post — barter your finds for supplies',
+  },
   fence: {
     emoji: '🚧', category: 'obstacle', height: 2, layer: 'mid',
     scale: 0.7, shadow: false, walkable: false, interactable: true,

@@ -21,7 +21,7 @@ import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizRe
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData } from './save';
-import { getNpcPersona, SHOP_MERCHANT_PERSONA } from './config/npc.config';
+import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './tiles';
 import {
   MICRO_TILE_DEFS, WORLD_UNIT_TEMPLATES, BIOME_PALETTES,
@@ -680,6 +680,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   (window as any).__trade = {
     openTrade, closeTrade, tradeNavigate, executeTrade, syncTradeDOM,
     createTradeState, toggleTradeMode, executeSell, getSellPrice, getSellableItems,
+    getShopPersona, // #112 themed shop persona lookup
   };
 
   return { state, renderer, input, hasSaveData: !!save };
@@ -1219,16 +1220,18 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       break;
     }
 
-    // --- Shop structure interaction (#77) ---
-    case 'shop':
-      showDialog(state.ui, 'Shopkeeper', [result.message]);
+    // --- Shop structure interaction (#77, #112 themed variants) ---
+    case 'shop': {
+      const shopPersona = getShopPersona(result.shopAsset);
+      showDialog(state.ui, shopPersona.displayName, [shopPersona.greetings[Math.floor(Math.random() * shopPersona.greetings.length)]]);
       state.paused = true;
       playSfx(state.sfx, 'dialog_open');
       _lastDialogNpcId = null;
       speakLine(state.voice, result.message, null);
       // Queue trade panel to open after dialog closes
-      state.pendingTrade = SHOP_MERCHANT_PERSONA.id;
+      state.pendingTrade = shopPersona.id;
       break;
+    }
 
     // --- Outhouse hygiene interaction (#110 Phase 2) ---
     case 'outhouse': {
@@ -1865,7 +1868,7 @@ function checkBubbleTriggers(state: GameState): void {
       const ly2 = ((gy2 % cs) + cs) % cs;
       const cell2 = nearChunk2.cells[ly2]?.[lx2];
       if (!cell2) continue;
-      if (cell2.assetKey === 'shop' || cell2.assetKey === 'merchant' || cell2.assetKey === 'store') {
+      if (cell2.assetKey === 'shop' || cell2.assetKey?.startsWith('shop_') || cell2.assetKey === 'merchant' || cell2.assetKey === 'store') {
         if (state.injury.injured) {
           triggerHint('injury_near_shop'); // Injured + near shop (#109)
         } else {

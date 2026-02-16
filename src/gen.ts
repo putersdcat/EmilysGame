@@ -1547,7 +1547,7 @@ function placeBonfires(
         const nx = cx + dx, ny = cy + dy;
         if (nx < 0 || nx >= size || ny < 0 || ny >= size) continue;
         const ak = cells[ny][nx].assetKey;
-        if (ak === 'house' || ak === 'hut' || ak === 'shop' || ak === 'fence' || ak === 'outhouse' ||
+        if (ak === 'house' || ak === 'hut' || ak === 'shop' || ak?.startsWith('shop_') || ak === 'fence' || ak === 'outhouse' ||
             cells[ny][nx].npcId) return true;
       }
     }
