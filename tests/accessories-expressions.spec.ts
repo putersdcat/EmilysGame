@@ -46,15 +46,15 @@ test.describe('Accessories & Expressions (#102)', () => {
     const container = page.locator('#custAccessories');
     await expect(container).toBeAttached();
 
-    // Should have 4 buttons: None, Bow, Crown, Glasses
+    // Should have 7 buttons: None, Bow, Crown, Glasses, Cowboy Hat, Wizard Hat, Flower Crown
     const buttons = container.locator('.cust-style-btn');
-    await expect(buttons).toHaveCount(4);
+    await expect(buttons).toHaveCount(7);
 
     // Verify data values
     const vals = await buttons.evaluateAll(els =>
       els.map(el => (el as HTMLElement).dataset.val)
     );
-    expect(vals).toEqual(['none', 'bow', 'crown', 'glasses']);
+    expect(vals).toEqual(['none', 'bow', 'crown', 'glasses', 'cowboy_hat', 'wizard_hat', 'flower_crown']);
   });
 
   test('expression buttons exist in customizer', async ({ page }) => {
