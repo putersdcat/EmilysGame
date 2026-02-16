@@ -95,11 +95,11 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     id: 'torch',
     assetKey: 'torch',
     displayName: 'Torch',
-    description: 'A handheld light source for dark areas.',
+    description: 'A handheld light source. Provides warm light while in inventory.',
     stackable: true,
     maxStack: 5,
-    consumable: true,
-    effect: { type: 'speed_boost', duration: 30000, value: 1 }, // placeholder effect
+    consumable: false, // Passive light source — not consumed on use
+    effect: { type: 'heal', value: 0 }, // Light is a passive inventory effect
   },
   snack: {
     id: 'snack',

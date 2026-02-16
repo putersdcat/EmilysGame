@@ -1,8 +1,9 @@
 /**
- * sfx.ts - Sound effects & ambience engine using Web Audio API oscillators.
- * Shares AudioContext pattern with music.ts but runs independently.
- * One-shot SFX + looping ambience layers with LFO modulation.
- * TODO: DOC - sfx architecture, ambience state machine, AudioContext sharing
+ * sfx.ts - Sound effects & ambience engine using Web Audio API.
+ * Supports both oscillator-based and sampled AudioBuffer playback.
+ * Includes positional audio via PannerNode for world-positioned sources.
+ * One-shot SFX + looping ambience layers with optional sampled loops.
+ * TODO: DOC - sfx architecture, ambience state machine, positional audio
  */
 
 import {
@@ -10,8 +11,18 @@ import {
   DEFAULT_SFX_SETTINGS,
   type SfxDef, type AmbienceProfile, type AmbienceLayer, type SfxSettings,
 } from './config/sfx.config';
+import {
+  initSampledSfx, hasSample, playSample, preloadAllSamples,
+  type ActiveSampleSource,
+} from './sampled-sfx';
 
 // ─── Types ──────────────────────────────────────────────────
+
+/** World position for positional audio */
+export interface AudioPosition {
+  x: number;  // world X
+  y: number;  // world Y
+}
 
 export interface SfxState {
   settings: SfxSettings;
@@ -19,6 +30,22 @@ export interface SfxState {
   activeAmbienceId: string | null;
   /** Debounce: last SFX play time per ID (prevents spam) */
   _lastPlayTime: Record<string, number>;
+  /** Whether sampled SFX are loaded and available */
+  sampledReady: boolean;
+  /** Active positional audio sources (for distance updates) */
+  _positionalSources: PositionalSource[];
+  /** Player/listener position in world coords */
+  listenerPos: AudioPosition;
+}
+
+/** A positional audio source with world position */
+interface PositionalSource {
+  id: string;
+  pos: AudioPosition;
+  panner: PannerNode;
+  handle: ActiveSampleSource;
+  /** Max audible distance in tiles */
+  maxDist: number;
 }
 
 /** Active ambience oscillator tracking (module-level) */
@@ -76,7 +103,21 @@ export function createSfxState(): SfxState {
     settings: { ...DEFAULT_SFX_SETTINGS },
     activeAmbienceId: null,
     _lastPlayTime: {},
+    sampledReady: false,
+    _positionalSources: [],
+    listenerPos: { x: 0, y: 0 },
   };
+}
+
+/** Initialize sampled SFX pipeline. Call once at startup. */
+export async function initSampledSfxPipeline(state: SfxState): Promise<void> {
+  await initSampledSfx();
+  const ctx = ensureAudioContext();
+  if (ctx) {
+    await preloadAllSamples(ctx);
+  }
+  state.sampledReady = true;
+  console.log('[SFX] Sampled SFX pipeline ready');
 }
 
 // ─── One-Shot SFX ───────────────────────────────────────────
@@ -85,16 +126,13 @@ export function createSfxState(): SfxState {
 const SFX_DEBOUNCE_MS = 50;
 
 /**
- * Play a one-shot SFX by ID. Non-blocking, fire-and-forget.
+ * Play a one-shot SFX by ID. Prefers sampled version if available.
+ * Non-blocking, fire-and-forget.
  * Respects debounce, max concurrency, and mute state.
  */
 export function playSfx(state: SfxState, sfxId: string): void {
   if (!state.settings.sfxEnabled || state.settings.sfxMuted) return;
 
-  const def = getSfxDef(sfxId);
-  if (!def) return;
-
-  // Debounce same SFX
   const now = performance.now();
   const last = state._lastPlayTime[sfxId] || 0;
   if (now - last < SFX_DEBOUNCE_MS) return;
@@ -105,6 +143,31 @@ export function playSfx(state: SfxState, sfxId: string): void {
 
   const ctx = ensureAudioContext();
   if (!ctx || !_sfxGain) return;
+
+  // Try sampled version first
+  if (state.sampledReady && hasSample(sfxId)) {
+    _activeSfxCount++;
+    playSample(ctx, sfxId, {
+      volume: state.settings.sfxVolume * 0.7,
+      destination: _sfxGain,
+      pitchVariation: sfxId.startsWith('footstep') ? 0.08 : 0,
+    }).then(handle => {
+      if (handle) {
+        handle.source.onended = () => {
+          _activeSfxCount = Math.max(0, _activeSfxCount - 1);
+        };
+      } else {
+        _activeSfxCount = Math.max(0, _activeSfxCount - 1);
+      }
+    }).catch(() => {
+      _activeSfxCount = Math.max(0, _activeSfxCount - 1);
+    });
+    return;
+  }
+
+  // Fallback to oscillator
+  const def = getSfxDef(sfxId);
+  if (!def) return;
 
   _playSfxDef(ctx, def, state.settings.sfxVolume);
 }
@@ -305,6 +368,111 @@ export function setSfxEnabled(state: SfxState, enabled: boolean): void {
   }
 }
 
+// ─── Positional Audio ───────────────────────────────────────
+
+/** Tile-to-audio coordinate scale factor */
+const AUDIO_SCALE = 1;
+
+/**
+ * Start a positional (looping) sample at a world position.
+ * Volume attenuates with distance from listener.
+ * Returns a handle ID for stopping/updating.
+ */
+export function startPositionalSample(
+  state: SfxState,
+  sampleId: string,
+  pos: AudioPosition,
+  maxDist = 15,
+  volume = 0.6
+): string | null {
+  if (!state.settings.sfxEnabled || !state.sampledReady) return null;
+  const ctx = ensureAudioContext();
+  if (!ctx || !_ambienceGain) return null;
+
+  // Create panner
+  const panner = ctx.createPanner();
+  panner.panningModel = 'HRTF';
+  panner.distanceModel = 'linear';
+  panner.maxDistance = maxDist * AUDIO_SCALE;
+  panner.refDistance = 1 * AUDIO_SCALE;
+  panner.rolloffFactor = 1;
+  panner.positionX.setValueAtTime(pos.x * AUDIO_SCALE, ctx.currentTime);
+  panner.positionY.setValueAtTime(0, ctx.currentTime);
+  panner.positionZ.setValueAtTime(pos.y * AUDIO_SCALE, ctx.currentTime);
+
+  panner.connect(_ambienceGain);
+
+  // Update listener position
+  _updateListenerPosition(ctx, state.listenerPos);
+
+  // Play sample through panner
+  const sourceId = `${sampleId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+  playSample(ctx, sampleId, {
+    volume,
+    destination: panner,
+    loop: true,
+  }).then(handle => {
+    if (handle) {
+      const psrc: PositionalSource = {
+        id: sourceId,
+        pos,
+        panner,
+        handle,
+        maxDist,
+      };
+      state._positionalSources.push(psrc);
+    }
+  });
+
+  return sourceId;
+}
+
+/** Stop a positional audio source by its handle ID */
+export function stopPositionalSample(state: SfxState, handleId: string): void {
+  const idx = state._positionalSources.findIndex(s => s.id === handleId);
+  if (idx === -1) return;
+  const src = state._positionalSources[idx];
+  src.handle.stop();
+  src.panner.disconnect();
+  state._positionalSources.splice(idx, 1);
+}
+
+/** Stop all positional audio sources */
+export function stopAllPositionalSamples(state: SfxState): void {
+  for (const src of state._positionalSources) {
+    src.handle.stop();
+    src.panner.disconnect();
+  }
+  state._positionalSources = [];
+}
+
+/**
+ * Update listener position — call each frame (throttled by caller).
+ * Updates AudioListener for all PannerNode distance calculations.
+ */
+export function updateListenerPosition(state: SfxState, x: number, y: number): void {
+  state.listenerPos.x = x;
+  state.listenerPos.y = y;
+  const ctx = _ctx;
+  if (!ctx) return;
+  _updateListenerPosition(ctx, state.listenerPos);
+}
+
+function _updateListenerPosition(ctx: AudioContext, pos: AudioPosition): void {
+  const listener = ctx.listener;
+  if (listener.positionX) {
+    listener.positionX.setValueAtTime(pos.x * AUDIO_SCALE, ctx.currentTime);
+    listener.positionY.setValueAtTime(0, ctx.currentTime);
+    listener.positionZ.setValueAtTime(pos.y * AUDIO_SCALE, ctx.currentTime);
+  }
+}
+
+/** Get count of active positional sources */
+export function getPositionalSourceCount(state: SfxState): number {
+  return state._positionalSources.length;
+}
+
 // ─── Serialization ──────────────────────────────────────────
 
 export function serializeSfxSettings(state: SfxState): SfxSettings {
@@ -323,6 +491,7 @@ export function deserializeSfxSettings(state: SfxState, saved: Partial<SfxSettin
 
 export function destroySfx(state: SfxState): void {
   stopAmbience(state);
+  stopAllPositionalSamples(state);
   _activeSfxCount = 0;
   // Don't close AudioContext — may be shared with music
 }

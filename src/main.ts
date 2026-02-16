@@ -2495,6 +2495,15 @@ function renderFrame(
     }
   }
   addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
+  // Torch: portable warm light when player has torch in inventory (#99)
+  if (state.inventory.hasItem('torch')) {
+    addPointLight(state.player.x, state.player.y, {
+      radius: 80,
+      color: [255, 160, 50],
+      intensity: 0.7,
+      flicker: true,
+    });
+  }
   renderLocalLights(renderer.getCtx(), state.camera);
 
   // Night desaturation: CSS filter on canvas element for GPU-composited grayscale (#114)

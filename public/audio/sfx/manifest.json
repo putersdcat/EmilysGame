@@ -1,0 +1,118 @@
+{
+  "samples": [
+    {
+      "id": "footstep_grass",
+      "filename": "footstep_grass.wav",
+      "category": "interaction",
+      "loop": false
+    },
+    {
+      "id": "footstep_dirt",
+      "filename": "footstep_dirt.wav",
+      "category": "interaction",
+      "loop": false
+    },
+    {
+      "id": "footstep_stone",
+      "filename": "footstep_stone.wav",
+      "category": "interaction",
+      "loop": false
+    },
+    {
+      "id": "bird_chirp_1",
+      "filename": "bird_chirp_1.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "bird_chirp_2",
+      "filename": "bird_chirp_2.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "bird_chirp_3",
+      "filename": "bird_chirp_3.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "owl_hoot",
+      "filename": "owl_hoot.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "cricket_loop",
+      "filename": "cricket_loop.wav",
+      "category": "ambience",
+      "loop": true
+    },
+    {
+      "id": "wind_loop",
+      "filename": "wind_loop.wav",
+      "category": "ambience",
+      "loop": true
+    },
+    {
+      "id": "rain_loop",
+      "filename": "rain_loop.wav",
+      "category": "ambience",
+      "loop": true
+    },
+    {
+      "id": "thunder",
+      "filename": "thunder.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "waterfall_loop",
+      "filename": "waterfall_loop.wav",
+      "category": "ambience",
+      "loop": true
+    },
+    {
+      "id": "campfire_loop",
+      "filename": "campfire_loop.wav",
+      "category": "ambience",
+      "loop": true
+    },
+    {
+      "id": "cat_purr_loop",
+      "filename": "cat_purr_loop.wav",
+      "category": "environment",
+      "loop": true
+    },
+    {
+      "id": "coin_clink",
+      "filename": "coin_clink.wav",
+      "category": "interaction",
+      "loop": false
+    },
+    {
+      "id": "chest_creak",
+      "filename": "chest_creak.wav",
+      "category": "interaction",
+      "loop": false
+    },
+    {
+      "id": "frog_croak",
+      "filename": "frog_croak.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "rooster_crow",
+      "filename": "rooster_crow.wav",
+      "category": "environment",
+      "loop": false
+    },
+    {
+      "id": "ouch",
+      "filename": "ouch.wav",
+      "category": "interaction",
+      "loop": false
+    }
+  ]
+}
