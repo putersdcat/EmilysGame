@@ -24,3 +24,8 @@ game-*.png
 core-test-result.txt
 struct-test-result.txt
 test-regression-output.txt
+cancel-test-result.txt
+cust-test-result.txt
+test-results-*.txt
+inventory-*.png
+torch-*.png

@@ -34,6 +34,22 @@ let _manifestLoaded = false;
 let _manifestPromise: Promise<void> | null = null;
 const SFX_BASE_URL = './audio/sfx/';
 
+/**
+ * ID aliases: game SFX ID → manifest sample ID.
+ * Allows the game to use semantic IDs (pickup_coin)
+ * while the manifest uses descriptive filenames (coin_clink).
+ * TODO: DOC - alias mapping for sampled SFX
+ */
+const ID_ALIASES: Record<string, string> = {
+  pickup_coin: 'coin_clink',
+  open_chest: 'chest_creak',
+};
+
+/** Resolve alias: returns the manifest ID for a game SFX ID */
+function resolveId(id: string): string {
+  return ID_ALIASES[id] ?? id;
+}
+
 // ─── Manifest loader ───────────────────────────────────────
 
 async function _loadManifest(): Promise<void> {
@@ -88,7 +104,7 @@ async function _loadBuffer(ctx: AudioContext, entry: SampleManifestEntry): Promi
 /** Preload specific sample IDs (call after AudioContext is available) */
 export async function preloadSamples(ctx: AudioContext, ids: string[]): Promise<void> {
   const entries = ids
-    .map(id => _entryCache.get(id))
+    .map(id => _entryCache.get(resolveId(id)))
     .filter((e): e is SampleManifestEntry => !!e);
 
   await Promise.all(entries.map(e => _loadBuffer(ctx, e)));
@@ -135,7 +151,7 @@ export async function playSample(
   sampleId: string,
   options: PlaySampleOptions = {}
 ): Promise<ActiveSampleSource | null> {
-  const entry = _entryCache.get(sampleId);
+  const entry = _entryCache.get(resolveId(sampleId));
   if (!entry) return null;
 
   const buffer = await _loadBuffer(ctx, entry);
@@ -181,14 +197,14 @@ export async function playSample(
   return handle;
 }
 
-/** Check if a sampled version exists for a given SFX ID */
+/** Check if a sampled version exists for a given SFX ID (resolves aliases) */
 export function hasSample(id: string): boolean {
-  return _entryCache.has(id);
+  return _entryCache.has(resolveId(id));
 }
 
-/** Get manifest entry for a sample */
+/** Get manifest entry for a sample (resolves aliases) */
 export function getSampleEntry(id: string): SampleManifestEntry | undefined {
-  return _entryCache.get(id);
+  return _entryCache.get(resolveId(id));
 }
 
 /** Get number of loaded samples */

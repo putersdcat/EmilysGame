@@ -1,0 +1,29 @@
+{
+  "name": "copilotsvgtool",
+  "version": "1.0.0",
+  "description": "Lightweight MCP server that renders SVG to PNG previews for GitHub Copilot Chat in VS Code.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "smoke": "tsx src/smoke.ts",
+    "test": "npm run smoke"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "@resvg/resvg-js": "^2.6.2",
+    "pngjs": "^7.0.0",
+    "playwright": "^1.55.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
