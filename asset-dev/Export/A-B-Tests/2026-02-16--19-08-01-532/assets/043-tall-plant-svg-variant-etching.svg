@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="inkwash-embedded-43-e" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#1e293b" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.4"/>
+    </linearGradient>
+    <pattern id="hatch-embedded-43-e" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" stroke-width="1.1" stroke-opacity="0.18"/>
+    </pattern>
+    <filter id="etch-embedded-43-e" x="-5%" y="-5%" width="110%" height="110%">
+      <feColorMatrix type="matrix" values="0.6 0 0 0 0.02  0 0.6 0 0 0.02  0 0 0.6 0 0.02  0 0 0 1 0" result="ink"/>
+      <feComponentTransfer color-interpolation-filters="sRGB">
+        <feFuncR type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncG type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncB type="gamma" amplitude="1" exponent="0.9" offset="0.02"/>
+      </feComponentTransfer>
+      <feComposite in2="SourceGraphic" operator="atop"/>
+    </filter>
+    <filter id="shadow-embedded-43-e" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.8" result="shadow"/>
+      <feOffset dx="1.5" dy="1.5" result="offset"/>
+      <feColorMatrix in="offset" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0"/>
+    </filter>
+  </defs>
+  <rect width="48" height="48" fill="url(#inkwash-embedded-43-e)" opacity="0.35"/>
+  <g filter="url(#shadow-embedded-43-e)">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%20%3Cline%20x1%3D%2224%22%20y1%3D%2244%22%20x2%3D%2224%22%20y2%3D%2214%22%20stroke%3D%22%234CAF50%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Cpath%20d%3D%22M24%2018%20Q16%2014%2012%2016%20Q18%2018%2024%2024Z%22%20fill%3D%22%2366BB6A%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M24%2024%20Q32%2020%2036%2022%20Q30%2024%2024%2030Z%22%20fill%3D%22%2381C784%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M24%2030%20Q16%2026%2012%2028%20Q18%2030%2024%2036Z%22%20fill%3D%22%2366BB6A%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.6%22%2F%3E%20%3Cpath%20d%3D%22M24%2014%20Q20%2010%2018%208%22%20stroke%3D%22%2343A047%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Cpath%20d%3D%22M24%2014%20Q28%2010%2030%208%22%20stroke%3D%22%2343A047%22%20stroke-width%3D%221.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%2F%3E%20%3C%2Fsvg%3E" width="48" height="48" preserveAspectRatio="xMidYMid meet" filter="url(#etch-embedded-43-e)"/>
+  </g>
+  <rect width="48" height="48" fill="url(#hatch-embedded-43-e)" opacity="0.28"/>
+</svg>

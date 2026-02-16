@@ -24,7 +24,8 @@
     "test:quick": "npx playwright test tests/core/ tests/audio/ --reporter=line",
     "screenshot": "tsx scripts/capture-screenshot.ts",
     "convert-midi": "tsx scripts/convert-midi.ts",
-    "generate-sfx": "tsx scripts/generate-sfx-samples.ts"
+    "generate-sfx": "tsx scripts/generate-sfx-samples.ts",
+    "generate:ab-tests": "tsx scripts/generate-asset-ab-tests.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

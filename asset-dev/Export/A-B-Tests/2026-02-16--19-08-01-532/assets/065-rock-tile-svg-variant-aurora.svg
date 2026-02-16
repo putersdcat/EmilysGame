@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="aurora-tile-3-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1dd3b0" stop-opacity="0.75"/>
+      <stop offset="50%" stop-color="#7f5af0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ff8906" stop-opacity="0.6"/>
+    </linearGradient>
+    <filter id="grain-tile-3-a" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.3 0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="overlay"/>
+    </filter>
+    <filter id="bloom-tile-3-a" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.4" result="blur"/>
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bloom"/>
+      <feMerge>
+        <feMergeNode in="bloom"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="32" height="32" fill="url(#aurora-tile-3-a)" opacity="0.18"/>
+  <g filter="url(#grain-tile-3-a)">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22rG%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%2232%22%20y2%3D%2232%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C0C0C0%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23696969%22%2F%3E%20%3C%2FlinearGradient%3E%20%3Cpattern%20id%3D%22rP%22%20width%3D%228%22%20height%3D%228%22%20patternUnits%3D%22userSpaceOnUse%22%3E%20%3Cpolygon%20points%3D%224%2C0%208%2C4%204%2C8%200%2C4%22%20fill%3D%22%23D3D3D3%22%20opacity%3D%220.2%22%2F%3E%20%3C%2Fpattern%3E%20%3C%2Fdefs%3E%20%3Cpath%20d%3D%22M1%203%20L7%201%20L15%205%20L23%201%20L29%203%20L32%2015%20L28%2023%20L20%2029%20L12%2025%20L4%2029%20L0%2019%20Z%22%20fill%3D%22url(%23rG)%22%2F%3E%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22url(%23rP)%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M3%207%20L11%2011%20M7%2019%20L15%2015%20M19%209%20L27%2013%20M5%2025%20L13%2021%20M8%2012%20L12%2016%20M16%2020%20L20%2024%20M24%208%20L28%2012%22%20stroke%3D%22%23404040%22%20stroke-width%3D%220.8%22%20opacity%3D%220.7%22%2F%3E%20%3Crect%20x%3D%220%22%20y%3D%2228%22%20width%3D%2232%22%20height%3D%224%22%20fill%3D%22%23000%22%20opacity%3D%220.25%22%2F%3E%20%3C%2Fsvg%3E" width="32" height="32" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+  <g filter="url(#bloom-tile-3-a)" opacity="0.9">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22rG%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%2232%22%20y2%3D%2232%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23C0C0C0%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23696969%22%2F%3E%20%3C%2FlinearGradient%3E%20%3Cpattern%20id%3D%22rP%22%20width%3D%228%22%20height%3D%228%22%20patternUnits%3D%22userSpaceOnUse%22%3E%20%3Cpolygon%20points%3D%224%2C0%208%2C4%204%2C8%200%2C4%22%20fill%3D%22%23D3D3D3%22%20opacity%3D%220.2%22%2F%3E%20%3C%2Fpattern%3E%20%3C%2Fdefs%3E%20%3Cpath%20d%3D%22M1%203%20L7%201%20L15%205%20L23%201%20L29%203%20L32%2015%20L28%2023%20L20%2029%20L12%2025%20L4%2029%20L0%2019%20Z%22%20fill%3D%22url(%23rG)%22%2F%3E%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22url(%23rP)%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M3%207%20L11%2011%20M7%2019%20L15%2015%20M19%209%20L27%2013%20M5%2025%20L13%2021%20M8%2012%20L12%2016%20M16%2020%20L20%2024%20M24%208%20L28%2012%22%20stroke%3D%22%23404040%22%20stroke-width%3D%220.8%22%20opacity%3D%220.7%22%2F%3E%20%3Crect%20x%3D%220%22%20y%3D%2228%22%20width%3D%2232%22%20height%3D%224%22%20fill%3D%22%23000%22%20opacity%3D%220.25%22%2F%3E%20%3C%2Fsvg%3E" width="32" height="32" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+</svg>

@@ -1,0 +1,1608 @@
+[
+  {
+    "assetId": "embedded-1",
+    "name": "TREE_SVG",
+    "fileBase": "001-tree-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/001-tree-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/001-tree-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/001-tree-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-2",
+    "name": "TREE_PINE_SVG",
+    "fileBase": "002-tree-pine-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/002-tree-pine-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/002-tree-pine-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/002-tree-pine-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-3",
+    "name": "TREE_PALM_SVG",
+    "fileBase": "003-tree-palm-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/003-tree-palm-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/003-tree-palm-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/003-tree-palm-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-4",
+    "name": "FLOWER_SVG",
+    "fileBase": "004-flower-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/004-flower-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/004-flower-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/004-flower-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-5",
+    "name": "FLOWER_PINK_SVG",
+    "fileBase": "005-flower-pink-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/005-flower-pink-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/005-flower-pink-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/005-flower-pink-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-6",
+    "name": "FLOWER_RED_SVG",
+    "fileBase": "006-flower-red-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/006-flower-red-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/006-flower-red-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/006-flower-red-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-7",
+    "name": "SUNFLOWER_SVG",
+    "fileBase": "007-sunflower-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/007-sunflower-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/007-sunflower-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/007-sunflower-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-8",
+    "name": "TULIP_SVG",
+    "fileBase": "008-tulip-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/008-tulip-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/008-tulip-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/008-tulip-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-9",
+    "name": "BUSH_SVG",
+    "fileBase": "009-bush-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/009-bush-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/009-bush-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/009-bush-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-10",
+    "name": "MUSHROOM_SVG",
+    "fileBase": "010-mushroom-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/010-mushroom-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/010-mushroom-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/010-mushroom-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-11",
+    "name": "STUMP_SVG",
+    "fileBase": "011-stump-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/011-stump-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/011-stump-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/011-stump-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-12",
+    "name": "CACTUS_SVG",
+    "fileBase": "012-cactus-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/012-cactus-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/012-cactus-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/012-cactus-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-13",
+    "name": "WHEAT_SVG",
+    "fileBase": "013-wheat-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/013-wheat-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/013-wheat-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/013-wheat-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-14",
+    "name": "SEEDLING_SVG",
+    "fileBase": "014-seedling-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/014-seedling-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/014-seedling-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/014-seedling-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-15",
+    "name": "CLOVER_SVG",
+    "fileBase": "015-clover-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/015-clover-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/015-clover-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/015-clover-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-16",
+    "name": "WILTED_FLOWER_SVG",
+    "fileBase": "016-wilted-flower-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/016-wilted-flower-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/016-wilted-flower-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/016-wilted-flower-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-17",
+    "name": "MAPLE_LEAF_SVG",
+    "fileBase": "017-maple-leaf-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/017-maple-leaf-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/017-maple-leaf-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/017-maple-leaf-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-18",
+    "name": "COIN_SVG",
+    "fileBase": "018-coin-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/018-coin-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/018-coin-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/018-coin-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-19",
+    "name": "KEY_SVG",
+    "fileBase": "019-key-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/019-key-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/019-key-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/019-key-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-20",
+    "name": "CROWBAR_SVG",
+    "fileBase": "020-crowbar-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/020-crowbar-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/020-crowbar-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/020-crowbar-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-21",
+    "name": "POTION_SVG",
+    "fileBase": "021-potion-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/021-potion-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/021-potion-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/021-potion-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-22",
+    "name": "BANDAGE_SVG",
+    "fileBase": "022-bandage-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/022-bandage-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/022-bandage-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/022-bandage-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-23",
+    "name": "SNACK_SVG",
+    "fileBase": "023-snack-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/023-snack-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/023-snack-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/023-snack-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-24",
+    "name": "WATER_FLASK_SVG",
+    "fileBase": "024-water-flask-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/024-water-flask-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/024-water-flask-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/024-water-flask-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-25",
+    "name": "SOAP_SVG",
+    "fileBase": "025-soap-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/025-soap-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/025-soap-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/025-soap-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-26",
+    "name": "TORCH_SVG",
+    "fileBase": "026-torch-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/026-torch-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/026-torch-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/026-torch-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-27",
+    "name": "MAP_SCROLL_SVG",
+    "fileBase": "027-map-scroll-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/027-map-scroll-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/027-map-scroll-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/027-map-scroll-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-28",
+    "name": "CHEST_SVG",
+    "fileBase": "028-chest-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/028-chest-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/028-chest-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/028-chest-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-29",
+    "name": "SIGN_SVG",
+    "fileBase": "029-sign-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/029-sign-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/029-sign-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/029-sign-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-30",
+    "name": "HOUSE_SVG",
+    "fileBase": "030-house-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/030-house-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/030-house-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/030-house-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-31",
+    "name": "HUT_SVG",
+    "fileBase": "031-hut-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/031-hut-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/031-hut-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/031-hut-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-32",
+    "name": "SHOP_SVG",
+    "fileBase": "032-shop-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/032-shop-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/032-shop-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/032-shop-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-33",
+    "name": "OUTHOUSE_SVG",
+    "fileBase": "033-outhouse-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/033-outhouse-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/033-outhouse-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/033-outhouse-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-34",
+    "name": "WALL_SVG",
+    "fileBase": "034-wall-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/034-wall-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/034-wall-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/034-wall-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-35",
+    "name": "DOOR_LOCKED_SVG",
+    "fileBase": "035-door-locked-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/035-door-locked-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/035-door-locked-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/035-door-locked-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-36",
+    "name": "DOOR_OPEN_SVG",
+    "fileBase": "036-door-open-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/036-door-open-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/036-door-open-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/036-door-open-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-37",
+    "name": "FENCE_SVG",
+    "fileBase": "037-fence-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/037-fence-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/037-fence-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/037-fence-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-38",
+    "name": "QUIZ_GATE_SVG",
+    "fileBase": "038-quiz-gate-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/038-quiz-gate-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/038-quiz-gate-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/038-quiz-gate-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-39",
+    "name": "TOLL_GATE_SVG",
+    "fileBase": "039-toll-gate-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/039-toll-gate-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/039-toll-gate-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/039-toll-gate-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-40",
+    "name": "BARRICADE_SVG",
+    "fileBase": "040-barricade-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/040-barricade-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/040-barricade-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/040-barricade-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-41",
+    "name": "SPARKLE_SVG",
+    "fileBase": "041-sparkle-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/041-sparkle-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/041-sparkle-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/041-sparkle-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-42",
+    "name": "BRIDGE_SVG",
+    "fileBase": "042-bridge-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/042-bridge-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/042-bridge-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/042-bridge-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-43",
+    "name": "TALL_PLANT_SVG",
+    "fileBase": "043-tall-plant-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/043-tall-plant-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/043-tall-plant-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/043-tall-plant-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-44",
+    "name": "ROCK_V0_SVG",
+    "fileBase": "044-rock-v0-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/044-rock-v0-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/044-rock-v0-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/044-rock-v0-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-45",
+    "name": "ROCK_V1_SVG",
+    "fileBase": "045-rock-v1-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/045-rock-v1-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/045-rock-v1-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/045-rock-v1-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-46",
+    "name": "ROCK_V2_SVG",
+    "fileBase": "046-rock-v2-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/046-rock-v2-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/046-rock-v2-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/046-rock-v2-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-47",
+    "name": "FIRE_FRAME_0_SVG",
+    "fileBase": "047-fire-frame-0-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/047-fire-frame-0-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/047-fire-frame-0-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/047-fire-frame-0-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-48",
+    "name": "FIRE_FRAME_1_SVG",
+    "fileBase": "048-fire-frame-1-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/048-fire-frame-1-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/048-fire-frame-1-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/048-fire-frame-1-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-49",
+    "name": "FIRE_FRAME_2_SVG",
+    "fileBase": "049-fire-frame-2-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/049-fire-frame-2-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/049-fire-frame-2-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/049-fire-frame-2-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-50",
+    "name": "FIRE_FRAME_3_SVG",
+    "fileBase": "050-fire-frame-3-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/050-fire-frame-3-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/050-fire-frame-3-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/050-fire-frame-3-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-51",
+    "name": "CHICKEN_SVG",
+    "fileBase": "051-chicken-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/051-chicken-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/051-chicken-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/051-chicken-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-52",
+    "name": "ROOSTER_SVG",
+    "fileBase": "052-rooster-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/052-rooster-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/052-rooster-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/052-rooster-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-53",
+    "name": "PIG_SVG",
+    "fileBase": "053-pig-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/053-pig-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/053-pig-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/053-pig-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-54",
+    "name": "COW_SVG",
+    "fileBase": "054-cow-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/054-cow-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/054-cow-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/054-cow-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-55",
+    "name": "SHEEP_SVG",
+    "fileBase": "055-sheep-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/055-sheep-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/055-sheep-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/055-sheep-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-56",
+    "name": "GOAT_SVG",
+    "fileBase": "056-goat-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/056-goat-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/056-goat-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/056-goat-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-57",
+    "name": "RABBIT_SVG",
+    "fileBase": "057-rabbit-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/057-rabbit-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/057-rabbit-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/057-rabbit-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-58",
+    "name": "DUCK_SVG",
+    "fileBase": "058-duck-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/058-duck-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/058-duck-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/058-duck-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-59",
+    "name": "FOX_SVG",
+    "fileBase": "059-fox-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/059-fox-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/059-fox-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/059-fox-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-60",
+    "name": "DEER_SVG",
+    "fileBase": "060-deer-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/060-deer-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/060-deer-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/060-deer-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-61",
+    "name": "HORSE_SVG",
+    "fileBase": "061-horse-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/061-horse-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/061-horse-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/061-horse-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "embedded-62",
+    "name": "DOG_SVG",
+    "fileBase": "062-dog-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/062-dog-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/062-dog-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/062-dog-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-1",
+    "name": "GRASS_TILE_SVG",
+    "fileBase": "063-grass-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/063-grass-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/063-grass-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/063-grass-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-2",
+    "name": "DIRT_TILE_SVG",
+    "fileBase": "064-dirt-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/064-dirt-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/064-dirt-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/064-dirt-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-3",
+    "name": "ROCK_TILE_SVG",
+    "fileBase": "065-rock-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/065-rock-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/065-rock-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/065-rock-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-4",
+    "name": "WATER_TILE_SVG",
+    "fileBase": "066-water-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/066-water-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/066-water-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/066-water-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-5",
+    "name": "SAND_TILE_SVG",
+    "fileBase": "067-sand-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/067-sand-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/067-sand-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/067-sand-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-6",
+    "name": "STONE_FLOOR_TILE_SVG",
+    "fileBase": "068-stone-floor-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/068-stone-floor-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/068-stone-floor-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/068-stone-floor-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-7",
+    "name": "STONE_WALL_TILE_SVG",
+    "fileBase": "069-stone-wall-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/069-stone-wall-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/069-stone-wall-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/069-stone-wall-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-8",
+    "name": "BRIDGE_TILE_SVG",
+    "fileBase": "070-bridge-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/070-bridge-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/070-bridge-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/070-bridge-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-9",
+    "name": "DOOR_GATE_TILE_SVG",
+    "fileBase": "071-door-gate-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/071-door-gate-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/071-door-gate-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/071-door-gate-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-10",
+    "name": "WOODEN_FENCE_TILE_SVG",
+    "fileBase": "072-wooden-fence-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/072-wooden-fence-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/072-wooden-fence-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/072-wooden-fence-tile-svg-variant-etching.svg"
+      }
+    ]
+  },
+  {
+    "assetId": "tile-11",
+    "name": "QUIZ_GATE_TILE_SVG",
+    "fileBase": "073-quiz-gate-tile-svg",
+    "versions": [
+      {
+        "key": "original",
+        "label": "Original",
+        "file": "assets/073-quiz-gate-tile-svg-original.svg"
+      },
+      {
+        "key": "aurora",
+        "label": "Aurora Glow",
+        "file": "assets/073-quiz-gate-tile-svg-variant-aurora.svg"
+      },
+      {
+        "key": "etching",
+        "label": "Ink Etching",
+        "file": "assets/073-quiz-gate-tile-svg-variant-etching.svg"
+      }
+    ]
+  }
+]

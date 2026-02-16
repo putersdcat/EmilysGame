@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="inkwash-embedded-1-e" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#1e293b" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.4"/>
+    </linearGradient>
+    <pattern id="hatch-embedded-1-e" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" stroke-width="1.1" stroke-opacity="0.18"/>
+    </pattern>
+    <filter id="etch-embedded-1-e" x="-5%" y="-5%" width="110%" height="110%">
+      <feColorMatrix type="matrix" values="0.6 0 0 0 0.02  0 0.6 0 0 0.02  0 0 0.6 0 0.02  0 0 0 1 0" result="ink"/>
+      <feComponentTransfer color-interpolation-filters="sRGB">
+        <feFuncR type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncG type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncB type="gamma" amplitude="1" exponent="0.9" offset="0.02"/>
+      </feComponentTransfer>
+      <feComposite in2="SourceGraphic" operator="atop"/>
+    </filter>
+    <filter id="shadow-embedded-1-e" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.8" result="shadow"/>
+      <feOffset dx="1.5" dy="1.5" result="offset"/>
+      <feColorMatrix in="offset" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0"/>
+    </filter>
+  </defs>
+  <rect width="48" height="48" fill="url(#inkwash-embedded-1-e)" opacity="0.35"/>
+  <g filter="url(#shadow-embedded-1-e)">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%20%3Cdefs%3E%20%3CradialGradient%20id%3D%22tc1%22%20cx%3D%2224%22%20cy%3D%2218%22%20r%3D%2216%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%2366BB6A%22%2F%3E%20%3Cstop%20offset%3D%220.7%22%20stop-color%3D%22%232E7D32%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%231B5E20%22%2F%3E%20%3C%2FradialGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20x%3D%2221%22%20y%3D%2228%22%20width%3D%226%22%20height%3D%2218%22%20rx%3D%221%22%20fill%3D%22%236D4C41%22%20stroke%3D%22%233E2723%22%20stroke-width%3D%221.2%22%2F%3E%20%3Cline%20x1%3D%2223%22%20y1%3D%2230%22%20x2%3D%2223%22%20y2%3D%2244%22%20stroke%3D%22%234E342E%22%20stroke-width%3D%220.6%22%20opacity%3D%220.4%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2219%22%20r%3D%2215%22%20fill%3D%22url(%23tc1)%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%221.5%22%2F%3E%20%3Ccircle%20cx%3D%2216%22%20cy%3D%2217%22%20r%3D%229%22%20fill%3D%22%23388E3C%22%20opacity%3D%220.7%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.8%22%2F%3E%20%3Ccircle%20cx%3D%2232%22%20cy%3D%2217%22%20r%3D%229%22%20fill%3D%22%23388E3C%22%20opacity%3D%220.65%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.8%22%2F%3E%20%3Ccircle%20cx%3D%2220%22%20cy%3D%2212%22%20r%3D%227%22%20fill%3D%22%2343A047%22%20opacity%3D%220.6%22%2F%3E%20%3Ccircle%20cx%3D%2228%22%20cy%3D%2212%22%20r%3D%227%22%20fill%3D%22%2343A047%22%20opacity%3D%220.55%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2210%22%20r%3D%225%22%20fill%3D%22%2366BB6A%22%20opacity%3D%220.45%22%2F%3E%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2232%22%20rx%3D%2210%22%20ry%3D%222%22%20fill%3D%22%231B5E20%22%20opacity%3D%220.25%22%2F%3E%20%3C%2Fsvg%3E" width="48" height="48" preserveAspectRatio="xMidYMid meet" filter="url(#etch-embedded-1-e)"/>
+  </g>
+  <rect width="48" height="48" fill="url(#hatch-embedded-1-e)" opacity="0.28"/>
+</svg>

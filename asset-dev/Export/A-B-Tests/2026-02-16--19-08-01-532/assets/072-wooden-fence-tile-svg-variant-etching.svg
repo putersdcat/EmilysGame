@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="inkwash-tile-10-e" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="50%" stop-color="#1e293b" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.4"/>
+    </linearGradient>
+    <pattern id="hatch-tile-10-e" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#0f172a" stroke-width="1.1" stroke-opacity="0.18"/>
+    </pattern>
+    <filter id="etch-tile-10-e" x="-5%" y="-5%" width="110%" height="110%">
+      <feColorMatrix type="matrix" values="0.6 0 0 0 0.02  0 0.6 0 0 0.02  0 0 0.6 0 0.02  0 0 0 1 0" result="ink"/>
+      <feComponentTransfer color-interpolation-filters="sRGB">
+        <feFuncR type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncG type="gamma" amplitude="1" exponent="0.85" offset="0.02"/>
+        <feFuncB type="gamma" amplitude="1" exponent="0.9" offset="0.02"/>
+      </feComponentTransfer>
+      <feComposite in2="SourceGraphic" operator="atop"/>
+    </filter>
+    <filter id="shadow-tile-10-e" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.8" result="shadow"/>
+      <feOffset dx="1.5" dy="1.5" result="offset"/>
+      <feColorMatrix in="offset" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0"/>
+    </filter>
+  </defs>
+  <rect width="32" height="32" fill="url(#inkwash-tile-10-e)" opacity="0.35"/>
+  <g filter="url(#shadow-tile-10-e)">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%2032%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22wfG%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%2232%22%20y2%3D%220%22%20gradientUnits%3D%22userSpaceOnUse%22%3E%20%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23A0522D%22%2F%3E%20%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23654321%22%2F%3E%20%3C%2FlinearGradient%3E%20%3C%2Fdefs%3E%20%3Crect%20width%3D%2232%22%20height%3D%2232%22%20fill%3D%22transparent%22%2F%3E%20%3Cpath%20d%3D%22M0%204%20H32%20M0%2012%20H32%20M0%2020%20H32%20M0%2028%20H32%22%20stroke%3D%22url(%23wfG)%22%20stroke-width%3D%224%22%2F%3E%20%3Cpath%20d%3D%22M4%200%20V32%20M12%200%20V32%20M20%200%20V32%20M28%200%20V32%22%20stroke%3D%22%23A0522D%22%20stroke-width%3D%222%22%20opacity%3D%220.9%22%2F%3E%20%3Cpath%20d%3D%22M6%208%20Q16%204%2026%208%20M6%2024%20Q16%2028%2026%2024%22%20stroke%3D%22%23654321%22%20stroke-width%3D%221%22%20opacity%3D%220.7%22%2F%3E%20%3Ccircle%20cx%3D%228%22%20cy%3D%228%22%20r%3D%221%22%20fill%3D%22%23696969%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%221%22%20fill%3D%22%23696969%22%2F%3E%20%3Crect%20x%3D%220%22%20y%3D%2228%22%20width%3D%2232%22%20height%3D%224%22%20fill%3D%22%23000%22%20opacity%3D%220.15%22%2F%3E%20%3C%2Fsvg%3E" width="32" height="32" preserveAspectRatio="xMidYMid meet" filter="url(#etch-tile-10-e)"/>
+  </g>
+  <rect width="32" height="32" fill="url(#hatch-tile-10-e)" opacity="0.28"/>
+</svg>

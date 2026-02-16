@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="aurora-embedded-15-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1dd3b0" stop-opacity="0.75"/>
+      <stop offset="50%" stop-color="#7f5af0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ff8906" stop-opacity="0.6"/>
+    </linearGradient>
+    <filter id="grain-embedded-15-a" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.3 0" result="grain"/>
+      <feBlend in="SourceGraphic" in2="grain" mode="overlay"/>
+    </filter>
+    <filter id="bloom-embedded-15-a" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.4" result="blur"/>
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="bloom"/>
+      <feMerge>
+        <feMergeNode in="bloom"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="48" height="48" fill="url(#aurora-embedded-15-a)" opacity="0.18"/>
+  <g filter="url(#grain-embedded-15-a)">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%20%3Cline%20x1%3D%2224%22%20y1%3D%2230%22%20x2%3D%2224%22%20y2%3D%2242%22%20stroke%3D%22%234CAF50%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Cellipse%20cx%3D%2220%22%20cy%3D%2224%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%234CAF50%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2228%22%20cy%3D%2224%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%2366BB6A%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2218%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%2343A047%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2230%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23388E3C%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%222%22%20fill%3D%22%232E7D32%22%2F%3E%20%3Cpath%20d%3D%22M20%2024%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M28%2024%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M24%2018%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3C%2Fsvg%3E" width="48" height="48" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+  <g filter="url(#bloom-embedded-15-a)" opacity="0.9">
+    <image href="data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2248%22%20height%3D%2248%22%20viewBox%3D%220%200%2048%2048%22%3E%20%3Cline%20x1%3D%2224%22%20y1%3D%2230%22%20x2%3D%2224%22%20y2%3D%2242%22%20stroke%3D%22%234CAF50%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%2F%3E%20%3Cellipse%20cx%3D%2220%22%20cy%3D%2224%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%234CAF50%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2228%22%20cy%3D%2224%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%2366BB6A%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2218%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%2343A047%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Cellipse%20cx%3D%2224%22%20cy%3D%2230%22%20rx%3D%225%22%20ry%3D%226%22%20fill%3D%22%23388E3C%22%20stroke%3D%22%232E7D32%22%20stroke-width%3D%220.8%22%2F%3E%20%3Ccircle%20cx%3D%2224%22%20cy%3D%2224%22%20r%3D%222%22%20fill%3D%22%232E7D32%22%2F%3E%20%3Cpath%20d%3D%22M20%2024%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M28%2024%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3Cpath%20d%3D%22M24%2018%20L24%2024%22%20stroke%3D%22%231B5E20%22%20stroke-width%3D%220.5%22%20opacity%3D%220.3%22%2F%3E%20%3C%2Fsvg%3E" width="48" height="48" preserveAspectRatio="xMidYMid meet"/>
+  </g>
+</svg>
