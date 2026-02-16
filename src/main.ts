@@ -28,6 +28,8 @@ import {
   validateAllTileDefs, validateTemplate, normalizeTileDef,
   isValidAnchorRole, tileMatchesClimate, getTileLOD, tilesAtLOD,
   getBiomePalette,
+  computeTraversalChannels, computeCornerCells, computeChainPorts,
+  getAllRotations as getAllTemplateRotations,
 } from './config/tiles.config';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
@@ -2815,6 +2817,11 @@ async function main(): Promise<void> {
     getTileLOD,
     tilesAtLOD,
     getBiomePalette,
+    // Edge contract v2 (#42) — traversal, corners, chain ports
+    computeTraversalChannels,
+    computeCornerCells,
+    computeChainPorts,
+    getAllTemplateRotations,
     getChunkClimate,
     // Fog-of-war debug (#114)
     toggleFog,

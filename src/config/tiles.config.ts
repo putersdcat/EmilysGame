@@ -24,6 +24,15 @@ export interface EdgeVector {
   w: EdgeTag;
 }
 
+/** Per-side traversal channel: does a walkable path exist across this edge? (#42) */
+export type TraversalChannels = { n: boolean; s: boolean; e: boolean; w: boolean };
+
+/** Corner cell types at the 4 corners of a 5×5 grid (#42) */
+export type CornerCells = { nw: string; ne: string; sw: string; se: string };
+
+/** Chain entry/exit port declarations for chain integrity (#42) */
+export interface ChainPorts { entries: Cardinal[]; exits: Cardinal[] }
+
 /** Traversal class: how the player can move through this tile */
 export type TraversalType = 'open' | 'blocked' | 'conditional' | 'hazardous';
 
@@ -350,6 +359,10 @@ export interface WorldUnitTemplate {
   lod?: LODLevel;
   /** Template-level climate preference (#101) */
   climate?: ClimateBand;
+  /** Per-side walkable traversal indicators (auto-computed from cells if omitted) (#42) */
+  traversalChannels?: TraversalChannels;
+  /** Chain port declarations (auto-computed from edgeTags + chainType if omitted) (#42) */
+  chainPorts?: ChainPorts;
 }
 
 /** A concrete rotation of a template, pre-computed at load time */
@@ -366,6 +379,12 @@ export interface RotatedTemplate {
   movementChannels?: Array<Array<{ x: number; y: number }>>;
   /** Rotated anchors */
   anchors?: AnchorPoint[];
+  /** Per-side walkable traversal channels (#42) */
+  traversalChannels: TraversalChannels;
+  /** Corner cell types at the 4 corners (#42) */
+  cornerCells: CornerCells;
+  /** Chain entry/exit port declarations (#42) */
+  chainPorts: ChainPorts;
 }
 
 // Helper: create a 5×5 grid filled with a value
@@ -390,6 +409,64 @@ function rotateEdges90(edges: EdgeVector): EdgeVector {
   return { n: edges.w, e: edges.n, s: edges.e, w: edges.s };
 }
 
+/** Rotate traversal channels 90° CW (#42) */
+function rotateTraversalChannels90(tc: TraversalChannels): TraversalChannels {
+  return { n: tc.w, e: tc.n, s: tc.e, w: tc.s };
+}
+
+/** Rotate corner cells 90° CW (#42): NW←SW, NE←NW, SE←NE, SW←SE */
+function rotateCornerCells90(cc: CornerCells): CornerCells {
+  return { nw: cc.sw, ne: cc.nw, se: cc.ne, sw: cc.se };
+}
+
+/** Rotate chain ports 90° CW (#42) */
+function rotateChainPorts90(cp: ChainPorts): ChainPorts {
+  const rot = (d: Cardinal): Cardinal => {
+    switch (d) { case 'n': return 'e'; case 'e': return 's'; case 's': return 'w'; case 'w': return 'n'; }
+  };
+  return { entries: cp.entries.map(rot), exits: cp.exits.map(rot) };
+}
+
+/** Compute traversal channels from a 5×5 cell grid (#42).
+ *  A side has a traversal channel if any border cell is walkable. */
+export function computeTraversalChannels(cells: (string | null)[][]): TraversalChannels {
+  const isWalkable = (cell: string | null): boolean => {
+    if (cell === null) return true; // null = inherit terrain, assume walkable
+    return MICRO_TILE_DEFS[cell as TileType]?.walkable ?? false;
+  };
+  return {
+    n: cells[0].some(c => isWalkable(c)),
+    s: cells[4].some(c => isWalkable(c)),
+    w: cells.some(row => isWalkable(row[0])),
+    e: cells.some(row => isWalkable(row[4])),
+  };
+}
+
+/** Extract corner cell types from a 5×5 grid (#42). Defaults to 'grass' for null. */
+export function computeCornerCells(cells: (string | null)[][]): CornerCells {
+  return {
+    nw: cells[0][0] ?? 'grass',
+    ne: cells[0][4] ?? 'grass',
+    sw: cells[4][0] ?? 'grass',
+    se: cells[4][4] ?? 'grass',
+  };
+}
+
+/** Compute chain entry/exit ports from edge tags and chain type (#42). */
+export function computeChainPorts(
+  edges: EdgeVector,
+  chainType?: string,
+  terminator = false,
+): ChainPorts {
+  if (!chainType) return { entries: [], exits: [] };
+  const dirs: Cardinal[] = ['n', 's', 'e', 'w'];
+  const chainDirs = dirs.filter(d => edges[d] !== 'open');
+  if (terminator) {
+    return { entries: chainDirs, exits: [] };
+  }
+  return { entries: chainDirs, exits: chainDirs };
+}
+
 /** Rotate a point 90° clockwise within a 5×5 grid */
 function rotatePoint90(p: { x: number; y: number }, size = 5): { x: number; y: number } {
   return { x: size - 1 - p.y, y: p.x };
@@ -402,6 +479,10 @@ export function computeRotations(template: WorldUnitTemplate): RotatedTemplate[]
   let edges = template.edgeTags;
   let channels = template.movementChannels;
   let anchors = template.anchors;
+  // Auto-compute new edge-contract fields (#42)
+  let tc = template.traversalChannels ?? computeTraversalChannels(template.cells);
+  let cc = computeCornerCells(template.cells);
+  let cp = template.chainPorts ?? computeChainPorts(template.edgeTags, template.chainType, template.terminator);
 
   for (let r = 0; r < 4; r++) {
     const deg = r * 90;
@@ -413,11 +494,17 @@ export function computeRotations(template: WorldUnitTemplate): RotatedTemplate[]
         edgeTags: { ...edges },
         movementChannels: channels?.map(ch => ch.map(p => ({ ...p }))),
         anchors: anchors?.map(a => ({ ...a })),
+        traversalChannels: { ...tc },
+        cornerCells: { ...cc },
+        chainPorts: { entries: [...cp.entries], exits: [...cp.exits] },
       });
     }
     // Rotate for next iteration
     cells = rotateGrid90(cells);
     edges = rotateEdges90(edges);
+    tc = rotateTraversalChannels90(tc);
+    cc = rotateCornerCells90(cc);
+    cp = rotateChainPorts90(cp);
     channels = channels?.map(ch => ch.map(p => rotatePoint90(p)));
     anchors = anchors?.map(a => ({
       ...a,

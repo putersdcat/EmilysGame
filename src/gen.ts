@@ -560,6 +560,96 @@ interface SolveResult {
 // --- AC-3 Solver Budget ---
 const MAX_PROPAGATION_ITERATIONS = 1000;
 
+// --- Traversal Continuity Check (#42) ---
+// When both edges are 'open' or 'path', traversal channels must match.
+const TRAVERSAL_EDGE_TYPES = new Set<EdgeTag>(['open', 'path']);
+
+function traversalCompatible(
+  a: RotatedTemplate,
+  b: RotatedTemplate,
+  aSide: Cardinal,
+  bSide: Cardinal,
+): boolean {
+  if (!TRAVERSAL_EDGE_TYPES.has(a.edgeTags[aSide]) || !TRAVERSAL_EDGE_TYPES.has(b.edgeTags[bSide])) {
+    return true; // only enforce on open/path edges
+  }
+  return a.traversalChannels[aSide] === b.traversalChannels[bSide];
+}
+
+// --- Corner Governance (#42) ---
+// At most 2 distinct surface types may meet at any corner junction point.
+
+function getCornerSurface(cellType: string): string {
+  return MICRO_TILE_DEFS[cellType as TileType]?.surface ?? 'grass';
+}
+
+function validateCornerGovernance(
+  candidate: RotatedTemplate,
+  gy: number,
+  gx: number,
+  slots: SlotState[][],
+): boolean {
+  // This slot participates in up to 4 corner junctions.
+  // For each junction, collect surface types from collapsed neighbors + candidate.
+  // Junction (jy, jx): top-left=SE, top-right=SW, bot-left=NE, bot-right=NW
+  const checks: Array<{
+    mySurface: string;
+    neighbors: Array<{ sy: number; sx: number; corner: 'nw' | 'ne' | 'sw' | 'se' }>;
+  }> = [
+    // This slot is top-left → contributes SE corner
+    {
+      mySurface: getCornerSurface(candidate.cornerCells.se),
+      neighbors: [
+        { sy: gy, sx: gx + 1, corner: 'sw' },
+        { sy: gy + 1, sx: gx, corner: 'ne' },
+        { sy: gy + 1, sx: gx + 1, corner: 'nw' },
+      ],
+    },
+    // This slot is top-right → contributes SW corner
+    {
+      mySurface: getCornerSurface(candidate.cornerCells.sw),
+      neighbors: [
+        { sy: gy, sx: gx - 1, corner: 'se' },
+        { sy: gy + 1, sx: gx - 1, corner: 'ne' },
+        { sy: gy + 1, sx: gx, corner: 'nw' },
+      ],
+    },
+    // This slot is bottom-left → contributes NE corner
+    {
+      mySurface: getCornerSurface(candidate.cornerCells.ne),
+      neighbors: [
+        { sy: gy - 1, sx: gx, corner: 'se' },
+        { sy: gy - 1, sx: gx + 1, corner: 'sw' },
+        { sy: gy, sx: gx + 1, corner: 'nw' },
+      ],
+    },
+    // This slot is bottom-right → contributes NW corner
+    {
+      mySurface: getCornerSurface(candidate.cornerCells.nw),
+      neighbors: [
+        { sy: gy - 1, sx: gx - 1, corner: 'se' },
+        { sy: gy - 1, sx: gx, corner: 'sw' },
+        { sy: gy, sx: gx - 1, corner: 'ne' },
+      ],
+    },
+  ];
+
+  for (const check of checks) {
+    const surfaces = new Set<string>([check.mySurface]);
+    let hasCollapsedNeighbor = false;
+    for (const { sy, sx, corner } of check.neighbors) {
+      if (sy < 0 || sy >= GRID_DIM || sx < 0 || sx >= GRID_DIM) continue;
+      const slot = slots[sy][sx];
+      if (!slot.collapsed) continue;
+      hasCollapsedNeighbor = true;
+      surfaces.add(getCornerSurface(slot.collapsed.cornerCells[corner]));
+    }
+    // Only enforce if at least one neighbor is collapsed (otherwise no constraint yet)
+    if (hasCollapsedNeighbor && surfaces.size > 2) return false;
+  }
+  return true;
+}
+
 function solveWorldUnitGrid(
   biome: BiomeDef,
   rng: () => number,
@@ -722,9 +812,10 @@ function propagateAC3(slots: SlotState[][], allArcs: Arc[]): void {
     // Revise: remove candidates from 'from' that have no compatible candidate in 'to'
     const before = fromSlot.candidates.length;
     fromSlot.candidates = fromSlot.candidates.filter(fc => {
-      // At least one candidate in 'to' must be compatible with fc on the shared edge
+      // At least one candidate in 'to' must be edge-compatible AND traversal-compatible (#42)
       return toSlot.candidates.some(tc =>
-        edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide]),
+        edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide])
+        && traversalCompatible(fc.template, tc.template, arc.fromSide, arc.toSide),
       );
     });
 
@@ -828,9 +919,15 @@ function collapseAllMRV(
 
     const slot = slots[bestY][bestX];
 
-    // Collapse: pick from candidates (weighted) or use fallback
+    // Collapse: pick from candidates (weighted) with corner governance (#42)
     if (slot.candidates.length > 0) {
-      slot.collapsed = weightedSelectTemplate(slot.candidates, rng);
+      // Filter by corner governance first; fall back to unfiltered if all rejected
+      const governed = slot.candidates.filter(c =>
+        validateCornerGovernance(c.template, bestY, bestX, slots),
+      );
+      slot.collapsed = weightedSelectTemplate(
+        governed.length > 0 ? governed : slot.candidates, rng,
+      );
     } else {
       // Contradiction: use fallback (recovery strategy 1: degrade)
       slot.collapsed = fallback;
@@ -848,7 +945,8 @@ function collapseAllMRV(
       const oppSide = OPPOSITES[arc.fromSide];
       if (slot.collapsed) {
         neighborSlot.candidates = neighborSlot.candidates.filter(c =>
-          edgesCompatible(c.template.edgeTags[arc.fromSide], slot.collapsed!.edgeTags[oppSide]),
+          edgesCompatible(c.template.edgeTags[arc.fromSide], slot.collapsed!.edgeTags[oppSide])
+          && traversalCompatible(c.template, slot.collapsed!, arc.fromSide, oppSide),
         );
       }
     }
@@ -885,18 +983,21 @@ function propagateAC3Partial(
     if (fromSlot.collapsed) continue;
 
     // If toSlot is collapsed, filter from against the single collapsed value
+    // Includes traversal continuity check (#42)
     let changed = false;
     if (toSlot.collapsed) {
       const before = fromSlot.candidates.length;
       fromSlot.candidates = fromSlot.candidates.filter(fc =>
-        edgesCompatible(fc.template.edgeTags[arc.fromSide], toSlot.collapsed!.edgeTags[arc.toSide]),
+        edgesCompatible(fc.template.edgeTags[arc.fromSide], toSlot.collapsed!.edgeTags[arc.toSide])
+        && traversalCompatible(fc.template, toSlot.collapsed!, arc.fromSide, arc.toSide),
       );
       changed = fromSlot.candidates.length < before;
     } else {
       const before = fromSlot.candidates.length;
       fromSlot.candidates = fromSlot.candidates.filter(fc =>
         toSlot.candidates.some(tc =>
-          edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide]),
+          edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide])
+          && traversalCompatible(fc.template, tc.template, arc.fromSide, arc.toSide),
         ),
       );
       changed = fromSlot.candidates.length < before;
@@ -939,7 +1040,7 @@ function extractGridBorderEdges(
   };
 }
 
-// --- Chain Integrity ---
+// --- Chain Integrity (#42: uses chainPorts for precise chain edge detection) ---
 
 function enforceChainIntegrity(
   grid: (RotatedTemplate | null)[][],
@@ -950,10 +1051,16 @@ function enforceChainIntegrity(
       const template = grid[gy][gx];
       if (!template) continue;
 
-      const chainEdges = getChainEdges(template);
-      if (chainEdges.length === 0) continue;
+      // Use chainPorts for precise chain edge detection (#42)
+      // Check exits first (must connect forward); fall back to entries for legacy
+      const ports = template.chainPorts;
+      const dirsToCheck = ports.exits.length > 0
+        ? ports.exits
+        : ports.entries;
+      if (dirsToCheck.length === 0) continue;
 
-      for (const { dir, tag } of chainEdges) {
+      for (const dir of dirsToCheck) {
+        const tag = template.edgeTags[dir];
         const nx = gx + (dir === 'e' ? 1 : dir === 'w' ? -1 : 0);
         const ny = gy + (dir === 's' ? 1 : dir === 'n' ? -1 : 0);
 
@@ -978,16 +1085,6 @@ function enforceChainIntegrity(
       }
     }
   }
-}
-
-function getChainEdges(template: RotatedTemplate): Array<{ dir: Cardinal; tag: EdgeTag }> {
-  const edges: Array<{ dir: Cardinal; tag: EdgeTag }> = [];
-  const dirs: Cardinal[] = ['n', 's', 'e', 'w'];
-  for (const dir of dirs) {
-    const tag = template.edgeTags[dir];
-    if (tag !== 'open') edges.push({ dir, tag });
-  }
-  return edges;
 }
 
 function findTerminator(
