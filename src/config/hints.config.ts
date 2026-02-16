@@ -119,6 +119,35 @@ export const HINTS: Record<string, HintDef> = {
     emoji: '🛍️',
   },
 
+  // ── Injury hints (#109) ──
+  ouch_injury: {
+    id: 'ouch_injury',
+    text: 'Ouch! That really hurt!',
+    type: 'speech',
+    priority: 8,
+    duration: 2500,
+    cooldown: 10000,
+    emoji: '🤕',
+  },
+  need_bandaid: {
+    id: 'need_bandaid',
+    text: 'My knee hurts... I need a bandaid!',
+    type: 'thought',
+    priority: 6,
+    duration: 3500,
+    cooldown: 30000,
+    emoji: '🩹',
+  },
+  injury_near_shop: {
+    id: 'injury_near_shop',
+    text: 'Ouch, knee hurts... that shop might have bandaids!',
+    type: 'thought',
+    priority: 7,
+    duration: 3500,
+    cooldown: 45000,
+    emoji: '🏪',
+  },
+
   // ── Nearby interactive prompts ──
   near_npc: {
     id: 'near_npc',

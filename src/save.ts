@@ -54,6 +54,8 @@ export interface SaveData {
   visitedFog?: number[][];
   /** Age band profile for content filtering (#92) */
   ageBand?: string;
+  /** Injury state (#109) */
+  injuryState?: { injured: boolean; injuryCount: number };
 }
 
 export interface ResolvedCell {

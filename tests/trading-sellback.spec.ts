@@ -140,17 +140,21 @@ test.describe('Trading Sell-Back (#112)', () => {
     await openTestTrade(page);
 
     const result = await page.evaluate(() => {
-      const { toggleTradeMode, executeSell } = (window as any).__trade;
+      const { toggleTradeMode, executeSell, getSellableItems } = (window as any).__trade;
       const state = (window as any).__gameState;
       const inv = state.inventory;
 
-      // Setup: give player a key, some coins, switch to sell mode
+      // Setup: give player a key, switch to sell mode
       inv.addItem('key', 1);
       const coinsBefore = inv.countItem('coin');
       const keysBefore = inv.countItem('key');
 
       toggleTradeMode(state.trade); // → sell
-      state.trade.selectedIndex = 0; // first sellable item
+
+      // Find the key's index in sellable items (starter items may be before it)
+      const sellable = getSellableItems(inv);
+      const keyIdx = sellable.findIndex((s: any) => s.itemId === 'key');
+      state.trade.selectedIndex = keyIdx >= 0 ? keyIdx : 0;
 
       // Sell
       const sellResult = executeSell(state.trade, inv);
@@ -160,10 +164,12 @@ test.describe('Trading Sell-Back (#112)', () => {
         coinsAfter: inv.countItem('coin'),
         keysBefore,
         keysAfter: inv.countItem('key'),
+        keyIdx,
       };
     });
 
     expect(result.ok).toBe(true);
+    expect(result.keyIdx).toBeGreaterThanOrEqual(0);
     expect(result.keysAfter).toBeLessThan(result.keysBefore);
     expect(result.coinsAfter).toBeGreaterThan(result.coinsBefore);
   });

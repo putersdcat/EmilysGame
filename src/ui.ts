@@ -22,6 +22,7 @@ import { getAllSlotInfo } from './save';
 import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
 import type { PlayerStatus } from './status';
+import type { InjuryState } from './injury';
 import type { MusicState } from './music';
 import type { SfxState } from './sfx';
 import { getDebuffs } from './status';
@@ -646,7 +647,7 @@ function initLlmConfigPanel(): void {
 let lastStatusSyncFrame = 0;
 
 /** Sync survival status bars in sidebar. Call from game loop. */
-export function syncStatusBars(status: PlayerStatus): void {
+export function syncStatusBars(status: PlayerStatus, injury?: InjuryState): void {
   // Throttle to every 12th call
   lastStatusSyncFrame++;
   if (lastStatusSyncFrame % 12 !== 0) return;
@@ -669,12 +670,14 @@ export function syncStatusBars(status: PlayerStatus): void {
     if (val) val.textContent = String(Math.round(bar.value));
   }
 
-  // Debuff list
+  // Debuff list (includes injury indicator #109)
   const debuffs = getDebuffs(status);
+  const allDebuffs = [...debuffs.activeDebuffs];
+  if (injury?.injured) allDebuffs.push('🩹 Injured');
   const debuffEl = document.getElementById('sbDebuffs');
   if (debuffEl) {
-    debuffEl.textContent = debuffs.activeDebuffs.length > 0
-      ? debuffs.activeDebuffs.join(' · ')
+    debuffEl.textContent = allDebuffs.length > 0
+      ? allDebuffs.join(' · ')
       : '';
   }
 }
