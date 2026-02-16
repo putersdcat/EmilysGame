@@ -29,3 +29,6 @@ cust-test-result.txt
 test-results-*.txt
 inventory-*.png
 torch-*.png
+
+# A/B test runs (keep README only)
+asset-dev/Export/A-B-Tests/run-*/
