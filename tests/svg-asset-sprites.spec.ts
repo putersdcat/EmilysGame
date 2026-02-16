@@ -1,5 +1,5 @@
 /**
- * Tests for SVG Asset Sprites (#115 Phase 1+2)
+ * Tests for SVG Asset Sprites (#115 Phase 1-3)
  * Validates that world objects render as SVG sprites instead of emoji.
  */
 import { test, expect } from '@playwright/test';
@@ -30,8 +30,8 @@ test.describe('SVG Asset Sprites (#115)', () => {
   test('hasAssetSprite returns false for unsupported keys', async ({ page }) => {
     const unsupported = await page.evaluate(() => {
       const debug = (window as any).__gameDebug;
-      // NPCs, terrain tiles, and animals don't have SVG asset sprites
-      return ['npc_merchant', 'npc_villager', 'npc_guardian', 'chicken', 'cow', 'grass', 'water'].map(k => ({
+      // NPCs and terrain tiles don't have SVG asset sprites (animals now do)
+      return ['npc_merchant', 'npc_villager', 'npc_guardian', 'npc_farmer', 'npc_ghost', 'grass', 'water'].map(k => ({
         key: k,
         has: debug.hasAssetSprite(k),
       }));
@@ -88,6 +88,22 @@ test.describe('SVG Asset Sprites (#115)', () => {
     }
   });
 
+  test('Phase 3 animals have SVG sprites', async ({ page }) => {
+    const animals = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      return ['chicken', 'rooster', 'pig', 'cow', 'sheep', 'goat',
+              'rabbit', 'duck', 'fox', 'deer', 'horse', 'dog'].map(k => ({
+        key: k,
+        has: debug.hasAssetSprite(k),
+      }));
+    });
+
+    for (const entry of animals) {
+      expect(entry.has, `${entry.key} should have SVG sprite`).toBe(true);
+    }
+    expect(animals.length).toBe(12); // All 12 animal types covered
+  });
+
   test('asset sprite keys list includes correct entries', async ({ page }) => {
     const keys: string[] = await page.evaluate(() => {
       return (window as any).__gameDebug.getAssetSpriteKeys();
@@ -108,8 +124,13 @@ test.describe('SVG Asset Sprites (#115)', () => {
     expect(keys).toContain('house');
     expect(keys).toContain('bush');
     expect(keys).toContain('bridge');
-    // Total: 7 Phase1 + 15 plants + 4 collectibles + 15 structures + 3 shop variants = 44
-    expect(keys.length).toBeGreaterThanOrEqual(30);
+    // Phase 3 animal keys (spot check)
+    expect(keys).toContain('chicken');
+    expect(keys).toContain('cow');
+    expect(keys).toContain('fox');
+    expect(keys).toContain('deer');
+    // Total: 7 Phase1 + 15 plants + 4 collectibles + 15 structures + 3 shop variants + 12 animals = 56
+    expect(keys.length).toBeGreaterThanOrEqual(40);
   });
 
   test('game renders without errors after SVG asset sprite integration', async ({ page }) => {

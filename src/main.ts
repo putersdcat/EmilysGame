@@ -2763,6 +2763,7 @@ async function main(): Promise<void> {
       'chest', 'sign', 'house', 'hut', 'shop', 'shop_general', 'shop_snack', 'shop_trading',
       'outhouse', 'wall', 'door_locked', 'door_open', 'fence', 'quiz_gate', 'toll_gate',
       'barricade', 'sparkle', 'bridge',
+      'chicken', 'rooster', 'pig', 'cow', 'sheep', 'goat', 'rabbit', 'duck', 'fox', 'deer', 'horse', 'dog',
     ],
   };
 

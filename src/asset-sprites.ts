@@ -1,6 +1,6 @@
 /**
  * asset-sprites.ts — SVG object sprites replacing emoji rendering.
- * Issue #115 Phase 1+2: Trees, rocks, fire, plants, collectibles, structures.
+ * Issue #115 Phase 1-3: Trees, rocks, fire, plants, collectibles, structures, animals.
  *
  * Pre-renders SVG artwork to offscreen canvases at init time.
  * Provides fast sync lookups for the render loop (zero alloc in hot path).
@@ -660,6 +660,199 @@ const FIRE_FRAME_SVGS = [
 </svg>`,
 ];
 
+// ─── Phase 3: Animals ────────────────────────────────────────
+// Paper-cut style farm animals and wildlife. Simple shapes, bold outlines.
+
+// --- Chicken (🐔 replacement) ---
+const CHICKEN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="32" rx="10" ry="8" fill="#F5F5F0" stroke="#795548" stroke-width="1.5"/>
+  <circle cx="28" cy="24" r="6" fill="#F5F5F0" stroke="#795548" stroke-width="1.5"/>
+  <polygon points="34,23 38,22 34,25" fill="#FF9800" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="30" cy="22" r="1.2" fill="#1A1A1A"/>
+  <path d="M26 18 Q28 14 30 18" fill="#F44336" stroke="#C62828" stroke-width="0.8"/>
+  <path d="M28 28 L26 30" stroke="#795548" stroke-width="1"/>
+  <line x1="20" y1="40" x2="18" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="24" y1="40" x2="24" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+  <path d="M14 32 Q12 28 16 30" fill="#F5F5F0" stroke="#795548" stroke-width="1"/>
+</svg>`;
+
+// --- Rooster (🐓 replacement) ---
+const ROOSTER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="32" rx="10" ry="8" fill="#E8D5B7" stroke="#5D4037" stroke-width="1.5"/>
+  <circle cx="28" cy="23" r="6" fill="#E8D5B7" stroke="#5D4037" stroke-width="1.5"/>
+  <polygon points="34,22 39,20 34,24" fill="#FF9800" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="30" cy="21" r="1.3" fill="#1A1A1A"/>
+  <path d="M25 17 Q27 11 29 13 Q31 11 33 17" fill="#F44336" stroke="#C62828" stroke-width="0.8"/>
+  <path d="M28 29 L30 32" stroke="#5D4037" stroke-width="0.8"/>
+  <path d="M12 30 Q8 26 14 28" fill="#1B5E20" stroke="#0D3B0E" stroke-width="0.8"/>
+  <path d="M13 32 Q9 30 14 30" fill="#2E7D32" stroke="#1B5E20" stroke-width="0.8"/>
+  <path d="M14 34 Q10 34 15 32" fill="#43A047" stroke="#2E7D32" stroke-width="0.8"/>
+  <line x1="20" y1="40" x2="18" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="24" y1="40" x2="24" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+</svg>`;
+
+// --- Pig (🐖 replacement) ---
+const PIG_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="30" rx="14" ry="10" fill="#F8BBD0" stroke="#AD1457" stroke-width="1.5"/>
+  <circle cx="30" cy="22" r="8" fill="#F8BBD0" stroke="#AD1457" stroke-width="1.5"/>
+  <ellipse cx="32" cy="24" rx="4" ry="3" fill="#F48FB1" stroke="#AD1457" stroke-width="1"/>
+  <circle cx="33" cy="23" r="1" fill="#AD1457"/>
+  <circle cx="31" cy="23" r="1" fill="#AD1457"/>
+  <circle cx="28" cy="19" r="1.5" fill="#1A1A1A"/>
+  <circle cx="34" cy="19" r="1.5" fill="#1A1A1A"/>
+  <path d="M25 16 Q24 13 26 14" fill="#F8BBD0" stroke="#AD1457" stroke-width="0.8"/>
+  <path d="M35 16 Q36 13 34 14" fill="#F8BBD0" stroke="#AD1457" stroke-width="0.8"/>
+  <path d="M10 28 Q8 30 10 32" fill="#F8BBD0" stroke="#AD1457" stroke-width="0.8"/>
+  <line x1="18" y1="40" x2="16" y2="44" stroke="#AD1457" stroke-width="1.5"/>
+  <line x1="22" y1="40" x2="22" y2="44" stroke="#AD1457" stroke-width="1.5"/>
+  <line x1="26" y1="40" x2="26" y2="44" stroke="#AD1457" stroke-width="1.5"/>
+  <line x1="30" y1="40" x2="32" y2="44" stroke="#AD1457" stroke-width="1.5"/>
+</svg>`;
+
+// --- Cow (🐄 replacement) ---
+const COW_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="28" rx="16" ry="11" fill="#FAFAFA" stroke="#424242" stroke-width="1.5"/>
+  <ellipse cx="20" cy="26" rx="5" ry="4" fill="#1A1A1A" opacity="0.7"/>
+  <ellipse cx="30" cy="30" rx="4" ry="3" fill="#1A1A1A" opacity="0.7"/>
+  <circle cx="32" cy="18" r="7" fill="#FAFAFA" stroke="#424242" stroke-width="1.5"/>
+  <ellipse cx="34" cy="22" rx="3.5" ry="2.5" fill="#F8BBD0" stroke="#AD1457" stroke-width="0.8"/>
+  <circle cx="30" cy="16" r="1.5" fill="#1A1A1A"/>
+  <circle cx="35" cy="16" r="1.5" fill="#1A1A1A"/>
+  <path d="M28 12 Q26 8 28 10" fill="#795548" stroke="#4E342E" stroke-width="0.8"/>
+  <path d="M36 12 Q38 8 36 10" fill="#795548" stroke="#4E342E" stroke-width="0.8"/>
+  <line x1="16" y1="38" x2="14" y2="44" stroke="#424242" stroke-width="2"/>
+  <line x1="22" y1="38" x2="22" y2="44" stroke="#424242" stroke-width="2"/>
+  <line x1="26" y1="38" x2="26" y2="44" stroke="#424242" stroke-width="2"/>
+  <line x1="32" y1="38" x2="34" y2="44" stroke="#424242" stroke-width="2"/>
+</svg>`;
+
+// --- Sheep (🐑 replacement) ---
+const SHEEP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="28" rx="14" ry="10" fill="#F5F5F5" stroke="#BDBDBD" stroke-width="1"/>
+  <circle cx="20" cy="26" r="5" fill="#EEEEEE"/>
+  <circle cx="28" cy="26" r="5" fill="#EEEEEE"/>
+  <circle cx="24" cy="22" r="4" fill="#EEEEEE"/>
+  <circle cx="18" cy="32" r="4" fill="#EEEEEE"/>
+  <circle cx="30" cy="32" r="4" fill="#EEEEEE"/>
+  <circle cx="32" cy="18" r="6" fill="#3E2723" stroke="#1B0F0A" stroke-width="1.2"/>
+  <circle cx="30" cy="16" r="1.3" fill="#FAFAFA"/>
+  <circle cx="34" cy="16" r="1.3" fill="#FAFAFA"/>
+  <circle cx="30" cy="16" r="0.6" fill="#1A1A1A"/>
+  <circle cx="34" cy="16" r="0.6" fill="#1A1A1A"/>
+  <line x1="18" y1="38" x2="16" y2="44" stroke="#3E2723" stroke-width="1.5"/>
+  <line x1="22" y1="38" x2="22" y2="44" stroke="#3E2723" stroke-width="1.5"/>
+  <line x1="26" y1="38" x2="26" y2="44" stroke="#3E2723" stroke-width="1.5"/>
+  <line x1="30" y1="38" x2="32" y2="44" stroke="#3E2723" stroke-width="1.5"/>
+</svg>`;
+
+// --- Goat (🐐 replacement) ---
+const GOAT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="28" rx="13" ry="9" fill="#E0D6C8" stroke="#5D4037" stroke-width="1.5"/>
+  <circle cx="30" cy="18" r="7" fill="#E0D6C8" stroke="#5D4037" stroke-width="1.5"/>
+  <ellipse cx="32" cy="22" rx="2.5" ry="2" fill="#F5E6D0" stroke="#5D4037" stroke-width="0.8"/>
+  <circle cx="28" cy="16" r="1.3" fill="#1A1A1A"/>
+  <circle cx="33" cy="16" r="1.3" fill="#1A1A1A"/>
+  <path d="M26 12 L24 6" stroke="#795548" stroke-width="2" stroke-linecap="round"/>
+  <path d="M34 12 L36 6" stroke="#795548" stroke-width="2" stroke-linecap="round"/>
+  <path d="M30 24 Q32 28 30 30" stroke="#E0D6C8" stroke-width="1.5" fill="none"/>
+  <line x1="18" y1="36" x2="16" y2="44" stroke="#5D4037" stroke-width="1.5"/>
+  <line x1="22" y1="36" x2="22" y2="44" stroke="#5D4037" stroke-width="1.5"/>
+  <line x1="26" y1="36" x2="26" y2="44" stroke="#5D4037" stroke-width="1.5"/>
+  <line x1="30" y1="36" x2="32" y2="44" stroke="#5D4037" stroke-width="1.5"/>
+</svg>`;
+
+// --- Rabbit (🐇 replacement) ---
+const RABBIT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="34" rx="8" ry="7" fill="#E0D6C8" stroke="#795548" stroke-width="1.2"/>
+  <circle cx="24" cy="24" r="6" fill="#E0D6C8" stroke="#795548" stroke-width="1.2"/>
+  <path d="M20 18 Q18 6 20 10 Q22 6 22 18" fill="#F5E6D0" stroke="#795548" stroke-width="1"/>
+  <path d="M26 18 Q24 6 26 10 Q28 6 28 18" fill="#F5E6D0" stroke="#795548" stroke-width="1"/>
+  <ellipse cx="19" cy="8" rx="1.5" ry="4" fill="#F8BBD0" opacity="0.6"/>
+  <ellipse cx="27" cy="8" rx="1.5" ry="4" fill="#F8BBD0" opacity="0.6"/>
+  <circle cx="22" cy="22" r="1.3" fill="#1A1A1A"/>
+  <circle cx="26" cy="22" r="1.3" fill="#1A1A1A"/>
+  <ellipse cx="24" cy="25" rx="1.5" ry="1" fill="#F8BBD0"/>
+  <circle cx="24" cy="40" r="3" fill="#F5F5F0" stroke="#795548" stroke-width="0.8"/>
+</svg>`;
+
+// --- Duck (🦆 replacement) ---
+const DUCK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="32" rx="12" ry="8" fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5"/>
+  <circle cx="30" cy="22" r="7" fill="#4CAF50" stroke="#2E7D32" stroke-width="1.5"/>
+  <polygon points="37,22 43,20 37,24" fill="#FF9800" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="32" cy="20" r="1.5" fill="#1A1A1A"/>
+  <path d="M28 16 Q30 13 32 16" fill="#4CAF50" stroke="#2E7D32" stroke-width="0.8"/>
+  <path d="M14 34 Q10 38 14 36" fill="#4CAF50" stroke="#2E7D32" stroke-width="1"/>
+  <line x1="20" y1="40" x2="18" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+  <line x1="26" y1="40" x2="26" y2="44" stroke="#FF9800" stroke-width="1.5"/>
+</svg>`;
+
+// --- Fox (🦊 replacement) ---
+const FOX_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="22" cy="30" rx="13" ry="8" fill="#FF8F00" stroke="#E65100" stroke-width="1.5"/>
+  <path d="M10 28 Q6 32 10 34" fill="#F5F5F0" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="30" cy="20" r="8" fill="#FF8F00" stroke="#E65100" stroke-width="1.5"/>
+  <polygon points="24,12 22,4 26,14" fill="#FF8F00" stroke="#E65100" stroke-width="0.8"/>
+  <polygon points="36,12 38,4 34,14" fill="#FF8F00" stroke="#E65100" stroke-width="0.8"/>
+  <path d="M24 14 L22 6" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>
+  <path d="M36 14 L38 6" fill="none" stroke="#1A1A1A" stroke-width="0.3"/>
+  <path d="M26 24 Q30 28 34 24" fill="#F5F5F0" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="28" cy="18" r="1.5" fill="#1A1A1A"/>
+  <circle cx="33" cy="18" r="1.5" fill="#1A1A1A"/>
+  <ellipse cx="30" cy="22" rx="1.5" ry="1" fill="#1A1A1A"/>
+  <line x1="18" y1="38" x2="16" y2="44" stroke="#E65100" stroke-width="1.5"/>
+  <line x1="26" y1="38" x2="26" y2="44" stroke="#E65100" stroke-width="1.5"/>
+</svg>`;
+
+// --- Deer (🦌 replacement) ---
+const DEER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="22" cy="28" rx="14" ry="9" fill="#A1887F" stroke="#5D4037" stroke-width="1.5"/>
+  <ellipse cx="20" cy="26" rx="3" ry="2" fill="#FAFAFA" opacity="0.5"/>
+  <circle cx="32" cy="16" r="7" fill="#A1887F" stroke="#5D4037" stroke-width="1.5"/>
+  <path d="M28 10 L26 2 L24 6 L22 0" stroke="#795548" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <path d="M36 10 L38 2 L40 6 L42 0" stroke="#795548" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="30" cy="14" r="1.5" fill="#1A1A1A"/>
+  <circle cx="35" cy="14" r="1.5" fill="#1A1A1A"/>
+  <ellipse cx="33" cy="19" rx="2" ry="1.2" fill="#5D4037"/>
+  <line x1="14" y1="36" x2="12" y2="44" stroke="#5D4037" stroke-width="1.8"/>
+  <line x1="20" y1="36" x2="20" y2="44" stroke="#5D4037" stroke-width="1.8"/>
+  <line x1="26" y1="36" x2="26" y2="44" stroke="#5D4037" stroke-width="1.8"/>
+  <line x1="30" y1="36" x2="32" y2="44" stroke="#5D4037" stroke-width="1.8"/>
+</svg>`;
+
+// --- Horse (🐎 replacement) ---
+const HORSE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="22" cy="26" rx="15" ry="10" fill="#8D6E63" stroke="#4E342E" stroke-width="1.5"/>
+  <path d="M32 18 Q36 10 34 8 Q38 10 36 18" fill="#8D6E63" stroke="#4E342E" stroke-width="1.2"/>
+  <circle cx="34" cy="14" r="6" fill="#8D6E63" stroke="#4E342E" stroke-width="1.5"/>
+  <polygon points="40,14 46,12 40,16" fill="#BCAAA4" stroke="#4E342E" stroke-width="0.8"/>
+  <circle cx="36" cy="12" r="1.5" fill="#1A1A1A"/>
+  <path d="M32 8 Q30 4 32 6" fill="#4E342E" stroke="#3E2723" stroke-width="0.8"/>
+  <path d="M36 8 Q38 4 36 6" fill="#4E342E" stroke="#3E2723" stroke-width="0.8"/>
+  <path d="M8 24 Q4 20 8 22 Q6 18 10 22" fill="#4E342E" stroke="#3E2723" stroke-width="0.8"/>
+  <line x1="14" y1="36" x2="12" y2="44" stroke="#4E342E" stroke-width="2"/>
+  <line x1="20" y1="36" x2="20" y2="44" stroke="#4E342E" stroke-width="2"/>
+  <line x1="26" y1="36" x2="26" y2="44" stroke="#4E342E" stroke-width="2"/>
+  <line x1="30" y1="36" x2="32" y2="44" stroke="#4E342E" stroke-width="2"/>
+</svg>`;
+
+// --- Dog (🐕 replacement) ---
+const DOG_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="22" cy="30" rx="12" ry="8" fill="#D7A86E" stroke="#8D6031" stroke-width="1.5"/>
+  <circle cx="30" cy="20" r="7" fill="#D7A86E" stroke="#8D6031" stroke-width="1.5"/>
+  <path d="M24 14 Q20 10 22 16" fill="#C09050" stroke="#8D6031" stroke-width="0.8"/>
+  <path d="M36 14 Q40 10 38 16" fill="#C09050" stroke="#8D6031" stroke-width="0.8"/>
+  <circle cx="28" cy="18" r="1.5" fill="#1A1A1A"/>
+  <circle cx="33" cy="18" r="1.5" fill="#1A1A1A"/>
+  <ellipse cx="30" cy="22" rx="2.5" ry="1.8" fill="#5D4037" stroke="#3E2723" stroke-width="0.8"/>
+  <circle cx="30" cy="21" r="0.8" fill="#1A1A1A"/>
+  <path d="M10 28 Q4 24 8 30 Q4 34 10 32" fill="#D7A86E" stroke="#8D6031" stroke-width="0.8"/>
+  <line x1="16" y1="38" x2="14" y2="44" stroke="#8D6031" stroke-width="1.5"/>
+  <line x1="22" y1="38" x2="22" y2="44" stroke="#8D6031" stroke-width="1.5"/>
+  <line x1="26" y1="38" x2="26" y2="44" stroke="#8D6031" stroke-width="1.5"/>
+  <line x1="30" y1="38" x2="32" y2="44" stroke="#8D6031" stroke-width="1.5"/>
+</svg>`;
+
 // ─── Asset SVG Registry ──────────────────────────────────────
 
 /** Map asset keys → SVG source strings. Rock variants are separate entries. */
@@ -708,6 +901,19 @@ const ASSET_SVG_MAP: Record<string, string> = {
   barricade: BARRICADE_SVG,
   sparkle: SPARKLE_SVG,
   bridge: BRIDGE_SVG,
+  // Phase 3: Animals
+  chicken: CHICKEN_SVG,
+  rooster: ROOSTER_SVG,
+  pig: PIG_SVG,
+  cow: COW_SVG,
+  sheep: SHEEP_SVG,
+  goat: GOAT_SVG,
+  rabbit: RABBIT_SVG,
+  duck: DUCK_SVG,
+  fox: FOX_SVG,
+  deer: DEER_SVG,
+  horse: HORSE_SVG,
+  dog: DOG_SVG,
 };
 
 /** Fire asset keys → array of frame SVGs (all fire types share frames). */
