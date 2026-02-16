@@ -25,6 +25,7 @@ export type InteractionResult =
   | { type: 'quiz_gate'; chunkKey: string; lx: number; ly: number; message: string }
   | { type: 'shop'; message: string }
   | { type: 'campfire'; message: string }
+  | { type: 'outhouse'; message: string }
   | { type: 'structure'; assetKey: string; message: string };
 
 // ─── Collision Check ─────────────────────────────────────────
@@ -202,6 +203,11 @@ export function interact(
   // --- Shop structure (#77) ---
   if (cell.assetKey === 'shop') {
     return { type: 'shop', message: 'Welcome to the shop! Browse our wares.' };
+  }
+
+  // --- Outhouse interaction (#110 Phase 2) ---
+  if (cell.assetKey === 'outhouse') {
+    return { type: 'outhouse', message: 'An outhouse! Time to freshen up — but first, a hygiene quiz!' };
   }
 
   // --- Campfire rest (#77) ---

@@ -350,6 +350,11 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.4, shadow: false, walkable: true, interactable: false,
     description: 'Magical sparkle', jitter: 0.35,
   },
+  outhouse: {
+    emoji: '🚽', category: 'interactive', height: 6, layer: 'high',
+    scale: 1.1, shadow: true, walkable: false, interactable: true,
+    description: 'Outhouse — restores cleanliness via hygiene quiz',
+  },
   campfire: {
     emoji: '🔥', category: 'interactive', height: 2, layer: 'mid',
     scale: 0.7, shadow: true, walkable: false, interactable: true,

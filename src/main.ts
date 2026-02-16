@@ -253,6 +253,73 @@ function _startWoundCareQuiz(state: GameState, wq: WoundCareQuestion): void {
   (state as any)._woundCareQuiz = true;
 }
 
+// ─── Hygiene Quiz (#110 Phase 2) ─────────────────────────────
+
+/** Hygiene quiz questions for outhouse interaction */
+const HYGIENE_QUESTIONS = [
+  {
+    question: 'When should you wash your hands?',
+    answers: ['Before eating and after using the bathroom', 'Only when they look dirty', 'Once a week', 'Never'],
+  },
+  {
+    question: 'How long should you wash your hands with soap?',
+    answers: ['At least 20 seconds', '2 seconds', '1 minute', 'Just rinse with water'],
+  },
+  {
+    question: 'What kills germs on your hands?',
+    answers: ['Soap and water', 'Just water', 'Blowing on them', 'Wiping on your shirt'],
+  },
+  {
+    question: 'Why do we brush our teeth?',
+    answers: ['To remove bacteria and prevent cavities', 'To make them shiny', 'Because adults say so', 'To wake up faster'],
+  },
+  {
+    question: 'What should you do after sneezing?',
+    answers: ['Wash your hands or use sanitizer', 'Wipe on your sleeve and forget about it', 'Nothing', 'Sneeze again to clear it'],
+  },
+  {
+    question: 'How often should you take a bath or shower?',
+    answers: ['Every day or every other day', 'Once a month', 'Only in summer', 'When someone tells you'],
+  },
+];
+
+/**
+ * Start a hygiene mini-quiz after outhouse interaction.
+ * Correct → full cleanliness restore; Wrong → keep partial restore only.
+ */
+function _startHygieneQuiz(state: GameState): void {
+  const hq = HYGIENE_QUESTIONS[Math.floor(Math.random() * HYGIENE_QUESTIONS.length)];
+  // Shuffle answers (correct is always index 0 in source)
+  const shuffled = [...hq.answers];
+  const correctAnswer = shuffled[0];
+  // Fisher-Yates shuffle
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const correctIdx = shuffled.indexOf(correctAnswer);
+
+  state.quiz.active = true;
+  state.quiz.displayText = `🚽 Hygiene Quiz: ${hq.question}`;
+  state.quiz.choices = [...shuffled, "I don't know 📖"];
+  state.quiz.correctIndex = correctIdx;
+  state.quiz.selectedIndex = 0;
+  state.quiz.result = 'pending';
+  state.quiz.npcId = null;
+  state.quiz.difficulty = 'easy';
+  state.quiz.question = {
+    id: `hygiene_${Date.now()}`,
+    question: hq.question,
+    answers: hq.answers,
+    category: 'science',
+    difficulty: 'easy',
+    correctIndex: 0 as const,
+    hint: 'Think about hygiene and health!',
+  };
+  state.paused = true;
+  (state as any)._hygieneQuiz = true;
+}
+
 // ─── Chunk Management ────────────────────────────────────────
 
 function chunkKey(cx: number, cy: number): string {
@@ -706,6 +773,14 @@ function update(state: GameState, input: InputManager): void {
             (state as any)._woundCareQuiz = false;
           }
 
+          // Hygiene quiz bonus — full cleanliness restore (#110)
+          if ((state as any)._hygieneQuiz) {
+            state.status.cleanliness = 100;
+            addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
+            playSfx(state.sfx, 'outhouse_clean');
+            (state as any)._hygieneQuiz = false;
+          }
+
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
           if (state.pendingGateQuiz) {
             const g = state.pendingGateQuiz;
@@ -724,8 +799,10 @@ function update(state: GameState, input: InputManager): void {
           playSfx(state.sfx, 'quiz_wrong');
           setTransientExpression(state, 'surprised', 1500);
           (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
+          (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
         } else if (state.quiz.result === 'idk') {
           (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
+          (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
           const questionText = state.quiz.question?.question || '';
@@ -1152,6 +1229,25 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       // Queue trade panel to open after dialog closes
       state.pendingTrade = SHOP_MERCHANT_PERSONA.id;
       break;
+
+    // --- Outhouse hygiene interaction (#110 Phase 2) ---
+    case 'outhouse': {
+      playSfx(state.sfx, 'outhouse_enter');
+      // Immediate partial cleanliness restore
+      const cleanBefore = state.status.cleanliness;
+      const partialRestore = Math.min(100 - cleanBefore, 40);
+      state.status.cleanliness = Math.min(100, cleanBefore + partialRestore);
+      const cleanMsg = partialRestore > 0
+        ? `🧼 +${Math.round(partialRestore)} cleanliness!`
+        : '✨ Already squeaky clean!';
+      addToast(state.ui, `🚽 ${result.message}`, '#88ccff', 2500);
+      if (partialRestore > 0) {
+        addToast(state.ui, cleanMsg, '#4caf50', 2000);
+      }
+      // Start hygiene quiz for bonus full restore
+      _startHygieneQuiz(state);
+      break;
+    }
 
     // --- Campfire rest interaction (#77) ---
     case 'campfire': {
@@ -1776,12 +1872,23 @@ function checkBubbleTriggers(state: GameState): void {
           triggerHint('near_shop');
         }
       }
+      // Outhouse proximity (#110)
+      if (cell2.assetKey === 'outhouse') {
+        if (state.status.cleanliness <= LOW) {
+          triggerHint('outhouse_near');
+        }
+      }
     }
   }
 
   // Injury-specific hints (#109)
   if (state.injury.injured) {
     triggerHint('need_bandaid');
+  }
+
+  // Dirty hint — outhouse needed (#110)
+  if (state.status.cleanliness <= LOW) {
+    triggerHint('outhouse_dirty');
   }
 }
 
@@ -2423,6 +2530,9 @@ async function main(): Promise<void> {
     },
     shouldAutoRead: () => _shouldAutoRead(state),
     quizSelectIndex: (idx: number) => quizSelectIndex(state.quiz, idx),
+    // Outhouse/hygiene debug (#110)
+    startHygieneQuiz: () => _startHygieneQuiz(state),
+    getHygieneQuizActive: () => (state as any)._hygieneQuiz === true,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

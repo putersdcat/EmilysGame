@@ -1990,6 +1990,33 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
+  // --- Outhouse (small hygiene recovery structure) (#110 Phase 2) ---
+  // Cozy clearing with outhouse — interact for hygiene quiz + cleanliness restore
+  {
+    name: 'outhouse_clearing',
+    cells: [
+      ['grass',        'grass',        'grass',        'grass',        'grass'],
+      ['grass',        'dirt',         'outhouse',     'dirt',         'grass'],
+      ['grass',        'dirt',         'dirt',         'dirt',         'grass'],
+      ['grass',        'dirt',         'dirt',         'dirt',         'grass'],
+      ['grass',        'grass',        'dirt',         'grass',        'grass'],
+    ],
+    edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
+    rotatable: true,
+    terminator: false,
+    minPassability: 0.8,
+    category: 'structural',
+    connectivity: 'standalone',
+    biomeAffinity: ['meadow', 'forest'],
+    movementChannels: [
+      [{ x: 2, y: 4 }, { x: 2, y: 2 }],  // Approach from south
+    ],
+    anchors: [
+      { x: 1, y: 3, role: 'decoration' }, // Flower / bush
+      { x: 3, y: 3, role: 'decoration' }, // Barrel / sign
+    ],
+  },
+
   // --- Inn Compound (walled social hub with multiple rooms) ---
   // Inspired by Elder Scrolls taverns / RPG inn layouts — larger footprint
   {
@@ -2071,6 +2098,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     homestead_compound: 0.05,
     seller_cart_yard: 0.04,
     inn_compound: 0.03,
+    // #110 Outhouse
+    outhouse_clearing: 0.03,
   },
   forest: {
     meadow_base: 0.05,
@@ -2114,6 +2143,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     homestead_compound: 0.04,
     seller_cart_yard: 0.03,
     inn_compound: 0.03,
+    // #110 Outhouse
+    outhouse_clearing: 0.02,
   },
   cave: {
     rock_cluster: 0.08,
