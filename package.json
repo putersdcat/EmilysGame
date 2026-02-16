@@ -24,7 +24,6 @@
     "test:quick": "npx playwright test tests/core/ tests/audio/ --reporter=line",
     "screenshot": "npm run sync-soundfonts && tsx scripts/capture-screenshot.ts",
     "convert-midi": "tsx scripts/convert-midi.ts",
-    "generate-sfx": "tsx scripts/generate-sfx-samples.ts",
     "sync-soundfonts": "tsx scripts/sync-soundfonts.ts",
     "generate:ab-tests": "tsx scripts/generate-asset-ab-tests.ts"
   },
