@@ -9,16 +9,24 @@ test.describe('Main Menu Visual', () => {
     // Navigate with ?test=0 to force non-test mode (show LLM splash + menu)
     await page.goto('http://localhost:5173/?test=0');
 
-    // Skip LLM splash (health check can take ~10s with timeouts)
+    // Handle LLM splash: either skip it or wait for it to auto-dismiss
     const skipBtn = page.locator('#btnSkipLlm');
-    await skipBtn.waitFor({ state: 'visible', timeout: 5000 });
-    await skipBtn.click();
+    const splashGone = page.locator('#llmSplash[style*="display: none"], #llmSplash:not([style])');
+    try {
+      await skipBtn.waitFor({ state: 'visible', timeout: 3000 });
+      await skipBtn.click();
+    } catch {
+      // LLM connected fast, splash already auto-dismissed
+    }
 
-    // Dismiss Welcome Splash (#117 Phase 1) if it appears
+    // Dismiss Welcome Splash (#117 Phase 1) if it appears (first-run)
     const welcomeDismiss = page.locator('#welcomeDismiss');
-    if (await welcomeDismiss.isVisible({ timeout: 5000 }).catch(() => false)) {
+    try {
+      await welcomeDismiss.waitFor({ state: 'visible', timeout: 8000 });
       await welcomeDismiss.click();
       await page.waitForTimeout(500);
+    } catch {
+      // Welcome splash was already dismissed (returning player)
     }
 
     // Wait for main menu (LLM health checks ~3-9s + 400ms + init)

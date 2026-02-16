@@ -5,14 +5,10 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5173/?test=1';
 
 async function waitForGame(page: import('@playwright/test').Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-  const skipBtn = page.locator('#btnSkipLlm');
-  if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await skipBtn.click();
-  }
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
   await page.waitForTimeout(1000);
   const hasDebug = await page.evaluate(() => !!(window as any).__gameDebug);

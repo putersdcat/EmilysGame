@@ -9,18 +9,13 @@
  */
 import { test, expect, Page } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5173/?test=1';
 
 /** Helper: start the game, skip LLM, wait for canvas + gameDebug */
 async function startGame(page: Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => { try { localStorage.clear(); } catch (_) { /* ok */ } });
   await page.waitForTimeout(500);
-
-  const skipBtn = page.locator('#btnSkipLlm');
-  if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await skipBtn.click();
-  }
 
   const canvas = page.locator('#gameContainer canvas');
   await expect(canvas).toBeAttached({ timeout: 8000 });

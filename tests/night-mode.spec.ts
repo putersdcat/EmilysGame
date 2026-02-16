@@ -7,18 +7,13 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5173/?test=1';
 
 /** Wait for game to fully init, clear previous state */
 async function waitForGame(page: import('@playwright/test').Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
-
-  const skipBtn = page.locator('#btnSkipLlm');
-  if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-    await skipBtn.click();
-  }
 
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
   await page.waitForTimeout(1000);
@@ -275,10 +270,6 @@ test.describe('Fog Save/Load (#114)', () => {
 
     // Reload page — game auto-loads save data on init
     await page.reload({ waitUntil: 'domcontentloaded' });
-    const skipBtn = page.locator('#btnSkipLlm');
-    if (await skipBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await skipBtn.click();
-    }
     await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
     await page.waitForTimeout(1500);
 
