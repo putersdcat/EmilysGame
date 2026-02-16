@@ -12,7 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
@@ -2905,6 +2905,8 @@ async function main(): Promise<void> {
       const key = chunkKey(cx, cy);
       return state.chunks.get(key)?.biomeTransitions ?? null;
     },
+    // Playability validation debug (#46 Solver F)
+    getPlayabilityStats,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
