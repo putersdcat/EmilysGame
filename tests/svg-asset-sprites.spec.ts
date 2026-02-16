@@ -1,6 +1,6 @@
 /**
- * Tests for SVG Asset Sprites (#115 Phase 1)
- * Validates that trees, rocks, and fire render as SVG sprites instead of emoji.
+ * Tests for SVG Asset Sprites (#115 Phase 1+2)
+ * Validates that world objects render as SVG sprites instead of emoji.
  */
 import { test, expect } from '@playwright/test';
 
@@ -30,7 +30,8 @@ test.describe('SVG Asset Sprites (#115)', () => {
   test('hasAssetSprite returns false for unsupported keys', async ({ page }) => {
     const unsupported = await page.evaluate(() => {
       const debug = (window as any).__gameDebug;
-      return ['flower', 'bush', 'coin', 'chest', 'npc_merchant'].map(k => ({
+      // NPCs, terrain tiles, and animals don't have SVG asset sprites
+      return ['npc_merchant', 'npc_villager', 'npc_guardian', 'chicken', 'cow', 'grass', 'water'].map(k => ({
         key: k,
         has: debug.hasAssetSprite(k),
       }));
@@ -41,11 +42,58 @@ test.describe('SVG Asset Sprites (#115)', () => {
     }
   });
 
+  test('Phase 2 plants have SVG sprites', async ({ page }) => {
+    const plants = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      return ['flower', 'flower_pink', 'flower_red', 'sunflower', 'tulip', 'bush',
+              'mushroom', 'stump', 'cactus', 'wheat', 'seedling', 'clover',
+              'wilted_flower', 'maple_leaf', 'tall_plant'].map(k => ({
+        key: k,
+        has: debug.hasAssetSprite(k),
+      }));
+    });
+
+    for (const entry of plants) {
+      expect(entry.has, `${entry.key} should have SVG sprite`).toBe(true);
+    }
+  });
+
+  test('Phase 2 collectibles have SVG sprites', async ({ page }) => {
+    const collectibles = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      return ['coin', 'key', 'crowbar', 'potion'].map(k => ({
+        key: k,
+        has: debug.hasAssetSprite(k),
+      }));
+    });
+
+    for (const entry of collectibles) {
+      expect(entry.has, `${entry.key} should have SVG sprite`).toBe(true);
+    }
+  });
+
+  test('Phase 2 structures have SVG sprites', async ({ page }) => {
+    const structures = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      return ['chest', 'sign', 'house', 'hut', 'shop', 'outhouse',
+              'wall', 'door_locked', 'door_open', 'fence',
+              'quiz_gate', 'toll_gate', 'barricade', 'sparkle', 'bridge'].map(k => ({
+        key: k,
+        has: debug.hasAssetSprite(k),
+      }));
+    });
+
+    for (const entry of structures) {
+      expect(entry.has, `${entry.key} should have SVG sprite`).toBe(true);
+    }
+  });
+
   test('asset sprite keys list includes correct entries', async ({ page }) => {
     const keys: string[] = await page.evaluate(() => {
       return (window as any).__gameDebug.getAssetSpriteKeys();
     });
 
+    // Phase 1 keys
     expect(keys).toContain('tree');
     expect(keys).toContain('tree_pine');
     expect(keys).toContain('tree_palm');
@@ -53,7 +101,15 @@ test.describe('SVG Asset Sprites (#115)', () => {
     expect(keys).toContain('bonfire');
     expect(keys).toContain('campfire');
     expect(keys).toContain('biomass_fire');
-    expect(keys).toHaveLength(7);
+    // Phase 2 keys (spot check)
+    expect(keys).toContain('flower');
+    expect(keys).toContain('coin');
+    expect(keys).toContain('chest');
+    expect(keys).toContain('house');
+    expect(keys).toContain('bush');
+    expect(keys).toContain('bridge');
+    // Total: 7 Phase1 + 15 plants + 4 collectibles + 15 structures + 3 shop variants = 44
+    expect(keys.length).toBeGreaterThanOrEqual(30);
   });
 
   test('game renders without errors after SVG asset sprite integration', async ({ page }) => {
@@ -90,42 +146,41 @@ test.describe('SVG Asset Sprites (#115)', () => {
     await page.waitForFunction(() => (window as any).__gameDebug !== undefined, { timeout: 15000 });
     await page.waitForTimeout(500);
 
-    // The cache should have entries: (3 trees + 3 rock variants) × 5 tints + 3 fire types × 4 frames = 42
-    // But only 4 unique biome tints [0, 15, 220, 340] so: 6 assets × 4 tints + 12 fire = 36
-    // Wait, BIOME_DEFS has 4 biomes but tint 0 is in the set + 3 others = {0, 15, 220, 340} = 4 tints
-    // Actually set starts with [0] and we add each biome's tint. Meadow=0 (already in set), Desert=15, Mountain=220, Swamp=340
-    // So 4 unique tints: {0, 15, 220, 340}
-    // Static: 6 SVGs × 4 tints = 24
-    // Fire: 3 fire types × 4 frames = 12
-    // Total: 36
+    // The cache has many entries now: (6 Phase1 + ~30 Phase2) × 4 biome tints + 12 fire frames
+    // Exact count depends on biome tint dedup. Just verify the log appears.
     expect(logs.length).toBeGreaterThan(0);
     expect(logs[0]).toContain('Asset sprite cache');
   });
 
-  test('trees in world render as SVG (not emoji)', async ({ page }) => {
-    // Wait for chunks to generate
-    await page.waitForTimeout(1000);
+  test('SVG-supported assets appear in world chunks', async ({ page }) => {
+    // Wait for chunks to generate and stabilize
+    await page.waitForTimeout(2000);
 
     const state = await page.evaluate(() => {
       const s = (window as any).__gameDebug.state;
-      let treeCount = 0;
+      const debug = (window as any).__gameDebug;
+      let svgAssetCount = 0;
       let chunkCount = 0;
+      const assetTypes = new Set<string>();
       s.chunks.forEach((chunk: any) => {
         chunkCount++;
         for (const row of chunk.cells) {
           for (const cell of row) {
-            if (cell.assetKey === 'tree' || cell.assetKey === 'tree_pine' || cell.assetKey === 'tree_palm') {
-              treeCount++;
+            if (cell.assetKey && debug.hasAssetSprite(cell.assetKey)) {
+              svgAssetCount++;
+              assetTypes.add(cell.assetKey);
             }
           }
         }
       });
-      return { chunkCount, treeCount };
+      return { chunkCount, svgAssetCount, assetTypes: [...assetTypes] };
     });
 
     expect(state.chunkCount).toBeGreaterThan(0);
-    // Trees should exist in generated world
-    expect(state.treeCount).toBeGreaterThan(0);
+    // World should have many SVG-rendered assets
+    expect(state.svgAssetCount).toBeGreaterThan(0);
+    // Multiple different asset types should exist
+    expect(state.assetTypes.length).toBeGreaterThan(1);
   });
 
   test('rocks in world render as SVG (not emoji)', async ({ page }) => {

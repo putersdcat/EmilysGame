@@ -2755,7 +2755,15 @@ async function main(): Promise<void> {
     getBarterQuiz: () => state.trade.barterQuiz,
     // Asset sprite debug (#115)
     hasAssetSprite,
-    getAssetSpriteKeys: () => ['tree', 'tree_pine', 'tree_palm', 'rock', 'bonfire', 'campfire', 'biomass_fire'],
+    getAssetSpriteKeys: () => [
+      'tree', 'tree_pine', 'tree_palm', 'rock', 'bonfire', 'campfire', 'biomass_fire',
+      'flower', 'flower_pink', 'flower_red', 'sunflower', 'tulip', 'bush', 'mushroom',
+      'stump', 'cactus', 'wheat', 'seedling', 'clover', 'wilted_flower', 'maple_leaf', 'tall_plant',
+      'coin', 'key', 'crowbar', 'potion',
+      'chest', 'sign', 'house', 'hut', 'shop', 'shop_general', 'shop_snack', 'shop_trading',
+      'outhouse', 'wall', 'door_locked', 'door_open', 'fence', 'quiz_gate', 'toll_gate',
+      'barricade', 'sparkle', 'bridge',
+    ],
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

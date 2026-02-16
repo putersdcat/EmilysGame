@@ -1,6 +1,6 @@
 /**
- * asset-sprites.ts — SVG object sprites for trees, rocks, fire.
- * Issue #115 Phase 1: Replaces emoji rendering with custom SVG artwork.
+ * asset-sprites.ts — SVG object sprites replacing emoji rendering.
+ * Issue #115 Phase 1+2: Trees, rocks, fire, plants, collectibles, structures.
  *
  * Pre-renders SVG artwork to offscreen canvases at init time.
  * Provides fast sync lookups for the render loop (zero alloc in hot path).
@@ -78,6 +78,468 @@ const TREE_PALM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height
   <circle cx="25" cy="16" r="1.6" fill="#8D6E63" stroke="#5D4037" stroke-width="0.5"/>
   <circle cx="28" cy="15" r="1.3" fill="#795548" stroke="#5D4037" stroke-width="0.5"/>
 </svg>`;
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE 2: Plants, Collectibles, Structures
+// ═══════════════════════════════════════════════════════════════
+
+// --- Flower / Wildflower (🌼 replacement) ---
+const FLOWER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="30" x2="24" y2="44" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="18" cy="42" rx="5" ry="1.5" fill="#4CAF50" opacity="0.3"/>
+  <path d="M20 38 Q16 36 14 38 Q16 40 20 38Z" fill="#66BB6A"/>
+  <circle cx="24" cy="26" r="10" fill="none"/>
+  <ellipse cx="24" cy="18" rx="4" ry="5" fill="#FFF" stroke="#E0E0E0" stroke-width="0.5"/>
+  <ellipse cx="30" cy="22" rx="4" ry="5" fill="#FFF" stroke="#E0E0E0" stroke-width="0.5" transform="rotate(72,24,26)"/>
+  <ellipse cx="30" cy="32" rx="4" ry="5" fill="#FFF" stroke="#E0E0E0" stroke-width="0.5" transform="rotate(144,24,26)"/>
+  <ellipse cx="18" cy="32" rx="4" ry="5" fill="#FFF" stroke="#E0E0E0" stroke-width="0.5" transform="rotate(216,24,26)"/>
+  <ellipse cx="18" cy="22" rx="4" ry="5" fill="#FFF" stroke="#E0E0E0" stroke-width="0.5" transform="rotate(288,24,26)"/>
+  <circle cx="24" cy="26" r="4.5" fill="#FFD54F" stroke="#F9A825" stroke-width="0.8"/>
+  <circle cx="23" cy="25" r="1" fill="#FFB300" opacity="0.5"/>
+</svg>`;
+
+// --- Cherry Blossom (🌸 replacement) ---
+const FLOWER_PINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="30" x2="24" y2="44" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="24" cy="26" rx="4" ry="5.5" fill="#F8BBD0" stroke="#F48FB1" stroke-width="0.6" transform="rotate(0,24,26)"/>
+  <ellipse cx="24" cy="26" rx="4" ry="5.5" fill="#F8BBD0" stroke="#F48FB1" stroke-width="0.6" transform="rotate(72,24,26)"/>
+  <ellipse cx="24" cy="26" rx="4" ry="5.5" fill="#F8BBD0" stroke="#F48FB1" stroke-width="0.6" transform="rotate(144,24,26)"/>
+  <ellipse cx="24" cy="26" rx="4" ry="5.5" fill="#F8BBD0" stroke="#F48FB1" stroke-width="0.6" transform="rotate(216,24,26)"/>
+  <ellipse cx="24" cy="26" rx="4" ry="5.5" fill="#F8BBD0" stroke="#F48FB1" stroke-width="0.6" transform="rotate(288,24,26)"/>
+  <circle cx="24" cy="26" r="3.5" fill="#FCE4EC" stroke="#F48FB1" stroke-width="0.6"/>
+  <circle cx="24" cy="25" r="1.2" fill="#FFF" opacity="0.6"/>
+</svg>`;
+
+// --- Red Hibiscus (🌺 replacement) ---
+const FLOWER_RED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="32" x2="24" y2="44" stroke="#388E3C" stroke-width="2" stroke-linecap="round"/>
+  <path d="M20 40 Q16 38 14 40 Q16 42 20 40Z" fill="#4CAF50"/>
+  <path d="M28 38 Q32 36 34 38 Q32 40 28 38Z" fill="#4CAF50"/>
+  <ellipse cx="24" cy="24" rx="5" ry="8" fill="#E53935" stroke="#C62828" stroke-width="0.6" transform="rotate(0,24,24)"/>
+  <ellipse cx="24" cy="24" rx="5" ry="8" fill="#EF5350" stroke="#C62828" stroke-width="0.6" transform="rotate(72,24,24)"/>
+  <ellipse cx="24" cy="24" rx="5" ry="8" fill="#E53935" stroke="#C62828" stroke-width="0.6" transform="rotate(144,24,24)"/>
+  <ellipse cx="24" cy="24" rx="5" ry="8" fill="#EF5350" stroke="#C62828" stroke-width="0.6" transform="rotate(216,24,24)"/>
+  <ellipse cx="24" cy="24" rx="5" ry="8" fill="#E53935" stroke="#C62828" stroke-width="0.6" transform="rotate(288,24,24)"/>
+  <circle cx="24" cy="24" r="4" fill="#FFEB3B" stroke="#F9A825" stroke-width="0.6"/>
+  <line x1="24" y1="24" x2="24" y2="16" stroke="#FFEB3B" stroke-width="1.5" stroke-linecap="round"/>
+  <circle cx="24" cy="15" r="1.5" fill="#FF9800"/>
+</svg>`;
+
+// --- Sunflower (🌻 replacement) ---
+const SUNFLOWER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="30" x2="24" y2="46" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M22 36 Q16 34 14 36 Q16 38 22 36Z" fill="#66BB6A"/>
+  <path d="M26 40 Q32 38 34 40 Q32 42 26 40Z" fill="#66BB6A"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFC107" stroke="#F9A825" stroke-width="0.5" transform="rotate(30,24,20)"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5" transform="rotate(60,24,20)"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFC107" stroke="#F9A825" stroke-width="0.5" transform="rotate(90,24,20)"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5" transform="rotate(120,24,20)"/>
+  <ellipse cx="24" cy="20" rx="3" ry="6" fill="#FFC107" stroke="#F9A825" stroke-width="0.5" transform="rotate(150,24,20)"/>
+  <circle cx="24" cy="20" r="5.5" fill="#795548" stroke="#5D4037" stroke-width="1"/>
+  <circle cx="22" cy="19" r="0.8" fill="#6D4C41" opacity="0.5"/>
+  <circle cx="26" cy="19" r="0.8" fill="#6D4C41" opacity="0.5"/>
+  <circle cx="24" cy="21" r="0.8" fill="#6D4C41" opacity="0.5"/>
+</svg>`;
+
+// --- Tulip (🌷 replacement) ---
+const TULIP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="28" x2="24" y2="44" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <path d="M22 36 Q16 34 14 36 Q16 38 22 36Z" fill="#66BB6A"/>
+  <path d="M18 28 Q16 18 20 14 Q24 10 24 14 Q24 10 28 14 Q32 18 30 28 Z" fill="#E91E63" stroke="#C2185B" stroke-width="1"/>
+  <path d="M20 26 Q20 20 22 16 Q24 14 24 16 Q24 14 26 16 Q28 20 28 26 Z" fill="#F06292" opacity="0.6"/>
+  <path d="M23 24 Q23 18 24 16 Q25 18 25 24 Z" fill="#F8BBD0" opacity="0.5"/>
+</svg>`;
+
+// --- Bush (🌿 replacement) ---
+const BUSH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <radialGradient id="bg1" cx="24" cy="30" r="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#66BB6A"/>
+      <stop offset="0.7" stop-color="#2E7D32"/>
+      <stop offset="1" stop-color="#1B5E20"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="24" cy="38" rx="14" ry="3" fill="#1B5E20" opacity="0.3"/>
+  <ellipse cx="24" cy="32" rx="16" ry="10" fill="url(#bg1)" stroke="#1B5E20" stroke-width="1.5"/>
+  <ellipse cx="16" cy="30" rx="8" ry="7" fill="#388E3C" opacity="0.6"/>
+  <ellipse cx="32" cy="30" rx="8" ry="7" fill="#388E3C" opacity="0.55"/>
+  <ellipse cx="24" cy="26" rx="8" ry="5" fill="#43A047" opacity="0.5"/>
+  <circle cx="18" cy="28" r="1.5" fill="#81C784" opacity="0.4"/>
+  <circle cx="30" cy="28" r="1.5" fill="#81C784" opacity="0.4"/>
+</svg>`;
+
+// --- Mushroom (🍄 replacement) ---
+const MUSHROOM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="21" y="30" width="6" height="12" rx="2" fill="#EFEBE9" stroke="#BCAAA4" stroke-width="0.8"/>
+  <ellipse cx="24" cy="30" rx="14" ry="8" fill="#E53935" stroke="#C62828" stroke-width="1.2"/>
+  <ellipse cx="24" cy="28" rx="13" ry="6" fill="#EF5350" opacity="0.7"/>
+  <circle cx="18" cy="28" r="2.5" fill="#FFF" opacity="0.7"/>
+  <circle cx="28" cy="26" r="2" fill="#FFF" opacity="0.65"/>
+  <circle cx="22" cy="24" r="1.5" fill="#FFF" opacity="0.6"/>
+  <circle cx="30" cy="30" r="1.8" fill="#FFF" opacity="0.5"/>
+  <ellipse cx="24" cy="42" rx="6" ry="1.5" fill="#8D6E63" opacity="0.2"/>
+</svg>`;
+
+// --- Tree Stump (🪵 replacement) ---
+const STUMP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="42" rx="12" ry="3" fill="#5D4037" opacity="0.3"/>
+  <rect x="14" y="30" width="20" height="12" rx="3" fill="#8D6E63" stroke="#5D4037" stroke-width="1.5"/>
+  <ellipse cx="24" cy="30" rx="10" ry="5" fill="#A1887F" stroke="#5D4037" stroke-width="1.2"/>
+  <ellipse cx="24" cy="30" rx="7" ry="3.5" fill="#BCAAA4"/>
+  <ellipse cx="24" cy="30" rx="4" ry="2" fill="#D7CCC8"/>
+  <circle cx="24" cy="30" r="1" fill="#8D6E63"/>
+  <path d="M22 28 Q24 26 26 28" stroke="#795548" stroke-width="0.4" fill="none" opacity="0.3"/>
+</svg>`;
+
+// --- Cactus (🌵 replacement) ---
+const CACTUS_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="cg1" x1="20" y1="6" x2="28" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#66BB6A"/>
+      <stop offset="1" stop-color="#2E7D32"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="44" rx="8" ry="2" fill="#1B5E20" opacity="0.2"/>
+  <rect x="20" y="10" width="8" height="34" rx="4" fill="url(#cg1)" stroke="#1B5E20" stroke-width="1.2"/>
+  <rect x="8" y="18" width="6" height="16" rx="3" fill="#43A047" stroke="#1B5E20" stroke-width="1"/>
+  <rect x="8" y="18" width="12" height="5" rx="2.5" fill="#4CAF50" stroke="#1B5E20" stroke-width="0.8"/>
+  <rect x="34" y="24" width="6" height="12" rx="3" fill="#43A047" stroke="#1B5E20" stroke-width="1"/>
+  <rect x="28" y="24" width="12" height="5" rx="2.5" fill="#4CAF50" stroke="#1B5E20" stroke-width="0.8"/>
+  <line x1="24" y1="14" x2="24" y2="42" stroke="#1B5E20" stroke-width="0.4" opacity="0.3"/>
+  <circle cx="22" cy="20" r="0.5" fill="#1B5E20" opacity="0.3"/>
+  <circle cx="26" cy="28" r="0.5" fill="#1B5E20" opacity="0.3"/>
+  <circle cx="22" cy="36" r="0.5" fill="#1B5E20" opacity="0.3"/>
+</svg>`;
+
+// --- Wheat (🌾 replacement) ---
+const WHEAT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="18" y1="44" x2="20" y2="16" stroke="#8D6E63" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="24" y1="44" x2="24" y2="12" stroke="#8D6E63" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="30" y1="44" x2="28" y2="18" stroke="#8D6E63" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="20" cy="14" rx="2" ry="4" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5" transform="rotate(-5,20,14)"/>
+  <ellipse cx="18" cy="18" rx="1.5" ry="3" fill="#FFC107" stroke="#F9A825" stroke-width="0.4" transform="rotate(-15,18,18)"/>
+  <ellipse cx="24" cy="10" rx="2" ry="4.5" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5"/>
+  <ellipse cx="22" cy="14" rx="1.5" ry="3" fill="#FFC107" stroke="#F9A825" stroke-width="0.4" transform="rotate(-10,22,14)"/>
+  <ellipse cx="26" cy="14" rx="1.5" ry="3" fill="#FFC107" stroke="#F9A825" stroke-width="0.4" transform="rotate(10,26,14)"/>
+  <ellipse cx="28" cy="16" rx="2" ry="4" fill="#FFD54F" stroke="#F9A825" stroke-width="0.5" transform="rotate(5,28,16)"/>
+  <ellipse cx="30" cy="20" rx="1.5" ry="3" fill="#FFC107" stroke="#F9A825" stroke-width="0.4" transform="rotate(15,30,20)"/>
+</svg>`;
+
+// --- Seedling (🌱 replacement) ---
+const SEEDLING_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="42" rx="5" ry="2" fill="#5D4037" opacity="0.25"/>
+  <line x1="24" y1="42" x2="24" y2="30" stroke="#4CAF50" stroke-width="2" stroke-linecap="round"/>
+  <path d="M24 32 Q18 28 16 22 Q22 24 24 30Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.6"/>
+  <path d="M24 34 Q30 30 32 24 Q26 26 24 32Z" fill="#81C784" stroke="#2E7D32" stroke-width="0.6"/>
+  <line x1="18" y1="25" x2="24" y2="30" stroke="#43A047" stroke-width="0.5" opacity="0.4"/>
+  <line x1="30" y1="27" x2="24" y2="32" stroke="#43A047" stroke-width="0.5" opacity="0.4"/>
+</svg>`;
+
+// --- Lucky Clover (🍀 replacement) ---
+const CLOVER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="30" x2="24" y2="42" stroke="#4CAF50" stroke-width="1.5" stroke-linecap="round"/>
+  <ellipse cx="20" cy="24" rx="5" ry="6" fill="#4CAF50" stroke="#2E7D32" stroke-width="0.8"/>
+  <ellipse cx="28" cy="24" rx="5" ry="6" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.8"/>
+  <ellipse cx="24" cy="18" rx="5" ry="6" fill="#43A047" stroke="#2E7D32" stroke-width="0.8"/>
+  <ellipse cx="24" cy="30" rx="5" ry="6" fill="#388E3C" stroke="#2E7D32" stroke-width="0.8"/>
+  <circle cx="24" cy="24" r="2" fill="#2E7D32"/>
+  <path d="M20 24 L24 24" stroke="#1B5E20" stroke-width="0.5" opacity="0.3"/>
+  <path d="M28 24 L24 24" stroke="#1B5E20" stroke-width="0.5" opacity="0.3"/>
+  <path d="M24 18 L24 24" stroke="#1B5E20" stroke-width="0.5" opacity="0.3"/>
+</svg>`;
+
+// --- Wilted Rose (🥀 replacement) ---
+const WILTED_FLOWER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <path d="M24 30 Q26 28 28 32 Q30 36 28 42" stroke="#6D4C41" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M24 30 Q20 28 18 24 Q16 20 18 18 Q22 16 24 20 Q26 16 30 18 Q32 20 30 24 Q28 28 24 30Z"
+        fill="#AD1457" stroke="#880E4F" stroke-width="0.8" opacity="0.7"/>
+  <path d="M22 24 Q24 20 26 24" stroke="#C2185B" stroke-width="0.4" fill="none" opacity="0.4"/>
+  <ellipse cx="26" cy="40" rx="4" ry="1.5" fill="#8D6E63" opacity="0.2"/>
+</svg>`;
+
+// --- Maple Leaf (🍁 replacement) ---
+const MAPLE_LEAF_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <path d="M24 8 L22 16 L14 14 L18 22 L10 24 L18 28 L14 36 L22 32 L24 42 L26 32 L34 36 L30 28 L38 24 L30 22 L34 14 L26 16 Z"
+        fill="#FF6F00" stroke="#E65100" stroke-width="1" stroke-linejoin="round"/>
+  <path d="M24 12 L24 38" stroke="#E65100" stroke-width="0.6" opacity="0.3"/>
+  <path d="M16 24 L32 24" stroke="#E65100" stroke-width="0.5" opacity="0.25"/>
+</svg>`;
+
+// --- Coin (💰 replacement) ---
+const COIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <radialGradient id="cog" cx="22" cy="22" r="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD54F"/>
+      <stop offset="0.7" stop-color="#FFC107"/>
+      <stop offset="1" stop-color="#FF8F00"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="24" cy="38" rx="6" ry="2" fill="#FF8F00" opacity="0.25"/>
+  <circle cx="24" cy="26" r="12" fill="url(#cog)" stroke="#E65100" stroke-width="1.5"/>
+  <circle cx="24" cy="26" r="9" fill="none" stroke="#FFB300" stroke-width="0.8" opacity="0.5"/>
+  <text x="24" y="31" text-anchor="middle" font-size="14" font-weight="bold" fill="#E65100" opacity="0.6">$</text>
+  <ellipse cx="20" cy="22" rx="3" ry="5" fill="#FFF" opacity="0.15"/>
+</svg>`;
+
+// --- Key (🔑 replacement) ---
+const KEY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="kg1" x1="10" y1="20" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD54F"/>
+      <stop offset="1" stop-color="#FF8F00"/>
+    </linearGradient>
+  </defs>
+  <circle cx="14" cy="24" r="8" fill="url(#kg1)" stroke="#E65100" stroke-width="1.5"/>
+  <circle cx="14" cy="24" r="4" fill="none" stroke="#E65100" stroke-width="1.2"/>
+  <line x1="22" y1="24" x2="40" y2="24" stroke="#FFC107" stroke-width="3.5" stroke-linecap="round"/>
+  <line x1="22" y1="24" x2="40" y2="24" stroke="#E65100" stroke-width="1" opacity="0.3"/>
+  <line x1="36" y1="24" x2="36" y2="30" stroke="#FFC107" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="32" y1="24" x2="32" y2="28" stroke="#FFC107" stroke-width="2" stroke-linecap="round"/>
+  <ellipse cx="12" cy="22" rx="2" ry="3" fill="#FFF" opacity="0.15"/>
+</svg>`;
+
+// --- Crowbar (🛠️ replacement) ---
+const CROWBAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="cbg" x1="12" y1="10" x2="36" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#90A4AE"/>
+      <stop offset="1" stop-color="#546E7A"/>
+    </linearGradient>
+  </defs>
+  <path d="M14 10 L34 38" stroke="url(#cbg)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M14 10 Q10 14 8 18" stroke="#78909C" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <path d="M34 38 Q38 36 40 34" stroke="#78909C" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M15 11 L33 37" stroke="#B0BEC5" stroke-width="1" opacity="0.3"/>
+</svg>`;
+
+// --- Potion (🧪 replacement) ---
+const POTION_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="ptg" x1="24" y1="22" x2="24" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CE93D8"/>
+      <stop offset="0.5" stop-color="#AB47BC"/>
+      <stop offset="1" stop-color="#7B1FA2"/>
+    </linearGradient>
+  </defs>
+  <rect x="20" y="8" width="8" height="6" rx="1" fill="#B0BEC5" stroke="#78909C" stroke-width="1"/>
+  <rect x="22" y="6" width="4" height="4" rx="1" fill="#CFD8DC" stroke="#90A4AE" stroke-width="0.8"/>
+  <path d="M20 14 L16 24 Q12 32 16 38 Q20 44 24 44 Q28 44 32 38 Q36 32 32 24 L28 14 Z"
+        fill="url(#ptg)" stroke="#6A1B9A" stroke-width="1.2"/>
+  <path d="M18 28 Q20 26 22 28 Q24 30 26 28 Q28 26 30 28" stroke="#E1BEE7" stroke-width="0.8" fill="none" opacity="0.5"/>
+  <ellipse cx="20" cy="32" rx="2" ry="3" fill="#FFF" opacity="0.15"/>
+  <circle cx="22" cy="24" r="1" fill="#FFF" opacity="0.3"/>
+  <circle cx="26" cy="36" r="0.8" fill="#FFF" opacity="0.2"/>
+</svg>`;
+
+// --- Chest (📦 replacement) ---
+const CHEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="chg" x1="8" y1="20" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A1887F"/>
+      <stop offset="1" stop-color="#6D4C41"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="42" rx="14" ry="2.5" fill="#5D4037" opacity="0.25"/>
+  <rect x="8" y="24" width="32" height="16" rx="2" fill="url(#chg)" stroke="#4E342E" stroke-width="1.5"/>
+  <path d="M8 24 Q24 18 40 24" fill="#8D6E63" stroke="#4E342E" stroke-width="1.2"/>
+  <rect x="22" y="28" width="4" height="6" rx="1" fill="#FFD54F" stroke="#E65100" stroke-width="0.8"/>
+  <circle cx="24" cy="31" r="1.2" fill="#E65100"/>
+  <line x1="8" y1="32" x2="40" y2="32" stroke="#5D4037" stroke-width="0.8" opacity="0.3"/>
+  <line x1="24" y1="18" x2="24" y2="24" stroke="#4E342E" stroke-width="0.8" opacity="0.3"/>
+</svg>`;
+
+// --- Sign Post (🪧 replacement) ---
+const SIGN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="44" rx="5" ry="1.5" fill="#5D4037" opacity="0.2"/>
+  <rect x="22" y="18" width="4" height="26" fill="#8D6E63" stroke="#5D4037" stroke-width="1"/>
+  <rect x="8" y="10" width="32" height="14" rx="2" fill="#D7CCC8" stroke="#795548" stroke-width="1.5"/>
+  <line x1="12" y1="15" x2="36" y2="15" stroke="#8D6E63" stroke-width="1" opacity="0.4"/>
+  <line x1="12" y1="19" x2="30" y2="19" stroke="#8D6E63" stroke-width="0.8" opacity="0.3"/>
+  <circle cx="24" cy="8" r="2" fill="#795548" stroke="#5D4037" stroke-width="0.8"/>
+</svg>`;
+
+// --- House (🏠 replacement) ---
+const HOUSE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="hrf" x1="24" y1="6" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EF5350"/>
+      <stop offset="1" stop-color="#C62828"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="44" rx="16" ry="3" fill="#5D4037" opacity="0.2"/>
+  <rect x="10" y="22" width="28" height="20" fill="#EFEBE9" stroke="#795548" stroke-width="1.5"/>
+  <polygon points="4,24 24,6 44,24" fill="url(#hrf)" stroke="#B71C1C" stroke-width="1.5"/>
+  <rect x="14" y="28" width="6" height="6" fill="#81D4FA" stroke="#0288D1" stroke-width="0.8"/>
+  <line x1="17" y1="28" x2="17" y2="34" stroke="#0288D1" stroke-width="0.5" opacity="0.5"/>
+  <line x1="14" y1="31" x2="20" y2="31" stroke="#0288D1" stroke-width="0.5" opacity="0.5"/>
+  <rect x="28" y="28" width="6" height="6" fill="#81D4FA" stroke="#0288D1" stroke-width="0.8"/>
+  <line x1="31" y1="28" x2="31" y2="34" stroke="#0288D1" stroke-width="0.5" opacity="0.5"/>
+  <line x1="28" y1="31" x2="34" y2="31" stroke="#0288D1" stroke-width="0.5" opacity="0.5"/>
+  <rect x="20" y="32" width="8" height="10" rx="1" fill="#8D6E63" stroke="#5D4037" stroke-width="1"/>
+  <circle cx="26" cy="37" r="1" fill="#FFD54F"/>
+</svg>`;
+
+// --- Hut (🛖 replacement) ---
+const HUT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="htf" x1="24" y1="6" x2="24" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A1887F"/>
+      <stop offset="0.5" stop-color="#8D6E63"/>
+      <stop offset="1" stop-color="#6D4C41"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="44" rx="15" ry="2.5" fill="#5D4037" opacity="0.2"/>
+  <rect x="12" y="26" width="24" height="16" fill="#D7CCC8" stroke="#795548" stroke-width="1.2"/>
+  <polygon points="2,28 24,6 46,28" fill="url(#htf)" stroke="#5D4037" stroke-width="1.5"/>
+  <line x1="8" y1="24" x2="24" y2="10" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+  <line x1="40" y1="24" x2="24" y2="10" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+  <rect x="20" y="32" width="8" height="10" rx="1" fill="#6D4C41" stroke="#4E342E" stroke-width="1"/>
+  <line x1="24" y1="32" x2="24" y2="42" stroke="#4E342E" stroke-width="0.6" opacity="0.4"/>
+  <circle cx="26" cy="37" r="0.8" fill="#A1887F"/>
+</svg>`;
+
+// --- Shop (🏪 replacement) ---
+const SHOP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="srf" x1="4" y1="12" x2="44" y2="12" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF7043"/>
+      <stop offset="0.25" stop-color="#FFF"/>
+      <stop offset="0.5" stop-color="#FF7043"/>
+      <stop offset="0.75" stop-color="#FFF"/>
+      <stop offset="1" stop-color="#FF7043"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="44" rx="16" ry="2.5" fill="#5D4037" opacity="0.2"/>
+  <rect x="8" y="18" width="32" height="24" fill="#FFF3E0" stroke="#BF360C" stroke-width="1.2"/>
+  <rect x="4" y="12" width="40" height="8" fill="url(#srf)" stroke="#BF360C" stroke-width="1"/>
+  <rect x="14" y="24" width="8" height="8" fill="#81D4FA" stroke="#0288D1" stroke-width="0.8"/>
+  <rect x="26" y="24" width="8" height="8" fill="#81D4FA" stroke="#0288D1" stroke-width="0.8"/>
+  <rect x="20" y="34" width="8" height="8" rx="1" fill="#8D6E63" stroke="#5D4037" stroke-width="1"/>
+  <circle cx="26" cy="38" r="0.8" fill="#FFD54F"/>
+  <text x="24" y="10" text-anchor="middle" font-size="6" fill="#BF360C" opacity="0.6">SHOP</text>
+</svg>`;
+
+// --- Outhouse (🚽 replacement) ---
+const OUTHOUSE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <ellipse cx="24" cy="44" rx="12" ry="2" fill="#5D4037" opacity="0.2"/>
+  <rect x="14" y="16" width="20" height="26" fill="#A1887F" stroke="#6D4C41" stroke-width="1.5"/>
+  <polygon points="12,18 24,6 36,18" fill="#8D6E63" stroke="#5D4037" stroke-width="1.2"/>
+  <rect x="20" y="22" width="8" height="14" rx="1" fill="#795548" stroke="#5D4037" stroke-width="1"/>
+  <path d="M22 30 Q24 28 26 30" fill="none" stroke="#6D4C41" stroke-width="0.6" opacity="0.5"/>
+  <circle cx="27" cy="29" r="1" fill="#D7CCC8"/>
+</svg>`;
+
+// --- Wall (🧱 replacement) ---
+const WALL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="4" y="8" width="40" height="34" fill="#D7CCC8" stroke="#795548" stroke-width="1.5"/>
+  <rect x="4" y="8" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="16" y="8" width="16" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="32" y="8" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="4" y="16" width="16" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="20" y="16" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="32" y="16" width="12" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="4" y="24" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="16" y="24" width="16" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="32" y="24" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="4" y="32" width="16" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="20" y="32" width="12" height="8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.6"/>
+  <rect x="32" y="32" width="12" height="8" fill="#A1887F" stroke="#8D6E63" stroke-width="0.6"/>
+</svg>`;
+
+// --- Door Locked (🔒 replacement) ---
+const DOOR_LOCKED_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="12" y="10" width="24" height="34" rx="2" fill="#8D6E63" stroke="#5D4037" stroke-width="1.5"/>
+  <rect x="14" y="12" width="20" height="30" rx="1" fill="#A1887F" stroke="#795548" stroke-width="0.8"/>
+  <line x1="24" y1="12" x2="24" y2="42" stroke="#795548" stroke-width="0.6" opacity="0.3"/>
+  <rect x="18" y="16" width="12" height="10" rx="3" fill="none" stroke="#FFD54F" stroke-width="2"/>
+  <rect x="20" y="24" width="8" height="8" rx="1" fill="#FFD54F" stroke="#E65100" stroke-width="1"/>
+  <circle cx="24" cy="28" r="1.5" fill="#E65100"/>
+  <line x1="24" y1="28" x2="24" y2="31" stroke="#E65100" stroke-width="1.2"/>
+</svg>`;
+
+// --- Door Open (🚪 replacement) ---
+const DOOR_OPEN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="12" y="10" width="24" height="34" rx="2" fill="#424242" stroke="#212121" stroke-width="1"/>
+  <rect x="10" y="8" width="20" height="36" rx="2" fill="#A1887F" stroke="#5D4037" stroke-width="1.5" transform="skewY(-3)"/>
+  <line x1="20" y1="10" x2="20" y2="42" stroke="#795548" stroke-width="0.5" opacity="0.3"/>
+  <circle cx="26" cy="28" r="1.5" fill="#FFD54F" stroke="#E65100" stroke-width="0.6"/>
+</svg>`;
+
+// --- Fence (🚧 replacement) ---
+const FENCE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="4" y="16" width="40" height="4" fill="#D7CCC8" stroke="#8D6E63" stroke-width="1"/>
+  <rect x="4" y="30" width="40" height="4" fill="#D7CCC8" stroke="#8D6E63" stroke-width="1"/>
+  <rect x="8" y="8" width="4" height="34" fill="#BCAAA4" stroke="#8D6E63" stroke-width="1"/>
+  <polygon points="8,8 10,4 12,8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.8"/>
+  <rect x="22" y="8" width="4" height="34" fill="#BCAAA4" stroke="#8D6E63" stroke-width="1"/>
+  <polygon points="22,8 24,4 26,8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.8"/>
+  <rect x="36" y="8" width="4" height="34" fill="#BCAAA4" stroke="#8D6E63" stroke-width="1"/>
+  <polygon points="36,8 38,4 40,8" fill="#BCAAA4" stroke="#8D6E63" stroke-width="0.8"/>
+</svg>`;
+
+// --- Quiz Gate (❓ replacement) ---
+const QUIZ_GATE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="4" y="14" width="4" height="30" fill="#7B1FA2" stroke="#4A148C" stroke-width="1"/>
+  <rect x="40" y="14" width="4" height="30" fill="#7B1FA2" stroke="#4A148C" stroke-width="1"/>
+  <rect x="4" y="10" width="40" height="8" rx="2" fill="#9C27B0" stroke="#6A1B9A" stroke-width="1.2"/>
+  <circle cx="24" cy="28" r="10" fill="#CE93D8" stroke="#7B1FA2" stroke-width="1.5"/>
+  <text x="24" y="33" text-anchor="middle" font-size="16" font-weight="bold" fill="#4A148C">?</text>
+</svg>`;
+
+// --- Toll Gate (🚧 replacement - different from fence) ---
+const TOLL_GATE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="4" y="16" width="4" height="28" fill="#F44336" stroke="#B71C1C" stroke-width="1"/>
+  <rect x="40" y="16" width="4" height="28" fill="#F44336" stroke="#B71C1C" stroke-width="1"/>
+  <rect x="4" y="12" width="40" height="8" rx="1" fill="#FFC107" stroke="#F57F17" stroke-width="1.5"/>
+  <rect x="8" y="14" width="6" height="4" fill="#F44336"/>
+  <rect x="20" y="14" width="6" height="4" fill="#F44336"/>
+  <rect x="34" y="14" width="6" height="4" fill="#F44336"/>
+  <circle cx="24" cy="30" r="6" fill="#FFD54F" stroke="#F57F17" stroke-width="1"/>
+  <text x="24" y="34" text-anchor="middle" font-size="8" font-weight="bold" fill="#E65100">$</text>
+</svg>`;
+
+// --- Barricade (🪵 obstacle replacement) ---
+const BARRICADE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="6" y="26" width="36" height="6" rx="2" fill="#8D6E63" stroke="#5D4037" stroke-width="1.2" transform="rotate(-15,24,29)"/>
+  <rect x="6" y="18" width="36" height="6" rx="2" fill="#A1887F" stroke="#5D4037" stroke-width="1.2" transform="rotate(10,24,21)"/>
+  <rect x="6" y="34" width="36" height="5" rx="2" fill="#795548" stroke="#4E342E" stroke-width="1.2" transform="rotate(-5,24,36)"/>
+  <rect x="10" y="10" width="5" height="34" rx="2" fill="#BCAAA4" stroke="#795548" stroke-width="1"/>
+  <rect x="33" y="10" width="5" height="34" rx="2" fill="#BCAAA4" stroke="#795548" stroke-width="1"/>
+</svg>`;
+
+// --- Sparkle (✨ replacement) ---
+const SPARKLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <path d="M24 8 L26 20 L38 22 L26 24 L24 36 L22 24 L10 22 L22 20 Z" fill="#FFD54F" stroke="#FFC107" stroke-width="0.8"/>
+  <path d="M14 12 L15 18 L21 19 L15 20 L14 26 L13 20 L7 19 L13 18 Z" fill="#FFF176" opacity="0.6"/>
+  <path d="M36 28 L37 32 L41 33 L37 34 L36 38 L35 34 L31 33 L35 32 Z" fill="#FFF176" opacity="0.5"/>
+</svg>`;
+
+// --- Bridge (🌉 replacement) ---
+const BRIDGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <rect x="2" y="20" width="44" height="12" fill="#8D6E63" stroke="#5D4037" stroke-width="1.5"/>
+  <line x1="6" y1="20" x2="6" y2="32" stroke="#6D4C41" stroke-width="1.5"/>
+  <line x1="14" y1="20" x2="14" y2="32" stroke="#6D4C41" stroke-width="1.5"/>
+  <line x1="22" y1="20" x2="22" y2="32" stroke="#6D4C41" stroke-width="1.5"/>
+  <line x1="30" y1="20" x2="30" y2="32" stroke="#6D4C41" stroke-width="1.5"/>
+  <line x1="38" y1="20" x2="38" y2="32" stroke="#6D4C41" stroke-width="1.5"/>
+  <rect x="2" y="18" width="44" height="4" fill="#A1887F" stroke="#5D4037" stroke-width="1"/>
+  <rect x="2" y="30" width="44" height="4" fill="#A1887F" stroke="#5D4037" stroke-width="1"/>
+  <rect x="0" y="14" width="4" height="22" fill="#BCAAA4" stroke="#795548" stroke-width="1"/>
+  <rect x="44" y="14" width="4" height="22" fill="#BCAAA4" stroke="#795548" stroke-width="1"/>
+</svg>`;
+
+// --- Tall Plant (🪾 replacement) ---
+const TALL_PLANT_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <line x1="24" y1="44" x2="24" y2="14" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M24 18 Q16 14 12 16 Q18 18 24 24Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.6"/>
+  <path d="M24 24 Q32 20 36 22 Q30 24 24 30Z" fill="#81C784" stroke="#2E7D32" stroke-width="0.6"/>
+  <path d="M24 30 Q16 26 12 28 Q18 30 24 36Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.6"/>
+  <path d="M24 14 Q20 10 18 8" stroke="#43A047" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M24 14 Q28 10 30 8" stroke="#43A047" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>`;
+
+// ═══════════════════════════════════════════════════════════════
 
 // --- Rock Variants (🪨 replacement, 3 variants) ---
 const ROCK_SVGS = [
@@ -202,12 +664,50 @@ const FIRE_FRAME_SVGS = [
 
 /** Map asset keys → SVG source strings. Rock variants are separate entries. */
 const ASSET_SVG_MAP: Record<string, string> = {
+  // Phase 1: Trees & rocks
   tree: TREE_SVG,
   tree_pine: TREE_PINE_SVG,
   tree_palm: TREE_PALM_SVG,
   rock_v0: ROCK_SVGS[0],
   rock_v1: ROCK_SVGS[1],
   rock_v2: ROCK_SVGS[2],
+  // Phase 2: Plants
+  flower: FLOWER_SVG,
+  flower_pink: FLOWER_PINK_SVG,
+  flower_red: FLOWER_RED_SVG,
+  sunflower: SUNFLOWER_SVG,
+  tulip: TULIP_SVG,
+  bush: BUSH_SVG,
+  mushroom: MUSHROOM_SVG,
+  stump: STUMP_SVG,
+  cactus: CACTUS_SVG,
+  wheat: WHEAT_SVG,
+  seedling: SEEDLING_SVG,
+  clover: CLOVER_SVG,
+  wilted_flower: WILTED_FLOWER_SVG,
+  maple_leaf: MAPLE_LEAF_SVG,
+  tall_plant: TALL_PLANT_SVG,
+  // Phase 2: Collectibles
+  coin: COIN_SVG,
+  key: KEY_SVG,
+  crowbar: CROWBAR_SVG,
+  potion: POTION_SVG,
+  // Phase 2: Structures & interactives
+  chest: CHEST_SVG,
+  sign: SIGN_SVG,
+  house: HOUSE_SVG,
+  hut: HUT_SVG,
+  shop: SHOP_SVG,
+  outhouse: OUTHOUSE_SVG,
+  wall: WALL_SVG,
+  door_locked: DOOR_LOCKED_SVG,
+  door_open: DOOR_OPEN_SVG,
+  fence: FENCE_SVG,
+  quiz_gate: QUIZ_GATE_SVG,
+  toll_gate: TOLL_GATE_SVG,
+  barricade: BARRICADE_SVG,
+  sparkle: SPARKLE_SVG,
+  bridge: BRIDGE_SVG,
 };
 
 /** Fire asset keys → array of frame SVGs (all fire types share frames). */
@@ -222,6 +722,8 @@ const SUPPORTED_KEYS = new Set([
   ...Object.keys(ASSET_SVG_MAP),
   ...Object.keys(FIRE_SVG_MAP),
   'rock', // resolved to rock_v0/v1/v2 at lookup time
+  // Shop variants share the shop sprite
+  'shop_general', 'shop_snack', 'shop_trading',
 ]);
 
 // ─── Cache Helpers ───────────────────────────────────────────
@@ -307,6 +809,10 @@ export function getAssetSprite(assetKey: string, tint: number, gx = 0, gy = 0): 
   if (assetKey === 'rock') {
     const rIdx = Math.abs((gx * 73 + gy * 137) % 3);
     key = `rock_v${rIdx}`;
+  }
+  // Shop variants all use the shop sprite
+  if (assetKey === 'shop_general' || assetKey === 'shop_snack' || assetKey === 'shop_trading') {
+    key = 'shop';
   }
   return cache.get(cacheKey(key, tint));
 }
