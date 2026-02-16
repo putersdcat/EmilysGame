@@ -19,7 +19,7 @@ import {
 // ─── Types ──────────────────────────────────────────────────
 
 /** World position for positional audio */
-export interface AudioPosition {
+interface AudioPosition {
   x: number;  // world X
   y: number;  // world Y
 }
@@ -361,91 +361,10 @@ export function toggleAmbienceMute(state: SfxState): void {
   }
 }
 
-export function setSfxEnabled(state: SfxState, enabled: boolean): void {
-  state.settings.sfxEnabled = enabled;
-  if (!enabled) {
-    stopAmbience(state);
-  }
-}
-
 // ─── Positional Audio ───────────────────────────────────────
 
 /** Tile-to-audio coordinate scale factor */
 const AUDIO_SCALE = 1;
-
-/**
- * Start a positional (looping) sample at a world position.
- * Volume attenuates with distance from listener.
- * Returns a handle ID for stopping/updating.
- */
-export function startPositionalSample(
-  state: SfxState,
-  sampleId: string,
-  pos: AudioPosition,
-  maxDist = 15,
-  volume = 0.6
-): string | null {
-  if (!state.settings.sfxEnabled || !state.sampledReady) return null;
-  const ctx = ensureAudioContext();
-  if (!ctx || !_ambienceGain) return null;
-
-  // Create panner
-  const panner = ctx.createPanner();
-  panner.panningModel = 'HRTF';
-  panner.distanceModel = 'linear';
-  panner.maxDistance = maxDist * AUDIO_SCALE;
-  panner.refDistance = 1 * AUDIO_SCALE;
-  panner.rolloffFactor = 1;
-  panner.positionX.setValueAtTime(pos.x * AUDIO_SCALE, ctx.currentTime);
-  panner.positionY.setValueAtTime(0, ctx.currentTime);
-  panner.positionZ.setValueAtTime(pos.y * AUDIO_SCALE, ctx.currentTime);
-
-  panner.connect(_ambienceGain);
-
-  // Update listener position
-  _updateListenerPosition(ctx, state.listenerPos);
-
-  // Play sample through panner
-  const sourceId = `${sampleId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-
-  playSample(ctx, sampleId, {
-    volume,
-    destination: panner,
-    loop: true,
-  }).then(handle => {
-    if (handle) {
-      const psrc: PositionalSource = {
-        id: sourceId,
-        pos,
-        panner,
-        handle,
-        maxDist,
-      };
-      state._positionalSources.push(psrc);
-    }
-  });
-
-  return sourceId;
-}
-
-/** Stop a positional audio source by its handle ID */
-export function stopPositionalSample(state: SfxState, handleId: string): void {
-  const idx = state._positionalSources.findIndex(s => s.id === handleId);
-  if (idx === -1) return;
-  const src = state._positionalSources[idx];
-  src.handle.stop();
-  src.panner.disconnect();
-  state._positionalSources.splice(idx, 1);
-}
-
-/** Stop all positional audio sources */
-export function stopAllPositionalSamples(state: SfxState): void {
-  for (const src of state._positionalSources) {
-    src.handle.stop();
-    src.panner.disconnect();
-  }
-  state._positionalSources = [];
-}
 
 /**
  * Update listener position — call each frame (throttled by caller).
@@ -468,11 +387,6 @@ function _updateListenerPosition(ctx: AudioContext, pos: AudioPosition): void {
   }
 }
 
-/** Get count of active positional sources */
-export function getPositionalSourceCount(state: SfxState): number {
-  return state._positionalSources.length;
-}
-
 // ─── Serialization ──────────────────────────────────────────
 
 export function serializeSfxSettings(state: SfxState): SfxSettings {
@@ -485,13 +399,4 @@ export function deserializeSfxSettings(state: SfxState, saved: Partial<SfxSettin
   if (saved.sfxMuted !== undefined) state.settings.sfxMuted = saved.sfxMuted;
   if (saved.ambienceMuted !== undefined) state.settings.ambienceMuted = saved.ambienceMuted;
   if (saved.sfxEnabled !== undefined) state.settings.sfxEnabled = saved.sfxEnabled;
-}
-
-// ─── Cleanup ────────────────────────────────────────────────
-
-export function destroySfx(state: SfxState): void {
-  stopAmbience(state);
-  stopAllPositionalSamples(state);
-  _activeSfxCount = 0;
-  // Don't close AudioContext — may be shared with music
 }
