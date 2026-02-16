@@ -11,8 +11,11 @@ export type FacingPose = 'front' | 'back' | 'side';
 /** Expression variants (#102) */
 export type Expression = 'happy' | 'neutral' | 'surprised' | 'determined';
 
-/** Head accessory variants (#102) */
-export type Accessory = 'none' | 'bow' | 'crown' | 'glasses';
+/** Head accessory variants (#102, #116 Phase 3) */
+export type Accessory = 'none' | 'bow' | 'crown' | 'glasses' | 'cowboy_hat' | 'wizard_hat' | 'flower_crown';
+
+/** Outfit pattern variants (#116 Phase 3) */
+export type OutfitPattern = 'plain' | 'floral' | 'striped' | 'starry';
 
 export interface CharacterVariation {
   name: string;
@@ -23,6 +26,7 @@ export interface CharacterVariation {
   accessory?: Accessory;
   expression?: Expression;
   eyeColor?: string; // (#116 Phase 2) — defaults to '#0066CC' blue
+  outfitPattern?: OutfitPattern; // (#116 Phase 3) — defaults to 'plain'
 }
 
 /**
@@ -38,6 +42,7 @@ export const characterVariations: Record<string, CharacterVariation> = {
     accessory: 'none',
     expression: 'happy',
     eyeColor: '#0066CC',
+    outfitPattern: 'plain',
   },
   brunette_green: {
     name: 'Brunette Girl (Green Dress)',
@@ -48,6 +53,7 @@ export const characterVariations: Record<string, CharacterVariation> = {
     accessory: 'none',
     expression: 'happy',
     eyeColor: '#0066CC',
+    outfitPattern: 'plain',
   },
   blonde_purple: {
     name: 'Blonde Girl (Purple Dress)',
@@ -58,6 +64,7 @@ export const characterVariations: Record<string, CharacterVariation> = {
     accessory: 'none',
     expression: 'happy',
     eyeColor: '#0066CC',
+    outfitPattern: 'plain',
   },
 };
 
@@ -126,7 +133,46 @@ function getSideFaceSVG(skinTone: string, expression: Expression = 'happy', eyeC
     ${M[expression] || M.happy}`;
 }
 
-// ─── Accessory SVG helpers (#102) ──────────────────────────────
+// ─── Outfit Pattern SVG helpers (#116 Phase 3) ─────────────────
+
+/** SVG <defs> for outfit pattern, and a rect overlay to apply it */
+function getOutfitPatternDefs(pattern: OutfitPattern = 'plain', dressColor: string): string {
+  if (pattern === 'plain') return '';
+  const id = `pat_${pattern}`;
+  let patternSvg = '';
+  switch (pattern) {
+    case 'floral':
+      patternSvg = `<pattern id="${id}" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
+        <rect width="8" height="8" fill="${dressColor}"/>
+        <circle cx="4" cy="4" r="1.5" fill="rgba(255,255,255,0.4)"/>
+        <circle cx="2.5" cy="2.5" r="0.6" fill="rgba(255,200,100,0.5)"/>
+        <circle cx="5.5" cy="5.5" r="0.6" fill="rgba(255,200,100,0.5)"/>
+      </pattern>`;
+      break;
+    case 'striped':
+      patternSvg = `<pattern id="${id}" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
+        <rect width="4" height="4" fill="${dressColor}"/>
+        <line x1="0" y1="2" x2="4" y2="2" stroke="rgba(255,255,255,0.25)" stroke-width="1.5"/>
+      </pattern>`;
+      break;
+    case 'starry':
+      patternSvg = `<pattern id="${id}" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+        <rect width="10" height="10" fill="${dressColor}"/>
+        <text x="2" y="6" font-size="4" fill="rgba(255,255,200,0.5)">★</text>
+        <text x="7" y="9" font-size="3" fill="rgba(255,255,200,0.4)">★</text>
+      </pattern>`;
+      break;
+  }
+  return patternSvg;
+}
+
+/** Get the fill attribute for outfit — either solid or pattern url */
+function getOutfitFill(pattern: OutfitPattern = 'plain', dressColor: string): string {
+  if (pattern === 'plain') return dressColor;
+  return `url(#pat_${pattern})`;
+}
+
+// ─── Accessory SVG helpers (#102, #116 Phase 3) ────────────────
 
 /** Front-facing accessory, rendered above hair */
 function getFrontAccessorySVG(accessory: Accessory = 'none'): string {
@@ -142,6 +188,23 @@ function getFrontAccessorySVG(accessory: Accessory = 'none'): string {
               <line x1="31.5" y1="30" x2="32.5" y2="30" stroke="#555" stroke-width="0.8"/>
               <line x1="24.5" y1="30" x2="22" y2="28" stroke="#555" stroke-width="0.6"/>
               <line x1="39.5" y1="30" x2="42" y2="28" stroke="#555" stroke-width="0.6"/>`;
+    case 'cowboy_hat':
+      return `<ellipse cx="32" cy="20" rx="16" ry="3" fill="#8B6914" stroke="#6B4E12" stroke-width="0.5"/>
+              <path d="M 24 20 Q 24 10 32 8 Q 40 10 40 20 Z" fill="#A0782C" stroke="#8B6914" stroke-width="0.5"/>
+              <rect x="24" y="18" width="16" height="2" rx="1" fill="#6B4E12"/>`;
+    case 'wizard_hat':
+      return `<path d="M 22 22 L 32 2 L 42 22 Z" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <ellipse cx="32" cy="22" rx="12" ry="3" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <circle cx="28" cy="16" r="1" fill="#FFD700" opacity="0.7"/>
+              <circle cx="34" cy="10" r="0.8" fill="#FFD700" opacity="0.6"/>
+              <circle cx="31" cy="6" r="0.6" fill="#FFD700" opacity="0.8"/>`;
+    case 'flower_crown':
+      return `<path d="M 22 22 Q 20 20 22 18 Q 24 17 26 19" fill="#FF69B4" stroke="#FF1493" stroke-width="0.3"/>
+              <path d="M 26 21 Q 25 19 27 17 Q 29 16 30 18" fill="#FFD700" stroke="#DAA520" stroke-width="0.3"/>
+              <path d="M 30 20 Q 29 18 31 16 Q 33 15 34 17" fill="#FF6B6B" stroke="#FF4444" stroke-width="0.3"/>
+              <path d="M 34 20 Q 33 18 35 17 Q 37 16 38 18" fill="#FFD700" stroke="#DAA520" stroke-width="0.3"/>
+              <path d="M 38 21 Q 37 19 39 18 Q 41 17 42 19" fill="#FF69B4" stroke="#FF1493" stroke-width="0.3"/>
+              <path d="M 22 22 Q 28 20 32 19 Q 36 20 42 22" fill="none" stroke="#228B22" stroke-width="1"/>`;
     default: return '';
   }
 }
@@ -157,6 +220,19 @@ function getSideAccessorySVG(accessory: Accessory = 'none'): string {
     case 'glasses':
       return `<circle cx="42" cy="28" r="3" fill="none" stroke="#555" stroke-width="0.8"/>
               <line x1="39" y1="28" x2="36" y2="26" stroke="#555" stroke-width="0.6"/>`;
+    case 'cowboy_hat':
+      return `<ellipse cx="35" cy="20" rx="14" ry="2.5" fill="#8B6914" stroke="#6B4E12" stroke-width="0.5"/>
+              <path d="M 28 20 Q 28 10 35 8 Q 42 10 42 20 Z" fill="#A0782C" stroke="#8B6914" stroke-width="0.5"/>`;
+    case 'wizard_hat':
+      return `<path d="M 26 22 L 35 2 L 44 22 Z" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <ellipse cx="35" cy="22" rx="10" ry="2.5" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <circle cx="33" cy="14" r="0.8" fill="#FFD700" opacity="0.6"/>
+              <circle cx="36" cy="8" r="0.6" fill="#FFD700" opacity="0.8"/>`;
+    case 'flower_crown':
+      return `<path d="M 28 21 Q 27 19 29 18 Q 31 17 32 19" fill="#FF69B4" stroke="#FF1493" stroke-width="0.3"/>
+              <path d="M 32 20 Q 31 18 33 17 Q 35 16 36 18" fill="#FFD700" stroke="#DAA520" stroke-width="0.3"/>
+              <path d="M 36 21 Q 35 19 37 18 Q 39 17 40 19" fill="#FF6B6B" stroke="#FF4444" stroke-width="0.3"/>
+              <path d="M 28 22 Q 33 19 40 22" fill="none" stroke="#228B22" stroke-width="0.8"/>`;
     default: return '';
   }
 }
@@ -170,6 +246,18 @@ function getBackAccessorySVG(accessory: Accessory = 'none'): string {
       return `<path d="M 24 22 L 26 17 L 29 20 L 32 15 L 35 20 L 38 17 L 40 22 Z" fill="#FFD700" stroke="#DAA520" stroke-width="0.5"/>
               <line x1="24" y1="22" x2="40" y2="22" stroke="#DAA520" stroke-width="1"/>`;
     case 'glasses': return ''; // not visible from behind
+    case 'cowboy_hat':
+      return `<ellipse cx="32" cy="20" rx="16" ry="3" fill="#8B6914" stroke="#6B4E12" stroke-width="0.5"/>
+              <path d="M 24 20 Q 24 10 32 8 Q 40 10 40 20 Z" fill="#A0782C" stroke="#8B6914" stroke-width="0.5"/>`;
+    case 'wizard_hat':
+      return `<path d="M 22 22 L 32 2 L 42 22 Z" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <ellipse cx="32" cy="22" rx="12" ry="3" fill="#4B0082" stroke="#2E0854" stroke-width="0.5"/>
+              <circle cx="34" cy="10" r="0.8" fill="#FFD700" opacity="0.6"/>`;
+    case 'flower_crown':
+      return `<path d="M 22 22 Q 20 20 22 18 Q 24 17 26 19" fill="#FF69B4" stroke="#FF1493" stroke-width="0.3"/>
+              <path d="M 30 20 Q 29 18 31 16 Q 33 15 34 17" fill="#FF6B6B" stroke="#FF4444" stroke-width="0.3"/>
+              <path d="M 38 21 Q 37 19 39 18 Q 41 17 42 19" fill="#FFD700" stroke="#DAA520" stroke-width="0.3"/>
+              <path d="M 22 22 Q 28 20 32 19 Q 36 20 42 22" fill="none" stroke="#228B22" stroke-width="1"/>`;
     default: return '';
   }
 }
@@ -260,11 +348,14 @@ function getFrontHairSVG(hairStyle: string, hairColor: string): string {
  * Generate SVG for idle (standing) character pose.
  */
 export function generateIdleCharacterSVG(variation: CharacterVariation): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor, outfitPattern } = variation;
   const hairSVG = getFrontHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Head -->
       ${hairSVG}
       
@@ -275,7 +366,7 @@ export function generateIdleCharacterSVG(variation: CharacterVariation): string 
       ${getFrontAccessorySVG(accessory)}
       
       <!-- Body - Dress -->
-      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressFill}"/>
       
       <!-- Dress trim -->
       <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.6"/>
@@ -300,7 +391,7 @@ export function generateIdleCharacterSVG(variation: CharacterVariation): string 
  * Frame: 0-5 (6 total frames)
  */
 export function generateWalkingCharacterSVG(variation: CharacterVariation, frame: number): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor, outfitPattern } = variation;
 
   // Calculate leg and arm positions based on animation frame
   const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
@@ -310,9 +401,12 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
   const bodyBounce = [0, -1, -2, -1, 0, -1][frame] || 0;
 
   const hairSVG = getFrontHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Upper body group with walking bounce -->
       <g transform="translate(0, ${bodyBounce})">
         <!-- Head -->
@@ -325,7 +419,7 @@ export function generateWalkingCharacterSVG(variation: CharacterVariation, frame
         ${getFrontAccessorySVG(accessory)}
         
         <!-- Body - Dress -->
-        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressFill}"/>
         
         <!-- Dress trim -->
         <line x1="22" y1="48" x2="42" y2="48" stroke="#FFF" stroke-width="1" opacity="0.6"/>
@@ -438,11 +532,14 @@ function getBackHairSVG(hairStyle: string, hairColor: string): string {
  * Shows back of head (hair), dress from behind, no face features.
  */
 export function generateBackIdleCharacterSVG(variation: CharacterVariation): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, outfitPattern } = variation;
   const backHair = getBackHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Hair (back of head) -->
       ${backHair}
 
@@ -453,7 +550,7 @@ export function generateBackIdleCharacterSVG(variation: CharacterVariation): str
       <rect x="28" y="38" width="8" height="6" fill="${skinTone}"/>
 
       <!-- Body - Dress (back, with center seam) -->
-      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+      <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressFill}"/>
       <line x1="32" y1="44" x2="32" y2="68" stroke="#000" stroke-width="0.5" opacity="0.15"/>
 
       <!-- Dress trim (back) -->
@@ -479,8 +576,10 @@ export function generateBackIdleCharacterSVG(variation: CharacterVariation): str
  * Same leg/arm cycle as front, but shows back of character.
  */
 export function generateBackWalkingCharacterSVG(variation: CharacterVariation, frame: number): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, outfitPattern } = variation;
   const backHair = getBackHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
   const otherLegOffset = [0, 4, 6, 4, 0, -4][frame] || 0;
@@ -489,6 +588,7 @@ export function generateBackWalkingCharacterSVG(variation: CharacterVariation, f
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Upper body with bounce -->
       <g transform="translate(0, ${bodyBounce})">
         <!-- Hair (back of head) -->
@@ -501,7 +601,7 @@ export function generateBackWalkingCharacterSVG(variation: CharacterVariation, f
         <rect x="28" y="38" width="8" height="6" fill="${skinTone}"/>
 
         <!-- Body - Dress (back) -->
-        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressColor}"/>
+        <rect x="22" y="42" width="20" height="28" rx="3" fill="${dressFill}"/>
         <line x1="32" y1="44" x2="32" y2="68" stroke="#000" stroke-width="0.5" opacity="0.15"/>
 
         <!-- Dress trim -->
@@ -608,11 +708,14 @@ function getSideHairSVG(hairStyle: string, hairColor: string): string {
  * Profile view showing one eye, profile nose, narrower body.
  */
 export function generateSideIdleCharacterSVG(variation: CharacterVariation): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor, outfitPattern } = variation;
   const sideHair = getSideHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Hair -->
       ${sideHair}
 
@@ -626,7 +729,7 @@ export function generateSideIdleCharacterSVG(variation: CharacterVariation): str
       <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
 
       <!-- Body - Dress (side view, narrower) -->
-      <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressColor}"/>
+      <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressFill}"/>
 
       <!-- Dress trim -->
       <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>
@@ -655,8 +758,10 @@ export function generateSideIdleCharacterSVG(variation: CharacterVariation): str
  * Profile stride with clear leg separation and arm swing.
  */
 export function generateSideWalkingCharacterSVG(variation: CharacterVariation, frame: number): string {
-  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor } = variation;
+  const { hairColor, hairStyle, dressColor, skinTone, accessory, expression, eyeColor, outfitPattern } = variation;
   const sideHair = getSideHairSVG(hairStyle, hairColor);
+  const patternDefs = getOutfitPatternDefs(outfitPattern, dressColor);
+  const dressFill = getOutfitFill(outfitPattern, dressColor);
 
   const legOffset = [0, -4, -6, -4, 0, 4][frame] || 0;
   const otherLegOffset = [0, 4, 6, 4, 0, -4][frame] || 0;
@@ -665,6 +770,7 @@ export function generateSideWalkingCharacterSVG(variation: CharacterVariation, f
 
   return `
     <svg viewBox="0 0 64 96" xmlns="http://www.w3.org/2000/svg">
+      ${patternDefs ? `<defs>${patternDefs}</defs>` : ''}
       <!-- Upper body with bounce -->
       <g transform="translate(0, ${bodyBounce})">
         <!-- Hair -->
@@ -680,7 +786,7 @@ export function generateSideWalkingCharacterSVG(variation: CharacterVariation, f
         <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
 
         <!-- Body - Dress (side, narrower) -->
-        <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressColor}"/>
+        <rect x="25" y="42" width="16" height="28" rx="3" fill="${dressFill}"/>
 
         <!-- Dress trim -->
         <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>

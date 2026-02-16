@@ -6,7 +6,7 @@
  * TODO: DOC - customizer UI spec
  */
 
-import type { CharacterVariation, Accessory, Expression } from './sprites';
+import type { CharacterVariation, Accessory, Expression, OutfitPattern } from './sprites';
 import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from './sprites';
 import { getUnlockablesForCategory } from './config/cosmetics.config';
 
@@ -57,10 +57,20 @@ export const HAIR_STYLES: { name: string; value: CharacterVariation['hairStyle']
 ];
 
 export const ACCESSORIES: { name: string; value: Accessory }[] = [
-  { name: '❌ None',       value: 'none' },
-  { name: '🎀 Bow',       value: 'bow' },
-  { name: '👑 Crown',     value: 'crown' },
-  { name: '👓 Glasses',   value: 'glasses' },
+  { name: '❌ None',         value: 'none' },
+  { name: '🎀 Bow',         value: 'bow' },
+  { name: '👑 Crown',       value: 'crown' },
+  { name: '👓 Glasses',     value: 'glasses' },
+  { name: '🤠 Cowboy Hat',  value: 'cowboy_hat' },
+  { name: '🧙 Wizard Hat',  value: 'wizard_hat' },
+  { name: '🌸 Flower Crown',value: 'flower_crown' },
+];
+
+export const OUTFIT_PATTERNS: { name: string; value: OutfitPattern }[] = [
+  { name: '⬜ Plain',    value: 'plain' },
+  { name: '🌺 Floral',   value: 'floral' },
+  { name: '📏 Striped',  value: 'striped' },
+  { name: '⭐ Starry',   value: 'starry' },
 ];
 
 export const EYE_COLORS: { name: string; hex: string }[] = [
@@ -90,6 +100,7 @@ export function createDefaultVariation(): CharacterVariation {
     accessory: 'none',
     expression: 'happy',
     eyeColor: '#0066CC',
+    outfitPattern: 'plain',
   };
 }
 
@@ -287,6 +298,30 @@ function renderExpressionButtons(
   });
 }
 
+/** Render outfit pattern toggle buttons (#116 Phase 3) */
+function renderPatternButtons(
+  containerId: string,
+  selectedPattern: OutfitPattern,
+  onSelect: (p: OutfitPattern) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = OUTFIT_PATTERNS.map(p => {
+    const selected = p.value === selectedPattern;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${p.value}">
+              ${p.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as OutfitPattern);
+    });
+  });
+}
+
 // ─── Main Customizer ────────────────────────────────────────
 
 /**
@@ -334,6 +369,10 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
         variation.eyeColor = hex;
         refreshAll();
       });
+      renderPatternButtons('custOutfitPatterns', variation.outfitPattern ?? 'plain', (p) => {
+        variation.outfitPattern = p;
+        refreshAll();
+      });
     };
 
     // Show overlay
@@ -361,6 +400,7 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
       variation.accessory = ACCESSORIES[Math.floor(Math.random() * ACCESSORIES.length)].value;
       variation.expression = EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)].value;
       variation.eyeColor = EYE_COLORS[Math.floor(Math.random() * EYE_COLORS.length)].hex;
+      variation.outfitPattern = OUTFIT_PATTERNS[Math.floor(Math.random() * OUTFIT_PATTERNS.length)].value;
       refreshAll();
       startPreviewAnimation(variation);
     };
@@ -387,6 +427,7 @@ export interface SerializedVariation {
   accessory?: string;
   expression?: string;
   eyeColor?: string;
+  outfitPattern?: string;
 }
 
 export function serializeVariation(v: CharacterVariation): SerializedVariation {
@@ -398,6 +439,7 @@ export function serializeVariation(v: CharacterVariation): SerializedVariation {
     accessory: v.accessory ?? 'none',
     expression: v.expression ?? 'happy',
     eyeColor: v.eyeColor ?? '#0066CC',
+    outfitPattern: v.outfitPattern ?? 'plain',
   };
 }
 
@@ -411,5 +453,6 @@ export function deserializeVariation(data: SerializedVariation): CharacterVariat
     accessory: (data.accessory as Accessory) || 'none',
     expression: (data.expression as Expression) || 'happy',
     eyeColor: data.eyeColor || '#0066CC',
+    outfitPattern: (data.outfitPattern as OutfitPattern) || 'plain',
   };
 }

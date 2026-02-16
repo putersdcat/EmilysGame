@@ -43,7 +43,7 @@ import {
 import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
 import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './age-profile';
 import type { AgeBand } from './types/content-pack.types';
-import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS } from './customizer';
+import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
 import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
@@ -2685,6 +2685,8 @@ async function main(): Promise<void> {
     // Customizer debug (#116)
     getHairStyles: () => HAIR_STYLES,
     getEyeColors: () => EYE_COLORS,
+    getAccessories: () => ACCESSORIES,
+    getOutfitPatterns: () => OUTFIT_PATTERNS,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
