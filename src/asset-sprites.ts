@@ -332,6 +332,140 @@ const POTION_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="4
   <circle cx="26" cy="36" r="0.8" fill="#FFF" opacity="0.2"/>
 </svg>`;
 
+// --- Bandage (🩹 replacement) ---
+const BANDAGE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="bdg" x1="8" y1="16" x2="40" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FAFAFA"/>
+      <stop offset="1" stop-color="#E0E0E0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="40" rx="10" ry="2" fill="#BDBDBD" opacity="0.2"/>
+  <rect x="8" y="16" width="32" height="18" rx="4" fill="url(#bdg)" stroke="#BDBDBD" stroke-width="1.5"/>
+  <rect x="16" y="16" width="16" height="18" rx="1" fill="#EF9A9A" stroke="#E57373" stroke-width="0.8"/>
+  <rect x="22" y="20" width="4" height="10" rx="0.5" fill="#FAFAFA" opacity="0.6"/>
+  <rect x="18" y="23" width="12" height="4" rx="0.5" fill="#FAFAFA" opacity="0.6"/>
+  <circle cx="20" cy="22" r="1" fill="#E57373" opacity="0.5"/>
+  <circle cx="28" cy="22" r="1" fill="#E57373" opacity="0.5"/>
+  <circle cx="20" cy="28" r="1" fill="#E57373" opacity="0.5"/>
+  <circle cx="28" cy="28" r="1" fill="#E57373" opacity="0.5"/>
+  <line x1="8" y1="25" x2="16" y2="25" stroke="#E0E0E0" stroke-width="0.5" opacity="0.5"/>
+  <line x1="32" y1="25" x2="40" y2="25" stroke="#E0E0E0" stroke-width="0.5" opacity="0.5"/>
+</svg>`;
+
+// --- Snack (🍫 replacement) ---
+const SNACK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="skg" x1="12" y1="10" x2="36" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFD54F"/>
+      <stop offset="1" stop-color="#FFA726"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="40" rx="8" ry="2" fill="#8D6E63" opacity="0.15"/>
+  <rect x="12" y="12" width="24" height="24" rx="3" fill="url(#skg)" stroke="#F9A825" stroke-width="1.2"/>
+  <path d="M12 18 L36 18" stroke="#FFA000" stroke-width="0.6" opacity="0.5"/>
+  <path d="M12 30 L36 30" stroke="#FFA000" stroke-width="0.6" opacity="0.5"/>
+  <rect x="15" y="19" width="18" height="10" rx="2" fill="#8D6E63"/>
+  <rect x="16" y="20" width="16" height="8" rx="1.5" fill="#A1887F"/>
+  <circle cx="19" cy="23" r="1.2" fill="#D7CCC8"/>
+  <circle cx="23" cy="21.5" r="1" fill="#BCAAA4"/>
+  <circle cx="27" cy="24" r="1.3" fill="#D7CCC8"/>
+  <circle cx="21" cy="26" r="0.9" fill="#BCAAA4"/>
+  <circle cx="25" cy="26.5" r="1.1" fill="#D7CCC8"/>
+  <circle cx="29" cy="22" r="0.8" fill="#BCAAA4"/>
+  <text x="24" y="15.5" text-anchor="middle" font-size="4" font-family="sans-serif" fill="#5D4037" font-weight="bold">SNACK</text>
+</svg>`;
+
+// --- Water Flask (🫗 replacement) ---
+const WATER_FLASK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="wfg" x1="16" y1="8" x2="32" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#B3E5FC"/>
+      <stop offset="0.6" stop-color="#4FC3F7"/>
+      <stop offset="1" stop-color="#0288D1"/>
+    </linearGradient>
+    <linearGradient id="wfw" x1="18" y1="24" x2="30" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#29B6F6"/>
+      <stop offset="1" stop-color="#0277BD"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="42" rx="7" ry="2" fill="#90CAF9" opacity="0.15"/>
+  <path d="M18 14 C18 14 16 16 16 22 C16 28 16 34 18 36 C20 38 28 38 30 36 C32 34 32 28 32 22 C32 16 30 14 30 14 Z" fill="url(#wfg)" stroke="#0288D1" stroke-width="1"/>
+  <path d="M17 26 Q20 24 24 26 Q28 28 31 26 L31 34 C30 37 28 38 24 38 C20 38 18 37 17 34 Z" fill="url(#wfw)" opacity="0.7"/>
+  <rect x="20" y="8" width="8" height="6" rx="1" fill="#B3E5FC" stroke="#0288D1" stroke-width="0.8"/>
+  <rect x="21" y="6" width="6" height="3" rx="1" fill="#8D6E63" stroke="#6D4C41" stroke-width="0.5"/>
+  <ellipse cx="21" cy="20" rx="1.5" ry="4" fill="white" opacity="0.3" transform="rotate(-10 21 20)"/>
+  <path d="M18 12 C14 10 14 6 20 6" stroke="#8D6E63" stroke-width="1" fill="none"/>
+  <path d="M30 12 C34 10 34 6 28 6" stroke="#8D6E63" stroke-width="1" fill="none"/>
+</svg>`;
+
+// --- Soap (🧼 replacement) ---
+const SOAP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="spg" x1="12" y1="14" x2="36" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CE93D8"/>
+      <stop offset="1" stop-color="#AB47BC"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="40" rx="9" ry="2" fill="#9C27B0" opacity="0.1"/>
+  <rect x="12" y="18" width="24" height="14" rx="5" fill="url(#spg)" stroke="#9C27B0" stroke-width="1"/>
+  <rect x="16" y="21" width="16" height="8" rx="2" fill="#E1BEE7" opacity="0.4"/>
+  <text x="24" y="27" text-anchor="middle" font-size="5" font-family="sans-serif" fill="#7B1FA2" font-weight="bold">SOAP</text>
+  <circle cx="10" cy="16" r="2.5" fill="white" opacity="0.4" stroke="#E1BEE7" stroke-width="0.3"/>
+  <circle cx="14" cy="12" r="1.8" fill="white" opacity="0.35" stroke="#E1BEE7" stroke-width="0.3"/>
+  <circle cx="8" cy="12" r="1.2" fill="white" opacity="0.3"/>
+  <circle cx="36" cy="14" r="2" fill="white" opacity="0.35" stroke="#E1BEE7" stroke-width="0.3"/>
+  <circle cx="38" cy="18" r="1.5" fill="white" opacity="0.3"/>
+  <ellipse cx="18" cy="22" rx="2" ry="1" fill="white" opacity="0.3" transform="rotate(-15 18 22)"/>
+</svg>`;
+
+// --- Torch (🔦 replacement) ---
+const TORCH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="thg" x1="20" y1="20" x2="28" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#8D6E63"/>
+      <stop offset="1" stop-color="#5D4037"/>
+    </linearGradient>
+    <radialGradient id="tfl" cx="24" cy="6" r="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF176"/>
+      <stop offset="0.4" stop-color="#FFB74D"/>
+      <stop offset="0.8" stop-color="#FF7043"/>
+      <stop offset="1" stop-color="#E64A19" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="24" cy="44" rx="5" ry="1.5" fill="#5D4037" opacity="0.15"/>
+  <rect x="21" y="18" width="6" height="24" rx="1.5" fill="url(#thg)" stroke="#4E342E" stroke-width="0.8"/>
+  <rect x="19" y="16" width="10" height="6" rx="2" fill="#A1887F" stroke="#6D4C41" stroke-width="0.8"/>
+  <path d="M24 2 C28 6 30 10 28 14 C26 18 22 18 20 14 C18 10 20 6 24 2 Z" fill="url(#tfl)" opacity="0.9"/>
+  <path d="M24 6 C26 8 27 10 26 13 C25 15 23 15 22 13 C21 10 22 8 24 6 Z" fill="#FFF176" opacity="0.8"/>
+  <circle cx="24" cy="10" r="6" fill="#FF9800" opacity="0.15"/>
+</svg>`;
+
+// --- Map Scroll (🗺️ replacement) ---
+const MAP_SCROLL_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="msg" x1="10" y1="10" x2="38" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFF8E1"/>
+      <stop offset="1" stop-color="#FFE082"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="24" cy="42" rx="8" ry="2" fill="#8D6E63" opacity="0.12"/>
+  <rect x="12" y="10" width="24" height="28" rx="2" fill="url(#msg)" stroke="#D4A438" stroke-width="1"/>
+  <ellipse cx="24" cy="10" rx="13" ry="3" fill="#FFE082" stroke="#D4A438" stroke-width="0.8"/>
+  <ellipse cx="24" cy="10" rx="13" ry="2" fill="#FFF8E1"/>
+  <ellipse cx="24" cy="38" rx="13" ry="3" fill="#FFE082" stroke="#D4A438" stroke-width="0.8"/>
+  <ellipse cx="24" cy="38" rx="13" ry="2" fill="#FFF8E1"/>
+  <path d="M16 16 L32 16" stroke="#C9A94E" stroke-width="0.6" opacity="0.5"/>
+  <path d="M16 20 L28 20" stroke="#C9A94E" stroke-width="0.6" opacity="0.5"/>
+  <path d="M16 24 L30 24" stroke="#C9A94E" stroke-width="0.6" opacity="0.5"/>
+  <path d="M16 28 L26 28" stroke="#C9A94E" stroke-width="0.6" opacity="0.5"/>
+  <path d="M16 32 L32 32" stroke="#C9A94E" stroke-width="0.6" opacity="0.5"/>
+  <circle cx="27" cy="26" r="3" fill="none" stroke="#D32F2F" stroke-width="1" opacity="0.6"/>
+  <line x1="25" y1="24" x2="29" y2="28" stroke="#D32F2F" stroke-width="0.8" opacity="0.6"/>
+  <line x1="29" y1="24" x2="25" y2="28" stroke="#D32F2F" stroke-width="0.8" opacity="0.6"/>
+  <rect x="11" y="22" width="3" height="6" rx="0.5" fill="#D32F2F" stroke="#B71C1C" stroke-width="0.3"/>
+</svg>`;
+
 // --- Chest (📦 replacement) ---
 const CHEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
   <defs>
@@ -885,6 +1019,12 @@ const ASSET_SVG_MAP: Record<string, string> = {
   key: KEY_SVG,
   crowbar: CROWBAR_SVG,
   potion: POTION_SVG,
+  bandage: BANDAGE_SVG,
+  snack: SNACK_SVG,
+  water_flask: WATER_FLASK_SVG,
+  soap: SOAP_SVG,
+  torch: TORCH_SVG,
+  map_scroll: MAP_SCROLL_SVG,
   // Phase 2: Structures & interactives
   chest: CHEST_SVG,
   sign: SIGN_SVG,

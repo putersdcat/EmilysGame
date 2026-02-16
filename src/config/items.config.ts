@@ -121,6 +121,16 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     consumable: true,
     effect: { type: 'heal', value: 3 },
   },
+  water_flask: {
+    id: 'water_flask',
+    assetKey: 'water_flask',
+    displayName: 'Water Flask',
+    description: 'A leather-wrapped flask of clean water. Restores hydration.',
+    stackable: true,
+    maxStack: 5,
+    consumable: true,
+    effect: { type: 'heal', value: 3 },
+  },
   soap: {
     id: 'soap',
     assetKey: 'soap',

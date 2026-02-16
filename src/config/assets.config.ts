@@ -195,6 +195,36 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 0.6, shadow: false, walkable: true, interactable: true,
     description: 'Speed potion', jitter: 0.15,
   },
+  bandage: {
+    emoji: '🩹', category: 'collectible', height: 1, layer: 'mid',
+    scale: 0.55, shadow: false, walkable: true, interactable: true,
+    description: 'Healing bandage', jitter: 0.15,
+  },
+  snack: {
+    emoji: '🍫', category: 'collectible', height: 1, layer: 'mid',
+    scale: 0.55, shadow: false, walkable: true, interactable: true,
+    description: 'Trail snack bar', jitter: 0.15,
+  },
+  water_flask: {
+    emoji: '🫗', category: 'collectible', height: 1, layer: 'mid',
+    scale: 0.6, shadow: false, walkable: true, interactable: true,
+    description: 'Water flask for hydration', jitter: 0.15,
+  },
+  soap: {
+    emoji: '🧼', category: 'collectible', height: 1, layer: 'mid',
+    scale: 0.5, shadow: false, walkable: true, interactable: true,
+    description: 'Bar of soap for cleanliness', jitter: 0.15,
+  },
+  torch: {
+    emoji: '🔦', category: 'collectible', height: 2, layer: 'mid',
+    scale: 0.6, shadow: false, walkable: true, interactable: true,
+    description: 'Handheld torch', jitter: 0.10,
+  },
+  map_scroll: {
+    emoji: '🗺️', category: 'collectible', height: 1, layer: 'mid',
+    scale: 0.55, shadow: false, walkable: true, interactable: true,
+    description: 'Map scroll revealing nearby areas', jitter: 0.15,
+  },
 
   // --- NPCs ---
   npc_merchant: {
