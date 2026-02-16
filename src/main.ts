@@ -3168,7 +3168,7 @@ async function main(): Promise<void> {
   // Load MIDI tracks in background (non-blocking, oscillator tracks work immediately)
   initMidiTracks(state.music).then(() => {
     if (getTotalTrackCount() > 4) {
-      console.log(`[Music] ${getTotalTrackCount()} total tracks available (${getTotalTrackCount() - 4} MIDI)`);
+      console.log(`[Music] ${getTotalTrackCount()} MIDI tracks available`);
     }
   });
 

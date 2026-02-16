@@ -1,12 +1,11 @@
 /**
- * music.ts — SoundFont-powered music playback engine.
+ * music.ts — MIDI-only music playback engine.
  *
- * Replaces oscillator beeps with real instrument samples:
- * - MIDI tracks (.mid files): parsed by midi-player-js, played through SoundFont instruments
- * - Legacy oscillator tracks: note sequences played through SoundFont piano
+ * Plays .mid files from public/audio/music/midi/ through SoundFont piano samples.
+ * All oscillator/note-sequence playback has been purged.
  *
  * All audio routes through AudioContext → GainNode for volume/ducking control.
- * TODO: DOC - SoundFont music engine architecture
+ * TODO: DOC - MIDI music engine architecture
  */
 
 import MidiPlayer from 'midi-player-js';
@@ -15,8 +14,7 @@ import {
   isMidiManifestLoaded, type MidiManifestEntry,
 } from './midi-loader';
 import {
-  MUSIC_TRACKS, getTracksForBiome, DEFAULT_MUSIC_SETTINGS,
-  NOTE_FREQ,
+  DEFAULT_MUSIC_SETTINGS,
   type MusicTrack, type MusicSettings,
 } from './config/music.config';
 
@@ -31,6 +29,8 @@ export interface MusicState {
   ducking: boolean;
   midiLoaded: boolean;
   trackProgress: number;
+  /** Tracks last biome to avoid redundant playlist rebuilds */
+  _lastBiomeId: number;
 }
 
 // ─── Audio Globals ──────────────────────────────────────────
@@ -54,11 +54,6 @@ const _pianoBuffers = new Map<string, AudioBuffer>();
 let _midiPlayer: InstanceType<typeof MidiPlayer.Player> | null = null;
 // Active note handles for MIDI note-off tracking
 const _activeNotes = new Map<string, PlayedNoteHandle>();
-
-// Fallback note-sequence playback (for oscillator-format tracks played through piano)
-let _noteTimer: ReturnType<typeof setTimeout> | null = null;
-let _melodyIndex = 0;
-let _bassIndex = 0;
 
 const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 const PIANO_SAMPLE_BASE = './audio/piano-mp3';
@@ -177,6 +172,7 @@ export function createMusicState(): MusicState {
     ducking: false,
     midiLoaded: false,
     trackProgress: 0,
+    _lastBiomeId: -1,
   };
 }
 
@@ -337,65 +333,6 @@ function stopAllNotes(): void {
   _activeNotes.clear();
 }
 
-// ─── Note Sequence Playback (Legacy Oscillator Tracks → SoundFont Piano) ────
-
-function beatDuration(tempo: number): number {
-  return 60 / tempo;
-}
-
-/** Play oscillator-format note sequences through SoundFont piano */
-function scheduleNoteSequence(track: MusicTrack, state: MusicState): void {
-  if (!_ctx || !_isPlaying || !_piano) return;
-
-  const beat = beatDuration(track.tempo);
-
-  // Melody note
-  const melodyNote = track.melody[_melodyIndex % track.melody.length];
-  const melodyDur = melodyNote.duration * beat;
-
-  if (melodyNote.note !== 'REST' && NOTE_FREQ[melodyNote.note]) {
-    try {
-      _piano.play(melodyNote.note, _ctx.currentTime, {
-        duration: melodyDur * 0.95,
-        gain: 0.7,
-      });
-    } catch { /* note may not be available */ }
-  }
-  _melodyIndex++;
-
-  // Update progress for cassette UI
-  if (track.melody.length > 0) {
-    state.trackProgress = (_melodyIndex % track.melody.length) / track.melody.length;
-  }
-
-  // Bass note
-  const bassNote = track.bass[_bassIndex % track.bass.length];
-  const bassDur = bassNote.duration * beat;
-
-  if (_bassIndex * bassDur <= _melodyIndex * melodyDur) {
-    if (bassNote.note !== 'REST' && NOTE_FREQ[bassNote.note]) {
-      try {
-        _piano.play(bassNote.note, _ctx.currentTime, {
-          duration: bassDur * 0.95,
-          gain: 0.4,
-        });
-      } catch { /* ok */ }
-    }
-    _bassIndex++;
-  }
-
-  _noteTimer = setTimeout(() => scheduleNoteSequence(track, state), melodyDur * 1000);
-}
-
-function stopNoteSequence(): void {
-  if (_noteTimer) {
-    clearTimeout(_noteTimer);
-    _noteTimer = null;
-  }
-  _melodyIndex = 0;
-  _bassIndex = 0;
-}
-
 // ─── Playback Control ───────────────────────────────────────
 
 export function play(state: MusicState): void {
@@ -407,7 +344,12 @@ export function play(state: MusicState): void {
 
   // Build playlist if empty
   if (state.playlist.length === 0) {
-    state.playlist = buildFullPlaylist(state);
+    state.playlist = buildFullPlaylist();
+  }
+
+  if (state.playlist.length === 0) {
+    console.warn('[Music] No MIDI tracks available');
+    return;
   }
 
   const track = state.playlist[state.currentTrackIndex % state.playlist.length];
@@ -415,28 +357,19 @@ export function play(state: MusicState): void {
   state.currentTrackId = track.id;
   state.playState = 'playing';
   _isPlaying = true;
-  _melodyIndex = 0;
-  _bassIndex = 0;
 
   applyVolume(state);
 
-  // Route: MIDI file or note sequence
-  if (track.source === 'midi') {
-    startMidiPlayback(track, state).then(success => {
-      if (!success && _isPlaying) {
-        console.log(`[Music] MIDI file fallback → note sequence: ${track.name}`);
-        if (track.melody.length > 0 && _piano) {
-          scheduleNoteSequence(track, state);
-        }
-      }
-    });
-  } else {
-    if (_piano) {
-      scheduleNoteSequence(track, state);
-    } else {
-      console.warn('[Music] No SoundFont piano for note playback');
+  // MIDI file playback only
+  startMidiPlayback(track, state).then(success => {
+    if (!success) {
+      console.warn(`[Music] Failed to play MIDI: ${track.name}, skipping`);
+      // Auto-skip to next track after brief pause
+      setTimeout(() => {
+        if (_isPlaying) nextTrack(state);
+      }, 1000);
     }
-  }
+  });
 
   console.log(`[Music] Playing: ${track.name}`);
 }
@@ -445,16 +378,12 @@ export function pause(state: MusicState): void {
   _isPlaying = false;
   state.playState = 'paused';
   stopMidiPlayer();
-  stopNoteSequence();
 }
 
 export function stop(state: MusicState): void {
   _isPlaying = false;
   state.playState = 'stopped';
   stopMidiPlayer();
-  stopNoteSequence();
-  _melodyIndex = 0;
-  _bassIndex = 0;
 }
 
 export function nextTrack(state: MusicState): void {
@@ -509,9 +438,13 @@ export function stopDucking(state: MusicState): void {
 // ─── Biome Awareness ────────────────────────────────────────
 
 export function setBiome(state: MusicState, biomeId: number): void {
-  const oscTracks = getTracksForBiome(biomeId);
+  // Only react to actual biome changes
+  if (biomeId === state._lastBiomeId) return;
+  state._lastBiomeId = biomeId;
+
   const midiTracks = getMidiTracksForBiome(biomeId);
-  const newPlaylist = [...oscTracks, ...midiTracks];
+  // If biome has specific tracks, use them; otherwise keep full playlist
+  const newPlaylist = midiTracks.length > 0 ? midiTracks : getLoadedMidiTracks();
   if (newPlaylist.length > 0 && newPlaylist[0]?.id !== state.playlist[0]?.id) {
     const wasPlaying = state.playState === 'playing';
     stop(state);
@@ -523,13 +456,8 @@ export function setBiome(state: MusicState, biomeId: number): void {
 
 // ─── Internal Helpers ───────────────────────────────────────
 
-function buildFullPlaylist(state: MusicState): MusicTrack[] {
-  const osc = [...MUSIC_TRACKS];
-  if (state.midiLoaded) {
-    const midi = getLoadedMidiTracks();
-    return [...osc, ...midi];
-  }
-  return osc;
+function buildFullPlaylist(): MusicTrack[] {
+  return getLoadedMidiTracks();
 }
 
 function getMidiTracksForBiome(biomeId: number): MusicTrack[] {
@@ -582,8 +510,7 @@ export function getCurrentTrackInfo(state: MusicState): {
   name: string; id: string; composer?: string; source?: string;
 } | null {
   if (!state.currentTrackId) return null;
-  let track: MusicTrack | undefined = MUSIC_TRACKS.find(t => t.id === state.currentTrackId);
-  if (!track) track = getLoadedMidiTracks().find(t => t.id === state.currentTrackId);
+  let track: MusicTrack | undefined = getLoadedMidiTracks().find(t => t.id === state.currentTrackId);
   if (!track) track = state.playlist.find(t => t.id === state.currentTrackId);
   if (!track) return null;
   return {
@@ -595,11 +522,9 @@ export function getCurrentTrackInfo(state: MusicState): {
 }
 
 export function getAllTrackNames(): { id: string; name: string; composer?: string }[] {
-  const osc = MUSIC_TRACKS.map(t => ({ id: t.id, name: t.name, composer: t.composer }));
-  const midi = getLoadedMidiTracks().map(t => ({ id: t.id, name: t.name, composer: t.composer }));
-  return [...osc, ...midi];
+  return getLoadedMidiTracks().map(t => ({ id: t.id, name: t.name, composer: t.composer }));
 }
 
 export function getTotalTrackCount(): number {
-  return MUSIC_TRACKS.length + getLoadedMidiTracks().length;
+  return getLoadedMidiTracks().length;
 }
