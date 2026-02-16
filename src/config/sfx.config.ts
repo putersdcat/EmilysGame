@@ -79,6 +79,24 @@ export const SFX_DEFS: SfxDef[] = [
       { freq: 100, duration: 0.06, wave: 'square', gain: 0.1 },
     ],
   },
+  {
+    id: 'ouch',
+    category: 'interaction',
+    notes: [
+      { freq: 400, duration: 0.08, wave: 'sawtooth', gain: 0.2 },
+      { freq: 250, duration: 0.12, wave: 'square', gain: 0.15, delay: 0.06 },
+      { freq: 150, duration: 0.15, wave: 'square', gain: 0.1, delay: 0.14 },
+    ],
+  },
+  {
+    id: 'bandaid_use',
+    category: 'interaction',
+    notes: [
+      { freq: 500, duration: 0.06, wave: 'sine', gain: 0.15 },
+      { freq: 700, duration: 0.08, wave: 'sine', gain: 0.12, delay: 0.05 },
+      { freq: 900, duration: 0.1, wave: 'sine', gain: 0.1, delay: 0.1 },
+    ],
+  },
 
   // ─── UI SFX ──────────────────────────────────────────────
   {

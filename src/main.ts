@@ -78,6 +78,11 @@ import {
   initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
 } from './debuff-visuals';
 import {
+  createInjuryState, rollInjury, applyBandaid, applyWoundQuizBonus,
+  getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
+  type InjuryState,
+} from './injury';
+import {
   createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
   nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -170,6 +175,8 @@ interface GameState {
   pendingTrade: string | null;
   // Player survival status (#70)
   status: PlayerStatus;
+  // Injury state (#109)
+  injury: InjuryState;
   // Unlocked cosmetic IDs (#66)
   unlockedCosmetics: string[];
   // Music state (#74)
@@ -212,6 +219,38 @@ function tickExpressionOverride(state: GameState): void {
     state.expressionOverride = null;
     state.lastAnimFrame = -1; // force sprite reload
   }
+}
+
+// ─── Wound-Care Quiz (#109) ─────────────────────────────────
+
+import type { WoundCareQuestion } from './injury';
+
+/**
+ * Start a wound-care mini-quiz after bandaid use.
+ * Uses the regular quiz UI but with a custom wound-care question.
+ */
+function _startWoundCareQuiz(state: GameState, wq: WoundCareQuestion): void {
+  // Populate quiz state directly (bypass normal startQuiz which loads from content packs)
+  state.quiz.active = true;
+  state.quiz.displayText = `🩹 Wound Care: ${wq.question}`;
+  state.quiz.choices = [...wq.answers, "I don't know 📖"];
+  state.quiz.correctIndex = wq.correctIndex;
+  state.quiz.selectedIndex = 0;
+  state.quiz.result = 'pending';
+  state.quiz.npcId = null;
+  state.quiz.difficulty = 'easy';
+  state.quiz.question = {
+    id: `wound_care_${Date.now()}`,
+    question: wq.question,
+    answers: wq.answers,
+    category: 'science',
+    difficulty: 'easy',
+    correctIndex: 0 as const,
+    hint: 'Think about first aid!',
+  };
+  state.paused = true;
+  // Mark this as a wound-care quiz for bonus logic
+  (state as any)._woundCareQuiz = true;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -487,6 +526,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     trade: createTradeState(),
     pendingTrade: null,
     status: createPlayerStatus(),
+    injury: createInjuryState(),
     unlockedCosmetics: save?.unlockedCosmetics ?? [],
     music: createMusicState(),
     sfx: createSfxState(),
@@ -538,6 +578,13 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     if (save.ageBand) {
       setAgeBand(state.ageProfile, save.ageBand as AgeBand);
     }
+  }
+
+  // Give starter items for new games (#109)
+  if (!save) {
+    state.inventory.addItem('bandage', 3);
+    state.inventory.addItem('snack', 2);
+    state.inventory.addItem('water_flask', 1);
   }
 
   // Generate initial chunks
@@ -652,6 +699,13 @@ function update(state: GameState, input: InputManager): void {
           setTransientExpression(state, 'happy', 2000);
           checkCosmeticUnlocks(state);
 
+          // Wound-care quiz bonus heal (#109)
+          if ((state as any)._woundCareQuiz) {
+            applyWoundQuizBonus(state.status);
+            addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
+            (state as any)._woundCareQuiz = false;
+          }
+
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
           if (state.pendingGateQuiz) {
             const g = state.pendingGateQuiz;
@@ -669,7 +723,9 @@ function update(state: GameState, input: InputManager): void {
         } else if (state.quiz.result === 'wrong') {
           playSfx(state.sfx, 'quiz_wrong');
           setTransientExpression(state, 'surprised', 1500);
+          (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
         } else if (state.quiz.result === 'idk') {
+          (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
           const questionText = state.quiz.question?.question || '';
@@ -797,9 +853,10 @@ function update(state: GameState, input: InputManager): void {
   const isMoving = mv.dx !== 0 || mv.dy !== 0;
 
   if (isMoving) {
-    // Apply survival status speed debuff (#70)
+    // Apply survival status + injury speed debuffs (#70, #109)
     const debuffs = getDebuffs(state.status);
-    const effectiveSpeed = state.player.speed * debuffs.speedMult;
+    const injuryMult = getInjurySpeedMult(state.injury);
+    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult;
     const newX = state.player.x + mv.dx * effectiveSpeed;
     const newY = state.player.y + mv.dy * effectiveSpeed;
 
@@ -810,6 +867,13 @@ function update(state: GameState, input: InputManager): void {
     } else {
       // Wall bump SFX (#75) — debounce handles frame-spam
       playSfx(state.sfx, 'wall_bump');
+      // Roll for injury on obstacle collision (#109)
+      if (rollInjury(state.injury)) {
+        playSfx(state.sfx, 'ouch');
+        triggerHint('ouch_injury');
+        setTransientExpression(state, 'surprised', 3000);
+        addToast(state.ui, '🤕 Ouch! You got hurt!', '#f44336', 2500);
+      }
     }
 
     // Direction (left/right flip)
@@ -1136,6 +1200,7 @@ function buildSaveData(state: GameState): SaveData {
     playerVariation: serializeVariation(state.playerVariation),
     discoveredWildlife: getDiscoveredSpeciesArray(),
     playerStatus: serializeStatus(state.status),
+    injuryState: serializeInjury(state.injury),
     unlockedCosmetics: state.unlockedCosmetics,
     musicSettings: serializeMusicSettings(state.music),
     sfxSettings: serializeSfxSettings(state.sfx),
@@ -1176,6 +1241,8 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Restore survival status (#70)
   state.status = deserializeStatus(data.playerStatus);
   resetTickCounter();
+  // Restore injury state (#109)
+  state.injury = deserializeInjury(data.injuryState);
   // Restore unlocked cosmetics (#66)
   state.unlockedCosmetics = data.unlockedCosmetics ?? [];
   setUnlockedCosmetics(state.unlockedCosmetics);
@@ -1405,6 +1472,7 @@ function resetGameState(state: GameState): void {
   state.trade = createTradeState();
   state.pendingTrade = null;
   state.status = createPlayerStatus();
+  state.injury = createInjuryState();
   resetTickCounter();
   state.unlockedCosmetics = [];
   setUnlockedCosmetics([]);
@@ -1702,9 +1770,18 @@ function checkBubbleTriggers(state: GameState): void {
       const cell2 = nearChunk2.cells[ly2]?.[lx2];
       if (!cell2) continue;
       if (cell2.assetKey === 'shop' || cell2.assetKey === 'merchant' || cell2.assetKey === 'store') {
-        triggerHint('near_shop');
+        if (state.injury.injured) {
+          triggerHint('injury_near_shop'); // Injured + near shop (#109)
+        } else {
+          triggerHint('near_shop');
+        }
       }
     }
+  }
+
+  // Injury-specific hints (#109)
+  if (state.injury.injured) {
+    triggerHint('need_bandaid');
   }
 }
 
@@ -1978,8 +2055,8 @@ function renderFrame(
       syncTradeDOM(state.trade, state.inventory);
     }
 
-    // Status bars (#70)
-    syncStatusBars(state.status);
+    // Status bars (#70, #109)
+    syncStatusBars(state.status, state.injury);
 
     // Music ducking sync (#74) — duck when paused (quiz/dialog active)
     if (state.paused && !state.music.ducking) {
@@ -2121,8 +2198,25 @@ function setupExtraKeys(state: GameState): void {
         break;
       case 'e':
       case 'E':
-        // Use/consume best available status item (#70)
+        // Use/consume best available status item (#70, #109)
         if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active && !state.trade.active) {
+          // Priority: if injured and have bandage, use bandage first (#109)
+          if (state.injury.injured && state.inventory.hasItem('bandage')) {
+            state.inventory.removeItem('bandage', 1);
+            const healAmt = applyBandaid(state.injury, state.status);
+            playSfx(state.sfx, 'bandaid_use');
+            addToast(state.ui, `🩹 Applied bandage! +${healAmt} energy`, '#88ccff', 2000);
+            setTransientExpression(state, 'happy', 2000);
+            // Start wound-care quiz after brief delay
+            if (state.injury.pendingWoundQuiz) {
+              state.injury.pendingWoundQuiz = false;
+              const wq = getWoundCareQuestion();
+              // Use quiz system with custom wound-care question
+              _startWoundCareQuiz(state, wq);
+            }
+            break;
+          }
+          // Normal consumable path
           const consumables = ['snack', 'water_flask', 'soap', 'mushroom', 'bandage', 'potion'];
           for (const itemId of consumables) {
             if (state.inventory.hasItem(itemId)) {
@@ -2199,6 +2293,11 @@ async function main(): Promise<void> {
       if (result) addToast(state.ui, result, '#88ccff', 2000);
       return result;
     },
+    // Injury helpers (#109)
+    getInjury: () => state.injury,
+    rollInjury: () => rollInjury(state.injury),
+    applyBandaid: () => applyBandaid(state.injury, state.status),
+    getWoundCareQuestion,
     // Cosmetic unlock helpers (#66)
     getUnlockedCosmetics: () => state.unlockedCosmetics,
     grantCosmetic: (id: string) => {
