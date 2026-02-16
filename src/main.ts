@@ -2057,7 +2057,12 @@ function showPauseMenu(state: GameState, inputMgr?: InputManager): void {
 
   document.getElementById('pauseCustomize')!.onclick = async () => {
     menu.style.display = 'none';
-    const newVariation = await showCustomizer(state.playerVariation);
+    const newVariation = await showCustomizer(state.playerVariation, true);
+    if (!newVariation) {
+      // Cancelled — reopen pause menu
+      menu.style.display = 'flex';
+      return;
+    }
     clearVariationCache('custom');
     state.playerVariation = newVariation;
     state._baseExpression = newVariation.expression ?? 'happy';
@@ -3023,7 +3028,12 @@ async function main(): Promise<void> {
   const openCustomizer = async () => {
     if (state.paused || state.quiz.active || state.ui.dialog.active) return;
     state.paused = true;
-    const newVariation = await showCustomizer(state.playerVariation);
+    const newVariation = await showCustomizer(state.playerVariation, true);
+    if (!newVariation) {
+      // Cancelled — resume game
+      state.paused = false;
+      return;
+    }
     clearVariationCache('custom'); // clear old cached sprites
     state.playerVariation = newVariation;
     state._baseExpression = newVariation.expression ?? 'happy';
@@ -3100,8 +3110,8 @@ async function main(): Promise<void> {
 
     if (choice === 'new-game') {
       resetGameState(state);
-      // Character customizer
-      const customVariation = await showCustomizer(state.playerVariation);
+      // Character customizer (no cancel on new game — must create character)
+      const customVariation = (await showCustomizer(state.playerVariation))!;
       clearVariationCache('custom');
       state.playerVariation = customVariation;
       state._baseExpression = customVariation.expression ?? 'happy';

@@ -326,9 +326,10 @@ function renderPatternButtons(
 
 /**
  * Show the character customizer overlay.
- * Returns a Promise that resolves with the chosen CharacterVariation.
+ * Returns a Promise that resolves with the chosen CharacterVariation,
+ * or null if cancelled (only when allowCancel=true).
  */
-export function showCustomizer(initial?: CharacterVariation): Promise<CharacterVariation> {
+export function showCustomizer(initial?: CharacterVariation, allowCancel = false): Promise<CharacterVariation | null> {
   return new Promise((resolve) => {
     const overlay = document.getElementById('customizerOverlay');
     if (!overlay) {
@@ -380,19 +381,23 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
     refreshAll();
     startPreviewAnimation(variation);
 
-    // Wire confirm button
-    const confirmBtn = document.getElementById('customizerConfirm');
-    const handler = () => {
+    // Cleanup helper — removes all listeners and hides overlay
+    const cleanup = () => {
       stopPreviewAnimation();
       overlay.style.display = 'none';
-      confirmBtn?.removeEventListener('click', handler);
-      resolve(variation);
+      confirmBtn?.removeEventListener('click', onConfirm);
+      randomBtn?.removeEventListener('click', onRandom);
+      cancelBtn?.removeEventListener('click', onCancel);
     };
-    confirmBtn?.addEventListener('click', handler);
+
+    // Wire confirm button
+    const confirmBtn = document.getElementById('customizerConfirm');
+    const onConfirm = () => { cleanup(); resolve(variation); };
+    confirmBtn?.addEventListener('click', onConfirm);
 
     // Wire randomize button
     const randomBtn = document.getElementById('customizerRandom');
-    const randomHandler = () => {
+    const onRandom = () => {
       variation.hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)].hex;
       variation.dressColor = OUTFIT_COLORS[Math.floor(Math.random() * OUTFIT_COLORS.length)].hex;
       variation.skinTone = SKIN_TONES[Math.floor(Math.random() * SKIN_TONES.length)].hex;
@@ -404,16 +409,13 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
       refreshAll();
       startPreviewAnimation(variation);
     };
-    randomBtn?.addEventListener('click', randomHandler);
+    randomBtn?.addEventListener('click', onRandom);
 
-    // Cleanup randomize handler when confirmed
-    const origHandler = handler;
-    const wrappedHandler = () => {
-      randomBtn?.removeEventListener('click', randomHandler);
-      origHandler();
-    };
-    confirmBtn?.removeEventListener('click', handler);
-    confirmBtn?.addEventListener('click', wrappedHandler);
+    // Wire cancel button (shown only when allowCancel=true)
+    const cancelBtn = document.getElementById('customizerCancel');
+    if (cancelBtn) cancelBtn.style.display = allowCancel ? '' : 'none';
+    const onCancel = () => { cleanup(); resolve(null); };
+    cancelBtn?.addEventListener('click', onCancel);
   });
 }
 
