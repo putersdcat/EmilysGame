@@ -17,6 +17,8 @@ async function waitForGame(page: import('@playwright/test').Page) {
 
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
   await page.waitForFunction(() => !!(window as any).__gameState, { timeout: 15000 });
+  // Allow fog system and other per-frame systems to tick
+  await page.waitForTimeout(1500);
 }
 
 // ─── Fog-of-War Tests ────────────────────────────────────────
@@ -269,6 +271,7 @@ test.describe('Fog Save/Load (#114)', () => {
     // Reload page — game auto-loads save data on init
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
+    await page.waitForFunction(() => !!(window as any).__gameDebug, { timeout: 15000 });
     await page.waitForTimeout(1500);
 
     const afterReload = await page.evaluate(() => (window as any).__gameDebug.getVisitedCount());
