@@ -63,6 +63,14 @@ export const ACCESSORIES: { name: string; value: Accessory }[] = [
   { name: '👓 Glasses',   value: 'glasses' },
 ];
 
+export const EYE_COLORS: { name: string; hex: string }[] = [
+  { name: '💙 Blue',    hex: '#0066CC' },
+  { name: '💚 Green',   hex: '#228B22' },
+  { name: '🤎 Brown',   hex: '#8B4513' },
+  { name: '🧡 Hazel',   hex: '#8E7618' },
+  { name: '🔶 Amber',   hex: '#CC7722' },
+];
+
 export const EXPRESSIONS: { name: string; value: Expression }[] = [
   { name: '😊 Happy',       value: 'happy' },
   { name: '😐 Neutral',     value: 'neutral' },
@@ -81,6 +89,7 @@ export function createDefaultVariation(): CharacterVariation {
     skinTone: '#F4C9B8',
     accessory: 'none',
     expression: 'happy',
+    eyeColor: '#0066CC',
   };
 }
 
@@ -321,6 +330,10 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
         variation.expression = e;
         refreshAll();
       });
+      renderSwatches('custEyeColors', EYE_COLORS.map(c => ({ hex: c.hex, name: c.name })), variation.eyeColor ?? '#0066CC', (hex) => {
+        variation.eyeColor = hex;
+        refreshAll();
+      });
     };
 
     // Show overlay
@@ -347,6 +360,7 @@ export function showCustomizer(initial?: CharacterVariation): Promise<CharacterV
       variation.hairStyle = HAIR_STYLES[Math.floor(Math.random() * HAIR_STYLES.length)].value;
       variation.accessory = ACCESSORIES[Math.floor(Math.random() * ACCESSORIES.length)].value;
       variation.expression = EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)].value;
+      variation.eyeColor = EYE_COLORS[Math.floor(Math.random() * EYE_COLORS.length)].hex;
       refreshAll();
       startPreviewAnimation(variation);
     };
@@ -372,6 +386,7 @@ export interface SerializedVariation {
   skinTone: string;
   accessory?: string;
   expression?: string;
+  eyeColor?: string;
 }
 
 export function serializeVariation(v: CharacterVariation): SerializedVariation {
@@ -382,6 +397,7 @@ export function serializeVariation(v: CharacterVariation): SerializedVariation {
     skinTone: v.skinTone,
     accessory: v.accessory ?? 'none',
     expression: v.expression ?? 'happy',
+    eyeColor: v.eyeColor ?? '#0066CC',
   };
 }
 
@@ -394,5 +410,6 @@ export function deserializeVariation(data: SerializedVariation): CharacterVariat
     skinTone: data.skinTone,
     accessory: (data.accessory as Accessory) || 'none',
     expression: (data.expression as Expression) || 'happy',
+    eyeColor: data.eyeColor || '#0066CC',
   };
 }
