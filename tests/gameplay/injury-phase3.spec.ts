@@ -77,28 +77,22 @@ test.describe('Injury System Phase 3 (#109)', () => {
     expect(count).toBe(0);
   });
 
-  test('rollInjury increments injury count when triggered', async ({ page }) => {
+  test('checkHazardInjury increments injury count deterministically (#137)', async ({ page }) => {
     await waitForGame(page);
     const result = await page.evaluate(() => {
       const debug = (window as any).__gameDebug;
-      // Force injury by calling rollInjury repeatedly until it fires
-      let rolled = false;
-      for (let i = 0; i < 200; i++) {
-        const state = (window as any).__gameState;
-        // Clear injury for re-roll
-        state.injury.injured = false;
-        state.injury.lastInjuryAt = 0;
-        if (debug.rollInjury()) {
-          rolled = true;
-          break;
-        }
-      }
+      const state = (window as any).__gameState;
+      // Reset state
+      state.injury.injured = false;
+      state.injury.lastInjuryAt = 0;
+      // Deterministic: hazardDamage > 0 always injures
+      const hit = debug.checkHazardInjury(1.0);
       return {
-        rolled,
+        hit,
         count: debug.getInjury().injuryCount,
       };
     });
-    expect(result.rolled).toBe(true);
+    expect(result.hit).toBe(true);
     expect(result.count).toBeGreaterThan(0);
   });
 

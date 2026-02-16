@@ -1,6 +1,6 @@
 /**
- * injury-system.spec.ts - E2E tests for injury & bandaid system (#109).
- * Covers: injury roll, speed debuff, bandaid heal, wound-care quiz, save/load.
+ * injury-system.spec.ts - E2E tests for deterministic injury system (#109, #137).
+ * Covers: hazard-based injury, speed debuff, bandaid heal, wound-care quiz, save/load.
  * TODO: DOC - injury test coverage
  */
 import { test, expect } from '@playwright/test';
@@ -42,23 +42,46 @@ test.describe('Injury & Bandaid System (#109)', () => {
     expect(bandages).toBe(3);
   });
 
-  test('rollInjury sets injured state', async ({ page }) => {
+  test('checkHazardInjury sets injured state deterministically (#137)', async ({ page }) => {
     await waitForGame(page);
 
-    // Force injury via debug hook (bypass random chance)
     const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
       const state = (window as any).__gameState;
-      // Directly set injured for deterministic test
-      state.injury.injured = true;
-      state.injury.injuryCount = 1;
+      state.injury.injured = false;
+      state.injury.lastInjuryAt = 0;
+      // Deterministic: hazardDamage > 0 always injures
+      const injured = debug.checkHazardInjury(1.0);
       return {
         injured: state.injury.injured,
         injuryCount: state.injury.injuryCount,
+        returnValue: injured,
       };
     });
 
+    expect(result.returnValue).toBe(true);
     expect(result.injured).toBe(true);
     expect(result.injuryCount).toBe(1);
+  });
+
+  test('non-hazard collisions (hazardDamage=0) never cause injury (#137)', async ({ page }) => {
+    await waitForGame(page);
+
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const state = (window as any).__gameState;
+      state.injury.injured = false;
+      state.injury.lastInjuryAt = 0;
+      // hazardDamage = 0 means not a hazard — should never injure
+      let injured = false;
+      for (let i = 0; i < 100; i++) {
+        if (debug.checkHazardInjury(0)) injured = true;
+      }
+      return { injured, count: state.injury.injuryCount };
+    });
+
+    expect(result.injured).toBe(false);
+    expect(result.count).toBe(0);
   });
 
   test('injury applies speed debuff (0.8x)', async ({ page }) => {
@@ -140,39 +163,30 @@ test.describe('Injury & Bandaid System (#109)', () => {
     expect(debuffsText).toContain('Injured');
   });
 
-  test('rollInjury respects cooldown', async ({ page }) => {
+  test('hazard injury respects cooldown (#137)', async ({ page }) => {
     await waitForGame(page);
 
     const results = await page.evaluate(() => {
       const debug = (window as any).__gameDebug;
       const state = (window as any).__gameState;
 
-      // First roll — force success by setting random seed trick
       state.injury.injured = false;
       state.injury.lastInjuryAt = 0;
 
-      // Roll many times quickly to test cooldown
-      let injuryHappened = false;
-      for (let i = 0; i < 1000 && !injuryHappened; i++) {
-        injuryHappened = debug.rollInjury();
-      }
+      // First hazard hit — deterministic, should always succeed
+      const firstHit = debug.checkHazardInjury(1.0);
 
-      // After injury, rolling again immediately should fail (cooldown)
-      if (injuryHappened) {
-        state.injury.injured = false; // Clear injured but keep lastInjuryAt
-        const secondRoll = debug.rollInjury();
-        return { firstRoll: true, secondRoll };
-      }
-
-      // Very unlikely to not get injured in 1000 rolls at 8%
-      return { firstRoll: injuryHappened, secondRoll: false };
+      // After injury, clear injured but keep lastInjuryAt (cooldown)
+      state.injury.injured = false;
+      const secondHit = debug.checkHazardInjury(1.0);
+      return { firstHit, secondHit };
     });
 
-    expect(results.firstRoll).toBe(true);
-    expect(results.secondRoll).toBe(false); // Cooldown prevents immediate re-injury
+    expect(results.firstHit).toBe(true);
+    expect(results.secondHit).toBe(false); // Cooldown prevents immediate re-injury
   });
 
-  test('injury not possible when already injured', async ({ page }) => {
+  test('injury not possible when already injured (#137)', async ({ page }) => {
     await waitForGame(page);
 
     const result = await page.evaluate(() => {
@@ -180,7 +194,7 @@ test.describe('Injury & Bandaid System (#109)', () => {
       const state = (window as any).__gameState;
       state.injury.injured = true; // Already injured
       state.injury.lastInjuryAt = 0;
-      return debug.rollInjury(); // Should return false
+      return debug.checkHazardInjury(1.0); // Should return false
     });
 
     expect(result).toBe(false);
@@ -229,6 +243,51 @@ test.describe('Injury & Bandaid System (#109)', () => {
 
     expect(result.injured).toBe(true);
     expect(result.injuryCount).toBe(3);
+  });
+
+  test('hazard assets have hazardDamage > 0 in ASSET_DEFS (#137)', async ({ page }) => {
+    await waitForGame(page);
+
+    const hazards = await page.evaluate(() => {
+      const defs = (window as any).__gameDebug.getAssetDefs();
+      return {
+        cactus: defs.cactus?.hazardDamage ?? 0,
+        rock: defs.rock?.hazardDamage ?? 0,
+        barricade: defs.barricade?.hazardDamage ?? 0,
+        // Non-hazards should have 0 or undefined
+        tree: defs.tree?.hazardDamage ?? 0,
+        wall: defs.wall?.hazardDamage ?? 0,
+        grass: defs.grass?.hazardDamage ?? 0,
+      };
+    });
+
+    // Hazardous objects
+    expect(hazards.cactus).toBeGreaterThan(0);
+    expect(hazards.rock).toBeGreaterThan(0);
+    expect(hazards.barricade).toBeGreaterThan(0);
+    // Cactus is the most dangerous
+    expect(hazards.cactus).toBeGreaterThan(hazards.rock);
+    // Non-hazardous objects
+    expect(hazards.tree).toBe(0);
+    expect(hazards.wall).toBe(0);
+    expect(hazards.grass).toBe(0);
+  });
+
+  test('hazard labels exist for hazardous assets (#137)', async ({ page }) => {
+    await waitForGame(page);
+
+    const labels = await page.evaluate(() => {
+      const defs = (window as any).__gameDebug.getAssetDefs();
+      return {
+        cactus: defs.cactus?.hazardLabel,
+        rock: defs.rock?.hazardLabel,
+        barricade: defs.barricade?.hazardLabel,
+      };
+    });
+
+    expect(labels.cactus).toBeTruthy();
+    expect(labels.rock).toBeTruthy();
+    expect(labels.barricade).toBeTruthy();
   });
 
 });

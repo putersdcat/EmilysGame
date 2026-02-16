@@ -15,7 +15,7 @@ import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, cle
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
-import { isWalkable, interact, autoCollect, resolveQuizGate, type InteractionResult } from './mechanics';
+import { isWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
@@ -85,7 +85,7 @@ import {
   triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
 } from './debuff-visuals';
 import {
-  createInjuryState, rollInjury, applyBandaid, applyWoundQuizBonus,
+  createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
   getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
   type InjuryState,
 } from './injury';
@@ -1141,13 +1141,17 @@ function update(state: GameState, input: InputManager): void {
     } else {
       // Wall bump SFX (#75) — debounce handles frame-spam
       playSfx(state.sfx, 'wall_bump');
-      // Roll for injury on obstacle collision (#109)
-      if (rollInjury(state.injury)) {
+      // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
+      const hitCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
+      const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+      const hazardDmg = hitDef?.hazardDamage ?? 0;
+      if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
+        const label = hitDef?.hazardLabel ?? 'something sharp';
         playSfx(state.sfx, 'ouch');
         triggerHint('ouch_injury');
         setTransientExpression(state, 'surprised', 3000);
         triggerInjuryFlash(); // (#109 Phase 3) red screen flash
-        addToast(state.ui, '🤕 Ouch! You got hurt!', '#f44336', 2500);
+        addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
         // Achievement milestones (#109 Phase 3)
         if (state.injury.injuryCount === 5) {
           addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
@@ -2840,9 +2844,9 @@ async function main(): Promise<void> {
       if (result) addToast(state.ui, result, '#88ccff', 2000);
       return result;
     },
-    // Injury helpers (#109)
+    // Injury helpers (#109, #137)
     getInjury: () => state.injury,
-    rollInjury: () => rollInjury(state.injury),
+    checkHazardInjury: (dmg = 1.0) => checkHazardInjury(state.injury, dmg),
     applyBandaid: () => applyBandaid(state.injury, state.status),
     getWoundCareQuestion,
     // Cosmetic unlock helpers (#66)

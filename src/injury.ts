@@ -1,6 +1,7 @@
 /**
- * injury.ts - Injury event system (#109).
- * Random injuries on obstacle collisions, bandaid recovery with wound-care quizzes.
+ * injury.ts - Deterministic injury event system (#109, #137).
+ * Injuries from explicit hazard collisions (cactus, rock, etc.), NOT random.
+ * Bandaid recovery with wound-care quizzes.
  * Non-punitive: injuries slow movement but never kill.
  * TODO: DOC - injury system API
  */
@@ -29,11 +30,8 @@ export interface WoundCareQuestion {
 
 // ─── Constants ───────────────────────────────────────────────
 
-/** Chance of injury per obstacle collision (0-1). ~8% default. */
-const INJURY_CHANCE = 0.08;
-
 /** Minimum ms between injury events (prevent rapid stacking) */
-const INJURY_COOLDOWN_MS = 5000;
+const INJURY_COOLDOWN_MS = 3000;
 
 /** Speed multiplier when injured (stacks with status debuffs) */
 export const INJURY_SPEED_PENALTY = 0.8;
@@ -93,21 +91,30 @@ export function createInjuryState(): InjuryState {
 // ─── Actions ─────────────────────────────────────────────────
 
 /**
- * Roll for injury on obstacle collision.
- * Returns true if an injury occurred.
+ * Check for deterministic injury from a hazard collision (#137).
+ * Returns true if an injury occurred. Only triggers on hazardous obstacles
+ * (those with hazardDamage > 0 in AssetDef), never randomly.
+ * Respects cooldown to prevent rapid stacking.
  */
-export function rollInjury(injury: InjuryState): boolean {
+export function checkHazardInjury(injury: InjuryState, hazardDamage: number): boolean {
   if (injury.injured) return false; // Already injured
+  if (hazardDamage <= 0) return false; // Not a hazard — no injury possible
   const now = Date.now();
   if (now - injury.lastInjuryAt < INJURY_COOLDOWN_MS) return false;
 
-  if (Math.random() < INJURY_CHANCE) {
-    injury.injured = true;
-    injury.injuryCount++;
-    injury.lastInjuryAt = now;
-    return true;
-  }
-  return false;
+  // Deterministic: any hazard with damage > 0 always injures
+  injury.injured = true;
+  injury.injuryCount++;
+  injury.lastInjuryAt = now;
+  return true;
+}
+
+/**
+ * @deprecated Use checkHazardInjury() for deterministic injuries (#137).
+ * Kept for backward compat with tests/external callers.
+ */
+export function rollInjury(injury: InjuryState): boolean {
+  return checkHazardInjury(injury, 1.0);
 }
 
 /**

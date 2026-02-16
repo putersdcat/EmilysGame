@@ -25,6 +25,10 @@ export interface AssetDef {
   description: string;      // Short tooltip / dev reference
   tileType?: TileType;      // SVG tile type for ground rendering (if available)
   jitter?: number;           // 0-1 sub-cell placement jitter range (fraction of half-tile). 0 = centered. (#82)
+  /** Hazard damage on collision (#137). 0/undefined = safe, >0 = deterministic injury. */
+  hazardDamage?: number;
+  /** Short label for injury feedback messages (#137). */
+  hazardLabel?: string;
 }
 
 // ─── Master Asset Library ────────────────────────────────────
@@ -120,6 +124,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🪨', category: 'obstacle', height: 2, layer: 'mid',
     scale: 0.8, shadow: true, walkable: false, interactable: false,
     description: 'Boulder', tileType: 'rock',
+    hazardDamage: 0.5, hazardLabel: 'a sharp rock',
   },
   wall: {
     emoji: '🧱', category: 'obstacle', height: 5, layer: 'high',
@@ -135,6 +140,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🪵', category: 'obstacle', height: 3, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
     description: 'Wooden barricade (needs crowbar)', tileType: 'wooden_fence',
+    hazardDamage: 0.3, hazardLabel: 'a splintery barricade',
   },
   toll_gate: {
     emoji: '🚧', category: 'obstacle', height: 4, layer: 'mid',
@@ -335,6 +341,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🌵', category: 'plant', height: 4, layer: 'mid',
     scale: 0.8, shadow: true, walkable: false, interactable: false,
     description: 'Prickly cactus (blocks movement)',
+    hazardDamage: 1.0, hazardLabel: 'a prickly cactus',
   },
   seedling: {
     emoji: '🌱', category: 'plant', height: 0, layer: 'base',
