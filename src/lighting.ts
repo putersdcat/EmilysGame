@@ -2,6 +2,7 @@
  * lighting.ts - Day/night cycle and ambient lighting overlay.
  * Applies a color-graded overlay to the entire scene based on game time.
  * Cycles through: dawn → day → dusk → night with smooth interpolation.
+ * Wall-clock based: 12 game daylight hours per 1 real hour (12:1 scale).
  * TODO: DOC - lighting system, color grading, time cycle
  */
 
@@ -9,10 +10,13 @@ import { RENDER_CONFIG } from './config/game.config';
 
 // ─── Config ─────────────────────────────────────────────────
 
-/** Total cycle length in game frames (~60fps). 
- *  7200 frames ≈ 2 minutes per full day at 60fps.
- *  Players see meaningful light changes every ~30s. */
-const CYCLE_LENGTH = 7200;
+/**
+ * Full day/night cycle duration in milliseconds (wall-clock).
+ * Daylight spans ~50% of cycle (PHASES.day=0.15 to PHASES.dusk=0.65).
+ * Target: 12 game daylight hours in 1 real hour → 50% of cycle = 3600s → full cycle = 7200s.
+ * 7200s = 7,200,000ms = 2 real hours per full game day.
+ */
+const CYCLE_DURATION_MS = 7_200_000;
 
 /** Time-of-day phases as fractions of the cycle [0..1] */
 const PHASES = {
@@ -47,8 +51,12 @@ const STOPS: { phase: number; light: LightingStop }[] = [
 
 // ─── State ──────────────────────────────────────────────────
 
-let gameTime = Math.floor(CYCLE_LENGTH * 0.17); // Start at early day (not midnight)
+/** Current cycle position in milliseconds (wall-clock) */
+let gameTimeMs = Math.floor(CYCLE_DURATION_MS * 0.17); // Start at early day
 let enabled = true;
+let lastTickTs = 0; // Last performance.now() for delta calc
+/** Cumulative active playtime in seconds (not counting paused time) */
+let _playedSeconds = 0;
 
 // ─── Interpolation ──────────────────────────────────────────
 
@@ -103,8 +111,8 @@ function getLightingForTime(t: number): LightingStop {
 export function updateAndRenderLighting(ctx: CanvasRenderingContext2D): void {
   if (!enabled) return;
 
-  tickLighting(); // Advance clock
-  const t = gameTime / CYCLE_LENGTH;
+  tickLighting(false); // Advance clock (not paused when rendering)
+  const t = gameTimeMs / CYCLE_DURATION_MS;
   const light = getLightingForTime(t);
 
   if (light.alpha < 0.005) return; // Skip rendering at full daylight
@@ -133,14 +141,21 @@ export function updateAndRenderLighting(ctx: CanvasRenderingContext2D): void {
   ctx.restore();
 }
 
-/** Advance the lighting clock by one frame. Called separately when local-lights handles rendering. */
-export function tickLighting(): void {
-  gameTime = (gameTime + 1) % CYCLE_LENGTH;
+/** Advance the lighting clock using wall-clock delta. Skips when paused. */
+export function tickLighting(paused = false): void {
+  const now = performance.now();
+  if (lastTickTs === 0) { lastTickTs = now; return; } // First frame: baseline only
+  const deltaMs = now - lastTickTs;
+  lastTickTs = now;
+  if (paused) return; // Don't advance clock or playtime
+  if (deltaMs > 500) return; // Skip huge jumps (tab hidden etc.)
+  gameTimeMs = (gameTimeMs + deltaMs) % CYCLE_DURATION_MS;
+  _playedSeconds += deltaMs / 1000;
 }
 
 /** Get current time-of-day name for UI display */
 export function getTimeOfDay(): string {
-  const t = gameTime / CYCLE_LENGTH;
+  const t = gameTimeMs / CYCLE_DURATION_MS;
   if (t < PHASES.morning) return '🌅 Dawn';
   if (t < PHASES.day) return '🌤️ Morning';
   if (t < PHASES.afternoon) return '☀️ Day';
@@ -153,7 +168,7 @@ export function getTimeOfDay(): string {
 
 /** Get cycle progress (0..1) for debug/UI */
 export function getCycleProgress(): number {
-  return gameTime / CYCLE_LENGTH;
+  return gameTimeMs / CYCLE_DURATION_MS;
 }
 
 /** Toggle day/night cycle on/off */
@@ -168,11 +183,21 @@ export function isLightingEnabled(): boolean {
 
 /** Reset cycle to a specific time (0..1) */
 export function setTimeOfDay(t: number): void {
-  gameTime = Math.floor((t % 1.0) * CYCLE_LENGTH);
+  gameTimeMs = Math.floor((t % 1.0) * CYCLE_DURATION_MS);
 }
 
 /** Get the current lighting overlay values for external use (local-lights integration). */
 export function getCurrentLighting(): { r: number; g: number; b: number; alpha: number; brightness: number } {
-  const t = gameTime / CYCLE_LENGTH;
+  const t = gameTimeMs / CYCLE_DURATION_MS;
   return getLightingForTime(t);
+}
+
+/** Get cumulative active playtime in seconds (excludes paused time). */
+export function getPlayedSeconds(): number {
+  return _playedSeconds;
+}
+
+/** Set cumulative playtime (for save restoration). */
+export function setPlayedSeconds(s: number): void {
+  _playedSeconds = s;
 }

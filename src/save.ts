@@ -56,6 +56,8 @@ export interface SaveData {
   ageBand?: string;
   /** Injury state (#109) */
   injuryState?: { injured: boolean; injuryCount: number };
+  /** Cumulative active playtime in seconds (#136) */
+  playedSeconds?: number;
 }
 
 export interface ResolvedCell {

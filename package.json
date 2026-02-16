@@ -4,9 +4,9 @@
   "description": "Procedural LLM-Driven Isometric Adventure Game",
   "type": "module",
   "scripts": {
-    "dev": "npm run build-wasm && vite",
-    "build": "npm run build-wasm && vite build",
-    "build:pages": "npm run build-wasm && vite build --mode pages",
+    "dev": "npm run sync-soundfonts && npm run build-wasm && vite",
+    "build": "npm run sync-soundfonts && npm run build-wasm && vite build",
+    "build:pages": "npm run sync-soundfonts && npm run build-wasm && vite build --mode pages",
     "build-wasm": "cd wasm && npx asc assembly/index.ts --target release && cd .. && node -e \"const fs=require('fs');fs.mkdirSync('public/wasm',{recursive:true});fs.copyFileSync('wasm/build/release.wasm','public/wasm/release.wasm')\"",
     "build-wasm:debug": "cd wasm && npx asc assembly/index.ts --target debug",
     "preview": "vite preview",
@@ -22,10 +22,11 @@
     "test:gameplay": "npx playwright test tests/gameplay/ --reporter=line",
     "test:perf": "npx playwright test tests/perf/ --reporter=line",
     "test:quick": "npx playwright test tests/core/ tests/audio/ --reporter=line",
-    "screenshot": "tsx scripts/capture-screenshot.ts",
+    "screenshot": "npm run sync-soundfonts && tsx scripts/capture-screenshot.ts",
     "convert-midi": "tsx scripts/convert-midi.ts",
     "generate-sfx": "tsx scripts/generate-sfx-samples.ts",
-    "generate:ab-tests": "tsx scripts/generate-asset-ab-tests.ts"
+    "generate:ab-tests": "tsx scripts/generate-asset-ab-tests.ts",
+    "sync-soundfonts": "tsx scripts/sync-soundfonts.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
@@ -37,6 +38,6 @@
   },
   "dependencies": {
     "midi-player-js": "^2.0.16",
-    "soundfont-player": "^0.12.0"
+    "piano-mp3": "^1.0.2"
   }
 }

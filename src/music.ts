@@ -10,7 +10,6 @@
  */
 
 import MidiPlayer from 'midi-player-js';
-import { instrument as loadSfInstrument, type Instrument as SfInstrument } from 'soundfont-player';
 import {
   loadMidiManifest, getLoadedMidiTracks, preloadAllMidiTracks,
   isMidiManifestLoaded, type MidiManifestEntry,
@@ -41,45 +40,30 @@ let _masterGain: GainNode | null = null;
 let _isPlaying = false;
 let _currentTrack: MusicTrack | null = null;
 
-// SoundFont instruments — piano is default, others loaded on demand
-let _piano: SfInstrument | null = null;
-let _pianoLoading: Promise<SfInstrument | null> | null = null;
-const _sfInstruments = new Map<string, SfInstrument>();
-const _sfLoading = new Map<string, Promise<SfInstrument | null>>();
+type PlayedNoteHandle = { stop: () => void };
+type PianoSampler = {
+  play: (note: string, when: number, opts?: { duration?: number; gain?: number }) => PlayedNoteHandle;
+};
+
+// Local bundled piano sampler
+let _piano: PianoSampler | null = null;
+let _pianoLoading: Promise<PianoSampler | null> | null = null;
+const _pianoBuffers = new Map<string, AudioBuffer>();
 
 // midi-player-js instance for .mid file playback
 let _midiPlayer: InstanceType<typeof MidiPlayer.Player> | null = null;
-// Active SoundFont notes for MIDI note-off tracking
-const _activeNotes = new Map<string, ReturnType<SfInstrument['play']>>();
+// Active note handles for MIDI note-off tracking
+const _activeNotes = new Map<string, PlayedNoteHandle>();
 
 // Fallback note-sequence playback (for oscillator-format tracks played through piano)
 let _noteTimer: ReturnType<typeof setTimeout> | null = null;
 let _melodyIndex = 0;
 let _bassIndex = 0;
 
-// GM instrument names for Program Change events
-const GM_INSTRUMENTS: Record<number, string> = {
-  0: 'acoustic_grand_piano', 1: 'bright_acoustic_piano', 2: 'electric_grand_piano',
-  3: 'honkytonk_piano', 4: 'electric_piano_1', 5: 'electric_piano_2',
-  6: 'harpsichord', 7: 'clavinet',
-  8: 'celesta', 9: 'glockenspiel', 10: 'music_box',
-  11: 'vibraphone', 12: 'marimba', 13: 'xylophone',
-  24: 'acoustic_guitar_nylon', 25: 'acoustic_guitar_steel',
-  26: 'electric_guitar_jazz', 27: 'electric_guitar_clean',
-  32: 'acoustic_bass', 33: 'electric_bass_finger', 34: 'electric_bass_pick',
-  40: 'violin', 41: 'viola', 42: 'cello', 43: 'contrabass',
-  44: 'tremolo_strings', 45: 'pizzicato_strings',
-  46: 'orchestral_harp', 47: 'timpani',
-  48: 'string_ensemble_1', 49: 'string_ensemble_2',
-  56: 'trumpet', 57: 'trombone', 58: 'tuba',
-  60: 'french_horn',
-  64: 'soprano_sax', 65: 'alto_sax', 66: 'tenor_sax',
-  68: 'oboe', 69: 'english_horn', 70: 'bassoon',
-  71: 'clarinet', 72: 'piccolo', 73: 'flute',
-};
-
-// Channel → instrument name mapping (updated by Program Change events)
-const _channelInstruments = new Map<number, string>();
+const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
+const PIANO_SAMPLE_BASE = './audio/piano-mp3';
+const MIN_MIDI_PIANO = 21; // A0
+const MAX_MIDI_PIANO = 108; // C8
 
 // ─── AudioContext Management ────────────────────────────────
 
@@ -97,10 +81,62 @@ function ensureAudioContext(): AudioContext | null {
   }
 }
 
-// ─── SoundFont Loading ──────────────────────────────────────
+// ─── Local Piano Sample Loading ─────────────────────────────
 
-/** Load the default piano SoundFont instrument */
-async function loadPiano(): Promise<SfInstrument | null> {
+function midiToNoteName(midiNote: number): string {
+  const clamped = Math.max(MIN_MIDI_PIANO, Math.min(MAX_MIDI_PIANO, Math.trunc(midiNote)));
+  const octave = Math.floor(clamped / 12) - 1;
+  const note = NOTE_NAMES[clamped % 12];
+  return `${note}${octave}`;
+}
+
+async function fetchAndDecodeSample(ctx: AudioContext, noteName: string): Promise<void> {
+  if (_pianoBuffers.has(noteName)) return;
+  const resp = await fetch(`${PIANO_SAMPLE_BASE}/${noteName}.mp3`);
+  if (!resp.ok) {
+    throw new Error(`Sample missing: ${noteName}.mp3 (${resp.status})`);
+  }
+  const arr = await resp.arrayBuffer();
+  const buf = await ctx.decodeAudioData(arr.slice(0));
+  _pianoBuffers.set(noteName, buf);
+}
+
+function createPianoSampler(ctx: AudioContext): PianoSampler {
+  return {
+    play(note: string, when: number, opts?: { duration?: number; gain?: number }): PlayedNoteHandle {
+      const buffer = _pianoBuffers.get(note);
+      if (!buffer || !_masterGain) {
+        return { stop: () => void 0 };
+      }
+
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      const gainNode = ctx.createGain();
+      gainNode.gain.value = Math.max(0, Math.min(1, opts?.gain ?? 0.7));
+      src.connect(gainNode);
+      gainNode.connect(_masterGain);
+
+      const startAt = Math.max(ctx.currentTime, when);
+      src.start(startAt);
+
+      const duration = opts?.duration;
+      if (duration && duration > 0) {
+        const stopAt = startAt + duration;
+        try { src.stop(stopAt); } catch { /* no-op */ }
+      }
+
+      return {
+        stop: () => {
+          try { src.stop(); } catch { /* no-op */ }
+          try { src.disconnect(); } catch { /* no-op */ }
+        },
+      };
+    },
+  };
+}
+
+/** Load the bundled local piano sample set */
+async function loadPiano(): Promise<PianoSampler | null> {
   if (_piano) return _piano;
   if (_pianoLoading) return _pianoLoading;
 
@@ -109,61 +145,24 @@ async function loadPiano(): Promise<SfInstrument | null> {
 
   _pianoLoading = (async () => {
     try {
-      const inst = await loadSfInstrument(ctx, 'acoustic_grand_piano', {
-        destination: _masterGain!,
-        soundfont: 'MusyngKite',
-        format: 'mp3',
-      });
-      _piano = inst;
-      _sfInstruments.set('acoustic_grand_piano', inst);
-      console.log('[Music] SoundFont piano loaded');
-      return inst;
+      const loadPromises: Promise<void>[] = [];
+      for (let midi = MIN_MIDI_PIANO; midi <= MAX_MIDI_PIANO; midi++) {
+        loadPromises.push(fetchAndDecodeSample(ctx, midiToNoteName(midi)).catch((e) => {
+          console.warn('[Music] Piano sample load warning:', e);
+        }));
+      }
+      await Promise.all(loadPromises);
+
+      _piano = createPianoSampler(ctx);
+      console.log(`[Music] Local piano samples loaded: ${_pianoBuffers.size}`);
+      return _piano;
     } catch (e) {
-      console.warn('[Music] SoundFont piano load failed:', e);
+      console.warn('[Music] Local piano sample load failed:', e);
       return null;
     }
   })();
 
   return _pianoLoading;
-}
-
-/** Load a named SoundFont instrument (for MIDI multi-instrument playback) */
-async function loadInstrument(name: string): Promise<SfInstrument | null> {
-  const existing = _sfInstruments.get(name);
-  if (existing) return existing;
-
-  const loading = _sfLoading.get(name);
-  if (loading) return loading;
-
-  const ctx = ensureAudioContext();
-  if (!ctx || !_masterGain) return null;
-
-  const promise = (async () => {
-    try {
-      const inst = await loadSfInstrument(ctx, name, {
-        destination: _masterGain!,
-        soundfont: 'MusyngKite',
-        format: 'mp3',
-      });
-      _sfInstruments.set(name, inst);
-      console.log(`[Music] SoundFont loaded: ${name}`);
-      return inst;
-    } catch (e) {
-      console.warn(`[Music] SoundFont load failed (${name}):`, e);
-      return null;
-    } finally {
-      _sfLoading.delete(name);
-    }
-  })();
-
-  _sfLoading.set(name, promise);
-  return promise;
-}
-
-/** Get the instrument for a MIDI channel (falls back to piano) */
-function getChannelInstrument(channel: number): SfInstrument | null {
-  const name = _channelInstruments.get(channel) ?? 'acoustic_grand_piano';
-  return _sfInstruments.get(name) ?? _piano;
 }
 
 // ─── State Factory ──────────────────────────────────────────
@@ -253,11 +252,11 @@ function handleMidiEvent(event: MidiPlayer.Event, _state: MusicState): void {
     // Channel 10 (9 in 0-indexed) is percussion — skip for now
     if (channel === 10) return;
 
-    const instrument = getChannelInstrument(channel);
-    if (instrument) {
+    if (_piano) {
       const gain = (event.velocity! / 127) * 0.8;
       try {
-        const node = instrument.play(noteNum.toString(), _ctx.currentTime, { gain });
+        const noteName = midiToNoteName(noteNum);
+        const node = _piano.play(noteName, _ctx.currentTime, { gain });
         _activeNotes.set(key, node);
       } catch { /* instrument may not have this note */ }
     }
@@ -273,13 +272,6 @@ function handleMidiEvent(event: MidiPlayer.Event, _state: MusicState): void {
       try { node.stop(); } catch { /* ok */ }
       _activeNotes.delete(key);
     }
-  } else if (event.name === 'Program Change') {
-    const channel = event.channel ?? 0;
-    const program = event.value ?? 0;
-    const instrumentName = GM_INSTRUMENTS[program] ?? 'acoustic_grand_piano';
-    _channelInstruments.set(channel, instrumentName);
-    // Lazy-load the instrument (non-blocking)
-    loadInstrument(instrumentName);
   }
 }
 
@@ -335,7 +327,6 @@ function stopMidiPlayer(): void {
     _midiPlayer = null;
   }
   stopAllNotes();
-  _channelInstruments.clear();
 }
 
 /** Stop all currently sounding SoundFont notes */
