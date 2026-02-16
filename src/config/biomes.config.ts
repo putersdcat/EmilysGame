@@ -36,7 +36,7 @@ export const BIOME_DEFS: BiomeDef[] = [
       tulip: 0.03, clover: 0.03, wheat: 0.04, sunflower: 0.02,
       chicken: 0.04, sheep: 0.03, cow: 0.02, pig: 0.02, duck: 0.02, rabbit: 0.02, dog: 0.01,
     },
-    obstacleWeights: { rock: 0.15, bush: 0.25, tree: 0.12, tree_pine: 0.12, tree_palm: 0.12, fence: 0.06, house: 0.06, hut: 0.04, campfire: 0.04, shop: 0.03, shop_general: 0.02, shop_snack: 0.02 },
+    obstacleWeights: { rock: 0.15, bush: 0.25, tree: 0.12, tree_pine: 0.12, tree_palm: 0.12, fence: 0.06, house: 0.06, hut: 0.04, campfire: 0.04, shop: 0.04, shop_general: 0.03, shop_snack: 0.03 },
     featureWeights: { chest: 0.15, sign: 0.1, npc_villager: 0.15, coin: 0.6 },
     collectibleRate: 1.0,
     npcRate: 1.0,

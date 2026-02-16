@@ -544,6 +544,41 @@
       text-align: center; margin-top: 8px;
     }
 
+    /* Barter Quiz overlay (#112 Phase 3) */
+    #barterQuizOverlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none; align-items: center; justify-content: center;
+      z-index: 20; pointer-events: auto;
+    }
+    .barter-modal {
+      background: rgba(30,25,50,0.97);
+      border: 2px solid #ffd700; border-radius: 12px;
+      padding: 20px 24px; min-width: 300px; max-width: 400px;
+      text-align: center;
+      box-shadow: 0 0 25px rgba(255,215,0,0.3);
+    }
+    .barter-modal h3 {
+      color: #ffd700; font: bold 18px monospace; margin: 0 0 12px 0;
+    }
+    .barter-question {
+      color: #e0e0e0; font: 14px monospace; margin-bottom: 14px; line-height: 1.4;
+    }
+    .barter-options { display: flex; flex-direction: column; gap: 6px; }
+    .barter-option {
+      background: rgba(80,70,120,0.5); color: #ccc; font: 13px monospace;
+      border: 1px solid #555; border-radius: 6px; padding: 8px 12px;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s;
+      text-align: left;
+    }
+    .barter-option:hover { background: rgba(100,90,150,0.6); }
+    .barter-option.selected {
+      background: rgba(255,215,0,0.15); border-color: #ffd700; color: #fff;
+    }
+    .barter-hint {
+      color: #888; font: 11px monospace; margin-top: 10px;
+    }
+
     /* Quiz overlay (centered modal) */
     #quizOverlay {
       position: absolute; inset: 0;
@@ -1464,6 +1499,9 @@
           <div id="tradeHint"></div>
         </div>
       </div>
+
+      <!-- Barter Quiz overlay (#112 Phase 3) -->
+      <div id="barterQuizOverlay" style="display:none;"></div>
 
       <!-- Quiz modal -->
       <div id="quizOverlay">

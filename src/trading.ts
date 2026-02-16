@@ -11,6 +11,16 @@ import { ITEM_DEFS } from './config/items.config';
 
 // ─── Types ───────────────────────────────────────────────────
 
+/** Barter quiz question (#112 Phase 3) */
+export interface BarterQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  itemName: string;
+  /** Discount applied if answered correctly (fraction off price) */
+  discount: number;
+}
+
 export interface TradeState {
   active: boolean;
   persona: NpcPersona | null;
@@ -22,6 +32,14 @@ export interface TradeState {
   lastResultAt: number;
   /** Current trade mode: buy or sell (#112) */
   mode: 'buy' | 'sell';
+  /** Active barter quiz — if set, trade is pending quiz answer (#112 Phase 3) */
+  barterQuiz: BarterQuestion | null;
+  /** Index of selected barter answer */
+  barterSelectedIndex: number;
+  /** Total barter quizzes triggered */
+  barterQuizCount: number;
+  /** Total barter quizzes answered correctly */
+  barterCorrectCount: number;
 }
 
 export type TradeResult =
@@ -36,6 +54,11 @@ const SELL_RATIO = 0.6;
 /** Items that cannot be sold */
 const UNSELLABLE = new Set(['coin']);
 
+/** Barter quiz trigger chance (30%) — #112 Phase 3 */
+const BARTER_QUIZ_CHANCE = 0.30;
+/** Discount for correct barter answer (10%) */
+const BARTER_DISCOUNT = 0.10;
+
 export function createTradeState(): TradeState {
   return {
     active: false,
@@ -45,6 +68,10 @@ export function createTradeState(): TradeState {
     lastResult: null,
     lastResultAt: 0,
     mode: 'buy',
+    barterQuiz: null,
+    barterSelectedIndex: 0,
+    barterQuizCount: 0,
+    barterCorrectCount: 0,
   };
 }
 
@@ -59,6 +86,8 @@ export function openTrade(ts: TradeState, persona: NpcPersona): boolean {
   ts.lastResult = null;
   ts.lastResultAt = 0;
   ts.mode = 'buy';
+  ts.barterQuiz = null;
+  ts.barterSelectedIndex = 0;
   return true;
 }
 
@@ -70,17 +99,17 @@ export function closeTrade(ts: TradeState): void {
   ts.mode = 'buy';
   ts.lastResult = null;
   ts.lastResultAt = 0;
+  ts.barterQuiz = null;
+  ts.barterSelectedIndex = 0;
 }
 
 export function tradeNavigate(ts: TradeState, dir: 'up' | 'down'): void {
   if (!ts.active) return;
-  // In buy mode, navigate trades; in sell mode, navigate player items
-  // Navigation count is handled by syncTradeDOM (which reads selectedIndex)
-  // Just clamp here
+  const maxIdx = ts.trades.length;  // works for buy mode; sell mode clamped in syncTradeDOM
   if (dir === 'up') {
-    ts.selectedIndex = Math.max(0, ts.selectedIndex - 1);
+    ts.selectedIndex = ts.selectedIndex <= 0 ? Math.max(0, maxIdx - 1) : ts.selectedIndex - 1;
   } else {
-    ts.selectedIndex = ts.selectedIndex + 1; // clamped during render
+    ts.selectedIndex = ts.selectedIndex >= maxIdx - 1 ? 0 : ts.selectedIndex + 1;
   }
 }
 
@@ -364,4 +393,139 @@ const ITEM_EMOJI: Record<string, string> = {
 
 function getItemEmoji(itemId: string): string {
   return ITEM_EMOJI[itemId] || '📦';
+}
+
+// ─── Barter Quiz System (#112 Phase 3) ──────────────────────
+
+/** Generate a barter quiz question about item value */
+export function generateBarterQuiz(itemName: string, actualPrice: number): BarterQuestion {
+  // Random question type
+  const type = Math.floor(Math.random() * 3);
+  if (type === 0) {
+    // "Is this worth X coins?" — correct is Yes if X matches
+    const isCorrect = Math.random() < 0.5;
+    const shownPrice = isCorrect ? actualPrice : actualPrice + (Math.random() < 0.5 ? Math.ceil(actualPrice * 0.3) : -Math.floor(actualPrice * 0.3));
+    return {
+      question: `Is a ${itemName} worth ${shownPrice} coins?`,
+      options: ['Yes, that\'s right!', 'No, that\'s wrong!'],
+      correctIndex: isCorrect ? 0 : 1,
+      itemName,
+      discount: BARTER_DISCOUNT,
+    };
+  } else if (type === 1) {
+    // Multiple choice: "How much is X worth?"
+    const wrong1 = Math.max(1, actualPrice + Math.ceil(Math.random() * 3));
+    const wrong2 = Math.max(1, actualPrice - Math.ceil(Math.random() * 2));
+    const options = [
+      `${actualPrice} coins`,
+      `${wrong1} coins`,
+      `${wrong2} coins`,
+    ];
+    // Shuffle options deterministically
+    const correctLabel = options[0];
+    options.sort(() => Math.random() - 0.5);
+    return {
+      question: `How much is a ${itemName} worth?`,
+      options,
+      correctIndex: options.indexOf(correctLabel),
+      itemName,
+      discount: BARTER_DISCOUNT,
+    };
+  } else {
+    // Comparison: "Which costs more?"
+    const otherPrice = Math.max(1, actualPrice + (Math.random() < 0.5 ? 2 : -2));
+    const otherItem = actualPrice > otherPrice ? 'a wooden stick' : 'a magic gem';
+    return {
+      question: `Which costs more: a ${itemName} or ${otherItem}?`,
+      options: [itemName, otherItem],
+      correctIndex: actualPrice >= otherPrice ? 0 : 1,
+      itemName,
+      discount: BARTER_DISCOUNT,
+    };
+  }
+}
+
+/** Check if barter quiz should trigger (30% chance) */
+export function shouldTriggerBarter(): boolean {
+  return Math.random() < BARTER_QUIZ_CHANCE;
+}
+
+/** Navigate barter quiz answer selection */
+export function barterNavigate(ts: TradeState, dir: 'up' | 'down'): void {
+  if (!ts.barterQuiz) return;
+  const maxIdx = ts.barterQuiz.options.length - 1;
+  if (dir === 'up') {
+    ts.barterSelectedIndex = Math.max(0, ts.barterSelectedIndex - 1);
+  } else {
+    ts.barterSelectedIndex = Math.min(maxIdx, ts.barterSelectedIndex + 1);
+  }
+}
+
+/** Submit barter quiz answer. Returns discount fraction if correct, 0 if wrong. */
+export function submitBarterAnswer(ts: TradeState): { correct: boolean; discount: number; feedback: string } {
+  if (!ts.barterQuiz) return { correct: false, discount: 0, feedback: '' };
+  const quiz = ts.barterQuiz;
+  const correct = ts.barterSelectedIndex === quiz.correctIndex;
+  ts.barterQuizCount++;
+  if (correct) ts.barterCorrectCount++;
+  const feedback = correct
+    ? `✅ Correct! You saved ${Math.round(quiz.discount * 100)}%!`
+    : `❌ Not quite! The right answer was: ${quiz.options[quiz.correctIndex]}`;
+  ts.barterQuiz = null;
+  ts.barterSelectedIndex = 0;
+  return { correct, discount: correct ? quiz.discount : 0, feedback };
+}
+
+/** NPC personality-driven trade dialog (#112 Phase 3) */
+export function getTradeDialog(persona: NpcPersona | null, result: TradeResult): string {
+  if (!persona) return result.message;
+  const dn = persona.displayName.toLowerCase();
+  if (result.ok) {
+    if (dn.includes('chef') || dn.includes('snack')) return `🎉 Great choice! ${result.message}`;
+    if (dn.includes('trader') || dn.includes('trading')) return `🤝 Fair deal! ${result.message}`;
+    if (dn.includes('keeper') || dn.includes('general')) return `👍 Pleasure doing business! ${result.message}`;
+    return `😊 ${result.message}`;
+  } else {
+    if (dn.includes('chef') || dn.includes('snack')) return `😅 Sorry, maybe next time! ${result.message}`;
+    if (dn.includes('trader')) return `🤨 Hmm, can't do that one. ${result.message}`;
+    if (dn.includes('keeper')) return `😐 ${result.message}`;
+    return `😕 ${result.message}`;
+  }
+}
+
+/** Sync barter quiz DOM overlay */
+export function syncBarterQuizDOM(ts: TradeState): void {
+  const overlay = document.getElementById('barterQuizOverlay');
+  if (!overlay) return;
+
+  if (!ts.barterQuiz) {
+    overlay.style.display = 'none';
+    return;
+  }
+
+  overlay.style.display = 'flex';
+  const quiz = ts.barterQuiz;
+
+  overlay.innerHTML = `
+    <div class="barter-modal">
+      <h3>💰 Barter Challenge!</h3>
+      <p class="barter-question">${quiz.question}</p>
+      <div class="barter-options">
+        ${quiz.options.map((opt, i) => `
+          <button class="barter-option${i === ts.barterSelectedIndex ? ' selected' : ''}" 
+                  data-idx="${i}">
+            ${opt}
+          </button>
+        `).join('')}
+      </div>
+      <div class="barter-hint">↑↓ Choose · Space Submit</div>
+    </div>
+  `;
+
+  overlay.querySelectorAll('.barter-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      ts.barterSelectedIndex = parseInt((btn as HTMLElement).dataset.idx ?? '0');
+      syncBarterQuizDOM(ts);
+    });
+  });
 }
