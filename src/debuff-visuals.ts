@@ -3,6 +3,7 @@
  * - Blur overlay when dehydrated (CSS backdrop-filter)
  * - Fly particles when dirty (canvas-rendered, orbit player)
  * - Injury screen flash (red overlay, fades out) (#109 Phase 3)
+ * - Diarrhea green illness overlay + poop particle burst (#133)
  * TODO: DOC - debuff visual effects
  */
 
@@ -182,11 +183,150 @@ export function getDebuffVisualsState(): {
   flyCount: number;
   flyTargetCount: number;
   injuryFlashAlpha: number;
+  diarrheaOverlayActive: boolean;
+  poopParticleCount: number;
 } {
   return {
     blurStrength: currentBlurStrength,
     flyCount: flies.length,
     flyTargetCount,
     injuryFlashAlpha,
+    diarrheaOverlayActive: _diarrheaOverlayActive,
+    poopParticleCount: _poopParticles.length,
   };
+}
+
+// ─── Diarrhea Illness Overlay (#133) ─────────────────────────
+
+let _diarrheaOverlayEl: HTMLElement | null = null;
+let _diarrheaOverlayActive = false;
+let _diarrheaTargetAlpha = 0;
+let _diarrheaCurrentAlpha = 0;
+
+/** Show or hide the diarrhea green illness overlay. */
+export function setDiarrheaOverlay(active: boolean): void {
+  _diarrheaOverlayActive = active;
+  _diarrheaTargetAlpha = active ? 0.18 : 0;
+}
+
+/** Update diarrhea overlay — call every frame. Smooth in/out. */
+export function updateDiarrheaOverlay(): void {
+  if (!_diarrheaOverlayEl) {
+    _diarrheaOverlayEl = document.getElementById('diarrheaOverlay');
+    if (!_diarrheaOverlayEl) return;
+  }
+  _diarrheaCurrentAlpha += (_diarrheaTargetAlpha - _diarrheaCurrentAlpha) * 0.08;
+  if (_diarrheaCurrentAlpha < 0.005) {
+    _diarrheaOverlayEl.style.display = 'none';
+    _diarrheaCurrentAlpha = 0;
+    return;
+  }
+  _diarrheaOverlayEl.style.display = 'block';
+  // Pulsing green tint for nausea feel
+  const pulse = 0.85 + Math.sin(Date.now() * 0.004) * 0.15;
+  const alpha = _diarrheaCurrentAlpha * pulse;
+  _diarrheaOverlayEl.style.background = `rgba(60, 120, 30, ${alpha.toFixed(3)})`;
+}
+
+// ─── Poop Particle Burst (#133) ────────────────────────────
+
+interface PoopParticle {
+  sx: number; sy: number;   // Screen position
+  vx: number; vy: number;   // Velocity
+  life: number;
+  maxLife: number;
+  size: number;
+  emoji: boolean;  // true = 💩 emoji, false = brown dot
+}
+
+const _poopParticles: PoopParticle[] = [];
+const POOP_EMOJIS = ['\u{1F4A9}'];
+const POOP_DOT_COLORS = ['#8B4513', '#6B3410', '#A0522D', '#5C3317', '#4E2A0E'];
+
+/** Spawn a burst of poop particles at the given screen position. */
+export function spawnPoopBurst(screenX: number, screenY: number, count: number = 18): void {
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    const speed = 1.5 + Math.random() * 3;
+    const isEmoji = i % 4 === 0; // ~25% emoji, 75% dots
+    _poopParticles.push({
+      sx: screenX + (Math.random() - 0.5) * 10,
+      sy: screenY + (Math.random() - 0.5) * 10,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1.5, // slight upward bias
+      life: 50 + Math.random() * 40,
+      maxLife: 90,
+      size: isEmoji ? (10 + Math.random() * 6) : (3 + Math.random() * 4),
+      emoji: isEmoji,
+    });
+  }
+}
+
+/** Update and render poop particles. Call every frame after main render. */
+export function updateAndRenderPoopParticles(ctx: CanvasRenderingContext2D): void {
+  if (_poopParticles.length === 0) return;
+  ctx.save();
+  let w = 0;
+  for (let i = 0; i < _poopParticles.length; i++) {
+    const p = _poopParticles[i];
+    p.life--;
+    p.sx += p.vx;
+    p.sy += p.vy;
+    p.vy += 0.08; // gravity
+    p.vx *= 0.97;  // drag
+
+    if (p.life <= 0) continue;
+    _poopParticles[w++] = p;
+
+    const alpha = Math.min(1, p.life / (p.maxLife * 0.3));
+    ctx.globalAlpha = alpha * 0.9;
+
+    if (p.emoji) {
+      ctx.font = `${Math.round(p.size)}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(POOP_EMOJIS[0], p.sx, p.sy);
+    } else {
+      ctx.fillStyle = POOP_DOT_COLORS[Math.floor(Math.random() * POOP_DOT_COLORS.length)];
+      ctx.beginPath();
+      ctx.arc(p.sx, p.sy, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+  _poopParticles.length = w;
+  ctx.restore();
+}
+
+// ─── Poop Marker Rendering (#133) ─────────────────────────
+
+/**
+ * Render poop markers (💩) in world space. Call during the render pass.
+ * Markers fade out over their last 300 frames (~5s).
+ */
+export function renderPoopMarkers(
+  ctx: CanvasRenderingContext2D,
+  markers: { x: number; y: number; placedAt: number }[],
+  frameCount: number,
+  markerDuration: number,
+  gridToScreen: (gx: number, gy: number) => { x: number; y: number },
+): void {
+  if (markers.length === 0) return;
+  ctx.save();
+  ctx.font = '22px serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (let i = markers.length - 1; i >= 0; i--) {
+    const m = markers[i];
+    const age = frameCount - m.placedAt;
+    if (age >= markerDuration) {
+      markers.splice(i, 1);
+      continue;
+    }
+    const fadeStart = markerDuration - 300; // Start fading 5s before expiry
+    const alpha = age > fadeStart ? 1 - (age - fadeStart) / 300 : 1;
+    const { x: sx, y: sy } = gridToScreen(m.x, m.y);
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.fillText('\u{1F4A9}', sx, sy);
+  }
+  ctx.restore();
 }

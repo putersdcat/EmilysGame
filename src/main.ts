@@ -84,6 +84,8 @@ import {
 import {
   initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
   triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
+  setDiarrheaOverlay, updateDiarrheaOverlay,
+  spawnPoopBurst, updateAndRenderPoopParticles, renderPoopMarkers,
 } from './debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
@@ -202,10 +204,31 @@ interface GameState {
   expressionOverride: { expr: import('./sprites').Expression; until: number } | null;
   // Base default expression to revert to after transient override (#102)
   _baseExpression: import('./sprites').Expression;
+  // Diarrhea illness chain (#133)
+  streamDrinkCount: number;
+  diarrheaUntil: number;       // frameCount when speed-debuff ends (0 = inactive)
+  diarrheaLocked: boolean;     // true = control locked during acute event
+  diarrheaLockUntil: number;   // frameCount when lock ends
+  diarrheaLastTrigger: number; // frameCount of last trigger (cooldown)
+  poopMarkers: { x: number; y: number; placedAt: number }[];
 }
 
 // Track NPC id for voice lines during dialog (#76)
 let _lastDialogNpcId: string | null = null;
+
+// ─── Diarrhea Illness Config (#133) ─────────────────────────
+
+const DIARRHEA_CONFIG = {
+  DRINK_THRESHOLD: 3,         // Min drinks before risk starts
+  BASE_CHANCE: 0.20,          // 20% per drink after threshold
+  GUARANTEED_AT: 6,           // 100% chance at this many drinks
+  LOCK_DURATION_FRAMES: 1500, // ~25s at 60fps: player can't move
+  DEBUFF_DURATION_FRAMES: 1800, // ~30s speed debuff after lock ends
+  SPEED_DEBUFF: 0.7,          // Speed multiplier during non-locked diarrhea
+  COOLDOWN_FRAMES: 3600,      // 60s cooldown between events
+  MARKER_DURATION_FRAMES: 3600, // 60s poop marker persistence
+  PARTICLE_COUNT: 18,         // Poop VFX particle count
+} as const;
 
 // ─── Transient Expression System (#102) ─────────────────────
 
@@ -733,6 +756,13 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     ageProfile: createAgeProfile(),
     expressionOverride: null,
     _baseExpression: playerVariation.expression ?? 'happy',
+    // Diarrhea illness chain (#133)
+    streamDrinkCount: 0,
+    diarrheaUntil: 0,
+    diarrheaLocked: false,
+    diarrheaLockUntil: 0,
+    diarrheaLastTrigger: 0,
+    poopMarkers: [],
   };
 
   // Sync unlocked cosmetics to customizer
@@ -1123,15 +1153,30 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
+  // --- Diarrhea control lock check (#133) ---
+  if (state.diarrheaLocked) {
+    if (state.frameCount >= state.diarrheaLockUntil) {
+      // Lock expired — recover
+      state.diarrheaLocked = false;
+      setDiarrheaOverlay(false);
+      addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
+      playSfx(state.sfx, 'pickup_item'); // relief SFX
+    } else {
+      // Still locked — skip all movement and interaction, just render
+      input.endFrame();
+      return;
+    }
+  }
+
   // --- Movement ---
   const mv = input.getMovementVector();
   const isMoving = mv.dx !== 0 || mv.dy !== 0;
 
   if (isMoving) {
-    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110)
+    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = ((state as any)._diarrheaUntil ?? 0) > state.frameCount ? 0.7 : 1.0;
+    const diarrheaMult = state.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
     const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
     const newX = state.player.x + mv.dx * effectiveSpeed;
     const newY = state.player.y + mv.dy * effectiveSpeed;
@@ -1473,22 +1518,48 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       break;
     }
 
-    // --- Stream drinking (#110 Phase 3) ---
+    // --- Stream drinking (#110 Phase 3, #133 illness chain) ---
     case 'stream_drink': {
       playSfx(state.sfx, 'stream_drink');
       const hydrationGain = 20;
       state.status.hydration = Math.min(100, state.status.hydration + hydrationGain);
 
-      // Track stream drink count for diarrhea risk
-      const drinkCount = ((state as any)._streamDrinkCount ?? 0) + 1;
-      (state as any)._streamDrinkCount = drinkCount;
+      // Track stream drink count for diarrhea risk (#133)
+      state.streamDrinkCount++;
+      const drinkCount = state.streamDrinkCount;
 
-      // 20% diarrhea chance after 3+ stream drinks
-      if (drinkCount >= 3 && Math.random() < 0.2) {
-        (state as any)._diarrheaUntil = state.frameCount + 1800; // ~30 seconds at 60fps
-        addToast(state.ui, '🤢 Eww! Stomach rumbling... shouldn\'t have drunk so much!', '#ff8844', 3500);
+      // Diarrhea roll: 20% after threshold, guaranteed at 6+ drinks, with cooldown
+      const pastThreshold = drinkCount >= DIARRHEA_CONFIG.DRINK_THRESHOLD;
+      const offCooldown = (state.frameCount - state.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
+      const chance = drinkCount >= DIARRHEA_CONFIG.GUARANTEED_AT
+        ? 1.0
+        : DIARRHEA_CONFIG.BASE_CHANCE;
+
+      if (pastThreshold && offCooldown && Math.random() < chance) {
+        // --- Trigger diarrhea illness event (#133) ---
+        state.diarrheaLocked = true;
+        state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
+        state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
+        state.diarrheaLastTrigger = state.frameCount;
+
+        // Spawn poop marker at current position
+        state.poopMarkers.push({
+          x: Math.round(state.player.x),
+          y: Math.round(state.player.y),
+          placedAt: state.frameCount,
+        });
+
+        // Poop particle burst VFX (uses screen coords — resolved in render)
+        _pendingPoopBurst = true;
+
+        // Green illness overlay
+        setDiarrheaOverlay(true);
+
+        // SFX + UI feedback
         playSfx(state.sfx, 'diarrhea_gurgle');
+        addToast(state.ui, '🤢 Oh no! Stomach emergency... can\'t move!', '#ff4444', 4000);
         triggerHint('stream_eww');
+        setTransientExpression(state, 'surprised', 5000);
       } else {
         addToast(state.ui, `💧 Refreshing stream water! +${hydrationGain} hydration`, '#4fc3f7', 2500);
       }
@@ -1971,6 +2042,14 @@ function resetGameState(state: GameState): void {
   resetTickCounter();
   state.unlockedCosmetics = [];
   setUnlockedCosmetics([]);
+  // Reset diarrhea illness chain (#133)
+  state.streamDrinkCount = 0;
+  state.diarrheaUntil = 0;
+  state.diarrheaLocked = false;
+  state.diarrheaLockUntil = 0;
+  state.diarrheaLastTrigger = 0;
+  state.poopMarkers.length = 0;
+  setDiarrheaOverlay(false);
   // Keep music settings across new game — just stop playback
   musicStop(state.music);
   // Keep SFX settings across new game — just stop ambience
@@ -2440,6 +2519,9 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
 
 // ─── Render ──────────────────────────────────────────────────
 
+// Deferred poop burst — set in tick, resolved in render with screen coords (#133)
+let _pendingPoopBurst = false;
+
 function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
@@ -2475,8 +2557,26 @@ function renderFrame(
   updateFlies(state.status);
   updateBlurOverlay(state.status);
   updateInjuryFlash(); // (#109 Phase 3) injury red flash
+  updateDiarrheaOverlay(); // (#133) green illness overlay
   const playerScreenDbf = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
   renderFlies(renderer.getCtx(), playerScreenDbf.x, playerScreenDbf.y);
+
+  // Poop markers in world space (#133)
+  const cam = state.camera;
+  renderPoopMarkers(
+    renderer.getCtx(),
+    state.poopMarkers,
+    state.frameCount,
+    DIARRHEA_CONFIG.MARKER_DURATION_FRAMES,
+    (gx: number, gy: number) => renderer.gridToScreen(gx, gy, cam),
+  );
+
+  // Poop particle burst (#133): resolve deferred burst with screen coords
+  if (_pendingPoopBurst) {
+    _pendingPoopBurst = false;
+    spawnPoopBurst(playerScreenDbf.x, playerScreenDbf.y, DIARRHEA_CONFIG.PARTICLE_COUNT);
+  }
+  updateAndRenderPoopParticles(renderer.getCtx());
 
   // Fog-of-war overlay: darken unexplored areas (#114)
   renderFog(renderer.getCtx(), state.camera);
@@ -2984,11 +3084,33 @@ async function main(): Promise<void> {
     // Outhouse/hygiene debug (#110)
     startHygieneQuiz: () => _startHygieneQuiz(state),
     getHygieneQuizActive: () => (state as any)._hygieneQuiz === true,
-    // Stream/worm debug (#110 Phase 3)
+    // Stream/worm debug (#110 Phase 3, #133 illness chain)
     getInsectQuestions: () => INSECT_QUESTIONS,
     startInsectQuiz: () => _startInsectQuiz(state),
-    getStreamDrinkCount: () => (state as any)._streamDrinkCount ?? 0,
-    getDiarrheaActive: () => ((state as any)._diarrheaUntil ?? 0) > state.frameCount,
+    getStreamDrinkCount: () => state.streamDrinkCount,
+    getDiarrheaActive: () => state.diarrheaUntil > state.frameCount,
+    getDiarrheaLocked: () => state.diarrheaLocked,
+    getDiarrheaState: () => ({
+      streamDrinkCount: state.streamDrinkCount,
+      diarrheaUntil: state.diarrheaUntil,
+      diarrheaLocked: state.diarrheaLocked,
+      diarrheaLockUntil: state.diarrheaLockUntil,
+      diarrheaLastTrigger: state.diarrheaLastTrigger,
+      poopMarkerCount: state.poopMarkers.length,
+      frameCount: state.frameCount,
+    }),
+    // Force-trigger diarrhea event for testing (#133)
+    triggerDiarrhea: () => {
+      state.diarrheaLocked = true;
+      state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
+      state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
+      state.diarrheaLastTrigger = state.frameCount;
+      state.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: state.frameCount });
+      _pendingPoopBurst = true;
+      setDiarrheaOverlay(true);
+      playSfx(state.sfx, 'diarrhea_gurgle');
+      addToast(state.ui, '🤢 Oh no! Stomach emergency... can\'t move!', '#ff4444', 4000);
+    },
     // Injury flash debug (#109 Phase 3)
     triggerInjuryFlash,
     getInjuryFlashAlpha,
