@@ -94,7 +94,7 @@ import {
   nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
   startDucking, stopDucking, setBiome as musicSetBiome,
   serializeMusicSettings, deserializeMusicSettings,
-  getCurrentTrackInfo,
+  getCurrentTrackInfo, initMidiTracks, getTotalTrackCount,
   type MusicState,
 } from './music';
 import {
@@ -3038,6 +3038,13 @@ async function main(): Promise<void> {
     }
     // 'continue' → auto-save already loaded by init()
   }
+
+  // Load MIDI tracks in background (non-blocking, oscillator tracks work immediately)
+  initMidiTracks(state.music).then(() => {
+    if (getTotalTrackCount() > 4) {
+      console.log(`[Music] ${getTotalTrackCount()} total tracks available (${getTotalTrackCount() - 4} MIDI)`);
+    }
+  });
 
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }

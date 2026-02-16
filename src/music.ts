@@ -1,5 +1,6 @@
 /**
- * music.ts - Procedural music playback via Web Audio API oscillators.
+ * music.ts - Music playback via Web Audio API oscillators.
+ * Supports both built-in oscillator tracks and MIDI-derived tracks.
  * State machine: stopped → playing → paused → playing | stopped.
  * Supports biome-aware track selection, ducking, and user controls.
  * TODO: DOC - music subsystem architecture
@@ -10,6 +11,10 @@ import {
   DEFAULT_MUSIC_SETTINGS,
   type MusicTrack, type MusicSettings,
 } from './config/music.config';
+import {
+  loadMidiManifest, preloadAllMidiTracks,
+  getLoadedMidiTracks, isMidiManifestLoaded,
+} from './midi-loader';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -22,6 +27,7 @@ export interface MusicState {
   playlist: MusicTrack[];          // tracks for current biome
   settings: MusicSettings;
   ducking: boolean;                // true when quiz/dialog active
+  midiLoaded: boolean;             // true once MIDI tracks are available
 }
 
 // ─── Audio Engine (module-level singleton) ──────────────────
@@ -77,7 +83,26 @@ export function createMusicState(): MusicState {
     playlist: [],
     settings: { ...DEFAULT_MUSIC_SETTINGS },
     ducking: false,
+    midiLoaded: false,
   };
+}
+
+/**
+ * Load MIDI tracks in the background. Call once during game init.
+ * Non-blocking — oscillator tracks work immediately, MIDI tracks
+ * get added to playlists once loaded.
+ */
+export async function initMidiTracks(state: MusicState): Promise<void> {
+  try {
+    await loadMidiManifest();
+    const tracks = await preloadAllMidiTracks();
+    if (tracks.length > 0) {
+      state.midiLoaded = true;
+      console.log(`[Music] ${tracks.length} MIDI tracks available`);
+    }
+  } catch (e) {
+    console.warn('[Music] MIDI track loading failed (oscillator fallback):', e);
+  }
 }
 
 // ─── Note Scheduling ────────────────────────────────────────
@@ -156,7 +181,7 @@ export function play(state: MusicState): void {
 
   // Pick track from playlist
   if (state.playlist.length === 0) {
-    state.playlist = [...MUSIC_TRACKS]; // fallback: all tracks
+    state.playlist = buildFullPlaylist(state);
   }
 
   const track = state.playlist[state.currentTrackIndex % state.playlist.length];
@@ -249,9 +274,11 @@ export function stopDucking(state: MusicState): void {
 
 // ─── Biome Awareness ────────────────────────────────────────
 
-/** Switch playlist when biome changes */
+/** Switch playlist when biome changes — merges oscillator + MIDI tracks */
 export function setBiome(state: MusicState, biomeId: number): void {
-  const newPlaylist = getTracksForBiome(biomeId);
+  const oscTracks = getTracksForBiome(biomeId);
+  const midiTracks = getMidiTracksForBiome(biomeId);
+  const newPlaylist = [...oscTracks, ...midiTracks];
   // Only switch if playlist actually changes
   if (newPlaylist.length > 0 && newPlaylist[0]?.id !== state.playlist[0]?.id) {
     const wasPlaying = state.playState === 'playing';
@@ -263,6 +290,22 @@ export function setBiome(state: MusicState, biomeId: number): void {
 }
 
 // ─── Internal Helpers ───────────────────────────────────────
+
+/** Build a merged playlist of oscillator + loaded MIDI tracks */
+function buildFullPlaylist(state: MusicState): MusicTrack[] {
+  const osc = [...MUSIC_TRACKS];
+  if (state.midiLoaded) {
+    const midi = getLoadedMidiTracks();
+    return [...osc, ...midi];
+  }
+  return osc;
+}
+
+/** Get loaded MIDI tracks matching a biome */
+function getMidiTracksForBiome(biomeId: number): MusicTrack[] {
+  if (!isMidiManifestLoaded()) return [];
+  return getLoadedMidiTracks().filter(t => t.biomes.includes(biomeId));
+}
 
 function stopOscillators(): void {
   if (_melodyOsc) {
@@ -308,15 +351,37 @@ export function deserializeMusicSettings(data?: SerializedMusicSettings): MusicS
 
 // ─── Info ───────────────────────────────────────────────────
 
-/** Get current track info for UI display */
-export function getCurrentTrackInfo(state: MusicState): { name: string; id: string } | null {
+/** Get current track info for UI display (includes composer for MIDI tracks) */
+export function getCurrentTrackInfo(state: MusicState): {
+  name: string; id: string; composer?: string; source?: string;
+} | null {
   if (!state.currentTrackId) return null;
-  const track = MUSIC_TRACKS.find(t => t.id === state.currentTrackId);
+  // Search both oscillator and MIDI tracks
+  let track: MusicTrack | undefined = MUSIC_TRACKS.find(t => t.id === state.currentTrackId);
+  if (!track) {
+    track = getLoadedMidiTracks().find(t => t.id === state.currentTrackId);
+  }
+  if (!track) {
+    // Check current playlist as fallback
+    track = state.playlist.find(t => t.id === state.currentTrackId);
+  }
   if (!track) return null;
-  return { name: track.name, id: track.id };
+  return {
+    name: track.name,
+    id: track.id,
+    composer: track.composer,
+    source: track.source,
+  };
 }
 
-/** Get all available track names (for UI) */
-export function getAllTrackNames(): { id: string; name: string }[] {
-  return MUSIC_TRACKS.map(t => ({ id: t.id, name: t.name }));
+/** Get all available track names (for UI), including loaded MIDI tracks */
+export function getAllTrackNames(): { id: string; name: string; composer?: string }[] {
+  const osc = MUSIC_TRACKS.map(t => ({ id: t.id, name: t.name, composer: t.composer }));
+  const midi = getLoadedMidiTracks().map(t => ({ id: t.id, name: t.name, composer: t.composer }));
+  return [...osc, ...midi];
+}
+
+/** Get total track count (oscillator + MIDI) */
+export function getTotalTrackCount(): number {
+  return MUSIC_TRACKS.length + getLoadedMidiTracks().length;
 }

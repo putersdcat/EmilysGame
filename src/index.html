@@ -153,12 +153,22 @@
       image-rendering: -webkit-optimize-contrast;
     }
 
-    /* Music Player (#74) */
+    /* Music Player (#74, #107) */
     .sb-music-track {
       font-size: 0.75rem;
       color: #aab;
       text-align: center;
       padding: 2px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .sb-music-composer {
+      font-size: 0.65rem;
+      color: #8899aa;
+      text-align: center;
+      padding: 0 4px 2px;
+      font-style: italic;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1821,10 +1831,11 @@
         <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
         <div class="sb-inv-grid" id="sbInvGrid"></div>
       </div>
-      <!-- Music Player (#74) -->
+      <!-- Music Player (#74, #107) -->
       <div class="sb-section" id="sbMusicSection">
         <div class="sb-header"><span class="icon">🎵</span> Music</div>
         <div class="sb-music-track" id="sbMusicTrack">No track</div>
+        <div class="sb-music-composer" id="sbMusicComposer" style="display:none"></div>
         <div class="sb-music-controls">
           <button id="btnMusicPrev" class="sb-music-btn" title="Previous track">⏮</button>
           <button id="btnMusicPlayPause" class="sb-music-btn sb-music-play" title="Play / Pause">▶</button>

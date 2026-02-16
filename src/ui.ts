@@ -699,9 +699,21 @@ export function syncMusicUI(music: MusicState): void {
     if (music.currentTrackId) {
       // Find track name from the playlist or tracks array
       const track = music.playlist.find(t => t.id === music.currentTrackId);
-      trackEl.textContent = track ? track.name : music.currentTrackId;
+      if (track) {
+        trackEl.textContent = track.name;
+        // Show composer for MIDI tracks
+        const composerEl = document.getElementById('sbMusicComposer');
+        if (composerEl) {
+          composerEl.textContent = track.composer ? `♪ ${track.composer}` : '';
+          composerEl.style.display = track.composer ? 'block' : 'none';
+        }
+      } else {
+        trackEl.textContent = music.currentTrackId;
+      }
     } else {
       trackEl.textContent = music.playState === 'stopped' ? 'No track' : '—';
+      const composerEl = document.getElementById('sbMusicComposer');
+      if (composerEl) composerEl.style.display = 'none';
     }
   }
 
