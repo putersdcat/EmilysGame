@@ -97,6 +97,26 @@ export const SFX_DEFS: SfxDef[] = [
       { freq: 900, duration: 0.1, wave: 'sine', gain: 0.1, delay: 0.1 },
     ],
   },
+  // #110 Outhouse interaction SFX — door creak + water splash
+  {
+    id: 'outhouse_enter',
+    category: 'interaction',
+    notes: [
+      { freq: 120, duration: 0.15, wave: 'sawtooth', gain: 0.12, slideTo: 80 },
+      { freq: 200, duration: 0.1, wave: 'triangle', gain: 0.08, delay: 0.2 },
+      { freq: 350, duration: 0.08, wave: 'sine', gain: 0.1, delay: 0.35 },
+    ],
+  },
+  {
+    id: 'outhouse_clean',
+    category: 'interaction',
+    notes: [
+      { freq: 600, duration: 0.06, wave: 'sine', gain: 0.12 },
+      { freq: 800, duration: 0.08, wave: 'sine', gain: 0.1, delay: 0.05 },
+      { freq: 1000, duration: 0.1, wave: 'sine', gain: 0.08, delay: 0.12 },
+      { freq: 1200, duration: 0.12, wave: 'sine', gain: 0.06, delay: 0.2 },
+    ],
+  },
 
   // ─── UI SFX ──────────────────────────────────────────────
   {

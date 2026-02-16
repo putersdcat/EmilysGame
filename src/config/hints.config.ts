@@ -148,6 +148,26 @@ export const HINTS: Record<string, HintDef> = {
     emoji: '🏪',
   },
 
+  // #110 Outhouse hints
+  outhouse_dirty: {
+    id: 'outhouse_dirty',
+    text: 'Eww, I\'m so dirty... I need an outhouse!',
+    type: 'thought',
+    priority: 6,
+    duration: 3000,
+    cooldown: 30000,
+    emoji: '🚽',
+  },
+  outhouse_near: {
+    id: 'outhouse_near',
+    text: 'An outhouse! I can freshen up in there!',
+    type: 'thought',
+    priority: 7,
+    duration: 3000,
+    cooldown: 20000,
+    emoji: '🚽',
+  },
+
   // ── Nearby interactive prompts ──
   near_npc: {
     id: 'near_npc',
