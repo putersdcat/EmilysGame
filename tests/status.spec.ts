@@ -155,10 +155,9 @@ test.describe('Survival Status System (#70)', () => {
       state.status.cleanliness = 10;
       return (window as any).__gameDebug.getDebuffs();
     });
-    // Cleanliness has no speed penalty but should show debuff label
+    // Cleanliness now has speed penalty (#110)
     expect(debuffs.activeDebuffs.some((d: string) => d.includes('Dirty'))).toBe(true);
-    // Speed should still be 1.0 (cleanliness doesn't affect speed)
-    expect(debuffs.speedMult).toBe(1.0);
+    expect(debuffs.speedMult).toBeLessThan(1.0);
   });
 
   test('status persists in save data', async ({ page }) => {

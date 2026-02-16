@@ -74,6 +74,9 @@ import {
   type PlayerStatus,
 } from './status';
 import {
+  initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
+} from './debuff-visuals';
+import {
   createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
   nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -413,6 +416,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Initialize minimap canvas
   initMinimap();
+
+  // Initialize debuff visual effects (#110)
+  initDebuffVisuals();
 
   // Load content packs for Book of Knowledge (#120)
   await initBookContent();
@@ -1751,6 +1757,12 @@ function renderFrame(
   const _t3 = performance.now();
   perfStats.wildlife = perfSmooth(perfStats.wildlife, _t3 - _t2);
 
+  // Debuff visual effects (#110): fly particles + dehydration blur
+  updateFlies(state.status);
+  updateBlurOverlay(state.status);
+  const playerScreenDbf = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
+  renderFlies(renderer.getCtx(), playerScreenDbf.x, playerScreenDbf.y);
+
   // Fog-of-war overlay: darken unexplored areas (#114)
   renderFog(renderer.getCtx(), state.camera);
 
@@ -2064,6 +2076,7 @@ async function main(): Promise<void> {
     getBiomeDefs: () => BIOME_DEFS,
     // Status helpers (#70)
     getDebuffs: () => getDebuffs(state.status),
+    getDebuffVisuals: getDebuffVisualsState,
     useStatusItem: (itemId: string) => {
       const result = useStatusItem(state.status, itemId);
       if (result) addToast(state.ui, result, '#88ccff', 2000);

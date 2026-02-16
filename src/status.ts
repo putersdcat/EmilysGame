@@ -41,8 +41,8 @@ const MOVE_HYDRATION_DRAIN = 0.15;
 const TERRAIN_CLEANLINESS_DRAIN = 0.3;
 
 /** Thresholds for debuffs */
-const LOW_THRESHOLD = 30;
-const CRITICAL_THRESHOLD = 15;
+export const LOW_THRESHOLD = 30;
+export const CRITICAL_THRESHOLD = 15;
 
 /** Speed penalties */
 const LOW_SPEED_PENALTY = 0.85;
@@ -121,10 +121,12 @@ export function getDebuffs(status: PlayerStatus): StatusDebuff {
     activeDebuffs.push('💧 Thirsty');
   }
 
-  // Cleanliness debuffs (no speed penalty, just visual indicator)
+  // Cleanliness debuffs (#110: now includes speed penalty)
   if (status.cleanliness <= CRITICAL_THRESHOLD) {
+    speedMult *= 0.8;
     activeDebuffs.push('🧼 Very Dirty');
   } else if (status.cleanliness <= LOW_THRESHOLD) {
+    speedMult *= 0.9;
     activeDebuffs.push('🧼 Dirty');
   }
 
