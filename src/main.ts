@@ -63,6 +63,7 @@ import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
   clearBubbles, getBubbleState, resetCooldowns,
 } from './thought-bubbles';
+import { HINTS } from './config/hints.config';
 import {
   createTradeState, openTrade, closeTrade, tradeNavigate,
   executeTrade, syncTradeDOM, type TradeState,
@@ -548,10 +549,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     getWildlifeStats,
   };
   (window as any).__lighting = { setTimeOfDay, getCycleProgress };
-  // Expose thought bubble functions for E2E tests (#71)
+  // Expose thought bubble functions for E2E tests (#71, #111)
   (window as any).__bubbles = {
     triggerHint, tickBubbles, dismissBubble, clearBubbles,
     getBubbleState, resetCooldowns, updateBubblePosition,
+    HINTS,
   };
   // Expose trade functions for E2E tests (#72)
   (window as any).__trade = {
@@ -1542,6 +1544,52 @@ function checkBubbleTriggers(state: GameState): void {
   const spawnDist = Math.sqrt(px * px + py * py);
   if (spawnDist > 60) {
     triggerHint('far_from_spawn');
+  }
+
+  // ── Status-aware triggers (#111) ──
+  const LOW = 30;
+  const CRIT = 15;
+  const { energy, hydration, cleanliness } = state.status;
+
+  // Count how many stats are low
+  let lowCount = 0;
+  if (energy <= LOW) lowCount++;
+  if (hydration <= LOW) lowCount++;
+  if (cleanliness <= LOW) lowCount++;
+
+  // Combo trigger first (priority 8, highest)
+  if (lowCount >= 3) {
+    triggerHint('status_combo_bad');
+  } else {
+    // Individual status triggers
+    if (energy <= CRIT) triggerHint('critical_energy');
+    else if (energy <= LOW) triggerHint('low_energy');
+
+    if (hydration <= CRIT) triggerHint('critical_hydration');
+    else if (hydration <= LOW) triggerHint('low_hydration');
+
+    if (cleanliness <= CRIT) triggerHint('critical_cleanliness');
+    else if (cleanliness <= LOW) triggerHint('low_cleanliness');
+  }
+
+  // ── Shop proximity trigger (#111) ──
+  // Check nearby cells for shop/merchant structures
+  for (let dy2 = -3; dy2 <= 3; dy2++) {
+    for (let dx2 = -3; dx2 <= 3; dx2++) {
+      const gx2 = rx + dx2;
+      const gy2 = ry + dy2;
+      const ccx2 = Math.floor(gx2 / cs);
+      const ccy2 = Math.floor(gy2 / cs);
+      const nearChunk2 = state.chunks.get(`${ccx2},${ccy2}`);
+      if (!nearChunk2?.generated) continue;
+      const lx2 = ((gx2 % cs) + cs) % cs;
+      const ly2 = ((gy2 % cs) + cs) % cs;
+      const cell2 = nearChunk2.cells[ly2]?.[lx2];
+      if (!cell2) continue;
+      if (cell2.assetKey === 'shop' || cell2.assetKey === 'merchant' || cell2.assetKey === 'store') {
+        triggerHint('near_shop');
+      }
+    }
   }
 }
 

@@ -43,6 +43,82 @@ export const HINTS: Record<string, HintDef> = {
     emoji: '🔑',
   },
 
+  // ── Status-aware triggers (#111) ──
+  low_energy: {
+    id: 'low_energy',
+    text: 'Getting hungry... need a snack!',
+    type: 'thought',
+    priority: 5,
+    duration: 3500,
+    cooldown: 45000,
+    emoji: '🍎',
+  },
+  critical_energy: {
+    id: 'critical_energy',
+    text: 'Stomach growling — not eating worms yet!',
+    type: 'thought',
+    priority: 7,
+    duration: 4000,
+    cooldown: 30000,
+    emoji: '😫',
+  },
+  low_hydration: {
+    id: 'low_hydration',
+    text: 'So thirsty... is there water nearby?',
+    type: 'thought',
+    priority: 5,
+    duration: 3500,
+    cooldown: 45000,
+    emoji: '💧',
+  },
+  critical_hydration: {
+    id: 'critical_hydration',
+    text: 'Need water! Throat is so dry...',
+    type: 'thought',
+    priority: 7,
+    duration: 4000,
+    cooldown: 30000,
+    emoji: '🏜️',
+  },
+  low_cleanliness: {
+    id: 'low_cleanliness',
+    text: 'Starting to feel grimy... soap would help!',
+    type: 'thought',
+    priority: 4,
+    duration: 3500,
+    cooldown: 60000,
+    emoji: '🧼',
+  },
+  critical_cleanliness: {
+    id: 'critical_cleanliness',
+    text: 'Flies are buzzing... need to get clean!',
+    type: 'thought',
+    priority: 6,
+    duration: 4000,
+    cooldown: 30000,
+    emoji: '🪰',
+  },
+  status_combo_bad: {
+    id: 'status_combo_bad',
+    text: 'Tired, hungry, AND dirty? What a day!',
+    type: 'thought',
+    priority: 8,
+    duration: 4000,
+    cooldown: 60000,
+    emoji: '😵',
+  },
+
+  // ── Shop/merchant proximity (#111) ──
+  near_shop: {
+    id: 'near_shop',
+    text: 'That shop might have snacks!',
+    type: 'thought',
+    priority: 4,
+    duration: 3000,
+    cooldown: 45000,
+    emoji: '🛍️',
+  },
+
   // ── Nearby interactive prompts ──
   near_npc: {
     id: 'near_npc',

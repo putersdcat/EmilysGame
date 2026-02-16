@@ -1087,8 +1087,7 @@
     .thought-bubble {
       position: absolute;
       width: 220px;
-      padding: 8px 12px;
-      border-radius: 12px;
+      padding: 10px 14px;
       font: 12px monospace;
       line-height: 1.4;
       pointer-events: none;
@@ -1102,26 +1101,42 @@
       60% { transform: scale(1.05) translateY(-2px); }
       100% { transform: scale(1) translateY(0); opacity: 1; }
     }
+
+    /* Cloud-shaped thought bubble (#111) */
     .thought-bubble.bubble-thought {
       background: rgba(40,35,65,0.92);
-      border: 1px solid rgba(120,100,180,0.5);
+      border: 2px dotted rgba(140,120,200,0.6);
+      border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
       color: #c8bfe0;
       box-shadow: 0 2px 12px rgba(80,60,140,0.3);
+    }
+    /* Thought chain dots (small circles leading to cloud) */
+    .thought-bubble.bubble-thought::before {
+      content: '';
+      position: absolute;
+      bottom: -14px;
+      left: calc(50% - 2px);
+      width: 8px; height: 8px;
+      background: rgba(40,35,65,0.85);
+      border: 1px dotted rgba(140,120,200,0.5);
+      border-radius: 50%;
     }
     .thought-bubble.bubble-thought::after {
       content: '';
       position: absolute;
-      bottom: -8px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 0; height: 0;
-      border-left: 8px solid transparent;
-      border-right: 8px solid transparent;
-      border-top: 8px solid rgba(40,35,65,0.92);
+      bottom: -22px;
+      left: calc(50% + 4px);
+      width: 5px; height: 5px;
+      background: rgba(40,35,65,0.75);
+      border: 1px dotted rgba(140,120,200,0.4);
+      border-radius: 50%;
     }
+
+    /* Speech bubble: solid border with pointed tail (#111) */
     .thought-bubble.bubble-speech {
       background: rgba(255,255,255,0.93);
-      border: 1px solid rgba(180,180,200,0.6);
+      border: 2px solid rgba(180,180,200,0.7);
+      border-radius: 12px;
       color: #333;
       box-shadow: 0 2px 12px rgba(0,0,0,0.15);
     }
