@@ -210,4 +210,107 @@ test.describe('Alpha QoL Features (#117)', () => {
     // Should not be showing
     expect(splashDisplay).not.toBe('flex');
   });
+
+  // ─── Options Overlay (#117 Phase 3) ─────────────────────────
+
+  test('options overlay DOM exists with audio + LLM sections', async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    const dom = await page.evaluate(() => {
+      return {
+        overlay: !!document.getElementById('optionsOverlay'),
+        musicSlider: !!document.getElementById('optMusicVol'),
+        sfxSlider: !!document.getElementById('optSfxVol'),
+        ambienceSlider: !!document.getElementById('optAmbienceVol'),
+        voiceSlider: !!document.getElementById('optVoiceVol'),
+        llmMode: !!document.getElementById('optLlmMode'),
+        llmUrl: !!document.getElementById('optLlmUrl'),
+        closeBtn: !!document.getElementById('optionsClose'),
+      };
+    });
+
+    expect(dom.overlay).toBe(true);
+    expect(dom.musicSlider).toBe(true);
+    expect(dom.sfxSlider).toBe(true);
+    expect(dom.ambienceSlider).toBe(true);
+    expect(dom.voiceSlider).toBe(true);
+    expect(dom.llmMode).toBe(true);
+    expect(dom.llmUrl).toBe(true);
+    expect(dom.closeBtn).toBe(true);
+  });
+
+  test('pause menu has Options button', async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    const exists = await page.evaluate(() => !!document.getElementById('pauseOptions'));
+    expect(exists).toBe(true);
+  });
+
+  test('main menu has Options button', async ({ page }) => {
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    const exists = await page.evaluate(() => !!document.getElementById('menuOptions'));
+    expect(exists).toBe(true);
+  });
+
+  test('options overlay opens from pause menu and closes', async ({ page }) => {
+    await waitForGame(page);
+
+    // Open pause menu
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+
+    // Click Options button
+    await page.evaluate(() => {
+      document.getElementById('pauseOptions')?.click();
+    });
+    await page.waitForTimeout(300);
+
+    const overlayVisible = await page.evaluate(() => {
+      const overlay = document.getElementById('optionsOverlay');
+      return overlay?.style.display === 'flex';
+    });
+    expect(overlayVisible).toBe(true);
+
+    // Close it
+    await page.evaluate(() => {
+      document.getElementById('optionsClose')?.click();
+    });
+    await page.waitForTimeout(200);
+
+    const overlayClosed = await page.evaluate(() => {
+      const overlay = document.getElementById('optionsOverlay');
+      return overlay?.style.display === 'none';
+    });
+    expect(overlayClosed).toBe(true);
+  });
+
+  test('options sliders sync from sidebar values on open', async ({ page }) => {
+    await waitForGame(page);
+
+    // Set sidebar sliders to known values
+    await page.evaluate(() => {
+      const musicSlider = document.getElementById('musicVolume') as HTMLInputElement;
+      const sfxSlider = document.getElementById('sfxVolume') as HTMLInputElement;
+      if (musicSlider) { musicSlider.value = '30'; musicSlider.dispatchEvent(new Event('input')); }
+      if (sfxSlider) { sfxSlider.value = '85'; sfxSlider.dispatchEvent(new Event('input')); }
+    });
+
+    // Open pause menu → Options
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
+    await page.evaluate(() => document.getElementById('pauseOptions')?.click());
+    await page.waitForTimeout(300);
+
+    // Check options sliders match sidebar
+    const vals = await page.evaluate(() => {
+      return {
+        music: (document.getElementById('optMusicVol') as HTMLInputElement)?.value,
+        sfx: (document.getElementById('optSfxVol') as HTMLInputElement)?.value,
+      };
+    });
+
+    expect(vals.music).toBe('30');
+    expect(vals.sfx).toBe('85');
+
+    // Cleanup
+    await page.evaluate(() => document.getElementById('optionsClose')?.click());
+  });
 });

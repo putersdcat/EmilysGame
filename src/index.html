@@ -975,6 +975,76 @@
     }
     .book-search-input:focus { border-color: rgba(100,130,200,0.6); }
 
+    /* ── Options Overlay (#117 Phase 3) ── */
+    #optionsOverlay {
+      position: fixed; inset: 0;
+      background: rgba(5,5,16,0.92);
+      display: none; flex-direction: column;
+      justify-content: center; align-items: center;
+      z-index: 100;
+      animation: menuFadeIn 0.3s ease;
+    }
+    .options-container {
+      background: rgba(20,18,40,0.95);
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 12px;
+      padding: 28px 32px;
+      max-width: 440px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .options-title {
+      font: bold 20px monospace;
+      color: #ffdd88;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .options-section {
+      margin-bottom: 18px;
+    }
+    .options-section-label {
+      font: bold 13px monospace;
+      color: #88ccff;
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(100,100,140,0.2);
+      padding-bottom: 4px;
+    }
+    .options-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .options-row label {
+      font: 12px monospace;
+      color: #aaa;
+      min-width: 70px;
+    }
+    .options-row input[type="range"] {
+      flex: 1;
+      accent-color: #88ccff;
+    }
+    .options-row .opt-val {
+      font: 11px monospace;
+      color: #888;
+      min-width: 28px;
+      text-align: right;
+    }
+    .options-row select, .options-row input[type="text"] {
+      flex: 1;
+      background: rgba(40,35,65,0.8);
+      border: 1px solid rgba(100,100,140,0.3);
+      border-radius: 4px;
+      color: #ccc;
+      font: 12px monospace;
+      padding: 4px 8px;
+    }
+    .options-close-row {
+      text-align: center;
+      margin-top: 16px;
+    }
+
     /* ── Main Menu Overlay ── */
     #mainMenu {
       position: fixed; inset: 0;
@@ -1302,6 +1372,7 @@
         <button id="menuContinue" class="menu-btn primary">▶ Continue</button>
         <button id="menuNewGame" class="menu-btn">🌟 New Game</button>
         <button id="menuLoadGame" class="menu-btn">📂 Load Game</button>
+        <button id="menuOptions" class="menu-btn">⚙️ Options</button>
       </div>
       <div id="menuLoadPanel" style="display:none">
         <div style="color:#88ccff;font:bold 14px monospace;margin-bottom:12px">📂 Select Save Slot</div>
@@ -1321,6 +1392,7 @@
         <button id="pauseSave" class="menu-btn">💾 Save Game</button>
         <button id="pauseCustomize" class="menu-btn">🎨 Customize</button>
         <button id="pauseControls" class="menu-btn">🎮 Controls</button>
+        <button id="pauseOptions" class="menu-btn">⚙️ Options</button>
         <button id="pauseBugReport" class="menu-btn">🐛 Report Bug</button>
         <button id="pauseMainMenu" class="menu-btn danger">🏠 Main Menu</button>
       </div>
@@ -1380,6 +1452,57 @@
       <div class="bug-buttons">
         <button id="bugSubmit" class="menu-btn primary" style="width:140px">📎 Download</button>
         <button id="bugCancel" class="menu-btn" style="width:140px">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Options Overlay (#117 Phase 3) -->
+  <div id="optionsOverlay">
+    <div class="options-container">
+      <div class="options-title">⚙️ Options</div>
+
+      <div class="options-section">
+        <div class="options-section-label">🔊 Audio</div>
+        <div class="options-row">
+          <label>Music</label>
+          <input type="range" id="optMusicVol" min="0" max="100" value="50" aria-label="Music volume">
+          <span class="opt-val" id="optMusicVal">50</span>
+        </div>
+        <div class="options-row">
+          <label>SFX</label>
+          <input type="range" id="optSfxVol" min="0" max="100" value="70" aria-label="SFX volume">
+          <span class="opt-val" id="optSfxVal">70</span>
+        </div>
+        <div class="options-row">
+          <label>Ambience</label>
+          <input type="range" id="optAmbienceVol" min="0" max="100" value="40" aria-label="Ambience volume">
+          <span class="opt-val" id="optAmbienceVal">40</span>
+        </div>
+        <div class="options-row">
+          <label>Voice</label>
+          <input type="range" id="optVoiceVol" min="0" max="100" value="80" aria-label="Voice volume">
+          <span class="opt-val" id="optVoiceVal">80</span>
+        </div>
+      </div>
+
+      <div class="options-section">
+        <div class="options-section-label">🤖 LLM Config</div>
+        <div class="options-row">
+          <label>Mode</label>
+          <select id="optLlmMode" aria-label="LLM mode">
+            <option value="local">Local</option>
+            <option value="remote">Remote</option>
+            <option value="off">Off (RNG only)</option>
+          </select>
+        </div>
+        <div class="options-row">
+          <label>URL</label>
+          <input type="text" id="optLlmUrl" placeholder="http://127.0.0.1:8000" aria-label="LLM URL">
+        </div>
+      </div>
+
+      <div class="options-close-row">
+        <button id="optionsClose" class="menu-btn primary" style="width:180px">✓ Done</button>
       </div>
     </div>
   </div>

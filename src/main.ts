@@ -1644,6 +1644,82 @@ function showAgeSelection(profile: AgeProfile): Promise<void> {
 }
 
 /** Show main menu overlay. Returns promise resolving to player choice. */
+// ─── Options Overlay (#117 Phase 3) ──────────────────────────
+
+/**
+ * Show options overlay. Syncs with sidebar sliders bidirectionally.
+ * If state is null, we're in main menu context (audio controls only affect sidebar defaults).
+ */
+function showOptionsOverlay(_state: GameState | null): void {
+  const overlay = document.getElementById('optionsOverlay')!;
+  overlay.style.display = 'flex';
+
+  // Sync options sliders FROM sidebar current values
+  const sidebarMusic = document.getElementById('musicVolume') as HTMLInputElement | null;
+  const sidebarSfx = document.getElementById('sfxVolume') as HTMLInputElement | null;
+  const sidebarAmbience = document.getElementById('ambienceVolume') as HTMLInputElement | null;
+  const sidebarVoice = document.getElementById('voiceVolume') as HTMLInputElement | null;
+  const sidebarLlmMode = document.getElementById('llmModeSelect') as HTMLSelectElement | null;
+  const sidebarLlmUrl = document.getElementById('llmUrlInput') as HTMLInputElement | null;
+
+  const optMusic = document.getElementById('optMusicVol') as HTMLInputElement;
+  const optSfx = document.getElementById('optSfxVol') as HTMLInputElement;
+  const optAmbience = document.getElementById('optAmbienceVol') as HTMLInputElement;
+  const optVoice = document.getElementById('optVoiceVol') as HTMLInputElement;
+  const optLlmMode = document.getElementById('optLlmMode') as HTMLSelectElement;
+  const optLlmUrl = document.getElementById('optLlmUrl') as HTMLInputElement;
+
+  // Read current values from sidebar
+  if (sidebarMusic) optMusic.value = sidebarMusic.value;
+  if (sidebarSfx) optSfx.value = sidebarSfx.value;
+  if (sidebarAmbience) optAmbience.value = sidebarAmbience.value;
+  if (sidebarVoice) optVoice.value = sidebarVoice.value;
+  if (sidebarLlmMode) optLlmMode.value = sidebarLlmMode.value;
+  if (sidebarLlmUrl) optLlmUrl.value = sidebarLlmUrl.value;
+
+  // Update display values
+  const updateDisplay = () => {
+    document.getElementById('optMusicVal')!.textContent = optMusic.value;
+    document.getElementById('optSfxVal')!.textContent = optSfx.value;
+    document.getElementById('optAmbienceVal')!.textContent = optAmbience.value;
+    document.getElementById('optVoiceVal')!.textContent = optVoice.value;
+  };
+  updateDisplay();
+
+  // Sync options → sidebar on input (live preview)
+  const syncToSidebar = (optEl: HTMLInputElement, sidebarEl: HTMLInputElement | null) => {
+    if (sidebarEl) {
+      sidebarEl.value = optEl.value;
+      sidebarEl.dispatchEvent(new Event('input'));
+    }
+    updateDisplay();
+  };
+
+  optMusic.oninput = () => syncToSidebar(optMusic, sidebarMusic);
+  optSfx.oninput = () => syncToSidebar(optSfx, sidebarSfx);
+  optAmbience.oninput = () => syncToSidebar(optAmbience, sidebarAmbience);
+  optVoice.oninput = () => syncToSidebar(optVoice, sidebarVoice);
+
+  // LLM config sync
+  optLlmMode.onchange = () => {
+    if (sidebarLlmMode) {
+      sidebarLlmMode.value = optLlmMode.value;
+      sidebarLlmMode.dispatchEvent(new Event('change'));
+    }
+  };
+  optLlmUrl.oninput = () => {
+    if (sidebarLlmUrl) {
+      sidebarLlmUrl.value = optLlmUrl.value;
+      sidebarLlmUrl.dispatchEvent(new Event('input'));
+    }
+  };
+
+  // Close button
+  document.getElementById('optionsClose')!.onclick = () => {
+    overlay.style.display = 'none';
+  };
+}
+
 function showMainMenu(hasSaveData: boolean): Promise<string> {
   return new Promise((resolve) => {
     const menu = document.getElementById('mainMenu')!;
@@ -1720,6 +1796,11 @@ function showMainMenu(hasSaveData: boolean): Promise<string> {
     loadBackBtn.onclick = () => {
       loadPanel.style.display = 'none';
       buttonsPanel.style.display = 'flex';
+    };
+
+    // Options button (#117 Phase 3)
+    document.getElementById('menuOptions')!.onclick = () => {
+      showOptionsOverlay(null); // null = no game state (main menu context)
     };
   });
 }
@@ -1883,6 +1964,11 @@ function showPauseMenu(state: GameState): void {
     document.getElementById('controlsClose')!.onclick = () => {
       guide.style.display = 'none';
     };
+  };
+
+  // Options (#117 Phase 3)
+  document.getElementById('pauseOptions')!.onclick = () => {
+    showOptionsOverlay(state);
   };
 
   // Bug reporter (#117)
