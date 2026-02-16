@@ -28,6 +28,7 @@ export interface MusicState {
   settings: MusicSettings;
   ducking: boolean;                // true when quiz/dialog active
   midiLoaded: boolean;             // true once MIDI tracks are available
+  trackProgress: number;           // 0-1 progress through current track (for cassette UI)
 }
 
 // ─── Audio Engine (module-level singleton) ──────────────────
@@ -84,6 +85,7 @@ export function createMusicState(): MusicState {
     settings: { ...DEFAULT_MUSIC_SETTINGS },
     ducking: false,
     midiLoaded: false,
+    trackProgress: 0,
   };
 }
 
@@ -143,6 +145,11 @@ function scheduleNextNotes(state: MusicState): void {
     _melodyOsc = null;
   }
   _melodyNoteIndex++;
+
+  // Update track progress for cassette UI (0-1)
+  if (track.melody.length > 0) {
+    state.trackProgress = (_melodyNoteIndex % track.melody.length) / track.melody.length;
+  }
 
   // Schedule bass note at melody timing (bass has its own sequence length)
   // Bass changes at its own pace

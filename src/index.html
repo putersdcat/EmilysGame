@@ -153,80 +153,181 @@
       image-rendering: -webkit-optimize-contrast;
     }
 
-    /* Music Player (#74, #107) */
-    .sb-music-track {
-      font-size: 0.75rem;
-      color: #aab;
+    /* Cassette Player (#107 Phase 2) */
+    .cassette-deck {
+      background: linear-gradient(135deg, #2a1f14 0%, #3d2e1e 50%, #2a1f14 100%);
+      border: 2px solid #5c4a35;
+      border-radius: 8px;
+      padding: 6px 8px 8px;
+      margin: 0 2px;
+      box-shadow: inset 0 1px 0 rgba(255,220,180,0.1), 0 2px 6px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .cassette-brand {
       text-align: center;
-      padding: 2px 4px;
+      font-size: 0.55rem;
+      color: #b8956a;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-bottom: 3px;
+    }
+    .cassette-window {
+      background: linear-gradient(180deg, #1a1520 0%, #252030 100%);
+      border: 1px solid #4a3f55;
+      border-radius: 4px;
+      padding: 4px 6px;
+      margin-bottom: 5px;
+    }
+    .cassette-reels {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      height: 36px;
+      margin-bottom: 3px;
+    }
+    .cassette-reel {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid #4a4060;
+      background: radial-gradient(circle, #1a1520 30%, #2a2535 70%);
+      position: relative;
+      transition: transform 0.3s linear;
+    }
+    .cassette-reel.spinning {
+      animation: reelSpin 1.5s linear infinite;
+    }
+    @keyframes reelSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .cassette-reel::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #3a3050;
+      border: 1px solid #5a5070;
+    }
+    .cassette-reel::after {
+      content: '';
+      position: absolute;
+      top: 4px; left: 4px; right: 4px; bottom: 4px;
+      border-radius: 50%;
+      border: 1px dashed rgba(100,80,130,0.4);
+    }
+    .cassette-tape-path {
+      position: absolute;
+      top: 50%;
+      left: 25%;
+      right: 25%;
+      height: 1px;
+      background: rgba(140,120,100,0.3);
+    }
+    .cassette-track-info {
+      font-size: 0.65rem;
+      color: #c0b0d0;
+      text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      text-shadow: 0 0 4px rgba(180,160,220,0.3);
     }
-    .sb-music-composer {
-      font-size: 0.65rem;
-      color: #8899aa;
+    .cassette-composer-info {
+      font-size: 0.55rem;
+      color: #9080a0;
       text-align: center;
-      padding: 0 4px 2px;
       font-style: italic;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .sb-music-controls {
+    .cassette-progress {
+      width: 100%;
+      height: 3px;
+      background: rgba(60,50,80,0.4);
+      border-radius: 2px;
+      margin-top: 3px;
+      overflow: hidden;
+    }
+    .cassette-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7060a0, #a080d0);
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.5s linear;
+    }
+    .cassette-controls {
       display: flex;
       justify-content: center;
-      gap: 6px;
-      padding: 4px 0;
+      align-items: center;
+      gap: 3px;
+      padding-top: 5px;
     }
-    .sb-music-btn {
-      width: 32px; height: 28px;
-      border: 1px solid rgba(100,100,140,0.4);
-      border-radius: 4px;
-      background: rgba(30,30,50,0.6);
-      color: #ccd;
-      font-size: 14px;
+    .cass-btn {
+      width: 28px; height: 24px;
+      border: 1px solid #5c4a35;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #4a3d2e 0%, #3a2e20 100%);
+      color: #c0a880;
+      font-size: 11px;
       cursor: pointer;
-      transition: all 0.15s;
-    }
-    .sb-music-btn:hover {
-      background: rgba(60,60,100,0.6);
-      border-color: #88ccff;
-    }
-    .sb-music-btn.active {
-      background: rgba(40,80,140,0.5);
-      border-color: #88ccff;
-    }
-    .sb-music-play {
-      width: 40px;
-      font-size: 16px;
-    }
-    .sb-music-volume-row {
+      transition: all 0.12s;
       display: flex;
       align-items: center;
-      gap: 6px;
-      padding: 2px 4px;
+      justify-content: center;
     }
-    .sb-music-vol-label {
-      font-size: 0.65rem;
-      color: #778;
-      min-width: 20px;
+    .cass-btn:hover {
+      background: linear-gradient(180deg, #5a4d3e 0%, #4a3e30 100%);
+      border-color: #8a7a55;
+      color: #e0c8a0;
     }
-    .sb-music-volume {
+    .cass-btn.active {
+      background: linear-gradient(180deg, #5a4538 0%, #4a3a28 100%);
+      border-color: #a08050;
+      box-shadow: 0 0 4px rgba(200,160,80,0.3);
+    }
+    .cass-btn-play {
+      width: 34px;
+      font-size: 14px;
+      height: 26px;
+    }
+    .cassette-vol-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 2px 0;
+    }
+    .cassette-vol-label {
+      font-size: 0.55rem;
+      color: #8a7a55;
+      min-width: 18px;
+    }
+    .cassette-vol-slider {
       flex: 1;
-      height: 4px;
+      height: 3px;
       -webkit-appearance: none;
       appearance: none;
-      background: rgba(100,100,140,0.3);
+      background: rgba(90,70,45,0.4);
       border-radius: 2px;
       outline: none;
     }
-    .sb-music-volume::-webkit-slider-thumb {
+    .cassette-vol-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 12px; height: 12px;
+      width: 10px; height: 10px;
       border-radius: 50%;
-      background: #88ccff;
+      background: #b8956a;
       cursor: pointer;
+    }
+    .cassette-counter {
+      font-size: 0.5rem;
+      color: #8a7a55;
+      text-align: right;
+      font-family: 'Courier New', monospace;
+      min-width: 30px;
     }
 
     /* SFX & Ambience controls (#75) */
@@ -1831,20 +1932,33 @@
         <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
         <div class="sb-inv-grid" id="sbInvGrid"></div>
       </div>
-      <!-- Music Player (#74, #107) -->
+      <!-- Cassette Player (#107 Phase 2) -->
       <div class="sb-section" id="sbMusicSection">
-        <div class="sb-header"><span class="icon">🎵</span> Music</div>
-        <div class="sb-music-track" id="sbMusicTrack">No track</div>
-        <div class="sb-music-composer" id="sbMusicComposer" style="display:none"></div>
-        <div class="sb-music-controls">
-          <button id="btnMusicPrev" class="sb-music-btn" title="Previous track">⏮</button>
-          <button id="btnMusicPlayPause" class="sb-music-btn sb-music-play" title="Play / Pause">▶</button>
-          <button id="btnMusicNext" class="sb-music-btn" title="Next track">⏭</button>
-          <button id="btnMusicMute" class="sb-music-btn" title="Mute / Unmute">🔊</button>
-        </div>
-        <div class="sb-music-volume-row">
-          <span class="sb-music-vol-label">Vol</span>
-          <input type="range" id="musicVolume" class="sb-music-volume" min="0" max="100" value="50" title="Music volume">
+        <div class="cassette-deck">
+          <div class="cassette-brand">Sonny WalkGirl</div>
+          <div class="cassette-window">
+            <div class="cassette-reels">
+              <div class="cassette-reel" id="cassetteReelL"></div>
+              <div class="cassette-tape-path"></div>
+              <div class="cassette-reel" id="cassetteReelR"></div>
+            </div>
+            <div class="cassette-track-info" id="sbMusicTrack">▸ INSERT TAPE ◂</div>
+            <div class="cassette-composer-info" id="sbMusicComposer"></div>
+            <div class="cassette-progress">
+              <div class="cassette-progress-fill" id="cassetteProgress"></div>
+            </div>
+          </div>
+          <div class="cassette-controls">
+            <button id="btnMusicPrev" class="cass-btn" title="Previous track">⏮</button>
+            <button id="btnMusicPlayPause" class="cass-btn cass-btn-play" title="Play / Pause">▶</button>
+            <button id="btnMusicNext" class="cass-btn" title="Next track">⏭</button>
+            <button id="btnMusicMute" class="cass-btn" title="Mute / Unmute">🔊</button>
+          </div>
+          <div class="cassette-vol-row">
+            <span class="cassette-vol-label">Vol</span>
+            <input type="range" id="musicVolume" class="cassette-vol-slider" min="0" max="100" value="50" title="Volume">
+            <span class="cassette-counter" id="cassetteCounter">000</span>
+          </div>
         </div>
       </div>
       <!-- SFX & Ambience (#75) -->
