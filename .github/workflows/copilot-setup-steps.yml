@@ -1,0 +1,58 @@
+name: "Copilot Setup Steps"
+
+# Validate this workflow when changed, and allow manual verification.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  # NOTE: This job name is required by GitHub Copilot coding agent.
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 59
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js 20 + npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install repo dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium + deps
+        run: npx playwright install --with-deps chromium
+
+      - name: Build WASM runtime artifact
+        run: npm run build-wasm
+
+      - name: Prepare local audio assets (optional)
+        shell: bash
+        run: |
+          if npm run | grep -q "sync-soundfonts"; then
+            npm run sync-soundfonts
+          else
+            echo "sync-soundfonts not defined yet; skipping"
+          fi
+
+      - name: Warm key build/test commands
+        shell: bash
+        run: |
+          npm run typecheck
+
+      - name: Context note for agent logs
+        run: |
+          echo "Project notes: TypeScript + Vite + Canvas 2D, Playwright tests, local-first audio assets preferred over runtime CDN fetches."
+          echo "If network egress is blocked by Copilot firewall, prefer vendored/public assets and deterministic offline scripts."
