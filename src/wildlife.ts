@@ -306,8 +306,9 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
   const species = getSpecies(entity.speciesId);  // O(1) Map lookup (#79)
   if (!species) return;
 
-  // Track position for facing direction update (#80)
+  // Track position for facing direction update (#80, #128)
   const _prevX = entity.worldX;
+  const _prevY = entity.worldY;
 
   // Advance animation phase
   entity.animPhase += 0.05;
@@ -368,11 +369,15 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
     }
   }
 
-  // Update facing direction from movement delta (#80)
+  // Update facing direction from isometric screen-space delta (#80, #128)
+  // In iso projection, screen-X ∝ (worldX - worldY), so use that for left/right facing.
+  // Fixes "moonwalk" bug where creatures moving in worldY appeared to slide sideways.
   if (species.flipRule === 'movement') {
     const moveDx = entity.worldX - _prevX;
-    if (Math.abs(moveDx) > 0.001) {
-      entity.facingDir = moveDx > 0 ? 1 : -1;
+    const moveDy = entity.worldY - _prevY;
+    const screenDx = moveDx - moveDy; // isometric horizontal component
+    if (Math.abs(screenDx) > 0.005) { // hysteresis prevents jitter at near-zero velocity
+      entity.facingDir = screenDx > 0 ? 1 : -1;
     }
   }
 }
