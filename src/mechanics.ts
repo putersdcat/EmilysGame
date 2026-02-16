@@ -149,6 +149,7 @@ export function interact(
       assetKey: 'grass',
       walkable: true,
       interactable: false,
+      resolved: true,
     };
     invalidateObjectCache(chunkKey);
     return { type: 'chest', items: loot, message: 'Opened chest! Found coins and a potion!' };
