@@ -23,7 +23,7 @@ export type InteractionResult =
   | { type: 'sign'; message: string }
   | { type: 'chest'; items: string[]; message: string }
   | { type: 'quiz_gate'; chunkKey: string; lx: number; ly: number; message: string }
-  | { type: 'shop'; message: string }
+  | { type: 'shop'; message: string; shopAsset: string }
   | { type: 'campfire'; message: string }
   | { type: 'outhouse'; message: string }
   | { type: 'structure'; assetKey: string; message: string };
@@ -200,9 +200,9 @@ export function interact(
     }
   }
 
-  // --- Shop structure (#77) ---
-  if (cell.assetKey === 'shop') {
-    return { type: 'shop', message: 'Welcome to the shop! Browse our wares.' };
+  // --- Shop structure (#77, #112 themed variants) ---
+  if (cell.assetKey === 'shop' || cell.assetKey?.startsWith('shop_')) {
+    return { type: 'shop', message: 'Welcome! Browse our wares.', shopAsset: cell.assetKey };
   }
 
   // --- Outhouse interaction (#110 Phase 2) ---

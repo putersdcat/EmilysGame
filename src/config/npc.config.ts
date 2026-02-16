@@ -320,9 +320,106 @@ export const SHOP_MERCHANT_PERSONA: NpcPersona = {
   quizDifficulty: 'easy',
 };
 
+// --- Themed shop variant personas (#112 Phase 2) ---
+
+/** General Store — broad inventory, fair prices */
+export const GENERAL_STORE_PERSONA: NpcPersona = {
+  id: 'shop_general_merchant',
+  assetKey: 'shop_general',
+  displayName: 'General Store Owner',
+  llmPersona: 'You run a well-stocked general store. You have everything from medicine to tools.',
+  greetings: [
+    'Welcome to the General Store! We have a bit of everything.',
+    'Step right in! Best selection in the region.',
+  ],
+  fallbackResponses: [
+    'Quality goods at fair prices!',
+    'Need anything else? We stock it all.',
+  ],
+  trades: [
+    { gives: 'bandage', wants: 'coin', cost: 2, description: 'First Aid Bandage' },
+    { gives: 'soap', wants: 'coin', cost: 3, description: 'Bar of Soap' },
+    { gives: 'potion', wants: 'coin', cost: 4, description: 'Speed Potion' },
+    { gives: 'key', wants: 'coin', cost: 6, description: 'Bronze Key' },
+    { gives: 'torch', wants: 'coin', cost: 2, description: 'Lantern Torch' },
+    { gives: 'water', wants: 'coin', cost: 2, description: 'Fresh Water' },
+    { gives: 'snack', wants: 'coin', cost: 1, description: 'Trail Mix' },
+    { gives: 'mushroom', wants: 'coin', cost: 1, description: 'Dried Mushroom' },
+  ],
+  canQuiz: false,
+  quizDifficulty: 'easy',
+};
+
+/** Snack Stand — food & drink focus, cheaper prices, fun persona */
+export const SNACK_STAND_PERSONA: NpcPersona = {
+  id: 'shop_snack_vendor',
+  assetKey: 'shop_snack',
+  displayName: 'Snack Vendor',
+  llmPersona: 'You run a cheerful roadside snack stand. You love food and sharing treats with travelers.',
+  greetings: [
+    'Hey there, hungry? 🍿 Grab a snack!',
+    'Welcome to the Snack Shack! Everything\'s fresh today!',
+  ],
+  fallbackResponses: [
+    'Best snacks on this side of the biome!',
+    'You look like you could use a treat! 🍪',
+  ],
+  trades: [
+    { gives: 'snack', wants: 'coin', cost: 1, description: 'Crunchy Trail Bar' },
+    { gives: 'mushroom', wants: 'coin', cost: 1, description: 'Toasted Mushroom' },
+    { gives: 'water', wants: 'coin', cost: 1, description: 'Cold Water Bottle' },
+    { gives: 'potion', wants: 'coin', cost: 3, description: 'Energy Smoothie' },
+  ],
+  canQuiz: false,
+  quizDifficulty: 'easy',
+};
+
+/** Trading Post — barter-focused, accepts found items */
+export const TRADING_POST_PERSONA: NpcPersona = {
+  id: 'shop_trading_merchant',
+  assetKey: 'shop_trading',
+  displayName: 'Trading Post Dealer',
+  llmPersona: 'You run a rugged trading post, exchanging rare finds for useful supplies. You drive a hard bargain.',
+  greetings: [
+    'Got something to trade? Let\'s see what you\'ve got.',
+    'Ah, a fellow traveler. I deal in hard-to-find goods.',
+  ],
+  fallbackResponses: [
+    'Bring me something interesting and we\'ll talk.',
+    'Fair trades only — no funny business.',
+  ],
+  trades: [
+    { gives: 'key', wants: 'mushroom', cost: 3, description: 'Key (3 mushrooms)' },
+    { gives: 'bandage', wants: 'mushroom', cost: 2, description: 'Bandage (2 mushrooms)' },
+    { gives: 'potion', wants: 'snack', cost: 3, description: 'Potion (3 snacks)' },
+    { gives: 'torch', wants: 'snack', cost: 2, description: 'Torch (2 snacks)' },
+    { gives: 'soap', wants: 'water', cost: 2, description: 'Soap (2 water)' },
+    { gives: 'map_scroll', wants: 'key', cost: 1, description: 'Map Scroll (1 key)' },
+  ],
+  canQuiz: false,
+  quizDifficulty: 'easy',
+};
+
+// All themed shop personas for lookup (#112)
+const THEMED_SHOP_PERSONAS: Record<string, NpcPersona> = {
+  shop: SHOP_MERCHANT_PERSONA,
+  shop_general: GENERAL_STORE_PERSONA,
+  shop_snack: SNACK_STAND_PERSONA,
+  shop_trading: TRADING_POST_PERSONA,
+};
+
+/** Get the merchant persona for a shop asset key */
+export function getShopPersona(assetKey: string): NpcPersona {
+  return THEMED_SHOP_PERSONAS[assetKey] ?? SHOP_MERCHANT_PERSONA;
+}
+
 /** Lookup NPC persona by id */
 export function getNpcPersona(id: string): NpcPersona | undefined {
   if (id === SHOP_MERCHANT_PERSONA.id) return SHOP_MERCHANT_PERSONA;
+  // Check themed shop personas
+  for (const p of Object.values(THEMED_SHOP_PERSONAS)) {
+    if (p.id === id) return p;
+  }
   return ALL_PERSONAS.find((p) => p.id === id);
 }
 
