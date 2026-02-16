@@ -777,6 +777,9 @@ function _autoReadQuizQuestion(state: GameState): void {
 // ─── Update ──────────────────────────────────────────────────
 
 function update(state: GameState, input: InputManager): void {
+  // Poll gamepad state each frame (#124)
+  input.pollGamepad();
+
   // FPS tracking
   state.fpsCounter++;
   const now = performance.now();
@@ -1650,7 +1653,7 @@ function showAgeSelection(profile: AgeProfile): Promise<void> {
  * Show options overlay. Syncs with sidebar sliders bidirectionally.
  * If state is null, we're in main menu context (audio controls only affect sidebar defaults).
  */
-function showOptionsOverlay(_state: GameState | null): void {
+function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): void {
   const overlay = document.getElementById('optionsOverlay')!;
   overlay.style.display = 'flex';
 
@@ -1713,6 +1716,36 @@ function showOptionsOverlay(_state: GameState | null): void {
       sidebarLlmUrl.dispatchEvent(new Event('input'));
     }
   };
+
+  // Touch controls toggle (#124)
+  const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
+  const optGamepadStatus = document.getElementById('optGamepadStatus');
+  if (optTouch && inputMgr) {
+    // Set current value
+    optTouch.value = inputMgr.touchEnabled ? 'on' : 'off';
+    if (!inputMgr.touchEnabled && ('ontouchstart' in window || navigator.maxTouchPoints > 0)) {
+      optTouch.value = 'auto'; // was auto-detected but not forced
+    }
+    optTouch.onchange = () => {
+      if (!inputMgr) return;
+      if (optTouch.value === 'on') {
+        inputMgr.enableTouchControls();
+      } else if (optTouch.value === 'off') {
+        inputMgr.disableTouchControls();
+      } else {
+        // Auto: enable if touch device
+        if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+          inputMgr.enableTouchControls();
+        } else {
+          inputMgr.disableTouchControls();
+        }
+      }
+    };
+  }
+  if (optGamepadStatus && inputMgr) {
+    optGamepadStatus.textContent = inputMgr.gamepadConnected ? '✅ Connected' : '❌ Not connected';
+    optGamepadStatus.style.color = inputMgr.gamepadConnected ? '#88ff88' : '#888';
+  }
 
   // Close button
   document.getElementById('optionsClose')!.onclick = () => {
@@ -1924,7 +1957,7 @@ function showWelcomeSplash(): Promise<void> {
 }
 
 /** Show pause menu overlay (Escape during gameplay) */
-function showPauseMenu(state: GameState): void {
+function showPauseMenu(state: GameState, inputMgr?: InputManager): void {
   state.paused = true;
   const menu = document.getElementById('pauseMenu')!;
   menu.style.display = 'flex';
@@ -1968,7 +2001,7 @@ function showPauseMenu(state: GameState): void {
 
   // Options (#117 Phase 3)
   document.getElementById('pauseOptions')!.onclick = () => {
-    showOptionsOverlay(state);
+    showOptionsOverlay(state, inputMgr);
   };
 
   // Bug reporter (#117)
@@ -2480,7 +2513,7 @@ function gameLoop(
 
 // ─── Extended Input (F3 debug, I inventory, Esc) ─────────────
 
-function setupExtraKeys(state: GameState): void {
+function setupExtraKeys(state: GameState, input?: InputManager): void {
   window.addEventListener('keydown', (e) => {
     switch (e.key) {
       case 'F3':
@@ -2495,7 +2528,18 @@ function setupExtraKeys(state: GameState): void {
         break;
       case 'b':
       case 'B':
-        if (!state.quiz.active && !state.ui.dialog.active) {
+        if (e.shiftKey) {
+          // Shift+B: cycle terrain blend intensity (#84)
+          const steps = [0, 0.5, 1.0, 1.5, 2.0];
+          const curBlend = getBlendIntensity();
+          let nextIdx = 0;
+          for (let i = 0; i < steps.length; i++) {
+            if (curBlend < steps[i] + 0.01) { nextIdx = i; break; }
+            if (i === steps.length - 1) nextIdx = 0;
+          }
+          nextIdx = (nextIdx + 1) % steps.length;
+          setBlendIntensity(steps[nextIdx]);
+        } else if (!state.quiz.active && !state.ui.dialog.active) {
           toggleBook(state.knowledge);
           state.paused = state.knowledge.bookOpen;
           // Close inventory if book opens
@@ -2542,7 +2586,7 @@ function setupExtraKeys(state: GameState): void {
           document.getElementById('pauseMenu')!.style.display = 'none';
           state.paused = false;
         } else {
-          showPauseMenu(state);
+          showPauseMenu(state, input);
         }
         break;
       }
@@ -2567,19 +2611,6 @@ function setupExtraKeys(state: GameState): void {
           const idx = types.indexOf(cur);
           setWeather(types[(idx + 1) % types.length]);
           invalidateShadowCache(); // #83 - weather affects shadow opacity
-        }
-        break;
-      case 'B': // Shift+B: cycle terrain blend intensity (#84)
-        if (e.shiftKey) {
-          const steps = [0, 0.5, 1.0, 1.5, 2.0];
-          const curBlend = getBlendIntensity();
-          let nextIdx = 0;
-          for (let i = 0; i < steps.length; i++) {
-            if (curBlend < steps[i] + 0.01) { nextIdx = i; break; }
-            if (i === steps.length - 1) nextIdx = 0;
-          }
-          nextIdx = (nextIdx + 1) % steps.length;
-          setBlendIntensity(steps[nextIdx]);
         }
         break;
       case 'f':
@@ -2635,7 +2666,7 @@ function setupExtraKeys(state: GameState): void {
 
 async function main(): Promise<void> {
   const { state, renderer, input, hasSaveData } = await init();
-  setupExtraKeys(state);
+  setupExtraKeys(state, input);
   _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
   // Wire HTML HUD buttons
