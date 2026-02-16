@@ -33,6 +33,7 @@ import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from '
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
 import { clearObjectCache } from './render';
 import { preloadEmojiSprites } from './emoji-cache';
+import { preloadAssetSprites, hasAssetSprite } from './asset-sprites';
 import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
 import { initMinimap, renderMinimap } from './minimap';
 import {
@@ -578,6 +579,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
   preloadEmojiSprites();
+
+  // Pre-render SVG asset sprites for trees, rocks, fire (#115)
+  await preloadAssetSprites();
 
   // Preload NPC paper-cut sprites (#85)
   preloadNpcSprites();
@@ -2749,6 +2753,9 @@ async function main(): Promise<void> {
       syncBarterQuizDOM(state.trade);
     },
     getBarterQuiz: () => state.trade.barterQuiz,
+    // Asset sprite debug (#115)
+    hasAssetSprite,
+    getAssetSpriteKeys: () => ['tree', 'tree_pine', 'tree_palm', 'rock', 'bonfire', 'campfire', 'biomass_fire'],
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

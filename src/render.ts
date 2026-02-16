@@ -20,6 +20,7 @@ import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
 } from './wasm-bridge';
+import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from './asset-sprites';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -53,6 +54,8 @@ interface DrawCmd {
   // NPC sprite fields (#85)
   npcImg?: HTMLImageElement | null;
   npcFlipX?: boolean;
+  // SVG asset sprite (#115)
+  assetCanvas?: HTMLCanvasElement | null;
 }
 
 // ─── NPC Mouth Animation (#113) ─────────────────────────────
@@ -254,6 +257,12 @@ export class IsometricRenderer {
     this.ctx.drawImage(sprite, sx - size / 2, sy - size / 2, size, size);
   }
 
+  /** Draw a pre-rendered SVG asset sprite (#115). Same positioning as drawEmoji. */
+  private drawAssetCanvas(sprite: HTMLCanvasElement, sx: number, sy: number, scale: number): void {
+    const size = sprite.width * scale;
+    this.ctx.drawImage(sprite, sx - size / 2, sy - size / 2, size, size);
+  }
+
   public drawSprite(
     img: HTMLImageElement,
     sx: number,
@@ -376,11 +385,29 @@ export class IsometricRenderer {
               cmd.shadow = def.shadow;
               cmd.npcImg = npcImg;
               cmd.npcFlipX = facing === 'west';
+              cmd.assetCanvas = null;
+            } else if (hasAssetSprite(cell.assetKey)) {
+              // SVG asset sprite path (#115) — priority over tileType for objects
+              const cmd = jsPool[jsPoolIdx++];
+              cmd.sortKey = depthKey;
+              cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
+              cmd.emoji = def.emoji; // fallback
+              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+              cmd.shadow = def.shadow;
+              // Resolve sprite at build time: fire frames or static asset
+              if (fireVariant) {
+                const phase = Math.abs(Math.floor(gx * 13 + gy * 29));
+                const fi = (Math.floor(_renderFrameCount / fireVariant.frameDuration) + phase) % FIRE_FRAME_COUNT;
+                cmd.assetCanvas = getFireFrame(cell.assetKey, fi) ?? null;
+              } else {
+                cmd.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
+              }
             } else if (def.tileType) {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
               cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+              cmd.assetCanvas = null;
             } else {
               const cmd = jsPool[jsPoolIdx++];
               cmd.sortKey = depthKey;
@@ -388,6 +415,7 @@ export class IsometricRenderer {
               cmd.emoji = def.emoji;
               cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.shadow = def.shadow;
+              cmd.assetCanvas = null;
             }
           }
 
@@ -447,11 +475,19 @@ export class IsometricRenderer {
           if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
           break;
         case CMD_EMOJI:
-          this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          if (cmd.assetCanvas) {
+            this.drawAssetCanvas(cmd.assetCanvas, cmd.sx, cmd.sy, cmd.scale);
+          } else {
+            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          }
           break;
         case CMD_SHADOW_EMOJI:
           this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
-          this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          if (cmd.assetCanvas) {
+            this.drawAssetCanvas(cmd.assetCanvas, cmd.sx, cmd.sy, cmd.scale);
+          } else {
+            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          }
           break;
         case CMD_ITEM:
           this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
@@ -534,14 +570,27 @@ export class IsometricRenderer {
           const def = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
           if (def) {
             if (def.layer === 'base') break; // base emoji terrain is also cached
-            this.drawEmoji(def.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+            // SVG asset sprite (#115) — use default variant in WASM path
+            const sprite = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
+            if (sprite) {
+              this.drawAssetCanvas(sprite, cmd.sx, cmd.sy, cmd.scale);
+            } else {
+              this.drawEmoji(def.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+            }
           }
           break;
         }
         case WCMD_SHADOW_EMOJI: {
           this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
           const def2 = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
-          if (def2) this.drawEmoji(def2.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          if (def2) {
+            const sprite2 = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
+            if (sprite2) {
+              this.drawAssetCanvas(sprite2, cmd.sx, cmd.sy, cmd.scale);
+            } else {
+              this.drawEmoji(def2.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+            }
+          }
           break;
         }
         case WCMD_ITEM: {
