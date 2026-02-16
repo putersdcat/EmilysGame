@@ -5,7 +5,7 @@
  * TODO: DOC - bubble system architecture
  */
 
-import { HINTS, MAX_BUBBLE_QUEUE, MIN_BUBBLE_GAP, type HintDef, type BubbleType } from './config/hints.config';
+import { HINTS, MAX_BUBBLE_QUEUE, MIN_BUBBLE_GAP, MAX_HISTORY_SIZE, type HintDef, type BubbleType } from './config/hints.config';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -23,6 +23,15 @@ interface ActiveBubble {
   expiresAt: number;
 }
 
+/** Entry in the recent-message history buffer (#135). */
+export interface HistoryEntry {
+  id: string;
+  text: string;
+  emoji: string;
+  type: BubbleType;
+  shownAt: number;
+}
+
 interface BubbleState {
   queue: QueuedBubble[];
   active: ActiveBubble | null;
@@ -35,6 +44,10 @@ interface BubbleState {
   /** Screen coords for positioning (updated from main). */
   screenX: number;
   screenY: number;
+  /** Last N shown messages (#135). */
+  history: HistoryEntry[];
+  /** Whether the history panel is open (#135). */
+  historyPanelVisible: boolean;
 }
 
 // ─── Module State ────────────────────────────────────────────
@@ -47,18 +60,34 @@ const state: BubbleState = {
   enabled: true,
   screenX: 0,
   screenY: 0,
+  history: [],
+  historyPanelVisible: false,
 };
 
 // DOM refs (cached on first use)
 let bubbleEl: HTMLElement | null = null;
 let bubbleTextEl: HTMLElement | null = null;
 let bubbleEmojiEl: HTMLElement | null = null;
+let historyBtnEl: HTMLElement | null = null;
+let historyBadgeEl: HTMLElement | null = null;
+let historyPanelEl: HTMLElement | null = null;
+let historyListEl: HTMLElement | null = null;
+let historyCloseEl: HTMLElement | null = null;
 
 function ensureDom(): void {
   if (bubbleEl) return;
   bubbleEl = document.getElementById('thoughtBubble');
   bubbleTextEl = document.getElementById('bubbleText');
   bubbleEmojiEl = document.getElementById('bubbleEmoji');
+  // History DOM refs (#135)
+  historyBtnEl = document.getElementById('bubbleHistoryBtn');
+  historyBadgeEl = document.getElementById('bubbleHistoryBadge');
+  historyPanelEl = document.getElementById('bubbleHistoryPanel');
+  historyListEl = document.getElementById('bubbleHistoryList');
+  historyCloseEl = document.getElementById('bubbleHistoryClose');
+  // Wire click/tap handlers once
+  historyBtnEl?.addEventListener('click', () => toggleHistoryPanel());
+  historyCloseEl?.addEventListener('click', () => toggleHistoryPanel(false));
 }
 
 // ─── Public API ──────────────────────────────────────────────
@@ -157,6 +186,8 @@ export function tickBubbles(): void {
     state.lastShownAt = now;
     // Set cooldown
     state.cooldowns.set(next.hint.id, now + next.hint.cooldown);
+    // Push to history (#135)
+    pushHistory(next.hint, now);
   }
 
   // Expire stale queue entries (>10s old without being shown)
@@ -275,4 +306,81 @@ function syncBubbleDom(now: number): void {
   if (bubbleTextEl) {
     bubbleTextEl.textContent = hint.text;
   }
+
+  // Sync history badge (#135)
+  syncHistoryBadge();
+}
+
+// ─── History Helpers (#135) ──────────────────────────────────
+
+/** Push a shown hint into the bounded history buffer. */
+function pushHistory(hint: HintDef, now: number): void {
+  state.history.unshift({
+    id: hint.id,
+    text: hint.text,
+    emoji: hint.emoji ?? (hint.type === 'thought' ? '💭' : '💬'),
+    type: hint.type,
+    shownAt: now,
+  });
+  if (state.history.length > MAX_HISTORY_SIZE) {
+    state.history.length = MAX_HISTORY_SIZE;
+  }
+}
+
+/** Update history badge count. */
+function syncHistoryBadge(): void {
+  if (!historyBadgeEl || !historyBtnEl) return;
+  const count = state.history.length;
+  if (count > 0) {
+    historyBadgeEl.textContent = String(count);
+    historyBadgeEl.style.display = '';
+    historyBtnEl.style.display = '';
+  } else {
+    historyBadgeEl.style.display = 'none';
+  }
+}
+
+/** Render the history list into the panel DOM. */
+function syncHistoryDom(): void {
+  if (!historyListEl) return;
+  const now = Date.now();
+  historyListEl.innerHTML = '';
+
+  if (state.history.length === 0) {
+    historyListEl.innerHTML = '<div class="bubble-history-empty">No messages yet</div>';
+    return;
+  }
+
+  for (const entry of state.history) {
+    const ago = formatTimeAgo(now - entry.shownAt);
+    const row = document.createElement('div');
+    row.className = `bubble-history-entry bubble-history-${entry.type}`;
+    row.innerHTML = `<span class="bh-emoji">${entry.emoji}</span><span class="bh-text">${entry.text}</span><span class="bh-time">${ago}</span>`;
+    historyListEl.appendChild(row);
+  }
+}
+
+/** Format ms delta as human-readable "Xs ago" / "Xm ago". */
+function formatTimeAgo(ms: number): string {
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.round(sec / 60);
+  return `${min}m ago`;
+}
+
+/** Toggle history panel visibility. Pass explicit boolean or omit to toggle. */
+export function toggleHistoryPanel(show?: boolean): void {
+  ensureDom();
+  state.historyPanelVisible = show ?? !state.historyPanelVisible;
+  if (historyPanelEl) {
+    historyPanelEl.style.display = state.historyPanelVisible ? 'flex' : 'none';
+  }
+  if (state.historyPanelVisible) {
+    syncHistoryDom();
+  }
+}
+
+/** Get the current message history for testing/debug. */
+export function getMessageHistory(): HistoryEntry[] {
+  return [...state.history];
 }

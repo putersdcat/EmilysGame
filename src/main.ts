@@ -65,6 +65,7 @@ import { getEmojiSprite } from './emoji-cache';
 import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
   clearBubbles, getBubbleState, resetCooldowns,
+  getMessageHistory, toggleHistoryPanel,
 } from './thought-bubbles';
 import { HINTS } from './config/hints.config';
 import {
@@ -807,6 +808,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   (window as any).__bubbles = {
     triggerHint, tickBubbles, dismissBubble, clearBubbles,
     getBubbleState, resetCooldowns, updateBubblePosition,
+    getMessageHistory, toggleHistoryPanel,
     HINTS,
   };
   // Expose trade functions for E2E tests (#72, #112)
