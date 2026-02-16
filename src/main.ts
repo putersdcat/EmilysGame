@@ -49,7 +49,7 @@ import type { AgeBand } from './types/content-pack.types';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './particles';
-import { tickLighting, setTimeOfDay, getCycleProgress } from './lighting';
+import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
@@ -802,7 +802,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     updateWildlife,
     getWildlifeStats,
   };
-  (window as any).__lighting = { setTimeOfDay, getCycleProgress };
+  (window as any).__lighting = { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds };
   // Expose thought bubble functions for E2E tests (#71, #111)
   (window as any).__bubbles = {
     triggerHint, tickBubbles, dismissBubble, clearBubbles,
@@ -1559,6 +1559,7 @@ function buildSaveData(state: GameState): SaveData {
     streakHistory: [...state.streak.history],
     visitedFog: serializeVisited(),
     ageBand: state.ageProfile.ageBand ?? undefined,
+    playedSeconds: getPlayedSeconds(),
   };
 }
 
@@ -1617,6 +1618,10 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Restore age band profile (#92)
   if (data.ageBand) {
     setAgeBand(state.ageProfile, data.ageBand as AgeBand);
+  }
+  // Restore cumulative playtime (#136)
+  if (data.playedSeconds != null) {
+    setPlayedSeconds(data.playedSeconds);
   }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
@@ -2475,7 +2480,8 @@ function renderFrame(
   updateBubblePosition(playerScreen.x, playerScreen.y);
 
   // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
-  tickLighting();
+  // Pause-aware: don't advance time when menus/overlays are active (#136)
+  tickLighting(state.paused);
 
   // Local lights: fire positions cached per chunk to avoid 5625+ cell scans every frame (#79, #81)
   clearLights();

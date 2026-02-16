@@ -10,7 +10,7 @@ import { ITEM_DEFS } from './config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
 import { getTerrainCacheSize, getTerrainCacheMemoryMB } from './terrain-cache';
 import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './llm';
-import { getTimeOfDay } from './lighting';
+import { getTimeOfDay, getPlayedSeconds } from './lighting';
 import { getWeatherInfo } from './weather';
 import { isFlashlightOn } from './local-lights';
 import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from './gen';
@@ -402,6 +402,15 @@ function syncSidebar(
   if (sbKeys) sbKeys.textContent = String(inv.countItem('key'));
   if (sbCrowbars) sbCrowbars.textContent = String(inv.countItem('crowbar'));
   if (sbPotions) sbPotions.textContent = String(inv.countItem('potion'));
+
+  // Playtime display (#136)
+  const sbPlaytime = document.getElementById('sbPlaytime');
+  if (sbPlaytime) {
+    const totalSec = Math.floor(getPlayedSeconds());
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    sbPlaytime.textContent = h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
 
   // Quiz stats
   if (quizStats) {
