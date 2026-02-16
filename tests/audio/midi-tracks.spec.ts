@@ -109,4 +109,56 @@ test.describe('MIDI Track Integration (#107)', () => {
     const withComposer = manifest.tracks.filter((t: any) => t.composer && t.composer !== 'Unknown');
     expect(withComposer.length).toBeGreaterThanOrEqual(45);
   });
+
+  // ─── SoundFont + MIDI file playback tests (#130) ─────────
+
+  test('manifest entries have midiFile paths', async ({ page, baseURL }) => {
+    const resp = await page.goto(`${baseURL}audio/music/manifest.json`);
+    const manifest = await resp!.json();
+    // All MIDI tracks should have a midiFile field pointing to .mid binary
+    const withMidiFile = manifest.tracks.filter((t: any) => t.midiFile);
+    expect(withMidiFile.length).toBe(manifest.tracks.length);
+    // Verify path format
+    for (const t of withMidiFile.slice(0, 5)) {
+      expect(t.midiFile).toMatch(/^midi\/.+\.mid$/);
+    }
+  });
+
+  test('.mid binary files are accessible via HTTP', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}?test=1`);
+    const manifestResp = await page.evaluate(async () => {
+      const r = await fetch('./audio/music/manifest.json');
+      return r.json();
+    });
+    // Check first 3 .mid files are fetchable
+    for (const t of manifestResp.tracks.slice(0, 3)) {
+      if (!t.midiFile) continue;
+      const status = await page.evaluate(async (midiFile: string) => {
+        const r = await fetch(`./audio/music/${midiFile}`);
+        return r.status;
+      }, t.midiFile);
+      expect(status).toBe(200);
+    }
+  });
+
+  test('MIDI file has valid header bytes', async ({ page, baseURL }) => {
+    await page.goto(`${baseURL}?test=1`);
+    const manifest = await page.evaluate(async () => {
+      const r = await fetch('./audio/music/manifest.json');
+      return r.json();
+    });
+    const firstMidi = manifest.tracks[0];
+    // Fetch as ArrayBuffer and check MIDI magic bytes "MThd"
+    const result = await page.evaluate(async (midiFile: string) => {
+      const resp = await fetch(`./audio/music/${midiFile}`);
+      const buf = await resp.arrayBuffer();
+      const view = new Uint8Array(buf);
+      return {
+        magic: String.fromCharCode(view[0], view[1], view[2], view[3]),
+        size: buf.byteLength,
+      };
+    }, firstMidi.midiFile);
+    expect(result.magic).toBe('MThd');
+    expect(result.size).toBeGreaterThan(100);
+  });
 });

@@ -11,7 +11,8 @@
         1
       ],
       "tempo": 104,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Bach_-_Badinerie.mid"
     },
     {
       "id": "bach___prelude_1",
@@ -24,7 +25,8 @@
         2
       ],
       "tempo": 92,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Bach_-_Prelude_1.mid"
     },
     {
       "id": "bach___toccata_and_fugue_dm",
@@ -36,7 +38,8 @@
         2
       ],
       "tempo": 20,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Bach_-_Toccata_and_Fugue_Dm.mid"
     },
     {
       "id": "beethoven___fur_elise",
@@ -49,7 +52,8 @@
         2
       ],
       "tempo": 75,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Beethoven_-_Fur_Elise.mid"
     },
     {
       "id": "beethoven___moonlight_sonata_1",
@@ -61,7 +65,8 @@
         2
       ],
       "tempo": 51,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Beethoven_-_Moonlight_Sonata_1.mid"
     },
     {
       "id": "beethoven___ode_to_joy",
@@ -74,7 +79,8 @@
         1
       ],
       "tempo": 124,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Beethoven_-_Ode_to_Joy.mid"
     },
     {
       "id": "beethoven___symphony_5_1",
@@ -87,7 +93,8 @@
         3
       ],
       "tempo": 212,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Beethoven_-_Symphony_5_1.mid"
     },
     {
       "id": "bizet___the_top",
@@ -100,7 +107,8 @@
         3
       ],
       "tempo": 150,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Bizet_-_The_Top.mid"
     },
     {
       "id": "boccherini___minuet",
@@ -113,7 +121,8 @@
         1
       ],
       "tempo": 100,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Boccherini_-_Minuet.mid"
     },
     {
       "id": "brahms___lullaby",
@@ -126,7 +135,8 @@
         2
       ],
       "tempo": 72,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Brahms_-_Lullaby.mid"
     },
     {
       "id": "bratton___teddy_bears_picnic",
@@ -139,7 +149,8 @@
         3
       ],
       "tempo": 150,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Bratton_-_Teddy_Bears_Picnic.mid"
     },
     {
       "id": "chopin___minute_waltz",
@@ -152,7 +163,8 @@
         3
       ],
       "tempo": 180,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Chopin_-_Minute_Waltz.mid"
     },
     {
       "id": "chopin___raindrop_prelude",
@@ -164,7 +176,8 @@
         2
       ],
       "tempo": 66,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Chopin_-_Raindrop_Prelude.mid"
     },
     {
       "id": "debussy___clair_de_lune",
@@ -176,7 +189,8 @@
         2
       ],
       "tempo": 48,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Debussy_-_Clair_de_Lune.mid"
     },
     {
       "id": "debussy___golliwogs_cakewalk",
@@ -189,7 +203,8 @@
         1
       ],
       "tempo": 110,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Debussy_-_Golliwogs_Cakewalk.mid"
     },
     {
       "id": "elgar___nimrod",
@@ -201,7 +216,8 @@
         2
       ],
       "tempo": 42,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Elgar_-_Nimrod.mid"
     },
     {
       "id": "elgar___pomp_and_circumstance",
@@ -214,7 +230,8 @@
         2
       ],
       "tempo": 82,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Elgar_-_Pomp_and_Circumstance.mid"
     },
     {
       "id": "grieg___morning_mood",
@@ -227,7 +244,8 @@
         2
       ],
       "tempo": 84,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Grieg_-_Morning_Mood.mid"
     },
     {
       "id": "handel___hornpipe",
@@ -240,7 +258,8 @@
         3
       ],
       "tempo": 218,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Handel_-_Hornpipe.mid"
     },
     {
       "id": "handel___largo",
@@ -252,7 +271,8 @@
         2
       ],
       "tempo": 65,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Handel_-_Largo.mid"
     },
     {
       "id": "holst___jupiter",
@@ -265,7 +285,8 @@
         2
       ],
       "tempo": 70,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Holst_-_Jupiter.mid"
     },
     {
       "id": "joplin___the_entertainer",
@@ -278,7 +299,8 @@
         2
       ],
       "tempo": 72,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Joplin_-_The_Entertainer.mid"
     },
     {
       "id": "liszt___liebestraum_3",
@@ -291,7 +313,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Liszt_-_Liebestraum_3.mid"
     },
     {
       "id": "massenet___meditation",
@@ -303,7 +326,8 @@
         2
       ],
       "tempo": 65,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Massenet_-_Meditation.mid"
     },
     {
       "id": "mendelssohn___hark_the_herald_angels",
@@ -316,7 +340,8 @@
         2
       ],
       "tempo": 98,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mendelssohn_-_Hark_The_Herald_Angels.mid"
     },
     {
       "id": "mendelssohn___wedding_march",
@@ -329,7 +354,8 @@
         1
       ],
       "tempo": 112,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mendelssohn_-_Wedding_March.mid"
     },
     {
       "id": "mozart___alla_turca",
@@ -342,7 +368,8 @@
         3
       ],
       "tempo": 132,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mozart_-_Alla_Turca.mid"
     },
     {
       "id": "mozart___eine_kleine_nachtmusik",
@@ -355,7 +382,8 @@
         3
       ],
       "tempo": 140,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mozart_-_Eine_Kleine_Nachtmusik.mid"
     },
     {
       "id": "mozart___elvira_madigan",
@@ -367,7 +395,8 @@
         2
       ],
       "tempo": 58,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mozart_-_Elvira_Madigan.mid"
     },
     {
       "id": "mozart___symphony_40",
@@ -380,7 +409,8 @@
         3
       ],
       "tempo": 220,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mozart_-_Symphony_40.mid"
     },
     {
       "id": "mussorgsky___promenade",
@@ -393,7 +423,8 @@
         1
       ],
       "tempo": 104,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Mussorgsky_-_Promenade.mid"
     },
     {
       "id": "pachelbel___canon_in_d",
@@ -405,7 +436,8 @@
         2
       ],
       "tempo": 42,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Pachelbel_-_Canon_in_D.mid"
     },
     {
       "id": "rachmaninoff___prelude_c_sharp_minor",
@@ -417,7 +449,8 @@
         2
       ],
       "tempo": 40,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Rachmaninoff_-_Prelude_C_Sharp_Minor.mid"
     },
     {
       "id": "saintsaens___the_elephant",
@@ -429,7 +462,8 @@
         2
       ],
       "tempo": 53,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/SaintSaens_-_The_Elephant.mid"
     },
     {
       "id": "saintsaens___the_swan",
@@ -441,7 +475,8 @@
         2
       ],
       "tempo": 67,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/SaintSaens_-_The_Swan.mid"
     },
     {
       "id": "satie___gnossienne_1",
@@ -454,7 +489,8 @@
         2
       ],
       "tempo": 83,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Satie_-_Gnossienne_1.mid"
     },
     {
       "id": "satie___gymnopedie_1",
@@ -467,7 +503,8 @@
         2
       ],
       "tempo": 80,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Satie_-_Gymnopedie_1.mid"
     },
     {
       "id": "schubert___the_trout",
@@ -479,7 +516,8 @@
         2
       ],
       "tempo": 60,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Schubert_-_The_Trout.mid"
     },
     {
       "id": "schumann___traumerei",
@@ -491,7 +529,8 @@
         2
       ],
       "tempo": 60,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Schumann_-_Traumerei.mid"
     },
     {
       "id": "scott_joplin___euphonic_sounds",
@@ -504,7 +543,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Scott_Joplin_-_Euphonic_Sounds.mid"
     },
     {
       "id": "scott_joplin___maple_leaf_rag",
@@ -517,7 +557,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Scott_Joplin_-_Maple_Leaf_Rag.mid"
     },
     {
       "id": "scott_joplin___pineapple_rag_easy_winners",
@@ -530,7 +571,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Scott_Joplin_-_Pineapple_Rag_Easy_Winners.mid"
     },
     {
       "id": "scott_joplin___the_cascades",
@@ -543,7 +585,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Scott_Joplin_-_The_Cascades.mid"
     },
     {
       "id": "scott_joplin___the_entertainer",
@@ -556,7 +599,8 @@
         1
       ],
       "tempo": 120,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Scott_Joplin_-_The_Entertainer.mid"
     },
     {
       "id": "strauss___blue_danube",
@@ -569,7 +613,8 @@
         3
       ],
       "tempo": 146,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Strauss_-_Blue_Danube.mid"
     },
     {
       "id": "tchaikovsky___sugar_plum_fairy",
@@ -581,7 +626,8 @@
         2
       ],
       "tempo": 62,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Tchaikovsky_-_Sugar_Plum_Fairy.mid"
     },
     {
       "id": "traditional___dies_irae",
@@ -594,7 +640,8 @@
         2
       ],
       "tempo": 85,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Traditional_-_Dies_Irae.mid"
     },
     {
       "id": "traditional___drunken_sailor",
@@ -607,7 +654,8 @@
         3
       ],
       "tempo": 175,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Traditional_-_Drunken_Sailor.mid"
     },
     {
       "id": "traditional___wellerman",
@@ -620,7 +668,8 @@
         3
       ],
       "tempo": 175,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Traditional_-_Wellerman.mid"
     },
     {
       "id": "vivaldi___autumn",
@@ -633,7 +682,8 @@
         1
       ],
       "tempo": 112,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Vivaldi_-_Autumn.mid"
     },
     {
       "id": "vivaldi___winter_largo",
@@ -645,7 +695,8 @@
         2
       ],
       "tempo": 32,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Vivaldi_-_Winter_Largo.mid"
     },
     {
       "id": "wagner___bridal_chorus",
@@ -658,7 +709,8 @@
         2
       ],
       "tempo": 80,
-      "source": "midi"
+      "source": "midi",
+      "midiFile": "midi/Wagner_-_Bridal_Chorus.mid"
     }
   ]
 }

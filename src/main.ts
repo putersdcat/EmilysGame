@@ -94,7 +94,7 @@ import {
   nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
   startDucking, stopDucking, setBiome as musicSetBiome,
   serializeMusicSettings, deserializeMusicSettings,
-  getCurrentTrackInfo, initMidiTracks, getTotalTrackCount,
+  getCurrentTrackInfo, initMidiTracks, getTotalTrackCount, updateMidiProgress,
   type MusicState,
 } from './music';
 import {
@@ -2592,6 +2592,7 @@ function renderFrame(
     }
 
     // Music UI sync (#74)
+    updateMidiProgress(state.music);
     syncMusicUI(state.music);
 
     // SFX UI sync (#75)
