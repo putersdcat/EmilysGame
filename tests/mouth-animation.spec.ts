@@ -24,9 +24,7 @@ async function waitForGame(page: import('@playwright/test').Page) {
   await page.reload({ waitUntil: 'domcontentloaded' });
 
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
-  await page.waitForTimeout(1000);
-  const hasState = await page.evaluate(() => !!(window as any).__gameState);
-  expect(hasState).toBe(true);
+  await page.waitForFunction(() => !!(window as any).__gameState, { timeout: 15000 });
 }
 
 /**

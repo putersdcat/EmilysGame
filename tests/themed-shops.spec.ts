@@ -10,9 +10,7 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 async function waitForGame(page: import('@playwright/test').Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
-  await page.waitForTimeout(1000);
-  const hasDebug = await page.evaluate(() => !!(window as any).__gameDebug);
-  expect(hasDebug).toBe(true);
+  await page.waitForFunction(() => !!(window as any).__gameDebug, { timeout: 15000 });
 }
 
 test.describe('Themed Shop Variants (#112 Phase 2)', () => {
