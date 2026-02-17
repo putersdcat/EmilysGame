@@ -368,7 +368,7 @@ const AUDIO_SCALE = 1;
 
 /**
  * Update listener position — call each frame (throttled by caller).
- * Updates AudioListener for all PannerNode distance calculations.
+ * Updates AudioListener + distance attenuation for positional sources.
  */
 export function updateListenerPosition(state: SfxState, x: number, y: number): void {
   state.listenerPos.x = x;
@@ -376,6 +376,8 @@ export function updateListenerPosition(state: SfxState, x: number, y: number): v
   const ctx = _ctx;
   if (!ctx) return;
   _updateListenerPosition(ctx, state.listenerPos);
+  // Update distance-based volume on all active positional sources
+  _updatePositionalVolumes(state);
 }
 
 function _updateListenerPosition(ctx: AudioContext, pos: AudioPosition): void {
@@ -384,6 +386,334 @@ function _updateListenerPosition(ctx: AudioContext, pos: AudioPosition): void {
     listener.positionX.setValueAtTime(pos.x * AUDIO_SCALE, ctx.currentTime);
     listener.positionY.setValueAtTime(0, ctx.currentTime);
     listener.positionZ.setValueAtTime(pos.y * AUDIO_SCALE, ctx.currentTime);
+  }
+}
+
+/**
+ * Play a positional (world-space) looping SFX.
+ * Volume attenuates by distance from listener. Uses PannerNode for stereo pan.
+ * Returns an ID handle for later removal, or null if playback failed.
+ */
+export function playPositionalSfx(
+  state: SfxState,
+  sampleId: string,
+  worldX: number,
+  worldY: number,
+  maxDist: number = 12,
+  baseVolume: number = 0.6,
+): string | null {
+  if (!state.settings.sfxEnabled || state.settings.sfxMuted) return null;
+  const ctx = ensureAudioContext();
+  if (!ctx || !_sfxGain) return null;
+
+  // Unique ID for this positional source
+  const id = `pos_${sampleId}_${worldX}_${worldY}`;
+
+  // Don't duplicate
+  if (state._positionalSources.some(s => s.id === id)) return id;
+
+  // Distance check — skip if too far
+  const dx = worldX - state.listenerPos.x;
+  const dy = worldY - state.listenerPos.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > maxDist * 1.5) return null; // Don't start if way out of range
+
+  // Create PannerNode with inverse distance model
+  const panner = ctx.createPanner();
+  panner.panningModel = 'HRTF';
+  panner.distanceModel = 'linear';
+  panner.maxDistance = maxDist * AUDIO_SCALE;
+  panner.refDistance = 1 * AUDIO_SCALE;
+  panner.rolloffFactor = 1;
+  panner.positionX.setValueAtTime(worldX * AUDIO_SCALE, ctx.currentTime);
+  panner.positionY.setValueAtTime(0, ctx.currentTime);
+  panner.positionZ.setValueAtTime(worldY * AUDIO_SCALE, ctx.currentTime);
+
+  // Play sampled loop via sampled-sfx pipeline
+  playSample(ctx, sampleId, {
+    volume: baseVolume,
+    destination: panner,
+    loop: true,
+  }).then(handle => {
+    if (handle) {
+      panner.connect(_sfxGain!);
+      const src: PositionalSource = {
+        id,
+        pos: { x: worldX, y: worldY },
+        panner,
+        handle,
+        maxDist,
+      };
+      state._positionalSources.push(src);
+      // Initial volume set
+      _setPositionalVolume(state, src);
+    }
+  }).catch(() => { /* silent fail */ });
+
+  return id;
+}
+
+/**
+ * Stop and remove a positional source by ID.
+ */
+export function stopPositionalSfx(state: SfxState, id: string): void {
+  const idx = state._positionalSources.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  const src = state._positionalSources[idx];
+  src.handle.stop();
+  src.panner.disconnect();
+  state._positionalSources.splice(idx, 1);
+}
+
+/**
+ * Stop all positional sources.
+ */
+export function stopAllPositionalSfx(state: SfxState): void {
+  for (const src of state._positionalSources) {
+    src.handle.stop();
+    src.panner.disconnect();
+  }
+  state._positionalSources.length = 0;
+}
+
+/** Distance-based volume update for single source */
+function _setPositionalVolume(state: SfxState, src: PositionalSource): void {
+  const dx = src.pos.x - state.listenerPos.x;
+  const dy = src.pos.y - state.listenerPos.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const vol = Math.max(0, 1 - dist / src.maxDist);
+  src.handle.setVolume(vol * state.settings.sfxVolume);
+}
+
+/** Update volumes for all active positional sources */
+function _updatePositionalVolumes(state: SfxState): void {
+  for (let i = state._positionalSources.length - 1; i >= 0; i--) {
+    const src = state._positionalSources[i];
+    const dx = src.pos.x - state.listenerPos.x;
+    const dy = src.pos.y - state.listenerPos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // Cull if very far away
+    if (dist > src.maxDist * 2) {
+      src.handle.stop();
+      src.panner.disconnect();
+      state._positionalSources.splice(i, 1);
+      continue;
+    }
+    _setPositionalVolume(state, src);
+  }
+}
+
+/**
+ * Get active positional source count (for debug/tests).
+ */
+export function getPositionalSourceCount(state: SfxState): number {
+  return state._positionalSources.length;
+}
+
+// ─── Terrain-Aware Footsteps ────────────────────────────────
+
+/** Surface type → footstep sample ID mapping */
+const SURFACE_FOOTSTEP: Record<string, string> = {
+  grass: 'footstep_grass',
+  dirt:  'footstep_dirt',
+  stone: 'footstep_stone',
+  wood:  'footstep_stone',  // Wooden surfaces use stone
+  sand:  'footstep_dirt',   // Sand uses dirt
+  water: 'footstep_grass',  // Shouldn't walk on water, but fallback
+};
+
+/** Footstep frame counter — we don't want footsteps every frame */
+let _footstepCounter = 0;
+const FOOTSTEP_INTERVAL = 12; // Play footstep every N frames while moving
+
+/**
+ * Play a terrain-appropriate footstep SFX.
+ * Call each frame while player is moving; internally rate-limits.
+ * @param surface - the SurfaceType under the player (from MICRO_TILE_DEFS)
+ */
+export function playFootstep(state: SfxState, surface: string): void {
+  _footstepCounter++;
+  if (_footstepCounter < FOOTSTEP_INTERVAL) return;
+  _footstepCounter = 0;
+
+  const sfxId = SURFACE_FOOTSTEP[surface] ?? 'footstep_grass';
+  playSfx(state, sfxId);
+}
+
+/** Reset footstep counter (call when player stops moving) */
+export function resetFootstepCounter(): void {
+  _footstepCounter = 0;
+}
+
+// ─── Sampled Ambience Layers ────────────────────────────────
+
+/**
+ * Active sampled ambience loops — tracked separately from oscillators.
+ * Keyed by sample ID for deduplication.
+ */
+const _activeSampledAmbience = new Map<string, ActiveSampleSource>();
+
+/**
+ * Start a sampled ambience loop (replaces or supplements oscillator layers).
+ * Won't duplicate if already playing.
+ */
+function _startSampledAmbienceLoop(
+  ctx: AudioContext,
+  sampleId: string,
+  volume: number,
+): void {
+  if (_activeSampledAmbience.has(sampleId)) return;
+
+  playSample(ctx, sampleId, {
+    volume,
+    destination: _ambienceGain ?? ctx.destination,
+    loop: true,
+  }).then(handle => {
+    if (handle) {
+      _activeSampledAmbience.set(sampleId, handle);
+    }
+  }).catch(() => { /* silent fail */ });
+}
+
+/** Stop a single sampled ambience loop */
+function _stopSampledAmbienceLoop(sampleId: string): void {
+  const handle = _activeSampledAmbience.get(sampleId);
+  if (handle) {
+    handle.stop();
+    _activeSampledAmbience.delete(sampleId);
+  }
+}
+
+/** Stop all sampled ambience loops */
+function _stopAllSampledAmbience(): void {
+  for (const [, handle] of _activeSampledAmbience) {
+    handle.stop();
+  }
+  _activeSampledAmbience.clear();
+}
+
+// ─── Time-Triggered Animal Calls ────────────────────────────
+
+/**
+ * Random animal call system – triggers at semi-random intervals.
+ * Bird chirps during day, owl hoots at night, rooster at dawn.
+ * Call every ~60 frames (throttled by caller).
+ */
+let _lastAnimalCallFrame = 0;
+
+export function tickAnimalCalls(
+  state: SfxState,
+  timeSlot: 'day' | 'dusk' | 'night',
+  frameCount: number,
+): void {
+  if (!state.settings.sfxEnabled || state.settings.ambienceMuted) return;
+  if (!state.sampledReady) return;
+
+  // Minimum gap between animal calls (150-400 frames ≈ 2.5-6.5s at 60fps)
+  const minGap = 150 + Math.floor(Math.random() * 250);
+  if (frameCount - _lastAnimalCallFrame < minGap) return;
+
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+
+  if (timeSlot === 'day') {
+    // 30% chance of bird chirp per check
+    if (Math.random() < 0.3) {
+      const variant = `bird_chirp_${Math.floor(Math.random() * 3) + 1}`;
+      playSfx(state, variant);
+      _lastAnimalCallFrame = frameCount;
+    }
+  } else if (timeSlot === 'dusk') {
+    // 15% chance of frog croak
+    if (Math.random() < 0.15) {
+      playSfx(state, 'frog_croak');
+      _lastAnimalCallFrame = frameCount;
+    }
+  } else if (timeSlot === 'night') {
+    // 20% chance of owl hoot
+    if (Math.random() < 0.2) {
+      playSfx(state, 'owl_hoot');
+      _lastAnimalCallFrame = frameCount;
+    }
+  }
+}
+
+/**
+ * Trigger rooster crow — call once at dawn transition.
+ * Plays rooster_crow sample (one-shot, not looping).
+ */
+export function playRoosterCrow(state: SfxState): void {
+  if (!state.settings.sfxEnabled || state.settings.ambienceMuted) return;
+  if (!state.sampledReady) return;
+  playSfx(state, 'rooster_crow');
+}
+
+// ─── Enhanced Ambience with Sampled Loops ───────────────────
+
+/**
+ * Sampled ambience layer mapping — which samples to play for each profile.
+ * These supplement or replace oscillator layers for richer sound.
+ */
+const SAMPLED_AMBIENCE_MAP: Record<string, { sampleId: string; volume: number }[]> = {
+  day_clear: [
+    // Bird chirps are handled by tickAnimalCalls instead of loops
+  ],
+  dusk_clear: [
+    { sampleId: 'cricket_loop', volume: 0.15 },
+    { sampleId: 'wind_loop', volume: 0.06 },
+  ],
+  night_clear: [
+    { sampleId: 'cricket_loop', volume: 0.2 },
+    { sampleId: 'wind_loop', volume: 0.04 },
+  ],
+  rain: [
+    { sampleId: 'rain_loop', volume: 0.25 },
+    { sampleId: 'wind_loop', volume: 0.08 },
+  ],
+  storm: [
+    { sampleId: 'rain_loop', volume: 0.35 },
+    { sampleId: 'wind_loop', volume: 0.12 },
+  ],
+  fog: [
+    { sampleId: 'wind_loop', volume: 0.05 },
+  ],
+};
+
+/**
+ * Enhanced ambience update — calls sampled loops alongside oscillators.
+ * Drop-in replacement for updateAmbience with sampled layer support.
+ */
+export function updateAmbienceEnhanced(
+  state: SfxState,
+  timeSlot: 'day' | 'dusk' | 'night',
+  weather: string,
+): void {
+  // Still run oscillator ambience for baseline
+  updateAmbience(state, timeSlot, weather);
+
+  if (!state.sampledReady || !state.settings.sfxEnabled || state.settings.ambienceMuted) {
+    _stopAllSampledAmbience();
+    return;
+  }
+
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+
+  // Determine target sampled layers for current profile
+  const profileId = state.activeAmbienceId;
+  const targetLayers = profileId ? (SAMPLED_AMBIENCE_MAP[profileId] ?? []) : [];
+  const targetIds = new Set(targetLayers.map(l => l.sampleId));
+
+  // Stop loops that shouldn't be playing
+  for (const [id] of _activeSampledAmbience) {
+    if (!targetIds.has(id)) {
+      _stopSampledAmbienceLoop(id);
+    }
+  }
+
+  // Start loops that should be playing
+  for (const layer of targetLayers) {
+    _startSampledAmbienceLoop(ctx, layer.sampleId, layer.volume * state.settings.ambienceVolume);
   }
 }
 
