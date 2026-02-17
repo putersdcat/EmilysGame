@@ -31,4 +31,8 @@ inventory-*.png
 torch-*.png
 
 # A/B test runs (keep README only)
-asset-dev/Export/A-B-Tests/run-*/
+# asset-dev/Export/A-B-Tests/run-*/
+
+# stuff from alpha build testing on emilys surfacebook
+public/audio/piano-mp3/manifest.json
+temp_log.txt
