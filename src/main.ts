@@ -211,6 +211,11 @@ interface GameState {
   diarrheaLockUntil: number;   // frameCount when lock ends
   diarrheaLastTrigger: number; // frameCount of last trigger (cooldown)
   poopMarkers: { x: number; y: number; placedAt: number }[];
+  // Quiz type flags — tracks which special quiz is active (#109, #110)
+  _woundCareQuiz: boolean;
+  _hygieneQuiz: boolean;
+  _insectQuiz: boolean;
+  _pendingInsectQuiz: boolean;
 }
 
 // Track NPC id for voice lines during dialog (#76)
@@ -282,7 +287,7 @@ function _startWoundCareQuiz(state: GameState, wq: WoundCareQuestion): void {
   };
   state.paused = true;
   // Mark this as a wound-care quiz for bonus logic
-  (state as any)._woundCareQuiz = true;
+  state._woundCareQuiz = true;
 }
 
 // ─── Hygiene Quiz (#110 Phase 2) ─────────────────────────────
@@ -349,7 +354,7 @@ function _startHygieneQuiz(state: GameState): void {
     hint: 'Think about hygiene and health!',
   };
   state.paused = true;
-  (state as any)._hygieneQuiz = true;
+  state._hygieneQuiz = true;
 }
 
 // ─── Insect Safety Quiz (#110 Phase 3) ───────────────────────
@@ -406,7 +411,7 @@ function _startInsectQuiz(state: GameState): void {
     hint: 'Think about food safety!',
   };
   state.paused = true;
-  (state as any)._insectQuiz = true;
+  state._insectQuiz = true;
 }
 
 // ─── Chunk Management ────────────────────────────────────────
@@ -763,6 +768,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     diarrheaLockUntil: 0,
     diarrheaLastTrigger: 0,
     poopMarkers: [],
+    // Quiz type flags (#109, #110)
+    _woundCareQuiz: false,
+    _hygieneQuiz: false,
+    _insectQuiz: false,
+    _pendingInsectQuiz: false,
   };
 
   // Sync unlocked cosmetics to customizer
@@ -936,25 +946,25 @@ function update(state: GameState, input: InputManager): void {
           checkCosmeticUnlocks(state);
 
           // Wound-care quiz bonus heal (#109)
-          if ((state as any)._woundCareQuiz) {
+          if (state._woundCareQuiz) {
             applyWoundQuizBonus(state.status);
             addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
-            (state as any)._woundCareQuiz = false;
+            state._woundCareQuiz = false;
           }
 
           // Hygiene quiz bonus — full cleanliness restore (#110)
-          if ((state as any)._hygieneQuiz) {
+          if (state._hygieneQuiz) {
             state.status.cleanliness = 100;
             addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
             playSfx(state.sfx, 'outhouse_clean');
-            (state as any)._hygieneQuiz = false;
+            state._hygieneQuiz = false;
           }
 
           // Insect safety quiz bonus — extra energy (#110 Phase 3)
-          if ((state as any)._insectQuiz) {
+          if (state._insectQuiz) {
             state.status.energy = Math.min(100, state.status.energy + 10);
             addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
-            (state as any)._insectQuiz = false;
+            state._insectQuiz = false;
           }
 
           // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
@@ -974,13 +984,13 @@ function update(state: GameState, input: InputManager): void {
         } else if (state.quiz.result === 'wrong') {
           playSfx(state.sfx, 'quiz_wrong');
           setTransientExpression(state, 'surprised', 1500);
-          (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
-          (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
-          (state as any)._insectQuiz = false; // Clear insect flag (#110 P3)
+          state._woundCareQuiz = false; // Clear wound-care flag (#109)
+          state._hygieneQuiz = false; // Clear hygiene flag (#110)
+          state._insectQuiz = false; // Clear insect flag (#110 P3)
         } else if (state.quiz.result === 'idk') {
-          (state as any)._woundCareQuiz = false; // Clear wound-care flag (#109)
-          (state as any)._hygieneQuiz = false; // Clear hygiene flag (#110)
-          (state as any)._insectQuiz = false; // Clear insect flag (#110 P3)
+          state._woundCareQuiz = false; // Clear wound-care flag (#109)
+          state._hygieneQuiz = false; // Clear hygiene flag (#110)
+          state._insectQuiz = false; // Clear insect flag (#110 P3)
           // "I don't know" → open Book to related article
           const category = state.quiz.question?.category || '';
           const questionText = state.quiz.question?.question || '';
@@ -1048,9 +1058,9 @@ function update(state: GameState, input: InputManager): void {
           // Auto-read question for young age bands (#94)
           _autoReadQuizQuestion(state);
           // state.paused stays true for quiz
-        } else if ((state as any)._pendingInsectQuiz) {
+        } else if (state._pendingInsectQuiz) {
           // Insect safety quiz after eating worms (#110 Phase 3)
-          (state as any)._pendingInsectQuiz = false;
+          state._pendingInsectQuiz = false;
           _startInsectQuiz(state);
           playSfx(state.sfx, 'quiz_start');
           _autoReadQuizQuestion(state);
@@ -1574,7 +1584,7 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       addToast(state.ui, '🐛 Gross! But you got a tiny bit of energy... +5', '#8bc34a', 3000);
 
       // Queue insect safety quiz
-      (state as any)._pendingInsectQuiz = true;
+      state._pendingInsectQuiz = true;
       showDialog(state.ui, '🐛 Yuck!', ['That was disgusting... but is it actually safe to eat insects?']);
       state.paused = true;
       _lastDialogNpcId = null;
@@ -2050,6 +2060,11 @@ function resetGameState(state: GameState): void {
   state.diarrheaLastTrigger = 0;
   state.poopMarkers.length = 0;
   setDiarrheaOverlay(false);
+  // Reset quiz type flags (#109, #110)
+  state._woundCareQuiz = false;
+  state._hygieneQuiz = false;
+  state._insectQuiz = false;
+  state._pendingInsectQuiz = false;
   // Keep music settings across new game — just stop playback
   musicStop(state.music);
   // Keep SFX settings across new game — just stop ambience
@@ -3083,7 +3098,7 @@ async function main(): Promise<void> {
     quizSelectIndex: (idx: number) => quizSelectIndex(state.quiz, idx),
     // Outhouse/hygiene debug (#110)
     startHygieneQuiz: () => _startHygieneQuiz(state),
-    getHygieneQuizActive: () => (state as any)._hygieneQuiz === true,
+    getHygieneQuizActive: () => state._hygieneQuiz === true,
     // Stream/worm debug (#110 Phase 3, #133 illness chain)
     getInsectQuestions: () => INSECT_QUESTIONS,
     startInsectQuiz: () => _startInsectQuiz(state),

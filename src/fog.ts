@@ -215,11 +215,6 @@ export function getVisitedCount(): number {
   return visitedCells.size;
 }
 
-/** Clear all visited state (new game). */
-export function clearVisited(): void {
-  visitedCells.clear();
-}
-
 // ─── Save / Load ────────────────────────────────────────────
 
 /**

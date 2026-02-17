@@ -5,7 +5,7 @@
  * TODO: DOC - MIDI track loading pipeline
  */
 
-import type { MusicTrack, MusicNote } from './config/music.config';
+import type { MusicTrack } from './config/music.config';
 
 // ─── Manifest Types ─────────────────────────────────────────
 
@@ -25,6 +25,8 @@ export interface MidiManifest {
 }
 
 // ─── Track JSON shape (as emitted by convert-midi.ts) ───────
+// Contains legacy melody/bass arrays for backward compat with JSON files;
+// only id/name/composer/style/tempo/volume/biomes are forwarded to MusicTrack.
 
 interface TrackJson {
   id: string;
@@ -32,12 +34,13 @@ interface TrackJson {
   composer: string;
   style: string;
   tempo: number;
-  melodyWave: string;
-  bassWave: string;
   volume: number;
   biomes: number[];
-  melody: MusicNote[];
-  bass: MusicNote[];
+  // Legacy fields in JSON — parsed but not forwarded
+  melodyWave?: string;
+  bassWave?: string;
+  melody?: unknown[];
+  bass?: unknown[];
 }
 
 // ─── State ──────────────────────────────────────────────────
@@ -107,16 +110,12 @@ export async function loadMidiTrack(id: string): Promise<MusicTrack | null> {
       }
       const json: TrackJson = await resp.json();
 
-      // Convert to MusicTrack
+      // Convert to MusicTrack (legacy melody/bass/wave fields not forwarded)
       const track: MusicTrack = {
         id: json.id,
         name: json.name,
         biomes: json.biomes,
         tempo: json.tempo,
-        melodyWave: (json.melodyWave as OscillatorType) || 'triangle',
-        bassWave: (json.bassWave as OscillatorType) || 'sine',
-        melody: json.melody,
-        bass: json.bass,
         volume: json.volume,
         composer: json.composer,
         style: json.style,
