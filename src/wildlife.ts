@@ -490,6 +490,9 @@ export function getAnimationOffset(entity: WildlifeEntity): { dx: number; dy: nu
       return { dx: Math.sin(t * 1.2) * 2, dy: Math.cos(t * 0.8) * 1 };
     case 'flutter':
       return { dx: Math.sin(t * 4) * 2, dy: Math.sin(t * 3) * 3 - 4 };
+    case 'prowl':
+      // Subtle cat-like stalking: slow horizontal drift, slight crouch bob
+      return { dx: Math.sin(t * 0.8) * 1.0, dy: Math.sin(t * 1.6) * 0.5 };
     case 'still':
     default:
       return { dx: 0, dy: 0 };

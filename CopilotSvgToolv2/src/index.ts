@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { renderSvgPreview, renderSvgToPng } from './renderSvg.js';
 import { renderAnimatedSvgPreview } from './renderAnimatedSvg.js';
+import { shutdownBrowserPool } from './browserPool.js';
 
 const server = new McpServer({
   name: 'copilot-svg-tool',
@@ -250,5 +251,5 @@ async function main(): Promise<void> {
 main().catch((error) => {
   const message = error instanceof Error ? error.stack ?? error.message : String(error);
   process.stderr.write(`${message}\n`);
-  process.exit(1);
+  void shutdownBrowserPool().finally(() => process.exit(1));
 });

@@ -9,7 +9,9 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "smoke": "tsx src/smoke.ts",
-    "test": "npm run smoke"
+    "test": "tsx src/test/runner.ts",
+    "test:static": "tsx src/test/runner.ts --static",
+    "test:animated": "tsx src/test/runner.ts --animated"
   },
   "keywords": [],
   "author": "",

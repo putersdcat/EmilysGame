@@ -31,7 +31,7 @@ export interface SpeciesDef {
   /** Quiz category association for educational hooks */
   quizCategory?: string;
   /** Idle animation style */
-  animStyle: 'bob' | 'hop' | 'sway' | 'swim' | 'flutter' | 'still';
+  animStyle: 'bob' | 'hop' | 'sway' | 'swim' | 'flutter' | 'still' | 'prowl';
   /** Movement speed (grid units per frame, 0 = stationary) */
   wanderSpeed: number;
   /** Flee distance threshold (grid units from player) */
@@ -161,6 +161,32 @@ export const SPECIES: SpeciesDef[] = [
     scale: 0.35, weight: 3, interactable: false,
     fact: 'Fish have been on Earth for more than 500 million years!',
     animStyle: 'swim', wanderSpeed: 0.015, fleeRadius: 4,
+    flipRule: 'movement',
+  },
+
+  // ─── Cats (#142) ───
+  {
+    id: 'cat_orange', emoji: '🐈', name: 'Orange Tabby Cat',
+    biomes: ['meadow', 'forest'], time: ['day', 'dusk'], habitat: 'land',
+    scale: 0.5, weight: 2, interactable: true,
+    fact: 'Orange tabby cats are almost always male — about 80% of them are boys!',
+    quizCategory: 'science', animStyle: 'prowl', wanderSpeed: 0.015, fleeRadius: 3,
+    flipRule: 'movement',
+  },
+  {
+    id: 'cat_black', emoji: '🐈\u200D\u2B1B', name: 'Black Cat',
+    biomes: ['forest', 'castle'], time: ['dusk', 'night'], habitat: 'land',
+    scale: 0.5, weight: 2, interactable: true,
+    fact: 'In many cultures, black cats are considered good luck — sailors believed they brought safe voyages!',
+    quizCategory: 'history', animStyle: 'prowl', wanderSpeed: 0.018, fleeRadius: 4,
+    flipRule: 'movement',
+  },
+  {
+    id: 'cat_persian', emoji: '🐱', name: 'Fluffy Gray Persian',
+    biomes: ['meadow', 'castle'], time: ['day'], habitat: 'land',
+    scale: 0.55, weight: 1, interactable: true,
+    fact: 'Persian cats are one of the oldest cat breeds — they have been around for over 400 years!',
+    quizCategory: 'history', animStyle: 'bob', wanderSpeed: 0.008, fleeRadius: 2,
     flipRule: 'movement',
   },
 
