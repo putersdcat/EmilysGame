@@ -12,6 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager, type TouchControlMode } from './input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
+import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './tutorial';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
@@ -1454,6 +1455,17 @@ function update(state: GameState, input: InputManager): void {
     musicSetBiome(state.music, biomeId);
   }
 
+  // --- Tutorial tick (#186) ---
+  if (isTutorialActive()) {
+    tickTutorial(
+      state.player.x,
+      state.player.y,
+      state.inventory.slots.reduce((sum, s) => sum + s.quantity, 0),
+      isFlashlightOn(),
+      justKeys.interact,
+    );
+  }
+
   // --- Transient expression tick (#102) ---
   tickExpressionOverride(state);
 
@@ -2099,6 +2111,14 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   document.getElementById('optionsClose')!.onclick = () => {
     overlay.style.display = 'none';
   };
+
+  // Replay Tutorial (#186)
+  document.getElementById('optReplayTutorial')?.addEventListener('click', () => {
+    resetTutorial();
+    initTutorial();
+    overlay.style.display = 'none';
+    if (_state) _state.paused = false;
+  });
 }
 
 function showMainMenu(hasSaveData: boolean): Promise<string> {
@@ -3396,6 +3416,12 @@ async function main(): Promise<void> {
         input.enableTouchControls();
       }
     },
+    // #186: Tutorial
+    resetTutorial,
+    initTutorial,
+    dismissTutorial,
+    isTutorialActive,
+    shouldShowTutorial,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -3541,6 +3567,10 @@ async function main(): Promise<void> {
       // Subject selection
       await showSubjectSelection(state.knowledge);
       addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
+      // Tutorial for first-time players (#186)
+      if (shouldShowTutorial()) {
+        initTutorial();
+      }
     } else if (choice.startsWith('load-slot-')) {
       const slot = parseInt(choice.replace('load-slot-', ''));
       const data = loadFromSlot(slot);

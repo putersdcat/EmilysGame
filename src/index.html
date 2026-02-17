@@ -1189,6 +1189,127 @@
     }
     .book-search-input:focus { border-color: rgba(100,130,200,0.6); }
 
+    /* ── Tutorial Overlay (#186) ── */
+    #tutorialOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 80;
+      pointer-events: none;
+    }
+    .tutorial-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 20px;
+      margin: 12px auto;
+      max-width: 600px;
+      background: rgba(10, 8, 25, 0.92);
+      border: 1px solid rgba(100, 100, 160, 0.4);
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: tutorialSlideIn 0.4s ease;
+      pointer-events: auto;
+    }
+    @keyframes tutorialSlideIn {
+      from { transform: translateY(-60px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .tutorial-step-icon {
+      font-size: 28px;
+      animation: tutorialPulse 1.5s ease-in-out infinite;
+    }
+    @keyframes tutorialPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    .tutorial-text {
+      flex: 1;
+      font: bold 14px monospace;
+      color: #ffdd88;
+    }
+    .tutorial-hint {
+      font: 12px monospace;
+      color: #8899bb;
+    }
+    .tutorial-key {
+      display: inline-block;
+      padding: 2px 6px;
+      background: rgba(80, 70, 120, 0.6);
+      border: 1px solid rgba(140, 130, 180, 0.5);
+      border-radius: 4px;
+      font: bold 11px monospace;
+      color: #ddd;
+    }
+    .tutorial-progress {
+      display: flex;
+      gap: 5px;
+    }
+    .tutorial-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(100, 100, 140, 0.4);
+      transition: background 0.3s;
+    }
+    .tutorial-dot.active {
+      background: #ffdd88;
+      box-shadow: 0 0 6px rgba(255, 221, 136, 0.5);
+    }
+    .tutorial-dot.done {
+      background: #66cc88;
+    }
+    .tutorial-skip {
+      background: none;
+      border: 1px solid rgba(100,100,140,0.3);
+      color: #888;
+      font: 11px monospace;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    .tutorial-skip:hover { color: #ccc; border-color: rgba(140,130,180,0.5); }
+    .tutorial-complete {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      padding: 32px 40px;
+      background: rgba(15, 12, 35, 0.96);
+      border: 1px solid rgba(100, 100, 160, 0.4);
+      border-radius: 14px;
+      text-align: center;
+      z-index: 81;
+      pointer-events: auto;
+      animation: menuFadeIn 0.4s ease;
+      backdrop-filter: blur(10px);
+    }
+    .tutorial-complete-title {
+      font: bold 22px monospace;
+      color: #ffdd88;
+      margin-bottom: 8px;
+    }
+    .tutorial-complete-sub {
+      font: 13px monospace;
+      color: #8899bb;
+      margin-bottom: 20px;
+    }
+    .tutorial-complete-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    .tutorial-checkbox-label {
+      font: 11px monospace;
+      color: #777;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .tutorial-checkbox-label input { accent-color: #ffdd88; }
+
     /* ── Options Overlay (#117 Phase 3) ── */
     #optionsOverlay {
       position: fixed; inset: 0;
@@ -1929,6 +2050,35 @@
     </div>
   </div>
 
+  <!-- Tutorial Overlay (#186) -->
+  <div id="tutorialOverlay" style="display:none">
+    <div class="tutorial-content">
+      <div class="tutorial-step-icon" id="tutorialIcon">🏃</div>
+      <div class="tutorial-text" id="tutorialText">Use Arrow keys or WASD to move around!</div>
+      <div class="tutorial-hint" id="tutorialHint">
+        <span class="tutorial-key">↑↓←→</span> or <span class="tutorial-key">WASD</span>
+      </div>
+      <div class="tutorial-progress" id="tutorialProgress">
+        <span class="tutorial-dot active"></span>
+        <span class="tutorial-dot"></span>
+        <span class="tutorial-dot"></span>
+        <span class="tutorial-dot"></span>
+      </div>
+      <button class="tutorial-skip" id="tutorialSkip">Skip Tutorial ✕</button>
+    </div>
+    <div class="tutorial-complete" id="tutorialComplete" style="display:none">
+      <div class="tutorial-complete-title">🎉 Tutorial Complete!</div>
+      <div class="tutorial-complete-sub">You've mastered the basics. Time to explore!</div>
+      <div class="tutorial-complete-buttons">
+        <button class="menu-btn primary" id="tutorialStartGame">🌟 Start Playing</button>
+        <button class="menu-btn" id="tutorialRepeat">🔄 Repeat</button>
+      </div>
+      <label class="tutorial-checkbox-label">
+        <input type="checkbox" id="tutorialDontShow"> Don't show again
+      </label>
+    </div>
+  </div>
+
   <!-- Options Overlay (#117 Phase 3) -->
   <div id="optionsOverlay">
     <div class="options-container">
@@ -1981,7 +2131,7 @@
         </div>
       </div>
 
-      <!-- Gameplay Options (#127) -->
+      <!-- Gameplay Options (#127, #186) -->
       <div class="options-section">
         <div class="options-section-label">🗺️ Gameplay</div>
         <div class="options-row">
@@ -1990,6 +2140,10 @@
             <option value="on">On</option>
             <option value="off">Off</option>
           </select>
+        </div>
+        <div class="options-row">
+          <label>Tutorial</label>
+          <button id="optReplayTutorial" class="menu-btn" style="padding:4px 12px;font-size:0.75rem;width:auto">Replay</button>
         </div>
       </div>
 
