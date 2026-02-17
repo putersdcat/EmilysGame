@@ -45,8 +45,11 @@ test.describe('MIDI Track Integration (#107)', () => {
     await page.goto('/?test=1');
     // Wait for game to finish loading
     await page.waitForFunction(() => !!(window as any).__gameDebug, { timeout: 15000 });
-    // Wait a bit for async MIDI loading
-    await page.waitForTimeout(3000);
+    // Poll for midiLoaded — 51 track fetches can take time under load
+    await page.waitForFunction(
+      () => (window as any).__gameDebug?.state?.music?.midiLoaded === true,
+      { timeout: 15000 },
+    );
     
     // Access music state through debug hooks
     const musicInfo = await page.evaluate(() => {

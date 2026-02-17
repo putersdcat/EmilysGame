@@ -15,6 +15,7 @@ import {
   initSampledSfx, hasSample, playSample, preloadAllSamples,
   type ActiveSampleSource,
 } from './sampled-sfx';
+import { isTestMode } from './llm';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -71,8 +72,10 @@ let _activeSfxCount = 0;
 
 // ─── Init ───────────────────────────────────────────────────
 
-/** Lazily create AudioContext on first user gesture */
+/** Lazily create AudioContext on first user gesture.
+ *  Returns null in test mode to prevent audio during Playwright runs. */
 function ensureAudioContext(): AudioContext | null {
+  if (isTestMode()) return null; // Silence during automated tests
   if (_ctx) return _ctx;
   try {
     _ctx = new AudioContext();

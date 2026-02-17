@@ -9,7 +9,7 @@ import { ASSET_DEFS, OBSTACLE_TEMPLATES, QUIZ_GATE_ASSET, type ObstacleTemplate 
 import { NPC_DEFS } from './config/npc.config';
 import { facingTowardPlayer } from './npc-sprites';
 import type { CellData, ChunkData } from './gen';
-import { WORLD_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';
 import { invalidateObjectCache } from './render';
 
@@ -52,6 +52,27 @@ export function isWalkable(
   if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
 
   return chunk.cells[ly][lx].walkable;
+}
+
+/**
+ * Check if the player's collision footprint (axis-aligned rectangle) is fully
+ * walkable at position (px, py). Samples all four corners of the footprint
+ * to prevent walk-through on any approach direction (#151, #180).
+ */
+export function isFootprintWalkable(
+  px: number,
+  py: number,
+  chunks: Map<string, ChunkData>,
+): boolean {
+  const hw = PLAYER_CONFIG.collisionHalfW;
+  const hh = PLAYER_CONFIG.collisionHalfH;
+  // Check all four corners of the collision rectangle
+  return (
+    isWalkable(Math.floor(px - hw), Math.floor(py - hh), chunks) &&
+    isWalkable(Math.floor(px + hw), Math.floor(py - hh), chunks) &&
+    isWalkable(Math.floor(px - hw), Math.floor(py + hh), chunks) &&
+    isWalkable(Math.floor(px + hw), Math.floor(py + hh), chunks)
+  );
 }
 
 /**

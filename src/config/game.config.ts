@@ -47,11 +47,15 @@ export const WORLD_CONFIG = {
 // ─── Player / Ego ────────────────────────────────────────────
 export const PLAYER_CONFIG = {
   speed: 0.05,          // Grid units per frame
-  startPosition: { x: 12, y: 12 }, // Center of first chunk (25/2)
+  startPosition: { x: 12.5, y: 12.5 }, // Center of cell at chunk midpoint (avoids footprint overlap with adjacent walls)
   height: 3,
   scale: 1.0,
   defaultVariation: 'blonde_pink',
   animationFrames: 6,   // Walking animation frame count
+  /** Collision footprint half-extents in grid units (centered on player position).
+   *  Tight rectangle prevents walk-through on all approach directions (#151, #180). */
+  collisionHalfW: 0.3,  // X half-width (grid units)
+  collisionHalfH: 0.3,  // Y half-height (grid units)
 } as const;
 
 // ─── LLM / Entropy ──────────────────────────────────────────

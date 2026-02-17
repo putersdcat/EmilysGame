@@ -29,6 +29,9 @@ export interface AssetDef {
   hazardDamage?: number;
   /** Short label for injury feedback messages (#137). */
   hazardLabel?: string;
+  /** Fraction (0-1) of sprite height that acts as occluder base (#181).
+   *  0 or undefined = no occlusion. E.g. 0.4 means bottom 40% of sprite clips over player. */
+  occluderRatio?: number;
 }
 
 // ─── Master Asset Library ────────────────────────────────────
@@ -87,21 +90,25 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🌿', category: 'plant', height: 3, layer: 'mid',
     scale: 0.9, shadow: true, walkable: false, interactable: false,
     description: 'Dense bush (blocks movement)',
+    occluderRatio: 0.35,
   },
   tree: {
     emoji: '🌳', category: 'plant', height: 8, layer: 'high',
     scale: 1.6, shadow: true, walkable: false, interactable: false,
     description: 'Large deciduous tree',
+    occluderRatio: 0.35,
   },
   tree_pine: {
     emoji: '🌲', category: 'plant', height: 9, layer: 'high',
     scale: 1.8, shadow: true, walkable: false, interactable: false,
     description: 'Tall pine tree',
+    occluderRatio: 0.3,
   },
   tree_palm: {
     emoji: '🌴', category: 'plant', height: 7, layer: 'high',
     scale: 1.5, shadow: true, walkable: false, interactable: false,
     description: 'Palm tree',
+    occluderRatio: 0.3,
   },
   tall_plant: {
     emoji: '🪾', category: 'plant', height: 3, layer: 'mid',
@@ -130,11 +137,13 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🧱', category: 'obstacle', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: false, interactable: false,
     description: 'Brick wall segment', tileType: 'stone_wall',
+    occluderRatio: 0.6,
   },
   door_locked: {
     emoji: '🔒', category: 'obstacle', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
     description: 'Locked door (needs key)', tileType: 'door_gate',
+    occluderRatio: 0.6,
   },
   barricade: {
     emoji: '🪵', category: 'obstacle', height: 3, layer: 'mid',
@@ -163,6 +172,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🪧', category: 'interactive', height: 3, layer: 'mid',
     scale: 0.8, shadow: true, walkable: false, interactable: true,
     description: 'Readable sign post',
+    occluderRatio: 0.4,
   },
   bridge: {
     emoji: '🌉', category: 'interactive', height: 1, layer: 'base',
@@ -178,6 +188,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🚪', category: 'interactive', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: true, interactable: false,
     description: 'Unlocked/open door',
+    occluderRatio: 0.5,
   },
 
   // --- Collectibles ---

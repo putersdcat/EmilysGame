@@ -17,6 +17,7 @@ import {
   DEFAULT_MUSIC_SETTINGS,
   type MusicTrack, type MusicSettings,
 } from './config/music.config';
+import { isTestMode } from './llm';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ const MAX_MIDI_PIANO = 108; // C8
 // ─── AudioContext Management ────────────────────────────────
 
 function ensureAudioContext(): AudioContext | null {
+  if (isTestMode()) return null; // Silence during automated tests
   if (_ctx) return _ctx;
   try {
     _ctx = new AudioContext();
@@ -361,6 +363,24 @@ function stopAllNotes(): void {
 // ─── Playback Control ───────────────────────────────────────
 
 export function play(state: MusicState): void {
+  // In test mode: update state machine with a dummy track — no real audio
+  if (isTestMode()) {
+    if (state.settings.muted || !state.settings.enabled) return;
+    state._playRequested = true;
+    if (state.playlist.length === 0) {
+      state.playlist = [{
+        id: 'test-track', name: 'Test Track',
+        biomes: [0, 1, 2, 3], tempo: 120, volume: 1,
+      }];
+    }
+    const track = state.playlist[state.currentTrackIndex % state.playlist.length];
+    _currentTrack = track;
+    state.currentTrackId = track.id;
+    state.playState = 'playing';
+    _isPlaying = true;
+    return;
+  }
+
   const ctx = ensureAudioContext();
   if (!ctx) return;
   if (ctx.state === 'suspended') ctx.resume();

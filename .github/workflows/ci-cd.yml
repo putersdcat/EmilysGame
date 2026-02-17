@@ -44,19 +44,3 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      # GitHub Pages deployment disabled - game requires local LLM server at 127.0.0.1:8002
-      # which is not available in static hosting environments. The game splash screen
-      # blocks on LLM connection, making GitHub Pages deployment non-functional.
-      # See: src/main.ts waitForLlm() function
-      #
-      # - name: Deploy to GitHub Pages
-      #   if: github.ref == 'refs/heads/main'
-      #   uses: peaceiris/actions-gh-pages@v3
-      #   with:
-      #     github_token: ${{ secrets.GITHUB_TOKEN }}
-      #     publish_dir: ./dist
-      #     publish_branch: gh-pages
-      #     keep_files: false
-      #     user_name: github-actions[bot]
-      #     user_email: 41898282+github-actions[bot]@users.noreply.github.com

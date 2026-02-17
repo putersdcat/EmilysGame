@@ -725,6 +725,13 @@ export function generateSideIdleCharacterSVG(variation: CharacterVariation): str
       <!-- Accessory -->
       ${getSideAccessorySVG(accessory)}
 
+      <!-- Back arm (behind body — drawn first so body occludes it) -->
+      <rect x="22" y="44" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.7"/>
+
+      <!-- Back leg (behind body) -->
+      <rect x="28" y="70" width="5" height="20" fill="${skinTone}" opacity="0.7"/>
+      <ellipse cx="30.5" cy="90" rx="3" ry="4" fill="#333" opacity="0.7"/>
+
       <!-- Neck -->
       <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
 
@@ -734,20 +741,11 @@ export function generateSideIdleCharacterSVG(variation: CharacterVariation): str
       <!-- Dress trim -->
       <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>
 
-      <!-- Back arm (behind body, partially visible) -->
-      <rect x="22" y="44" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.6"/>
-
-      <!-- Front arm -->
+      <!-- Front arm (in front of body) -->
       <rect x="38" y="44" width="6" height="18" rx="2" fill="${skinTone}"/>
-
-      <!-- Back leg -->
-      <rect x="28" y="70" width="5" height="20" fill="${skinTone}" opacity="0.7"/>
 
       <!-- Front leg -->
       <rect x="33" y="70" width="5" height="20" fill="${skinTone}"/>
-
-      <!-- Shoes -->
-      <ellipse cx="30.5" cy="90" rx="3" ry="4" fill="#333" opacity="0.7"/>
       <ellipse cx="35.5" cy="90" rx="3" ry="4" fill="#333"/>
     </svg>
   `;
@@ -782,6 +780,11 @@ export function generateSideWalkingCharacterSVG(variation: CharacterVariation, f
         <!-- Accessory -->
         ${getSideAccessorySVG(accessory)}
 
+        <!-- Back arm (swinging, behind body — drawn first so body occludes) -->
+        <g transform="translate(25, 44)">
+          <rect x="-3" y="0" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.7" transform="rotate(${-armSwing})"/>
+        </g>
+
         <!-- Neck -->
         <rect x="30" y="38" width="8" height="6" fill="${skinTone}"/>
 
@@ -791,18 +794,13 @@ export function generateSideWalkingCharacterSVG(variation: CharacterVariation, f
         <!-- Dress trim -->
         <line x1="25" y1="48" x2="41" y2="48" stroke="#FFF" stroke-width="1" opacity="0.5"/>
 
-        <!-- Back arm (swinging, behind body) -->
-        <g transform="translate(25, 44)">
-          <rect x="-3" y="0" width="6" height="18" rx="2" fill="${skinTone}" opacity="0.6" transform="rotate(${-armSwing})"/>
-        </g>
-
-        <!-- Front arm (swinging, in front) -->
+        <!-- Front arm (swinging, in front of body) -->
         <g transform="translate(41, 44)">
           <rect x="-3" y="0" width="6" height="18" rx="2" fill="${skinTone}" transform="rotate(${armSwing})"/>
         </g>
       </g>
 
-      <!-- Back leg (striding) -->
+      <!-- Back leg (striding — drawn before front leg) -->
       <g transform="translate(28, 70)">
         <rect x="0" y="${otherLegOffset}" width="5" height="20" fill="${skinTone}" opacity="0.7"/>
         <ellipse cx="2.5" cy="${20 + otherLegOffset}" rx="3" ry="4" fill="#333" opacity="0.7"/>

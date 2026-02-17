@@ -78,17 +78,36 @@ Emily's Game is an isometric browser-based procedural adventure game with LLM-dr
 - Type check: `npx tsc --noEmit`
 - Build: `npx vite build`
 
+## Path-Scoped Instructions
+
+Detailed, context-aware instructions live in `.github/instructions/`. These auto-attach when editing matching files:
+
+| Instruction File | Scope | Key Content |
+|-----------------|-------|-------------|
+| `src-main.instructions.md` | `src/main.ts` | God-file mitigation, extraction targets |
+| `src-gen.instructions.md` | `src/gen.ts` | Monolith extraction strategy |
+| `rendering.instructions.md` | `src/{render,terrain-cache,local-lights,shadows,fog,lighting}.ts` | Zero-allocation rules, Camera dedup |
+| `config-files.instructions.md` | `src/config/*.config.ts` | Typing, immutability, duplicate types |
+| `types.instructions.md` | `src/types/**` | Type centralization strategy |
+| `audio.instructions.md` | `src/{sfx,music,sampled-sfx,midi-loader,npc-voice}.ts` | Error handling, factory patterns |
+| `tests.instructions.md` | `tests/**` | Test mode, sharding, coverage gaps |
+| `state-management.instructions.md` | On-demand | State architecture, save/load rules |
+| `performance.instructions.md` | On-demand | Hot-path rules, throttling, chunks |
+| `llm-integration.instructions.md` | `src/llm.ts` | Test mode bypass, fallback strategy |
+| `scripts.instructions.md` | `scripts/**` | Script conventions, content pipeline |
+| `ci-cd.instructions.md` | `.github/workflows/**` | Workflow rules, deployment process |
+
 ## Key Files Reference
 
 | File | Purpose |
 |------|---------|
-| `src/main.ts` | Game loop, LLM gate, perf tracking |
+| `src/main.ts` | Game loop, LLM gate, perf tracking (**⚠️ 3,150-line god file — see instructions**) |
 | `src/render.ts` | Viewport-culled isometric renderer |
 | `src/ui.ts` | HTML DOM UI sync |
 | `src/input.ts` | Edge detection input handling |
 | `src/sprites.ts` | SVG sprite generation + cache |
 | `src/llm.ts` | LLM client (health, chat, entropy) |
-| `src/gen.ts` | World generation |
+| `src/gen.ts` | World generation (**⚠️ 2,480-line monolith — see instructions**) |
 | `src/quiz.ts` | Quiz system |
 | `src/inventory.ts` | Item/inventory management |
 | `src/mechanics.ts` | Game mechanics (collision, interaction) |

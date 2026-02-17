@@ -11,11 +11,11 @@ import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager, shouldAutoShowTouchOverlay, type TouchControlMode } from './input';
-import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
+import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
-import { isWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './mechanics';
+import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './mechanics';
 import { createInventory, type Inventory } from './inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
 import { type QuizDifficulty } from './config/quiz.config';
@@ -1246,15 +1246,36 @@ function update(state: GameState, input: InputManager): void {
     const injuryMult = getInjurySpeedMult(state.injury);
     const diarrheaMult = state.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
     const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
-    const newX = state.player.x + mv.dx * effectiveSpeed;
-    const newY = state.player.y + mv.dy * effectiveSpeed;
+    const dx = mv.dx * effectiveSpeed;
+    const dy = mv.dy * effectiveSpeed;
+    const newX = state.player.x + dx;
+    const newY = state.player.y + dy;
 
-    // Collision check
-    if (isWalkable(Math.round(newX), Math.round(newY), state.chunks)) {
+    // Axis-independent collision resolution with footprint (#151, #180)
+    // Try combined move first; if blocked, try each axis independently (wall-sliding)
+    let movedX = false;
+    let movedY = false;
+    if (isFootprintWalkable(newX, newY, state.chunks)) {
       state.player.x = newX;
       state.player.y = newY;
+      movedX = true;
+      movedY = true;
+    } else {
+      // Try X-only
+      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks)) {
+        state.player.x = newX;
+        movedX = true;
+      }
+      // Try Y-only
+      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks)) {
+        state.player.y = newY;
+        movedY = true;
+      }
+    }
+
+    if (movedX || movedY) {
       // Terrain-aware footstep SFX (#108)
-      const footCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
+      const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
       const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./tiles').TileType] : undefined;
       const surface = footTileDef?.surface ?? 'grass';
       playFootstep(state.sfx, surface);
@@ -3136,9 +3157,13 @@ async function main(): Promise<void> {
         }
       }
     },
-    // Sprite helpers (#86)
+    // Sprite helpers (#86, #182 limb layering)
+    loadCharacterSprite,
     loadCharacterSpriteAsync,
     generateIdleCharacterSVG,
+    generateSideIdleCharacterSVG,
+    generateSideWalkingCharacterSVG,
+    spriteCache,
     clearVariationCache,
     showCustomizer: () => showCustomizer(state.playerVariation),
     // NPC sprite helpers (#85)
@@ -3445,7 +3470,8 @@ async function main(): Promise<void> {
       console.log(`[Music] ${getTotalTrackCount()} MIDI tracks available`);
     }
     // Auto-start music after tracks are ready if music is enabled and not muted.
-    if (state.music.settings.enabled && !state.music.settings.muted) {
+    // Skip in test mode — tests control music state explicitly.
+    if (!isTestMode() && state.music.settings.enabled && !state.music.settings.muted) {
       musicPlay(state.music);
     }
   });

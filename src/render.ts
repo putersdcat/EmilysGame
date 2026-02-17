@@ -108,6 +108,27 @@ const jsSortIdx: number[] = [];
 for (let i = 0; i < JS_CMD_POOL_SIZE; i++) jsSortIdx.push(i);
 let jsPoolIdx = 0;
 
+// ─── Occluder Tracking (#181) ────────────────────────────────
+// Pre-allocated pool of occluder references for partial-hide pass.
+// Tall objects (trees, walls) can partially clip over the player
+// when the player walks just south of them.
+const MAX_OCCLUDERS = 64;
+interface OccluderRef {
+  sx: number; sy: number;     // screen position
+  gy: number;                 // grid Y (for proximity check)
+  scale: number;              // draw scale
+  ratio: number;              // bottom fraction that occludes (0-1)
+  sortKey: number;            // depth key (for player comparison)
+  assetCanvas: HTMLCanvasElement | null; // SVG sprite (if available)
+  emoji: string;              // emoji fallback
+  tint: number;               // biome tint
+}
+const occluderPool: OccluderRef[] = [];
+for (let i = 0; i < MAX_OCCLUDERS; i++) {
+  occluderPool.push({ sx: 0, sy: 0, gy: 0, scale: 0, ratio: 0, sortKey: 0, assetCanvas: null, emoji: '', tint: 0 });
+}
+let occluderCount = 0;
+
 // ─── Object Cell Cache ──────────────────────────────────────
 // Pre-computed sparse list of non-base cells per chunk.
 // Instead of iterating all 1024 cells per chunk per frame,
@@ -311,6 +332,7 @@ export class IsometricRenderer {
     // --- Layer 1: cached base terrain (one drawImage per chunk) ---
     // Data-driven draw commands using pre-allocated pool (no per-frame alloc)
     jsPoolIdx = 0;
+    occluderCount = 0;   // reset occluder tracking (#181)
     _renderFrameCount++;
     const size = WORLD_CONFIG.chunkSize;
     const maxCmds = RENDER_CONFIG.maxDrawCmds; // draw call budget for graceful degradation
@@ -358,7 +380,9 @@ export class IsometricRenderer {
 
           // Draw elevated (non-base) objects
           if (!isBase) {
-            const depthKey = gy + def.height * 0.1;
+            // Sort key: cell base Y + half-cell for center anchor + tiny height bias
+            // for stable occlusion. Taller objects with same Y draw slightly later (#179).
+            const depthKey = gy + 0.5 + def.height * 0.01;
             // Fire animation: scale pulse + vertical wobble (#81)
             const fireVariant = FIRE_VARIANTS[cell.assetKey];
             let drawScale = def.scale;
@@ -416,6 +440,29 @@ export class IsometricRenderer {
               cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.shadow = def.shadow;
               cmd.assetCanvas = null;
+            }
+
+            // Track occluder objects near the player for partial-hide pass (#181)
+            const occRatio = def.occluderRatio;
+            if (occRatio && occRatio > 0 && occluderCount < MAX_OCCLUDERS) {
+              // Only track objects within ±2 grid units of the player
+              const dyGY = egoPos.y - gy;
+              const dxGX = egoPos.x - gx;
+              if (dyGY > -0.5 && dyGY < 2.0 && dxGX > -2.0 && dxGX < 2.0) {
+                const occ = occluderPool[occluderCount++];
+                occ.sx = jsx; occ.sy = drawSy;
+                occ.gy = gy; occ.scale = drawScale;
+                occ.ratio = occRatio;
+                occ.sortKey = depthKey;
+                // Resolve the asset canvas or emoji for re-draw
+                if (hasAssetSprite(cell.assetKey)) {
+                  occ.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
+                } else {
+                  occ.assetCanvas = null;
+                }
+                occ.emoji = def.emoji;
+                occ.tint = biome.tintHue;
+              }
             }
           }
 
@@ -510,6 +557,36 @@ export class IsometricRenderer {
           }
           break;
       }
+    }
+
+    // ─── Occluder Re-draw Pass (#181) ────────────────────────────
+    // Re-draw the bottom portion of tracked occluder objects ON TOP of the player
+    // to create partial-hiding behind tall objects (trees, walls).
+    // Only activates when the player is slightly south of the occluder (in front but close).
+    const playerSortKey = egoPos.y + 0.3;
+    const occCtx = this.ctx;
+    for (let oi = 0; oi < occluderCount; oi++) {
+      const occ = occluderPool[oi];
+      // Only re-draw if player is "in front" (higher sortKey) but close
+      if (playerSortKey <= occ.sortKey) continue;
+      // For standard 48px base emoji/asset sprites, compute actual draw size
+      const spriteSize = occ.assetCanvas
+        ? occ.assetCanvas.width * occ.scale
+        : 48 * occ.scale;
+      // Occluder region: bottom (ratio) fraction of the sprite
+      const clipTop = occ.sy - spriteSize / 2 + spriteSize * (1.0 - occ.ratio);
+      const clipH = spriteSize * occ.ratio;
+      const clipLeft = occ.sx - spriteSize / 2;
+      occCtx.save();
+      occCtx.beginPath();
+      occCtx.rect(clipLeft, clipTop, spriteSize, clipH);
+      occCtx.clip();
+      if (occ.assetCanvas) {
+        this.drawAssetCanvas(occ.assetCanvas, occ.sx, occ.sy, occ.scale);
+      } else {
+        this.drawEmoji(occ.emoji, occ.sx, occ.sy, occ.scale, occ.tint);
+      }
+      occCtx.restore();
     }
   }
 

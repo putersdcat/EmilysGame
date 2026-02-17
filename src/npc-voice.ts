@@ -4,6 +4,11 @@
  * TODO: DOC - NPC voice system, settings, per-NPC voice mapping
  */
 
+import { isTestMode } from './llm';
+
+/** Cached once — doesn't change at runtime */
+const _isTestMode = isTestMode();
+
 // ─── Types ───────────────────────────────────────────────────
 
 export interface VoiceStyle {
@@ -72,9 +77,11 @@ if (typeof speechSynthesis !== 'undefined') {
 
 // ─── Public API ──────────────────────────────────────────────
 
-/** Create initial voice state with feature detection */
+/** Create initial voice state with feature detection.
+ *  Disabled in test mode to prevent speech during Playwright runs. */
 export function createVoiceState(): VoiceState {
-  const supported = typeof speechSynthesis !== 'undefined'
+  const supported = !_isTestMode
+    && typeof speechSynthesis !== 'undefined'
     && typeof SpeechSynthesisUtterance !== 'undefined';
   return {
     settings: { ...DEFAULT_VOICE_SETTINGS },
