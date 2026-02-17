@@ -1163,7 +1163,7 @@
       margin-top: 16px;
     }
 
-    /* ── Touch Controls Overlay (#124, #126 idle-slide) ── */
+    /* ── Touch Controls Overlay (#124, #126, #144 3-way visibility) ── */
     #touchControlsOverlay {
       position: fixed;
       inset: 0;
@@ -1185,10 +1185,6 @@
       touch-action: none;
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
       will-change: transform, opacity;
-    }
-    .touch-idle .touch-joystick-zone {
-      transform: translateX(-120%);
-      opacity: 0.15;
     }
     .touch-joystick-ring {
       width: 110px;
@@ -1221,9 +1217,55 @@
       transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
       will-change: transform, opacity;
     }
-    .touch-idle .touch-action-zone {
+
+    /* ── Mode: Slide (legacy #126) — controls slide off-screen when idle ── */
+    .touch-mode-slide.touch-idle .touch-joystick-zone {
+      transform: translateX(-120%);
+      opacity: 0.15;
+    }
+    .touch-mode-slide.touch-idle .touch-action-zone {
       transform: translateX(120%);
       opacity: 0.15;
+    }
+
+    /* ── Mode: Whisper (default #144) — fade to faint outline, never leave screen ── */
+    .touch-mode-whisper .touch-joystick-zone,
+    .touch-mode-whisper .touch-action-zone {
+      transition: opacity 0.4s ease;
+    }
+    .touch-mode-whisper.touch-idle .touch-joystick-zone,
+    .touch-mode-whisper.touch-idle .touch-action-zone {
+      opacity: 0.15;
+    }
+    .touch-mode-whisper.touch-idle .touch-joystick-ring {
+      border-color: rgba(130,160,255,0.18);
+      background: rgba(20,18,40,0.10);
+    }
+    .touch-mode-whisper.touch-idle .touch-joystick-knob {
+      background: radial-gradient(circle, rgba(130,160,255,0.15) 0%, rgba(80,100,200,0.08) 100%);
+      border-color: rgba(130,160,255,0.15);
+    }
+    .touch-mode-whisper.touch-idle .touch-action-btn {
+      border-color: rgba(255,200,100,0.12);
+      background: rgba(40,35,20,0.10);
+      color: rgba(255,220,130,0.25);
+    }
+    .touch-mode-whisper.touch-idle .touch-flashlight-btn {
+      border-color: rgba(255,230,150,0.10);
+      background: rgba(40,35,20,0.08);
+      color: rgba(255,230,150,0.20);
+    }
+    .touch-mode-whisper.touch-idle .touch-menu-btn {
+      border-color: rgba(180,180,200,0.10);
+      background: rgba(30,28,50,0.08);
+      color: rgba(200,200,220,0.20);
+    }
+
+    /* ── Mode: Visible — always full alpha (#144) ── */
+    .touch-mode-visible .touch-joystick-zone,
+    .touch-mode-visible .touch-action-zone {
+      opacity: 1 !important;
+      transform: none !important;
     }
     .touch-action-btn {
       width: 64px;
@@ -1832,7 +1874,7 @@
         </div>
       </div>
 
-      <!-- Input Controls (#124) -->
+      <!-- Input Controls (#124, #144) -->
       <div class="options-section">
         <div class="options-section-label">🎮 Input</div>
         <div class="options-row">
@@ -1841,6 +1883,14 @@
             <option value="auto">Auto-detect</option>
             <option value="on">Always On</option>
             <option value="off">Off</option>
+          </select>
+        </div>
+        <div class="options-row">
+          <label>Touch Visibility</label>
+          <select id="optTouchVisibility" aria-label="Touch Control Visibility">
+            <option value="whisper">Whisper Outline</option>
+            <option value="slide">Slide Off-Screen</option>
+            <option value="visible">Always Visible</option>
           </select>
         </div>
         <div class="options-row" id="gamepadStatusRow">
@@ -2141,6 +2191,20 @@
             <span class="sb-sfx-label">Voice</span>
             <input type="range" id="voiceVolume" class="sb-sfx-volume" min="0" max="100" value="80" title="Voice volume">
             <button id="btnVoiceToggle" class="sb-sfx-btn" title="Toggle NPC voice">🗣️</button>
+          </div>
+        </div>
+      </div>
+      <!-- Touch Controls Visibility (#144) -->
+      <div class="sb-section" id="sbTouchVisSection">
+        <div class="sb-header"><span class="icon">👆</span> Touch Controls</div>
+        <div class="sb-sfx-controls">
+          <div class="sb-sfx-row">
+            <span class="sb-sfx-label">Visibility</span>
+            <select id="sbTouchVisMode" class="sb-input" style="flex:1;font-size:0.72rem;padding:2px 4px" title="Touch control idle behavior">
+              <option value="whisper">Whisper</option>
+              <option value="slide">Slide Off</option>
+              <option value="visible">Always</option>
+            </select>
           </div>
         </div>
       </div>

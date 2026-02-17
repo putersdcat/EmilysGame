@@ -107,30 +107,35 @@ test.describe('Touch UX #126 — UA-based visibility', () => {
 });
 
 test.describe('Touch UX #126 — Idle-slide behavior', () => {
-  // Force overlay on for idle tests (desktop UA)
+  // Force overlay on in slide mode for idle tests (desktop UA)
+  // NOTE: Default mode changed to 'whisper' in #144 — slide tests must force mode
   async function forceEnableTouchOverlay(page: Page) {
     await page.evaluate(() => {
-      (window as any).__gameDebug?.inputMgr?.enableTouchControls();
+      const mgr = (window as any).__gameDebug?.inputMgr;
+      if (mgr) {
+        mgr.setTouchControlMode('slide');
+        mgr.enableTouchControls();
+      }
     });
     await page.waitForTimeout(200);
   }
 
-  test('overlay starts with touch-idle class', async ({ page }) => {
+  test('overlay starts with touch-idle class in slide mode', async ({ page }) => {
     await waitForGame(page);
     await forceEnableTouchOverlay(page);
 
-    const hasIdleClass = await page.evaluate(() => {
-      const el = document.getElementById('touchControlsOverlay');
-      return el ? el.classList.contains('touch-idle') : null;
-    });
-    // Should start idle or transition to idle shortly
     // Wait for the idle timer to fire (enableTouchControls starts idle)
     await page.waitForTimeout(400);
-    const idleAfterWait = await page.evaluate(() => {
+    const result = await page.evaluate(() => {
       const el = document.getElementById('touchControlsOverlay');
-      return el ? el.classList.contains('touch-idle') : null;
+      if (!el) return null;
+      return {
+        idle: el.classList.contains('touch-idle'),
+        slideMode: el.classList.contains('touch-mode-slide'),
+      };
     });
-    expect(idleAfterWait).toBe(true);
+    expect(result?.idle).toBe(true);
+    expect(result?.slideMode).toBe(true);
   });
 
   test('joystick zone has slide transition CSS', async ({ page }) => {

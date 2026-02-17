@@ -2,9 +2,12 @@
  * input.ts - Unified input handling: keyboard, touch, and gamepad.
  * Manages WASD/Arrow keys, virtual touch D-pad, and Gamepad API.
  * Supports edge detection (justPressed) for single-fire actions.
- * Touch overlay auto-shows only on iOS/iPadOS/Tesla UA; auto-hides when idle (#126).
+ * Touch overlay auto-shows only on iOS/iPadOS/Tesla UA; 3-way visibility mode (#144).
  * TODO: DOC - touch overlay layout, gamepad button mapping, input unification
  */
+
+/** Touch control visibility mode (#144) */
+export type TouchControlMode = 'whisper' | 'slide' | 'visible';
 
 export interface InputState {
   up: boolean;
@@ -71,10 +74,12 @@ export class InputManager {
   private joystickOriginY = 0;
   private joystickKnob: HTMLElement | null = null;
 
-  // ── Touch idle/slide state (#126) ──
+  // ── Touch idle/visibility state (#126, #144) ──
   private _touchIdleTimer: ReturnType<typeof setTimeout> | null = null;
-  private _touchIdle = true; // start hidden, slide in on first touch
+  private _touchIdle = true; // start idle
   private static readonly TOUCH_IDLE_MS = 1200;
+  /** 3-way visibility mode: whisper (default), slide, visible (#144) */
+  private _touchControlMode: TouchControlMode = 'whisper';
 
   // ── Gamepad state ──
   private gamepadState: InputState = { up: false, down: false, left: false, right: false, interact: false };
@@ -106,6 +111,27 @@ export class InputManager {
 
   /** Whether a gamepad is connected */
   get gamepadConnected(): boolean { return this._gamepadConnected; }
+
+  /** Current touch control visibility mode (#144) */
+  get touchControlMode(): TouchControlMode { return this._touchControlMode; }
+
+  /** Set touch control visibility mode and apply immediately (#144) */
+  setTouchControlMode(mode: TouchControlMode): void {
+    this._touchControlMode = mode;
+    if (!this.touchOverlay) return;
+    // Clear all mode classes
+    this.touchOverlay.classList.remove('touch-mode-whisper', 'touch-mode-slide', 'touch-mode-visible');
+    this.touchOverlay.classList.add(`touch-mode-${mode}`);
+    if (mode === 'visible') {
+      // Always visible — cancel idle, remove idle class
+      if (this._touchIdleTimer) { clearTimeout(this._touchIdleTimer); this._touchIdleTimer = null; }
+      this._touchIdle = false;
+      this.touchOverlay.classList.remove('touch-idle');
+    } else if (this._touchIdle) {
+      // Re-apply idle state for whisper/slide
+      this.touchOverlay.classList.add('touch-idle');
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════════
   //  KEYBOARD
@@ -189,15 +215,16 @@ export class InputManager {
   // ═══════════════════════════════════════════════════════════════
 
   /** Create and show touch overlay with joystick + action button.
-   *  (#126) Starts idle-hidden; slides in on touch, slides out after 1200ms idle. */
+   *  (#144) 3-way mode: whisper (default), slide, visible. */
   enableTouchControls(): void {
     if (this._touchEnabled) return;
     this._touchEnabled = true;
-    this._touchIdle = true; // start idle (slid off-screen)
+    this._touchIdle = this._touchControlMode !== 'visible'; // start idle unless 'visible'
 
     const overlay = document.createElement('div');
     overlay.id = 'touchControlsOverlay';
-    overlay.classList.add('touch-idle'); // start hidden
+    overlay.classList.add(`touch-mode-${this._touchControlMode}`);
+    if (this._touchIdle) overlay.classList.add('touch-idle'); // start idle
     overlay.innerHTML = `
       <div class="touch-joystick-zone" id="touchJoystickZone">
         <div class="touch-joystick-ring">
@@ -262,8 +289,10 @@ export class InputManager {
       this.startIdleTimer();
     }, { passive: false });
 
-    // Initial idle → slide in after a short delay so user sees the animation
-    setTimeout(() => this.startIdleTimer(), 300);
+    // Initial idle → start idle timer after a short delay (unless 'visible' mode)
+    if (this._touchControlMode !== 'visible') {
+      setTimeout(() => this.startIdleTimer(), 300);
+    }
   }
 
   /** Remove touch overlay */
@@ -290,8 +319,9 @@ export class InputManager {
     }
   }
 
-  /** Start the idle timer — after TOUCH_IDLE_MS, slide controls off-screen */
+  /** Start the idle timer — after TOUCH_IDLE_MS, fade/slide controls (#144) */
   private startIdleTimer(): void {
+    if (this._touchControlMode === 'visible') return; // never idle in visible mode
     if (this._touchIdleTimer) clearTimeout(this._touchIdleTimer);
     this._touchIdleTimer = setTimeout(() => {
       this._touchIdle = true;

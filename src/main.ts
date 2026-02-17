@@ -10,7 +10,7 @@ import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
-import { InputManager, shouldAutoShowTouchOverlay } from './input';
+import { InputManager, shouldAutoShowTouchOverlay, type TouchControlMode } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
@@ -1647,6 +1647,7 @@ function buildSaveData(state: GameState): SaveData {
     visitedFog: serializeVisited(),
     ageBand: state.ageProfile.ageBand ?? undefined,
     playedSeconds: getPlayedSeconds(),
+    touchControlMode: localStorage.getItem('emilys_game_touch_vis') ?? 'whisper',
   };
 }
 
@@ -1709,6 +1710,10 @@ function applySaveData(state: GameState, data: SaveData): void {
   // Restore cumulative playtime (#136)
   if (data.playedSeconds != null) {
     setPlayedSeconds(data.playedSeconds);
+  }
+  // Restore touch control visibility mode (#144)
+  if (data.touchControlMode) {
+    localStorage.setItem('emilys_game_touch_vis', data.touchControlMode);
   }
   // Force camera + chunk reload
   state.camera.x = data.player.x;
@@ -1893,6 +1898,27 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
 
   // Touch controls toggle (#124, #126 — UA-based auto-show)
   const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
+
+  // Touch visibility mode (#144 — 3-way: whisper/slide/visible)
+  const TOUCH_VIS_KEY = 'emilys_game_touch_vis';
+  const optTouchVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
+  const sbTouchVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
+  const savedTouchVis = (localStorage.getItem(TOUCH_VIS_KEY) || 'whisper') as TouchControlMode;
+  if (inputMgr) inputMgr.setTouchControlMode(savedTouchVis);
+  const syncTouchVis = (mode: TouchControlMode) => {
+    if (inputMgr) inputMgr.setTouchControlMode(mode);
+    localStorage.setItem(TOUCH_VIS_KEY, mode);
+    if (optTouchVis) optTouchVis.value = mode;
+    if (sbTouchVis) sbTouchVis.value = mode;
+  };
+  if (optTouchVis) {
+    optTouchVis.value = savedTouchVis;
+    optTouchVis.onchange = () => syncTouchVis(optTouchVis.value as TouchControlMode);
+  }
+  if (sbTouchVis) {
+    sbTouchVis.value = savedTouchVis;
+    sbTouchVis.onchange = () => syncTouchVis(sbTouchVis.value as TouchControlMode);
+  }
 
   // Fog of War toggle (#127)
   const FOG_PREF_KEY = 'emilys_game_fog_enabled';
@@ -3270,6 +3296,25 @@ async function main(): Promise<void> {
     const val = parseInt((e.target as HTMLInputElement).value, 10);
     setVoiceVolume(state.voice, val / 100);
   });
+
+  // ─── Wire Touch Visibility (#144) ───────────────────────────
+  {
+    const TOUCH_VIS_KEY_INIT = 'emilys_game_touch_vis';
+    const savedMode = (localStorage.getItem(TOUCH_VIS_KEY_INIT) || 'whisper') as TouchControlMode;
+    input.setTouchControlMode(savedMode);
+    const sbVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
+    if (sbVis) {
+      sbVis.value = savedMode;
+      sbVis.onchange = () => {
+        const m = sbVis.value as TouchControlMode;
+        input.setTouchControlMode(m);
+        localStorage.setItem(TOUCH_VIS_KEY_INIT, m);
+        // Sync options dropdown if open
+        const optVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
+        if (optVis) optVis.value = m;
+      };
+    }
+  }
 
   // ─── Main Menu / New Game Flow ─────────────────────────────
   if (!isTestMode()) {

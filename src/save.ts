@@ -58,6 +58,8 @@ export interface SaveData {
   injuryState?: { injured: boolean; injuryCount: number };
   /** Cumulative active playtime in seconds (#136) */
   playedSeconds?: number;
+  /** Touch control visibility mode: whisper|slide|visible (#144) */
+  touchControlMode?: string;
 }
 
 export interface ResolvedCell {
