@@ -35,3 +35,6 @@ asset-dev/Export/A-B-Tests/run-*/
 
 # Content pipeline cache (source snapshots)
 scripts/content-pipeline/.cache/
+
+# QA reports (generated artifacts)
+public/content/packs/*/qa-reports/
