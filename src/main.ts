@@ -5,7 +5,7 @@
  */
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './config/game.config';
-import { perfStats, perfSmooth } from './perf';
+import { perfStats, perfSmooth, recordFrameTime, resetFrameHistory, getFrameBenchmark } from './perf';
 import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
@@ -2878,9 +2878,17 @@ function gameLoop(
   _time: number,
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
+  const _frameStart = performance.now();
   tickWaterAnimation();
+  const _updateStart = performance.now();
   update(ctx.state, ctx.input);
+  const _updateEnd = performance.now();
+  perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state);
+  const _frameEnd = performance.now();
+  const totalMs = _frameEnd - _frameStart;
+  perfStats.total = perfSmooth(perfStats.total, totalMs);
+  recordFrameTime(totalMs);
   requestAnimationFrame((t) => gameLoop(t, ctx));
 }
 
@@ -3315,6 +3323,10 @@ async function main(): Promise<void> {
     })),
     // Playability validation debug (#46 Solver F)
     getPlayabilityStats,
+    // #183: Performance benchmarking
+    getPerfStats: () => ({ ...perfStats }),
+    getFrameBenchmark,
+    resetFrameHistory,
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);

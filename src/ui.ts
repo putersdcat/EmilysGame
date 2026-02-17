@@ -351,7 +351,7 @@ function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): v
     `Cache: ${getTerrainCacheSize()} chunks (${getTerrainCacheMemoryMB().toFixed(1)}MB)`,
     tpsLabel,
     entropyLabel,
-    `Perf: W:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)}ms`,
+    `Perf: R:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)} U:${perfStats.update.toFixed(1)} T:${perfStats.total.toFixed(1)}ms`,
         getShadowDebugInfo(),
     `Blend: intensity=${getBlendIntensity().toFixed(2)}`,
     (() => { const ps = getParticleStats(); return `Particles: ${ps.total} (\u{1F98B}${ps.butterfly} \u{2728}${ps.sparkle} \u{1F343}${ps.leaf} \u{1F426}${ps.bird})`; })(),
