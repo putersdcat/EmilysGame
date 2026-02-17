@@ -123,9 +123,9 @@ test.describe('Music Playback System', () => {
 
   // ─── UI Controls ──────────────────────────────────────────
 
-  test('music section exists in sidebar DOM', async ({ page }) => {
+  test('music popup exists in DOM (#138)', async ({ page }) => {
     const exists = await page.evaluate(() => {
-      return !!document.getElementById('sbMusicSection');
+      return !!document.getElementById('musicPopup');
     });
     expect(exists).toBe(true);
   });
@@ -145,6 +145,9 @@ test.describe('Music Playback System', () => {
   });
 
   test('clicking play button starts music', async ({ page }) => {
+    // Open music popup first (#138 - cassette is in flyout)
+    await page.click('#btnMusic');
+    await page.waitForSelector('#musicPopup', { state: 'visible', timeout: 5000 });
     await page.click('#btnMusicPlayPause');
     await page.waitForTimeout(300);
     const state = await page.evaluate(() => {
@@ -154,6 +157,9 @@ test.describe('Music Playback System', () => {
   });
 
   test('play button shows pause icon when playing', async ({ page }) => {
+    // Open music popup first (#138 - cassette is in flyout)
+    await page.click('#btnMusic');
+    await page.waitForSelector('#musicPopup', { state: 'visible', timeout: 5000 });
     await page.click('#btnMusicPlayPause');
     // Wait for UI sync to update the button text (throttled in render loop)
     await page.waitForFunction(() => {

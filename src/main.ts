@@ -101,10 +101,13 @@ import {
   type MusicState,
 } from './music';
 import {
-  createSfxState, playSfx, updateAmbience, stopAmbience,
+  createSfxState, playSfx, stopAmbience,
   setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
   serializeSfxSettings, deserializeSfxSettings,
   initSampledSfxPipeline, updateListenerPosition,
+  playFootstep, resetFootstepCounter,
+  playPositionalSfx, getPositionalSourceCount,
+  updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
   type SfxState,
 } from './sfx';
 import {
@@ -216,6 +219,8 @@ interface GameState {
   _hygieneQuiz: boolean;
   _insectQuiz: boolean;
   _pendingInsectQuiz: boolean;
+  // Last time-of-day slot for dawn rooster detection (#108)
+  _lastTimeSlot: 'day' | 'dusk' | 'night';
 }
 
 // Track NPC id for voice lines during dialog (#76)
@@ -531,6 +536,58 @@ function collectResolvedCells(chunks: Map<string, ChunkData>): ResolvedCell[] {
   return result;
 }
 
+// ─── Positional Audio Source Scanner (#108) ─────────────────
+// Scans nearby chunks for campfire & water tiles; starts positional loops.
+// Assets that emit positional audio:
+const POSITIONAL_AUDIO_ASSETS: Record<string, { sampleId: string; maxDist: number; volume: number }> = {
+  campfire:    { sampleId: 'campfire_loop', maxDist: 8,  volume: 0.5 },
+  water:       { sampleId: 'waterfall_loop', maxDist: 12, volume: 0.3 },
+};
+
+/** Track which positional IDs we've attempted so we don't spam attempts */
+const _positionalScanned = new Set<string>();
+
+function _scanPositionalAudioSources(state: GameState): void {
+  const size = WORLD_CONFIG.chunkSize;
+  const pcx = Math.floor(state.player.x / size);
+  const pcy = Math.floor(state.player.y / size);
+
+  // Scan player's chunk and immediate neighbors (3x3 grid)
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      const key = `${pcx + dx},${pcy + dy}`;
+      const chunk = state.chunks.get(key);
+      if (!chunk) continue;
+
+      const baseX = (pcx + dx) * size;
+      const baseY = (pcy + dy) * size;
+
+      for (let ly = 0; ly < size; ly++) {
+        for (let lx = 0; lx < size; lx++) {
+          const cell = chunk.cells[ly][lx];
+          const audioDef = POSITIONAL_AUDIO_ASSETS[cell.assetKey];
+          if (!audioDef) continue;
+
+          const wx = baseX + lx;
+          const wy = baseY + ly;
+          const id = `pos_${audioDef.sampleId}_${wx}_${wy}`;
+
+          // Skip if already started or attempted
+          if (_positionalScanned.has(id)) continue;
+          _positionalScanned.add(id);
+
+          playPositionalSfx(state.sfx, audioDef.sampleId, wx, wy, audioDef.maxDist, audioDef.volume);
+        }
+      }
+    }
+  }
+
+  // Clean up scanned set for distant chunks (avoid unbounded growth)
+  if (_positionalScanned.size > 500) {
+    _positionalScanned.clear();
+  }
+}
+
 /** Only call ensureChunksAround when player crosses a chunk boundary */
 function maybeLoadChunks(state: GameState): void {
   const size = WORLD_CONFIG.chunkSize;
@@ -773,6 +830,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     _hygieneQuiz: false,
     _insectQuiz: false,
     _pendingInsectQuiz: false,
+    _lastTimeSlot: 'day',
   };
 
   // Sync unlocked cosmetics to customizer
@@ -1195,6 +1253,11 @@ function update(state: GameState, input: InputManager): void {
     if (isWalkable(Math.round(newX), Math.round(newY), state.chunks)) {
       state.player.x = newX;
       state.player.y = newY;
+      // Terrain-aware footstep SFX (#108)
+      const footCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
+      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./tiles').TileType] : undefined;
+      const surface = footTileDef?.surface ?? 'grass';
+      playFootstep(state.sfx, surface);
     } else {
       // Wall bump SFX (#75) — debounce handles frame-spam
       playSfx(state.sfx, 'wall_bump');
@@ -1276,6 +1339,7 @@ function update(state: GameState, input: InputManager): void {
     maybeLoadChunks(state);
   } else {
     state.player.isMoving = false;
+    resetFootstepCounter(); // Reset footstep cadence when idle (#108)
     // Idle sprite - only reload once when stopping (preserves facing pose)
     if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
       state.player.animFrame = 0;
@@ -1301,8 +1365,10 @@ function update(state: GameState, input: InputManager): void {
     );
     if (wildlifeHit) {
       const { species, entity } = wildlifeHit;
-      // Show creature dialog with fun fact
-      const wildlifeLine = `You spotted a ${species.name}! ${species.emoji}`;
+      // Show creature dialog — use custom interaction lines if available (#142)
+      const wildlifeLine = species.interactLines && species.interactLines.length > 0
+        ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
+        : `You spotted a ${species.name}! ${species.emoji}`;
       showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
       state.paused = true;
       playSfx(state.sfx, 'wildlife_discover');
@@ -1369,18 +1435,32 @@ function update(state: GameState, input: InputManager): void {
   // --- Transient expression tick (#102) ---
   tickExpressionOverride(state);
 
-  // --- Ambience update (#75) — resolves based on time-of-day + weather ---
+  // --- Ambience update (#75 + #108) — oscillator + sampled layers ---
   // Throttle to every 60th frame (~1s at 60fps) to avoid churn
   if (state.frameCount % 60 === 0) {
     const cycleProgress = getCycleProgress();
     const timeSlot: 'day' | 'dusk' | 'night' = cycleProgress < 0.65 ? 'day' : cycleProgress < 0.80 ? 'dusk' : 'night';
     const weatherInfo = getWeatherInfo();
-    updateAmbience(state.sfx, timeSlot, weatherInfo.type);
+    // Enhanced ambience with sampled loops (#108)
+    updateAmbienceEnhanced(state.sfx, timeSlot, weatherInfo.type);
+    // Random animal calls (#108) — bird chirps, owl hoots, frog croaks
+    tickAnimalCalls(state.sfx, timeSlot, state.frameCount);
+    // Dawn rooster (#108) — play once on night→day transition
+    if (timeSlot === 'day' && state._lastTimeSlot === 'night') {
+      playRoosterCrow(state.sfx);
+    }
+    state._lastTimeSlot = timeSlot;
   }
 
   // --- Positional audio listener update (#108) — every 10th frame ---
   if (state.frameCount % 10 === 0) {
     updateListenerPosition(state.sfx, state.player.x, state.player.y);
+  }
+
+  // --- Positional audio source scan (#108) — every 120 frames (~2s) ---
+  // Scans nearby chunks for campfire/waterfall and starts positional loops
+  if (state.frameCount % 120 === 0 && state.sfx.sampledReady) {
+    _scanPositionalAudioSources(state);
   }
 
   // --- Auto-save every 30s ---
@@ -1841,23 +1921,17 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   const sidebarSfx = document.getElementById('sfxVolume') as HTMLInputElement | null;
   const sidebarAmbience = document.getElementById('ambienceVolume') as HTMLInputElement | null;
   const sidebarVoice = document.getElementById('voiceVolume') as HTMLInputElement | null;
-  const sidebarLlmMode = document.getElementById('llmModeSelect') as HTMLSelectElement | null;
-  const sidebarLlmUrl = document.getElementById('llmUrlInput') as HTMLInputElement | null;
 
   const optMusic = document.getElementById('optMusicVol') as HTMLInputElement;
   const optSfx = document.getElementById('optSfxVol') as HTMLInputElement;
   const optAmbience = document.getElementById('optAmbienceVol') as HTMLInputElement;
   const optVoice = document.getElementById('optVoiceVol') as HTMLInputElement;
-  const optLlmMode = document.getElementById('optLlmMode') as HTMLSelectElement;
-  const optLlmUrl = document.getElementById('optLlmUrl') as HTMLInputElement;
 
-  // Read current values from sidebar
+  // Read current values from sidebar/popup controls
   if (sidebarMusic) optMusic.value = sidebarMusic.value;
   if (sidebarSfx) optSfx.value = sidebarSfx.value;
   if (sidebarAmbience) optAmbience.value = sidebarAmbience.value;
   if (sidebarVoice) optVoice.value = sidebarVoice.value;
-  if (sidebarLlmMode) optLlmMode.value = sidebarLlmMode.value;
-  if (sidebarLlmUrl) optLlmUrl.value = sidebarLlmUrl.value;
 
   // Update display values
   const updateDisplay = () => {
@@ -1882,19 +1956,8 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   optAmbience.oninput = () => syncToSidebar(optAmbience, sidebarAmbience);
   optVoice.oninput = () => syncToSidebar(optVoice, sidebarVoice);
 
-  // LLM config sync
-  optLlmMode.onchange = () => {
-    if (sidebarLlmMode) {
-      sidebarLlmMode.value = optLlmMode.value;
-      sidebarLlmMode.dispatchEvent(new Event('change'));
-    }
-  };
-  optLlmUrl.oninput = () => {
-    if (sidebarLlmUrl) {
-      sidebarLlmUrl.value = optLlmUrl.value;
-      sidebarLlmUrl.dispatchEvent(new Event('input'));
-    }
-  };
+  // #138: LLM config is now Options-only (no sidebar sync needed)
+  // LLM settings load/applied via initLlmConfigPanel() in ui.ts
 
   // Touch controls toggle (#124, #126 — UA-based auto-show)
   const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
@@ -2552,6 +2615,31 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
       ctx.drawImage(sprite, drawX, drawY, size, size);
     }
 
+    // Behavior indicator particles (#142: visual cues for sit/groom)
+    if (entity.behavior === 'groom') {
+      // Tiny sparkle dots for grooming
+      const sparkT = entity.animPhase * 4;
+      ctx.save();
+      ctx.globalAlpha = 0.5 + Math.sin(sparkT) * 0.3;
+      ctx.fillStyle = '#fff8e0';
+      for (let i = 0; i < 3; i++) {
+        const px = sx + Math.sin(sparkT + i * 2.1) * 6;
+        const py = sy + anim.dy - 8 + Math.cos(sparkT + i * 1.7) * 4;
+        ctx.fillRect(px - 1, py - 1, 2, 2);
+      }
+      ctx.restore();
+    } else if (entity.behavior === 'sit') {
+      // Tiny "Zzz" indicator when sitting still long enough
+      if (entity.behaviorTimer < 60) { // last second of sitting
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.font = '8px sans-serif';
+        ctx.fillStyle = '#aaccff';
+        ctx.fillText('z', sx + 8, sy + anim.dy - 12 + Math.sin(entity.animPhase * 2) * 2);
+        ctx.restore();
+      }
+    }
+
     if (entity.behavior === 'flee') {
       ctx.globalAlpha = 1.0;
     }
@@ -3016,7 +3104,7 @@ async function main(): Promise<void> {
       muted: state.music.settings.muted,
       ducking: state.music.ducking,
     }),
-    // SFX helpers (#75)
+    // SFX helpers (#75, #108)
     playSfx: (id: string) => playSfx(state.sfx, id),
     getSfxState: () => ({
       sfxVolume: state.sfx.settings.sfxVolume,
@@ -3025,6 +3113,8 @@ async function main(): Promise<void> {
       ambienceMuted: state.sfx.settings.ambienceMuted,
       sfxEnabled: state.sfx.settings.sfxEnabled,
       activeAmbience: state.sfx.activeAmbienceId,
+      sampledReady: state.sfx.sampledReady,
+      positionalSources: getPositionalSourceCount(state.sfx),
     }),
     // Voice helpers (#76)
     getVoiceState: () => ({

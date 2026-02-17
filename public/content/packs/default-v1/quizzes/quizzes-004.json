@@ -1,681 +1,8 @@
 {
   "shardId": "quizzes-004",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T20:48:10.024Z",
+  "createdAt": "2026-02-17T08:50:38.722Z",
   "questions": [
-    {
-      "id": "q_science_easy_300",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do birds have that helps them fly?",
-      "answers": [
-        "Wings",
-        "Legs",
-        "Beaks",
-        "Tails"
-      ],
-      "hint": "Flap flap!",
-      "explanation": "Birds use wings to fly",
-      "tags": [
-        "animals"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_301",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "Is a tomato a fruit or vegetable?",
-      "answers": [
-        "Fruit",
-        "Vegetable",
-        "Both",
-        "Neither"
-      ],
-      "hint": "Has seeds!",
-      "explanation": "Tomatoes are fruits (they have seeds)",
-      "tags": [
-        "plants"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_302",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do we call water falling from the sky?",
-      "answers": [
-        "Rain",
-        "Snow",
-        "Hail",
-        "Sleet"
-      ],
-      "hint": "Drops of water",
-      "explanation": "Rain is water falling from clouds",
-      "tags": [
-        "weather"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_303",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "How many wings does a bee have?",
-      "answers": [
-        "4",
-        "2",
-        "6",
-        "8"
-      ],
-      "hint": "Two pairs",
-      "explanation": "Bees have 4 wings",
-      "tags": [
-        "insects"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_304",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What animal is the tallest?",
-      "answers": [
-        "Giraffe",
-        "Elephant",
-        "Horse",
-        "Bear"
-      ],
-      "hint": "Long neck",
-      "explanation": "Giraffes are the tallest land animals",
-      "tags": [
-        "animals"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_305",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do caterpillars turn into?",
-      "answers": [
-        "Butterflies or moths",
-        "Birds",
-        "Beetles",
-        "Flies"
-      ],
-      "hint": "Beautiful wings",
-      "explanation": "Caterpillars become butterflies or moths",
-      "tags": [
-        "insects"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_306",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is steam?",
-      "answers": [
-        "Water vapor",
-        "Ice",
-        "Liquid",
-        "Solid"
-      ],
-      "hint": "Hot gas",
-      "explanation": "Steam is water in gas form",
-      "tags": [
-        "states-of-matter"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_307",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do bees collect from flowers?",
-      "answers": [
-        "Nectar and pollen",
-        "Water",
-        "Leaves",
-        "Stems"
-      ],
-      "hint": "Make honey!",
-      "explanation": "Bees collect nectar and pollen",
-      "tags": [
-        "insects",
-        "plants"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_308",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "How many teeth do adults usually have?",
-      "answers": [
-        "32",
-        "28",
-        "30",
-        "24"
-      ],
-      "hint": "Including wisdom teeth",
-      "explanation": "Adults have 32 teeth total",
-      "tags": [
-        "human-body"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_309",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the smallest bone in the human body?",
-      "answers": [
-        "Stapes (in ear)",
-        "Toe bone",
-        "Finger bone",
-        "Wrist bone"
-      ],
-      "hint": "In your ear",
-      "explanation": "The stapes in the ear is the smallest bone",
-      "tags": [
-        "human-body"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_310",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What planet has rings?",
-      "answers": [
-        "Saturn",
-        "Jupiter",
-        "Mars",
-        "Venus"
-      ],
-      "hint": "Most visible rings",
-      "explanation": "Saturn has prominent rings",
-      "tags": [
-        "astronomy"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_311",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the boiling point of water (Fahrenheit)?",
-      "answers": [
-        "212°F",
-        "100°F",
-        "200°F",
-        "180°F"
-      ],
-      "hint": "Also 100°C",
-      "explanation": "Water boils at 212°F or 100°C",
-      "tags": [
-        "physics"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_312",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is an ecosystem?",
-      "answers": [
-        "Living and non-living things interacting",
-        "A type of animal",
-        "A habitat",
-        "A plant"
-      ],
-      "hint": "Environment system",
-      "explanation": "Ecosystems include all living and non-living parts",
-      "tags": [
-        "ecology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_313",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the outer layer of Earth called?",
-      "answers": [
-        "Crust",
-        "Mantle",
-        "Core",
-        "Surface"
-      ],
-      "hint": "Thin outer layer",
-      "explanation": "Earth's crust is the outer rocky layer",
-      "tags": [
-        "geology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_314",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is chlorophyll?",
-      "answers": [
-        "Green pigment in plants",
-        "A vitamin",
-        "A mineral",
-        "An animal"
-      ],
-      "hint": "Makes plants green",
-      "explanation": "Chlorophyll is the green pigment for photosynthesis",
-      "tags": [
-        "plants"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_315",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "How long does it take Earth to orbit the Sun?",
-      "answers": [
-        "365 days",
-        "360 days",
-        "300 days",
-        "400 days"
-      ],
-      "hint": "One year",
-      "explanation": "Earth takes 365 days (1 year) to orbit the Sun",
-      "tags": [
-        "astronomy"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_316",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is a carnivore?",
-      "answers": [
-        "Meat eater",
-        "Plant eater",
-        "Eats both",
-        "Eats nothing"
-      ],
-      "hint": "Like lions",
-      "explanation": "Carnivores eat only meat",
-      "tags": [
-        "animals"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_317",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the freezing point of water (Celsius)?",
-      "answers": [
-        "0°C",
-        "32°C",
-        "100°C",
-        "-10°C"
-      ],
-      "hint": "Also 32°F",
-      "explanation": "Water freezes at 0°C or 32°F",
-      "tags": [
-        "physics"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_318",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What are the three states of matter?",
-      "answers": [
-        "Solid, liquid, gas",
-        "Hot, cold, warm",
-        "Big, small, tiny",
-        "Hard, soft, medium"
-      ],
-      "hint": "Ice, water, steam",
-      "explanation": "Matter exists as solid, liquid, or gas",
-      "tags": [
-        "physics"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_319",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is evaporation?",
-      "answers": [
-        "Liquid to gas",
-        "Gas to liquid",
-        "Solid to liquid",
-        "Liquid to solid"
-      ],
-      "hint": "Water drying up",
-      "explanation": "Evaporation is liquid becoming gas",
-      "tags": [
-        "water-cycle"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_hard_320",
-      "category": "science",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is E=mc²?",
-      "answers": [
-        "Energy equals mass times speed of light squared",
-        "A math problem",
-        "A chemistry formula",
-        "A biology term"
-      ],
-      "hint": "Einstein's equation",
-      "explanation": "Einstein's famous equation relates energy and mass",
-      "tags": [
-        "physics"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_hard_321",
-      "category": "science",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What are prokaryotic cells?",
-      "answers": [
-        "Cells without nucleus",
-        "Cells with nucleus",
-        "Plant cells",
-        "Animal cells"
-      ],
-      "hint": "Like bacteria",
-      "explanation": "Prokaryotes have no nucleus (bacteria)",
-      "tags": [
-        "biology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_hard_322",
-      "category": "science",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is the periodic table?",
-      "answers": [
-        "Chart of elements",
-        "A calendar",
-        "A time table",
-        "A chart of animals"
-      ],
-      "hint": "Chemistry chart",
-      "explanation": "The periodic table organizes chemical elements",
-      "tags": [
-        "chemistry"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_hard_323",
-      "category": "science",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is mitosis?",
-      "answers": [
-        "Cell division",
-        "Cell death",
-        "Cell growth",
-        "Cell eating"
-      ],
-      "hint": "One cell becomes two",
-      "explanation": "Mitosis is cell division for growth",
-      "tags": [
-        "biology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
     {
       "id": "q_science_hard_324",
       "category": "science",
@@ -698,10 +25,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -726,10 +53,10 @@
         "geology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -754,10 +81,10 @@
         "astronomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -782,10 +109,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -810,10 +137,10 @@
         "ecology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -838,10 +165,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -866,10 +193,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -894,10 +221,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -922,10 +249,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -950,10 +277,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -978,10 +305,10 @@
         "fractions"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1006,10 +333,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1017,9 +344,9 @@
       "category": "math",
       "difficulty": "medium",
       "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
       },
       "question": "What is 50% of 200?",
       "answers": [
@@ -1034,10 +361,10 @@
         "percent"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1062,10 +389,10 @@
         "exponents"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1073,9 +400,9 @@
       "category": "math",
       "difficulty": "medium",
       "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
       },
       "question": "What is 15% of 100?",
       "answers": [
@@ -1090,10 +417,10 @@
         "percent"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1118,10 +445,10 @@
         "primes"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1146,10 +473,10 @@
         "exponents"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1174,10 +501,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1185,9 +512,9 @@
       "category": "math",
       "difficulty": "medium",
       "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
       },
       "question": "What is 0.25 as a fraction?",
       "answers": [
@@ -1202,10 +529,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1230,10 +557,10 @@
         "factors"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1258,10 +585,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1286,10 +613,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1314,10 +641,10 @@
         "patterns"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1342,10 +669,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1370,66 +697,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_hard_349",
-      "category": "math",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is the LCM of 4 and 6?",
-      "answers": [
-        "12",
-        "24",
-        "8",
-        "6"
-      ],
-      "hint": "Least common multiple",
-      "explanation": "Multiples of 4: 4,8,12... Multiples of 6: 6,12... LCM=12",
-      "tags": [
-        "multiples"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_medium_350",
-      "category": "math",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is 20% of 50?",
-      "answers": [
-        "10",
-        "5",
-        "15",
-        "20"
-      ],
-      "hint": "One fifth",
-      "explanation": "20% = 1/5, so 50/5 = 10",
-      "tags": [
-        "percent"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1454,10 +725,10 @@
         "measurement"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1482,10 +753,10 @@
         "division"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1510,10 +781,10 @@
         "number-sense"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1538,10 +809,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1566,10 +837,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1594,38 +865,10 @@
         "integers"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_357",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What shape has no corners?",
-      "answers": [
-        "Circle",
-        "Triangle",
-        "Square",
-        "Pentagon"
-      ],
-      "hint": "Round shape",
-      "explanation": "Circles have no corners or sides",
-      "tags": [
-        "geometry"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1650,10 +893,10 @@
         "fractions"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1678,66 +921,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_360",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do plants need to grow?",
-      "answers": [
-        "Water, sunlight, air",
-        "Only water",
-        "Only sunlight",
-        "Only soil"
-      ],
-      "hint": "Three things",
-      "explanation": "Plants need water, sunlight, and air (CO2)",
-      "tags": [
-        "plants"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_361",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is evaporation?",
-      "answers": [
-        "Liquid to gas",
-        "Gas to liquid",
-        "Solid to liquid",
-        "Liquid to solid"
-      ],
-      "hint": "Water drying up",
-      "explanation": "Evaporation is liquid becoming gas",
-      "tags": [
-        "water-cycle"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1762,10 +949,10 @@
         "body"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1790,10 +977,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1818,10 +1005,10 @@
         "earth"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1846,10 +1033,10 @@
         "water-cycle"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1874,10 +1061,10 @@
         "body"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1902,10 +1089,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1930,38 +1117,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_369",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What season comes after winter?",
-      "answers": [
-        "Spring",
-        "Summer",
-        "Fall",
-        "Autumn"
-      ],
-      "hint": "Flowers bloom",
-      "explanation": "Spring follows winter",
-      "tags": [
-        "seasons"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1986,10 +1145,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2014,66 +1173,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_372",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is a carnivore?",
-      "answers": [
-        "Meat eater",
-        "Plant eater",
-        "Eats both",
-        "Eats nothing"
-      ],
-      "hint": "Hunters",
-      "explanation": "Carnivores eat meat",
-      "tags": [
-        "animals"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_hard_373",
-      "category": "science",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is an ecosystem?",
-      "answers": [
-        "Living and nonliving things interacting",
-        "A type of animal",
-        "A plant",
-        "A rock formation"
-      ],
-      "hint": "Community of life",
-      "explanation": "Ecosystems include all organisms and environment",
-      "tags": [
-        "ecology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2098,38 +1201,10 @@
         "plants"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_medium_375",
-      "category": "science",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the fastest land animal?",
-      "answers": [
-        "Cheetah",
-        "Lion",
-        "Horse",
-        "Gazelle"
-      ],
-      "hint": "Big cat",
-      "explanation": "Cheetahs run up to 70 mph",
-      "tags": [
-        "animals"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2154,10 +1229,10 @@
         "environment"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2182,38 +1257,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_378",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What gas do plants release?",
-      "answers": [
-        "Oxygen",
-        "Carbon dioxide",
-        "Nitrogen",
-        "Methane"
-      ],
-      "hint": "We breathe it",
-      "explanation": "Plants release oxygen during photosynthesis",
-      "tags": [
-        "plants"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2238,10 +1285,10 @@
         "ecology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2266,10 +1313,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2294,10 +1341,10 @@
         "matter"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2322,10 +1369,10 @@
         "matter"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2350,10 +1397,10 @@
         "evolution"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2378,10 +1425,10 @@
         "ecology"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2406,10 +1453,10 @@
         "environment"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2434,10 +1481,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2462,10 +1509,10 @@
         "earth"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2490,10 +1537,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2518,10 +1565,10 @@
         "water-cycle"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2529,9 +1576,9 @@
       "category": "history",
       "difficulty": "easy",
       "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
       },
       "question": "Who was the first president of USA?",
       "answers": [
@@ -2546,10 +1593,10 @@
         "american-history"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2574,10 +1621,10 @@
         "grammar"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2602,10 +1649,10 @@
         "world-history"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2630,10 +1677,10 @@
         "grammar"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2641,9 +1688,9 @@
       "category": "language",
       "difficulty": "medium",
       "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
       },
       "question": "Who wrote Romeo and Juliet?",
       "answers": [
@@ -2658,10 +1705,10 @@
         "literature"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2686,10 +1733,10 @@
         "exploration"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2714,66 +1761,10 @@
         "grammar"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_easy_397",
-      "category": "geography",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the capital of France?",
-      "answers": [
-        "Paris",
-        "London",
-        "Rome",
-        "Berlin"
-      ],
-      "hint": "City of lights",
-      "explanation": "Paris is capital of France",
-      "tags": [
-        "world-geography"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_history_medium_398",
-      "category": "history",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "Who invented the light bulb?",
-      "answers": [
-        "Thomas Edison",
-        "Benjamin Franklin",
-        "Nikola Tesla",
-        "Alexander Bell"
-      ],
-      "hint": "American inventor",
-      "explanation": "Edison invented practical light bulb",
-      "tags": [
-        "inventions"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2798,10 +1789,486 @@
         "vocabulary"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_history_medium_400",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "When was Declaration of Independence signed?",
+      "answers": [
+        "1776",
+        "1492",
+        "1812",
+        "1865"
+      ],
+      "hint": "July 4th",
+      "explanation": "Declaration signed in 1776",
+      "tags": [
+        "american-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_medium_401",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a compound word?",
+      "answers": [
+        "Two words joined",
+        "Long word",
+        "Three syllables",
+        "Rhyming words"
+      ],
+      "hint": "Sunshine, baseball",
+      "explanation": "Compound words combine two words",
+      "tags": [
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_history_easy_402",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Who was Martin Luther King Jr?",
+      "answers": [
+        "Civil rights leader",
+        "President",
+        "Inventor",
+        "Writer"
+      ],
+      "hint": "I Have a Dream",
+      "explanation": "MLK led civil rights movement",
+      "tags": [
+        "american-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_hard_403",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is alliteration?",
+      "answers": [
+        "Repeating beginning sounds",
+        "Rhyming endings",
+        "Long sentences",
+        "Metaphor"
+      ],
+      "hint": "Peter Piper picked",
+      "explanation": "Alliteration repeats initial sounds",
+      "tags": [
+        "literary-devices"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_medium_405",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a pronoun?",
+      "answers": [
+        "Replaces a noun",
+        "Action word",
+        "Describing word",
+        "Place name"
+      ],
+      "hint": "He, she, it",
+      "explanation": "Pronouns replace nouns",
+      "tags": [
+        "grammar"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_easy_406",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What ocean is west of USA?",
+      "answers": [
+        "Pacific",
+        "Atlantic",
+        "Indian",
+        "Arctic"
+      ],
+      "hint": "California coast",
+      "explanation": "Pacific Ocean is on west coast",
+      "tags": [
+        "US-geography"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_art_medium_407",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Who painted the Mona Lisa?",
+      "answers": [
+        "Leonardo da Vinci",
+        "Pablo Picasso",
+        "Vincent van Gogh",
+        "Michelangelo"
+      ],
+      "hint": "Renaissance artist",
+      "explanation": "Da Vinci painted Mona Lisa",
+      "tags": [
+        "art-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_hard_408",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a simile?",
+      "answers": [
+        "Comparison using like or as",
+        "Direct comparison",
+        "Exaggeration",
+        "Rhyme"
+      ],
+      "hint": "As brave as lion",
+      "explanation": "Similes compare using like or as",
+      "tags": [
+        "literary-devices"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_easy_409",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is the capital of USA?",
+      "answers": [
+        "Washington D.C.",
+        "New York",
+        "Los Angeles",
+        "Chicago"
+      ],
+      "hint": "Not a state",
+      "explanation": "Washington D.C. is US capital",
+      "tags": [
+        "US-geography"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_history_hard_410",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "When did Civil War end?",
+      "answers": [
+        "1865",
+        "1776",
+        "1812",
+        "1945"
+      ],
+      "hint": "Mid 1800s",
+      "explanation": "Civil War ended in 1865",
+      "tags": [
+        "american-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_medium_412",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the smallest continent?",
+      "answers": [
+        "Australia",
+        "Europe",
+        "Antarctica",
+        "South America"
+      ],
+      "hint": "Also a country",
+      "explanation": "Australia is smallest continent",
+      "tags": [
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_history_medium_414",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the Great Wall of China?",
+      "answers": [
+        "Ancient defensive wall",
+        "A river",
+        "A mountain",
+        "A palace"
+      ],
+      "hint": "Very long structure",
+      "explanation": "Great Wall protected ancient China",
+      "tags": [
+        "world-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_easy_415",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What continent is Egypt in?",
+      "answers": [
+        "Africa",
+        "Asia",
+        "Europe",
+        "Australia"
+      ],
+      "hint": "Pyramids",
+      "explanation": "Egypt is in Africa",
+      "tags": [
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_history_medium_416",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the pyramids main purpose?",
+      "answers": [
+        "Tombs for pharaohs",
+        "Temples",
+        "Homes",
+        "Forts"
+      ],
+      "hint": "Ancient burial",
+      "explanation": "Pyramids were royal tombs",
+      "tags": [
+        "ancient-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_hard_417",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What mountain range separates Europe and Asia?",
+      "answers": [
+        "Ural Mountains",
+        "Himalayas",
+        "Alps",
+        "Rockies"
+      ],
+      "hint": "In Russia",
+      "explanation": "Ural Mountains divide Europe and Asia",
+      "tags": [
+        "world-geography"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_medium_418",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a prefix?",
+      "answers": [
+        "Added to beginning of word",
+        "Added to end of word",
+        "Root word",
+        "Syllable"
+      ],
+      "hint": "Un-, re-, pre-",
+      "explanation": "Prefixes attach to word beginnings",
+      "tags": [
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_language_medium_419",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a suffix?",
+      "answers": [
+        "Added to end of word",
+        "Added to beginning",
+        "Root word",
+        "Syllable"
+      ],
+      "hint": "-ing, -ed, -ly",
+      "explanation": "Suffixes attach to word endings",
+      "tags": [
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.688Z",
+        "curator": "content-pipeline-v2"
       }
     }
   ]

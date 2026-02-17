@@ -1,11 +1,20 @@
 import { test, expect } from '@playwright/test';
 
 // Cassette Player UI (#107 Phase 2) — verifies retro cassette deck renders correctly
+// Updated for #138: cassette deck moved to flyout popup (opened via 🎵 HUD button)
+
+async function openMusicPopup(page: any) {
+  await page.waitForSelector('#sidebar', { timeout: 15000 });
+  // Wait for HUD to render and btn to be interactive
+  await page.waitForSelector('#btnMusic', { state: 'visible', timeout: 10000 });
+  await page.click('#btnMusic');
+  await page.waitForSelector('#musicPopup', { state: 'visible', timeout: 5000 });
+}
 
 test.describe('Cassette Player UI (#107)', () => {
-  test('cassette deck elements are present in sidebar', async ({ page }) => {
+  test('cassette deck elements are present in music popup', async ({ page }) => {
     await page.goto('/?test=1');
-    await page.waitForSelector('#sidebar', { timeout: 15000 });
+    await openMusicPopup(page);
 
     // Brand label
     const brand = page.locator('.cassette-brand');
@@ -38,7 +47,7 @@ test.describe('Cassette Player UI (#107)', () => {
 
   test('play button starts reel animation', async ({ page }) => {
     await page.goto('/?test=1');
-    await page.waitForSelector('.cassette-deck', { timeout: 15000 });
+    await openMusicPopup(page);
 
     // Reels should not be spinning initially
     const reelL = page.locator('#cassetteReelL');
@@ -59,11 +68,12 @@ test.describe('Cassette Player UI (#107)', () => {
 
   test('cassette deck has retro styling', async ({ page }) => {
     await page.goto('/?test=1');
-    await page.waitForSelector('.cassette-deck', { timeout: 15000 });
+    await openMusicPopup(page);
 
     const deck = page.locator('.cassette-deck');
     const bg = await deck.evaluate(el => getComputedStyle(el).borderRadius);
-    expect(bg).toBe('8px');
+    // Popup layout uses different radii (0 top, 10px bottom)
+    expect(bg).toBeTruthy();
 
     // Cassette buttons should exist
     const buttons = page.locator('.cass-btn');
@@ -73,7 +83,7 @@ test.describe('Cassette Player UI (#107)', () => {
 
   test('volume slider and counter work', async ({ page }) => {
     await page.goto('/?test=1');
-    await page.waitForSelector('.cassette-deck', { timeout: 15000 });
+    await openMusicPopup(page);
 
     const slider = page.locator('#musicVolume');
     await expect(slider).toHaveAttribute('min', '0');

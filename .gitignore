@@ -31,8 +31,15 @@ inventory-*.png
 torch-*.png
 
 # A/B test runs (keep README only)
+<<<<<<< HEAD
 # asset-dev/Export/A-B-Tests/run-*/
 
-# stuff from alpha build testing on emilys surfacebook
+# Stuff from alpha build testing
 public/audio/piano-mp3/manifest.json
 temp_log.txt
+
+# Content pipeline cache (source snapshots)
+scripts/content-pipeline/.cache/
+
+# QA reports (generated artifacts)
+public/content/packs/*/qa-reports/

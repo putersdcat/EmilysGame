@@ -1,41 +1,38 @@
 {
   "schemaVersion": "1.0.0",
   "packName": "Default Educational Content Pack",
-  "packVersion": "1.0.0",
-  "description": "Core educational content for Emily's Game - quiz questions and knowledge articles across multiple subjects and age bands (5-12+)",
-  "author": "Emily's Game Content Team",
+  "packVersion": "2.0.0",
+  "description": "Educational content for Emily's Game — 381 quizzes and 30 articles across multiple subjects and age bands. Sources: manual-curation.",
+  "author": "Emily's Game Content Pipeline v2",
   "license": "CC0-1.0",
-  "createdAt": "2026-02-15T20:48:19.692Z",
-  "updatedAt": "2026-02-15T20:48:19.692Z",
+  "createdAt": "2026-02-17T08:50:38.741Z",
+  "updatedAt": "2026-02-17T08:50:38.741Z",
   "shards": {
     "quizzes": [
       "quizzes-001.json",
       "quizzes-002.json",
       "quizzes-003.json",
-      "quizzes-004.json",
-      "quizzes-005.json"
+      "quizzes-004.json"
     ],
     "articles": [
-      "articles-001.json",
-      "articles-002.json"
+      "articles-001.json"
     ]
   },
   "stats": {
-    "totalQuizzes": 420,
-    "totalArticles": 31,
+    "totalQuizzes": 381,
+    "totalArticles": 30,
     "categoryCounts": {
-      "math": 125,
-      "science": 125,
-      "history": 39,
-      "language": 43,
-      "logic": 30,
-      "geography": 37,
-      "technology": 20,
-      "art": 1
+      "math": 116,
+      "science": 114,
+      "history": 36,
+      "language": 39,
+      "logic": 29,
+      "geography": 28,
+      "technology": 19
     },
     "subjectCounts": {
       "math": 5,
-      "science": 8,
+      "science": 7,
       "history": 5,
       "language": 4,
       "technology": 4,
@@ -43,9 +40,9 @@
       "art": 2
     },
     "ageBandCounts": {
-      "5-7": 128,
-      "8-10": 166,
-      "11-12+": 157
+      "5-7": 109,
+      "8-10": 142,
+      "11-12+": 130
     }
   }
 }

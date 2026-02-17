@@ -1,552 +1,8 @@
 {
   "shardId": "quizzes-003",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T20:48:10.024Z",
+  "createdAt": "2026-02-17T08:50:38.722Z",
   "questions": [
-    {
-      "id": "q_geography_easy_200",
-      "category": "geography",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What color are most school buses?",
-      "answers": [
-        "Yellow",
-        "Red",
-        "Blue",
-        "Green"
-      ],
-      "hint": "Think of the color of the sun.",
-      "explanation": "School buses are usually yellow for high visibility.",
-      "tags": [
-        "everyday-knowledge",
-        "colors"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_medium_201",
-      "category": "geography",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "Which ocean is on the west coast of the United States?",
-      "answers": [
-        "Pacific Ocean",
-        "Atlantic Ocean",
-        "Indian Ocean",
-        "Arctic Ocean"
-      ],
-      "hint": "California touches this ocean.",
-      "explanation": "The Pacific Ocean is on the west coast of the U.S.",
-      "tags": [
-        "oceans",
-        "usa"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_medium_202",
-      "category": "geography",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the capital of Japan?",
-      "answers": [
-        "Tokyo",
-        "Beijing",
-        "Seoul",
-        "Bangkok"
-      ],
-      "hint": "It's one of the world's largest cities.",
-      "explanation": "Tokyo is the capital and largest city of Japan.",
-      "tags": [
-        "capitals",
-        "asia"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_hard_203",
-      "category": "geography",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "Which continent is also a country?",
-      "answers": [
-        "Australia",
-        "Africa",
-        "Europe",
-        "Asia"
-      ],
-      "hint": "It's in the Southern Hemisphere.",
-      "explanation": "Australia is both a continent and a country.",
-      "tags": [
-        "continents",
-        "countries"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_hard_204",
-      "category": "geography",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is the capital of Canada?",
-      "answers": [
-        "Ottawa",
-        "Toronto",
-        "Montreal",
-        "Vancouver"
-      ],
-      "hint": "It's not the largest city.",
-      "explanation": "Ottawa is the capital of Canada, located in Ontario.",
-      "tags": [
-        "capitals",
-        "north-america"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_technology_easy_205",
-      "category": "technology",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do we use to type on a computer?",
-      "answers": [
-        "Keyboard",
-        "Mouse",
-        "Screen",
-        "Speaker"
-      ],
-      "hint": "It has letters and numbers on it.",
-      "explanation": "A keyboard is used to type letters and numbers on a computer.",
-      "tags": [
-        "hardware",
-        "basics"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_technology_medium_206",
-      "category": "technology",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What does \"WWW\" stand for in a website address?",
-      "answers": [
-        "World Wide Web",
-        "Wide World Web",
-        "Web World Wide",
-        "World Web Wide"
-      ],
-      "hint": "It's the system of internet pages.",
-      "explanation": "WWW stands for World Wide Web, invented by Tim Berners-Lee.",
-      "tags": [
-        "internet",
-        "acronyms"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_technology_medium_207",
-      "category": "technology",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What company makes the iPhone?",
-      "answers": [
-        "Apple",
-        "Samsung",
-        "Google",
-        "Microsoft"
-      ],
-      "hint": "It's named after a fruit.",
-      "explanation": "Apple Inc. makes the iPhone and other products.",
-      "tags": [
-        "companies",
-        "devices"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_technology_hard_208",
-      "category": "technology",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What does \"CPU\" stand for?",
-      "answers": [
-        "Central Processing Unit",
-        "Computer Personal Unit",
-        "Central Program Unit",
-        "Computer Processing Unit"
-      ],
-      "hint": "It's the \"brain\" of the computer.",
-      "explanation": "CPU stands for Central Processing Unit - the main chip that runs programs.",
-      "tags": [
-        "hardware",
-        "acronyms"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_technology_hard_209",
-      "category": "technology",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "Who co-founded Microsoft with Bill Gates?",
-      "answers": [
-        "Paul Allen",
-        "Steve Jobs",
-        "Steve Wozniak",
-        "Mark Zuckerberg"
-      ],
-      "hint": "His first name is Paul.",
-      "explanation": "Paul Allen and Bill Gates co-founded Microsoft in 1975.",
-      "tags": [
-        "history",
-        "founders"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_210",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 7+5?",
-      "answers": [
-        "12",
-        "11",
-        "13",
-        "10"
-      ],
-      "hint": "Count on your fingers!",
-      "explanation": "7+5=12",
-      "tags": [
-        "addition"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_211",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 20-8?",
-      "answers": [
-        "12",
-        "10",
-        "14",
-        "11"
-      ],
-      "hint": "Count back from 20",
-      "explanation": "20-8=12",
-      "tags": [
-        "subtraction"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_212",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 3×4?",
-      "answers": [
-        "12",
-        "10",
-        "14",
-        "15"
-      ],
-      "hint": "3 groups of 4",
-      "explanation": "3×4=12",
-      "tags": [
-        "multiplication"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_213",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "How many corners does a triangle have?",
-      "answers": [
-        "3",
-        "4",
-        "5",
-        "2"
-      ],
-      "hint": "Count them!",
-      "explanation": "A triangle has 3 corners and 3 sides.",
-      "tags": [
-        "geometry"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_214",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 10+10?",
-      "answers": [
-        "20",
-        "15",
-        "25",
-        "30"
-      ],
-      "hint": "Double 10",
-      "explanation": "10+10=20",
-      "tags": [
-        "addition",
-        "doubles"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_215",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is half of 10?",
-      "answers": [
-        "5",
-        "4",
-        "6",
-        "3"
-      ],
-      "hint": "Cut it in the middle",
-      "explanation": "Half of 10 is 5",
-      "tags": [
-        "division",
-        "fractions"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_216",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 8+9?",
-      "answers": [
-        "17",
-        "16",
-        "18",
-        "15"
-      ],
-      "hint": "Almost 8+10",
-      "explanation": "8+9=17",
-      "tags": [
-        "addition"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_217",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is 14-6?",
-      "answers": [
-        "8",
-        "7",
-        "9",
-        "6"
-      ],
-      "hint": "Count back",
-      "explanation": "14-6=8",
-      "tags": [
-        "subtraction"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_218",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "How many sides does a rectangle have?",
-      "answers": [
-        "4",
-        "3",
-        "5",
-        "6"
-      ],
-      "hint": "Same as a square",
-      "explanation": "A rectangle has 4 sides",
-      "tags": [
-        "geometry"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
     {
       "id": "q_math_easy_219",
       "category": "math",
@@ -569,10 +25,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -597,10 +53,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -625,10 +81,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -653,10 +109,10 @@
         "division"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -681,10 +137,10 @@
         "fractions"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -710,10 +166,10 @@
         "area"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -738,10 +194,10 @@
         "percentages"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -766,10 +222,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -794,10 +250,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -822,10 +278,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -851,38 +307,10 @@
         "angles"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_hard_230",
-      "category": "math",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is 144÷12?",
-      "answers": [
-        "12",
-        "11",
-        "13",
-        "14"
-      ],
-      "hint": "12 squared",
-      "explanation": "144÷12=12 because 12×12=144",
-      "tags": [
-        "division"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -907,10 +335,10 @@
         "square-roots"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -935,38 +363,10 @@
         "algebra"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_hard_233",
-      "category": "math",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is 25% of 80?",
-      "answers": [
-        "20",
-        "15",
-        "25",
-        "30"
-      ],
-      "hint": "Quarter of 80",
-      "explanation": "25%=1/4, so 80÷4=20",
-      "tags": [
-        "percentages"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -992,38 +392,10 @@
         "circles"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_hard_235",
-      "category": "math",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is 3²+4²?",
-      "answers": [
-        "25",
-        "24",
-        "26",
-        "20"
-      ],
-      "hint": "9+16",
-      "explanation": "3²=9, 4²=16, so 9+16=25",
-      "tags": [
-        "exponents"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1048,10 +420,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1076,10 +448,10 @@
         "prime-factorization"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1105,10 +477,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1134,10 +506,10 @@
         "volume"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1162,10 +534,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1190,10 +562,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1218,10 +590,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1246,10 +618,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1275,10 +647,10 @@
         "doubles"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1303,10 +675,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1331,10 +703,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1359,10 +731,10 @@
         "money"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1387,10 +759,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1415,10 +787,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1443,38 +815,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_medium_251",
-      "category": "math",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is 6×6?",
-      "answers": [
-        "36",
-        "30",
-        "42",
-        "32"
-      ],
-      "hint": "Six squared",
-      "explanation": "6×6=36",
-      "tags": [
-        "multiplication"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1499,10 +843,10 @@
         "division"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1527,10 +871,10 @@
         "fractions"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1555,10 +899,10 @@
         "squares"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1583,10 +927,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1611,10 +955,10 @@
         "time"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1639,10 +983,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1667,10 +1011,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1695,10 +1039,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1723,10 +1067,10 @@
         "exponents"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1751,10 +1095,10 @@
         "square-roots"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1779,10 +1123,10 @@
         "algebra"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1807,10 +1151,10 @@
         "percentages"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1835,10 +1179,10 @@
         "geometry"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1863,10 +1207,10 @@
         "exponents"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1891,10 +1235,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1919,10 +1263,10 @@
         "multiples"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1947,10 +1291,10 @@
         "percentages"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1975,10 +1319,10 @@
         "statistics"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2003,10 +1347,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2032,10 +1376,10 @@
         "colors"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2060,10 +1404,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2089,10 +1433,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2117,10 +1461,10 @@
         "astronomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2145,10 +1489,10 @@
         "seasons"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2173,10 +1517,10 @@
         "plants"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2202,10 +1546,10 @@
         "states"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2230,10 +1574,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2258,10 +1602,10 @@
         "human-body"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2287,10 +1631,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2315,10 +1659,10 @@
         "human-body"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2343,10 +1687,10 @@
         "astronomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2371,10 +1715,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2399,10 +1743,10 @@
         "astronomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2427,10 +1771,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2456,10 +1800,10 @@
         "oceans"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2485,10 +1829,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2513,10 +1857,10 @@
         "minerals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2541,10 +1885,10 @@
         "human-body"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2569,10 +1913,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2597,10 +1941,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2626,10 +1970,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2654,10 +1998,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2682,10 +2026,10 @@
         "geology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2710,10 +2054,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2738,10 +2082,10 @@
         "astronomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2766,10 +2110,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2795,10 +2139,10 @@
         "cells"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2823,10 +2167,655 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_300",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do birds have that helps them fly?",
+      "answers": [
+        "Wings",
+        "Legs",
+        "Beaks",
+        "Tails"
+      ],
+      "hint": "Flap flap!",
+      "explanation": "Birds use wings to fly",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_301",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Is a tomato a fruit or vegetable?",
+      "answers": [
+        "Fruit",
+        "Vegetable",
+        "Both",
+        "Neither"
+      ],
+      "hint": "Has seeds!",
+      "explanation": "Tomatoes are fruits (they have seeds)",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_302",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call water falling from the sky?",
+      "answers": [
+        "Rain",
+        "Snow",
+        "Hail",
+        "Sleet"
+      ],
+      "hint": "Drops of water",
+      "explanation": "Rain is water falling from clouds",
+      "tags": [
+        "weather"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_303",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many wings does a bee have?",
+      "answers": [
+        "4",
+        "2",
+        "6",
+        "8"
+      ],
+      "hint": "Two pairs",
+      "explanation": "Bees have 4 wings",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_304",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What animal is the tallest?",
+      "answers": [
+        "Giraffe",
+        "Elephant",
+        "Horse",
+        "Bear"
+      ],
+      "hint": "Long neck",
+      "explanation": "Giraffes are the tallest land animals",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_305",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do caterpillars turn into?",
+      "answers": [
+        "Butterflies or moths",
+        "Birds",
+        "Beetles",
+        "Flies"
+      ],
+      "hint": "Beautiful wings",
+      "explanation": "Caterpillars become butterflies or moths",
+      "tags": [
+        "insects"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_306",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is steam?",
+      "answers": [
+        "Water vapor",
+        "Ice",
+        "Liquid",
+        "Solid"
+      ],
+      "hint": "Hot gas",
+      "explanation": "Steam is water in gas form",
+      "tags": [
+        "states-of-matter"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_easy_307",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do bees collect from flowers?",
+      "answers": [
+        "Nectar and pollen",
+        "Water",
+        "Leaves",
+        "Stems"
+      ],
+      "hint": "Make honey!",
+      "explanation": "Bees collect nectar and pollen",
+      "tags": [
+        "insects",
+        "plants"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_308",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How many teeth do adults usually have?",
+      "answers": [
+        "32",
+        "28",
+        "30",
+        "24"
+      ],
+      "hint": "Including wisdom teeth",
+      "explanation": "Adults have 32 teeth total",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_309",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the smallest bone in the human body?",
+      "answers": [
+        "Stapes (in ear)",
+        "Toe bone",
+        "Finger bone",
+        "Wrist bone"
+      ],
+      "hint": "In your ear",
+      "explanation": "The stapes in the ear is the smallest bone",
+      "tags": [
+        "human-body"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_310",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What planet has rings?",
+      "answers": [
+        "Saturn",
+        "Jupiter",
+        "Mars",
+        "Venus"
+      ],
+      "hint": "Most visible rings",
+      "explanation": "Saturn has prominent rings",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_311",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the boiling point of water (Fahrenheit)?",
+      "answers": [
+        "212°F",
+        "100°F",
+        "200°F",
+        "180°F"
+      ],
+      "hint": "Also 100°C",
+      "explanation": "Water boils at 212°F or 100°C",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_312",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an ecosystem?",
+      "answers": [
+        "Living and non-living things interacting",
+        "A type of animal",
+        "A habitat",
+        "A plant"
+      ],
+      "hint": "Environment system",
+      "explanation": "Ecosystems include all living and non-living parts",
+      "tags": [
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_313",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the outer layer of Earth called?",
+      "answers": [
+        "Crust",
+        "Mantle",
+        "Core",
+        "Surface"
+      ],
+      "hint": "Thin outer layer",
+      "explanation": "Earth's crust is the outer rocky layer",
+      "tags": [
+        "geology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_314",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is chlorophyll?",
+      "answers": [
+        "Green pigment in plants",
+        "A vitamin",
+        "A mineral",
+        "An animal"
+      ],
+      "hint": "Makes plants green",
+      "explanation": "Chlorophyll is the green pigment for photosynthesis",
+      "tags": [
+        "plants"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_315",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "How long does it take Earth to orbit the Sun?",
+      "answers": [
+        "365 days",
+        "360 days",
+        "300 days",
+        "400 days"
+      ],
+      "hint": "One year",
+      "explanation": "Earth takes 365 days (1 year) to orbit the Sun",
+      "tags": [
+        "astronomy"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_316",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a carnivore?",
+      "answers": [
+        "Meat eater",
+        "Plant eater",
+        "Eats both",
+        "Eats nothing"
+      ],
+      "hint": "Like lions",
+      "explanation": "Carnivores eat only meat",
+      "tags": [
+        "animals"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_317",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the freezing point of water (Celsius)?",
+      "answers": [
+        "0°C",
+        "32°C",
+        "100°C",
+        "-10°C"
+      ],
+      "hint": "Also 32°F",
+      "explanation": "Water freezes at 0°C or 32°F",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_318",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What are the three states of matter?",
+      "answers": [
+        "Solid, liquid, gas",
+        "Hot, cold, warm",
+        "Big, small, tiny",
+        "Hard, soft, medium"
+      ],
+      "hint": "Ice, water, steam",
+      "explanation": "Matter exists as solid, liquid, or gas",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_medium_319",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is evaporation?",
+      "answers": [
+        "Liquid to gas",
+        "Gas to liquid",
+        "Solid to liquid",
+        "Liquid to solid"
+      ],
+      "hint": "Water drying up",
+      "explanation": "Evaporation is liquid becoming gas",
+      "tags": [
+        "water-cycle"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_hard_320",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is E=mc²?",
+      "answers": [
+        "Energy equals mass times speed of light squared",
+        "A math problem",
+        "A chemistry formula",
+        "A biology term"
+      ],
+      "hint": "Einstein's equation",
+      "explanation": "Einstein's famous equation relates energy and mass",
+      "tags": [
+        "physics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_hard_321",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What are prokaryotic cells?",
+      "answers": [
+        "Cells without nucleus",
+        "Cells with nucleus",
+        "Plant cells",
+        "Animal cells"
+      ],
+      "hint": "Like bacteria",
+      "explanation": "Prokaryotes have no nucleus (bacteria)",
+      "tags": [
+        "biology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_science_hard_322",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the periodic table?",
+      "answers": [
+        "Chart of elements",
+        "A calendar",
+        "A time table",
+        "A chart of animals"
+      ],
+      "hint": "Chemistry chart",
+      "explanation": "The periodic table organizes chemical elements",
+      "tags": [
+        "chemistry"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.687Z",
+        "curator": "content-pipeline-v2"
       }
     }
   ]
