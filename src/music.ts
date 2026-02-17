@@ -31,6 +31,8 @@ export interface MusicState {
   trackProgress: number;
   /** Tracks last biome to avoid redundant playlist rebuilds */
   _lastBiomeId: number;
+  /** User requested playback; used to resume after async warmup */
+  _playRequested: boolean;
 }
 
 // ─── Audio Globals ──────────────────────────────────────────
@@ -54,6 +56,7 @@ const _pianoBuffers = new Map<string, AudioBuffer>();
 let _midiPlayer: InstanceType<typeof MidiPlayer.Player> | null = null;
 // Active note handles for MIDI note-off tracking
 const _activeNotes = new Map<string, PlayedNoteHandle>();
+let _preparePlaybackPromise: Promise<void> | null = null;
 
 const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 const PIANO_SAMPLE_BASE = './audio/piano-mp3';
@@ -173,7 +176,29 @@ export function createMusicState(): MusicState {
     midiLoaded: false,
     trackProgress: 0,
     _lastBiomeId: -1,
+    _playRequested: false,
   };
+}
+
+async function ensurePlaybackReady(state: MusicState): Promise<void> {
+  if (getLoadedMidiTracks().length > 0 && _piano) return;
+
+  if (!_preparePlaybackPromise) {
+    _preparePlaybackPromise = (async () => {
+      await loadMidiManifest();
+      try {
+        await preloadAllMidiTracks();
+      } catch {
+        // Best effort; play() will bail if still no tracks.
+      }
+      await loadPiano();
+    })().finally(() => {
+      _preparePlaybackPromise = null;
+    });
+  }
+
+  await _preparePlaybackPromise;
+  state.midiLoaded = getLoadedMidiTracks().length > 0;
 }
 
 // ─── Init ───────────────────────────────────────────────────
@@ -341,6 +366,7 @@ export function play(state: MusicState): void {
   if (ctx.state === 'suspended') ctx.resume();
 
   if (state.settings.muted || !state.settings.enabled) return;
+  state._playRequested = true;
 
   // Build playlist if empty
   if (state.playlist.length === 0) {
@@ -348,7 +374,16 @@ export function play(state: MusicState): void {
   }
 
   if (state.playlist.length === 0) {
-    console.warn('[Music] No MIDI tracks available');
+    // Lazy warmup path: allow play() before async init completes.
+    ensurePlaybackReady(state).then(() => {
+      if (!state._playRequested) return;
+      if (state.settings.muted || !state.settings.enabled) return;
+      if (state.playState === 'playing') return;
+      play(state);
+    }).catch((e) => {
+      console.warn('[Music] Playback warmup failed:', e);
+    });
+    console.warn('[Music] No MIDI tracks available yet (warming up)');
     return;
   }
 
@@ -375,12 +410,14 @@ export function play(state: MusicState): void {
 }
 
 export function pause(state: MusicState): void {
+  state._playRequested = false;
   _isPlaying = false;
   state.playState = 'paused';
   stopMidiPlayer();
 }
 
 export function stop(state: MusicState): void {
+  state._playRequested = false;
   _isPlaying = false;
   state.playState = 'stopped';
   stopMidiPlayer();
@@ -413,6 +450,7 @@ export function toggleMute(state: MusicState): void {
   if (state.settings.muted) {
     pause(state);
   } else if (state.playState === 'paused') {
+    state._playRequested = true;
     play(state);
   }
   applyVolume(state);
