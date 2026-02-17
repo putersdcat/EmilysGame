@@ -1301,8 +1301,10 @@ function update(state: GameState, input: InputManager): void {
     );
     if (wildlifeHit) {
       const { species, entity } = wildlifeHit;
-      // Show creature dialog with fun fact
-      const wildlifeLine = `You spotted a ${species.name}! ${species.emoji}`;
+      // Show creature dialog — use custom interaction lines if available (#142)
+      const wildlifeLine = species.interactLines && species.interactLines.length > 0
+        ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
+        : `You spotted a ${species.name}! ${species.emoji}`;
       showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
       state.paused = true;
       playSfx(state.sfx, 'wildlife_discover');
@@ -2550,6 +2552,31 @@ function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
       ctx.restore();
     } else {
       ctx.drawImage(sprite, drawX, drawY, size, size);
+    }
+
+    // Behavior indicator particles (#142: visual cues for sit/groom)
+    if (entity.behavior === 'groom') {
+      // Tiny sparkle dots for grooming
+      const sparkT = entity.animPhase * 4;
+      ctx.save();
+      ctx.globalAlpha = 0.5 + Math.sin(sparkT) * 0.3;
+      ctx.fillStyle = '#fff8e0';
+      for (let i = 0; i < 3; i++) {
+        const px = sx + Math.sin(sparkT + i * 2.1) * 6;
+        const py = sy + anim.dy - 8 + Math.cos(sparkT + i * 1.7) * 4;
+        ctx.fillRect(px - 1, py - 1, 2, 2);
+      }
+      ctx.restore();
+    } else if (entity.behavior === 'sit') {
+      // Tiny "Zzz" indicator when sitting still long enough
+      if (entity.behaviorTimer < 60) { // last second of sitting
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.font = '8px sans-serif';
+        ctx.fillStyle = '#aaccff';
+        ctx.fillText('z', sx + 8, sy + anim.dy - 12 + Math.sin(entity.animPhase * 2) * 2);
+        ctx.restore();
+      }
     }
 
     if (entity.behavior === 'flee') {

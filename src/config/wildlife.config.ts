@@ -10,6 +10,17 @@
 export type TimeSlot = 'day' | 'dusk' | 'night';
 export type Habitat = 'land' | 'water_adjacent';
 
+/** Extra behavior states for richer wildlife AI (#142) */
+export type ExtraBehavior = 'sit' | 'groom' | 'sprint';
+
+/** Weights for idle→behavior transitions. Omitted keys default to 0. */
+export interface BehaviorWeights {
+  wander?: number;   // default 1.0 for species with wanderSpeed > 0
+  sit?: number;      // pause and sit down
+  groom?: number;    // self-grooming/licking animation
+  sprint?: number;   // short burst of speed (2-3x wander)
+}
+
 export interface SpeciesDef {
   id: string;
   emoji: string;
@@ -39,6 +50,10 @@ export interface SpeciesDef {
   /** Flip rule for directionality (#80):
    *  'movement' = face travel direction, 'random' = random per spawn, 'none' = never flip */
   flipRule: 'movement' | 'random' | 'none';
+  /** Optional behavior transition weights (#142). If omitted, only wander is available. */
+  behaviorWeights?: BehaviorWeights;
+  /** Custom interaction lines (random pick). Falls back to generic "You spotted a..." */
+  interactLines?: string[];
 }
 
 // ─── Species Table ──────────────────────────────────────────
@@ -172,6 +187,12 @@ export const SPECIES: SpeciesDef[] = [
     fact: 'Orange tabby cats are almost always male — about 80% of them are boys!',
     quizCategory: 'science', animStyle: 'prowl', wanderSpeed: 0.015, fleeRadius: 3,
     flipRule: 'movement',
+    behaviorWeights: { wander: 1.0, sit: 1.5, groom: 1.0, sprint: 0.6 },
+    interactLines: [
+      'The orange tabby purrs softly and rubs against your leg! 🧡',
+      'Mrrrow! The tabby rolls over and shows you its belly!',
+      'The cat stretches lazily and blinks at you slowly — that means it trusts you!',
+    ],
   },
   {
     id: 'cat_black', emoji: '🐈\u200D\u2B1B', name: 'Black Cat',
@@ -180,6 +201,12 @@ export const SPECIES: SpeciesDef[] = [
     fact: 'In many cultures, black cats are considered good luck — sailors believed they brought safe voyages!',
     quizCategory: 'history', animStyle: 'prowl', wanderSpeed: 0.018, fleeRadius: 4,
     flipRule: 'movement',
+    behaviorWeights: { wander: 1.2, sit: 0.8, groom: 0.6, sprint: 1.0 },
+    interactLines: [
+      'The black cat stares at you with luminous golden eyes... then headbutts your hand! 🖤',
+      'A soft "mew" — the black cat weaves between your feet!',
+      'The black cat sits perfectly still, then suddenly pounces on a leaf! 🍃',
+    ],
   },
   {
     id: 'cat_persian', emoji: '🐱', name: 'Fluffy Gray Persian',
@@ -188,6 +215,12 @@ export const SPECIES: SpeciesDef[] = [
     fact: 'Persian cats are one of the oldest cat breeds — they have been around for over 400 years!',
     quizCategory: 'history', animStyle: 'bob', wanderSpeed: 0.008, fleeRadius: 2,
     flipRule: 'movement',
+    behaviorWeights: { wander: 0.5, sit: 2.0, groom: 2.0, sprint: 0.2 },
+    interactLines: [
+      'The fluffy Persian looks at you regally and allows you to pet it. How gracious! 👑',
+      'The Persian grooms its magnificent floofy tail, ignoring you entirely... then purrs.',
+      'Prrrrrrrr... the Persian cat melts into a content furry puddle under your hand!',
+    ],
   },
 
   // ─── Cave/Castle Specials ───

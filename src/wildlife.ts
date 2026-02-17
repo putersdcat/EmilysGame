@@ -7,7 +7,7 @@
 
 import { WORLD_CONFIG } from './config/game.config';
 import {
-  SPECIES, type SpeciesDef, type TimeSlot,
+  SPECIES, type SpeciesDef, type TimeSlot, type BehaviorWeights,
   MAX_WILDLIFE_PER_CHUNK, INTERACT_RANGE, BIOME_DENSITY,
   getSpecies,
 } from './config/wildlife.config';
@@ -25,14 +25,16 @@ export interface WildlifeEntity {
   /** Home position (spawn point, wanders near this) */
   homeX: number;
   homeY: number;
-  /** Behavior state */
-  behavior: 'idle' | 'wander' | 'flee';
+  /** Behavior state (#142: added sit, groom, sprint) */
+  behavior: 'idle' | 'wander' | 'flee' | 'sit' | 'groom' | 'sprint';
   /** Animation phase accumulator */
   animPhase: number;
   /** Wander angle (radians) */
   wanderAngle: number;
   /** Flee cooldown (frames remaining) */
   fleeCooldown: number;
+  /** Behavior duration timer (frames remaining for sit/groom/sprint) */
+  behaviorTimer: number;
   /** True if hidden (fled offscreen or despawned by time change) */
   hidden: boolean;
   /** Chunk key this entity belongs to */
@@ -201,6 +203,7 @@ function spawnChunkWildlife(chunk: ChunkData, timeSlot: TimeSlot): WildlifeEntit
       animPhase: rng() * Math.PI * 2,
       wanderAngle: rng() * Math.PI * 2,
       fleeCooldown: 0,
+      behaviorTimer: 0,
       hidden: false,
       chunkKey: key,
       localId: i,
@@ -228,6 +231,7 @@ function spawnChunkWildlife(chunk: ChunkData, timeSlot: TimeSlot): WildlifeEntit
       animPhase: rng() * Math.PI * 2,
       wanderAngle: rng() * Math.PI * 2,
       fleeCooldown: 0,
+      behaviorTimer: 0,
       hidden: false,
       chunkKey: key,
       localId: waterSlots + i,
@@ -295,14 +299,49 @@ export function updateWildlife(
 
       for (const entity of cached.entities) {
         if (entity.hidden) continue;
-        tickEntity(entity, playerX, playerY);
+        tickEntity(entity, playerX, playerY, chunks);
       }
     }
   }
 }
 
-/** Tick a single wildlife entity's behavior */
-function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): void {
+/** Pick a weighted transition from idle based on species behaviorWeights (#142) */
+function pickIdleBehavior(weights: BehaviorWeights | undefined, rng: number): 'wander' | 'sit' | 'groom' | 'sprint' {
+  if (!weights) return 'wander'; // legacy species — wander only
+  const w = weights.wander ?? 1.0;
+  const s = weights.sit ?? 0;
+  const g = weights.groom ?? 0;
+  const sp = weights.sprint ?? 0;
+  const total = w + s + g + sp;
+  if (total <= 0) return 'wander';
+  let roll = rng * total;
+  roll -= w; if (roll <= 0) return 'wander';
+  roll -= s; if (roll <= 0) return 'sit';
+  roll -= g; if (roll <= 0) return 'groom';
+  return 'sprint';
+}
+
+/** Check if a world position is walkable in the given chunks map */
+function isWalkable(worldX: number, worldY: number, chunks: Map<string, ChunkData>): boolean {
+  const size = WORLD_CONFIG.chunkSize;
+  const cx = Math.floor(worldX / size);
+  const cy = Math.floor(worldY / size);
+  const key = `${cx},${cy}`;
+  const chunk = chunks.get(key);
+  if (!chunk || !chunk.generated) return false;
+  const lx = Math.floor(worldX - cx * size);
+  const ly = Math.floor(worldY - cy * size);
+  if (lx < 0 || lx >= size || ly < 0 || ly >= size) return false;
+  return chunk.cells[ly][lx].walkable;
+}
+
+/** Tick a single wildlife entity's behavior (#142: extended state machine) */
+function tickEntity(
+  entity: WildlifeEntity,
+  playerX: number,
+  playerY: number,
+  chunks: Map<string, ChunkData>,
+): void {
   const species = getSpecies(entity.speciesId);  // O(1) Map lookup (#79)
   if (!species) return;
 
@@ -318,11 +357,12 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
   const ddy = playerY - entity.worldY;
   const dist = Math.sqrt(ddx * ddx + ddy * ddy);
 
-  // Flee logic
+  // --- Flee logic (highest priority) ---
   if (entity.fleeCooldown > 0) {
     entity.fleeCooldown--;
     if (entity.fleeCooldown <= 0) {
       entity.behavior = 'idle';
+      entity.behaviorTimer = 0;
     }
   }
 
@@ -330,48 +370,123 @@ function tickEntity(entity: WildlifeEntity, playerX: number, playerY: number): v
     if (entity.behavior !== 'flee') {
       entity.behavior = 'flee';
       entity.fleeCooldown = 120; // ~2 seconds at 60fps
+      entity.behaviorTimer = 0;
     }
     // Move away from player
     if (dist > 0.1) {
       const fleeSpeed = species.wanderSpeed * 3;
-      entity.worldX -= (ddx / dist) * fleeSpeed;
-      entity.worldY -= (ddy / dist) * fleeSpeed;
+      const newX = entity.worldX - (ddx / dist) * fleeSpeed;
+      const newY = entity.worldY - (ddy / dist) * fleeSpeed;
+      // Walkability check (#142)
+      if (isWalkable(newX, newY, chunks)) {
+        entity.worldX = newX;
+        entity.worldY = newY;
+      }
     }
   } else if (entity.behavior === 'idle' && species.wanderSpeed > 0) {
-    // Wander occasionally
+    // --- Idle → transition (#142: weighted pick) ---
     if (Math.random() < 0.005) {
-      entity.behavior = 'wander';
-      entity.wanderAngle = Math.random() * Math.PI * 2;
+      const nextBehavior = pickIdleBehavior(species.behaviorWeights, Math.random());
+      entity.behavior = nextBehavior;
+      switch (nextBehavior) {
+        case 'wander':
+          entity.wanderAngle = Math.random() * Math.PI * 2;
+          entity.behaviorTimer = 0;
+          break;
+        case 'sit':
+          entity.behaviorTimer = 120 + Math.floor(Math.random() * 180); // 2-5s
+          break;
+        case 'groom':
+          entity.behaviorTimer = 90 + Math.floor(Math.random() * 120); // 1.5-3.5s
+          break;
+        case 'sprint':
+          entity.wanderAngle = Math.random() * Math.PI * 2;
+          entity.behaviorTimer = 30 + Math.floor(Math.random() * 40); // 0.5-1.2s
+          break;
+      }
     }
   }
 
-  if (entity.behavior === 'wander') {
-    entity.worldX += Math.cos(entity.wanderAngle) * species.wanderSpeed;
-    entity.worldY += Math.sin(entity.wanderAngle) * species.wanderSpeed;
+  // --- Behavior execution ---
+  switch (entity.behavior) {
+    case 'wander': {
+      const newX = entity.worldX + Math.cos(entity.wanderAngle) * species.wanderSpeed;
+      const newY = entity.worldY + Math.sin(entity.wanderAngle) * species.wanderSpeed;
+      // Walkability check (#142)
+      if (isWalkable(newX, newY, chunks)) {
+        entity.worldX = newX;
+        entity.worldY = newY;
+      } else {
+        // Bounce: reverse angle and go back to idle
+        entity.wanderAngle += Math.PI;
+        entity.behavior = 'idle';
+        entity.behaviorTimer = 0;
+        break;
+      }
 
-    // Stay near home position
-    const homeDx = entity.homeX - entity.worldX;
-    const homeDy = entity.homeY - entity.worldY;
-    const homeDist = Math.sqrt(homeDx * homeDx + homeDy * homeDy);
-    if (homeDist > 2.5) {
-      // Drift back toward home
-      entity.wanderAngle = Math.atan2(homeDy, homeDx);
-    }
+      // Stay near home position
+      const homeDx = entity.homeX - entity.worldX;
+      const homeDy = entity.homeY - entity.worldY;
+      const homeDist = Math.sqrt(homeDx * homeDx + homeDy * homeDy);
+      if (homeDist > 2.5) {
+        entity.wanderAngle = Math.atan2(homeDy, homeDx);
+      }
 
-    // Random direction changes
-    if (Math.random() < 0.02) {
-      entity.wanderAngle += (Math.random() - 0.5) * 1.5;
-    }
+      // Random direction changes
+      if (Math.random() < 0.02) {
+        entity.wanderAngle += (Math.random() - 0.5) * 1.5;
+      }
 
-    // Occasionally stop
-    if (Math.random() < 0.008) {
-      entity.behavior = 'idle';
+      // Occasionally stop
+      if (Math.random() < 0.008) {
+        entity.behavior = 'idle';
+        entity.behaviorTimer = 0;
+      }
+      break;
     }
+    case 'sit': {
+      // Sitting still — timer counts down, then return to idle (#142)
+      entity.behaviorTimer--;
+      if (entity.behaviorTimer <= 0) {
+        entity.behavior = 'idle';
+      }
+      break;
+    }
+    case 'groom': {
+      // Grooming animation — timer counts down (#142)
+      entity.behaviorTimer--;
+      if (entity.behaviorTimer <= 0) {
+        entity.behavior = 'idle';
+      }
+      break;
+    }
+    case 'sprint': {
+      // Short speed burst — 2.5x wander speed, with walkability check (#142)
+      const sprintSpeed = species.wanderSpeed * 2.5;
+      const newX = entity.worldX + Math.cos(entity.wanderAngle) * sprintSpeed;
+      const newY = entity.worldY + Math.sin(entity.wanderAngle) * sprintSpeed;
+      if (isWalkable(newX, newY, chunks)) {
+        entity.worldX = newX;
+        entity.worldY = newY;
+      } else {
+        // Hit a wall — stop sprinting
+        entity.behavior = 'idle';
+        entity.behaviorTimer = 0;
+        break;
+      }
+      entity.behaviorTimer--;
+      if (entity.behaviorTimer <= 0) {
+        entity.behavior = 'idle';
+      }
+      break;
+    }
+    case 'flee':
+      // Flee movement handled above
+      break;
+    // 'idle' — no movement, just animate
   }
 
   // Update facing direction from isometric screen-space delta (#80, #128)
-  // In iso projection, screen-X ∝ (worldX - worldY), so use that for left/right facing.
-  // Fixes "moonwalk" bug where creatures moving in worldY appeared to slide sideways.
   if (species.flipRule === 'movement') {
     const moveDx = entity.worldX - _prevX;
     const moveDy = entity.worldY - _prevY;
@@ -478,6 +593,20 @@ export function getAnimationOffset(entity: WildlifeEntity): { dx: number; dy: nu
   if (!species) return { dx: 0, dy: 0 };
 
   const t = entity.animPhase;
+
+  // Behavior-specific animation overrides (#142)
+  switch (entity.behavior) {
+    case 'sit':
+      // Sitting: small gentle bob, visually lower (crouching)
+      return { dx: 0, dy: 2 + Math.sin(t * 0.5) * 0.5 };
+    case 'groom':
+      // Grooming: rhythmic side-to-side licking motion
+      return { dx: Math.sin(t * 3) * 1.5, dy: 1 + Math.sin(t * 6) * 0.4 };
+    case 'sprint':
+      // Sprinting: fast bouncy movement
+      return { dx: Math.sin(t * 5) * 0.5, dy: -Math.abs(Math.sin(t * 6)) * 3 };
+    // idle/wander/flee use species animStyle below
+  }
 
   switch (species.animStyle) {
     case 'bob':
