@@ -3444,6 +3444,10 @@ async function main(): Promise<void> {
     if (getTotalTrackCount() > 4) {
       console.log(`[Music] ${getTotalTrackCount()} MIDI tracks available`);
     }
+    // Auto-start music after tracks are ready if music is enabled and not muted.
+    if (state.music.settings.enabled && !state.music.settings.muted) {
+      musicPlay(state.music);
+    }
   });
 
   // Load sampled SFX in background (oscillator SFX work immediately as fallback)

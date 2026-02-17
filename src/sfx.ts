@@ -117,6 +117,13 @@ export async function initSampledSfxPipeline(state: SfxState): Promise<void> {
     await preloadAllSamples(ctx);
   }
   state.sampledReady = true;
+  // Apply current settings to any active loops after sample pipeline is ready.
+  _updatePositionalVolumes(state);
+  if (state.settings.ambienceMuted) {
+    _stopAllSampledAmbience();
+    _stopAmbienceNodes();
+    _ambienceStarted = false;
+  }
   console.log('[SFX] Sampled SFX pipeline ready');
 }
 
@@ -337,7 +344,8 @@ function _startAmbienceLayer(ctx: AudioContext, layer: AmbienceLayer, volume: nu
 
 export function setSfxVolume(state: SfxState, vol: number): void {
   state.settings.sfxVolume = Math.max(0, Math.min(1, vol));
-  // _sfxGain is set at play time from state, no live update needed for one-shots
+  // One-shots read volume on play; positional loops need live updates.
+  _updatePositionalVolumes(state);
 }
 
 export function setAmbienceVolume(state: SfxState, vol: number): void {
@@ -351,12 +359,16 @@ export function setAmbienceVolume(state: SfxState, vol: number): void {
 
 export function toggleSfxMute(state: SfxState): void {
   state.settings.sfxMuted = !state.settings.sfxMuted;
+  // Immediately apply to existing positional loops.
+  _updatePositionalVolumes(state);
 }
 
 export function toggleAmbienceMute(state: SfxState): void {
   state.settings.ambienceMuted = !state.settings.ambienceMuted;
-  if (state.settings.ambienceMuted && _ambienceStarted) {
+  if (state.settings.ambienceMuted) {
+    // Hard-stop both oscillator and sampled ambience layers.
     _stopAmbienceNodes();
+    _stopAllSampledAmbience();
     _ambienceStarted = false;
   }
 }
@@ -482,7 +494,8 @@ function _setPositionalVolume(state: SfxState, src: PositionalSource): void {
   const dy = src.pos.y - state.listenerPos.y;
   const dist = Math.sqrt(dx * dx + dy * dy);
   const vol = Math.max(0, 1 - dist / src.maxDist);
-  src.handle.setVolume(vol * state.settings.sfxVolume);
+  const bus = (state.settings.sfxEnabled && !state.settings.sfxMuted) ? 1 : 0;
+  src.handle.setVolume(vol * state.settings.sfxVolume * bus);
 }
 
 /** Update volumes for all active positional sources */
@@ -688,11 +701,33 @@ export function updateAmbienceEnhanced(
   timeSlot: 'day' | 'dusk' | 'night',
   weather: string,
 ): void {
-  // Still run oscillator ambience for baseline
-  updateAmbience(state, timeSlot, weather);
-
-  if (!state.sampledReady || !state.settings.sfxEnabled || state.settings.ambienceMuted) {
+  if (!state.settings.sfxEnabled || state.settings.ambienceMuted) {
+    _stopAmbienceNodes();
+    _ambienceStarted = false;
     _stopAllSampledAmbience();
+    state.activeAmbienceId = null;
+    return;
+  }
+
+  // If sampled ambience is unavailable, use oscillator fallback.
+  if (!state.sampledReady) {
+    updateAmbience(state, timeSlot, weather);
+    _stopAllSampledAmbience();
+    return;
+  }
+
+  // Sampled ambience ready: disable synthetic oscillator layers to avoid tonal hiss.
+  if (_ambienceStarted) {
+    _stopAmbienceNodes();
+    _ambienceStarted = false;
+  }
+
+  const profile = resolveAmbienceProfile(timeSlot, weather);
+  state.activeAmbienceId = profile ? profile.id : null;
+
+  if (!profile) {
+    _stopAllSampledAmbience();
+    state.activeAmbienceId = null;
     return;
   }
 
@@ -700,8 +735,7 @@ export function updateAmbienceEnhanced(
   if (!ctx) return;
 
   // Determine target sampled layers for current profile
-  const profileId = state.activeAmbienceId;
-  const targetLayers = profileId ? (SAMPLED_AMBIENCE_MAP[profileId] ?? []) : [];
+  const targetLayers = SAMPLED_AMBIENCE_MAP[profile.id] ?? [];
   const targetIds = new Set(targetLayers.map(l => l.sampleId));
 
   // Stop loops that shouldn't be playing
@@ -729,4 +763,10 @@ export function deserializeSfxSettings(state: SfxState, saved: Partial<SfxSettin
   if (saved.sfxMuted !== undefined) state.settings.sfxMuted = saved.sfxMuted;
   if (saved.ambienceMuted !== undefined) state.settings.ambienceMuted = saved.ambienceMuted;
   if (saved.sfxEnabled !== undefined) state.settings.sfxEnabled = saved.sfxEnabled;
+  _updatePositionalVolumes(state);
+  if (state.settings.ambienceMuted || !state.settings.sfxEnabled) {
+    _stopAmbienceNodes();
+    _stopAllSampledAmbience();
+    _ambienceStarted = false;
+  }
 }
