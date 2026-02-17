@@ -73,3 +73,41 @@ The 2025 Tesla Model S is reporting itself as a **Linux x86_64** desktop with **
 No device model/vendor is exposed — it deliberately identifies as a generic Linux desktop machine.
 
 All data above is a 100 % faithful OCR/transcription of the three screenshots you provided.
+
+---
+
+## QA: Testing Tesla Mode (#185)
+
+Since Tesla's UA contains **no distinguishing token**, the game cannot auto-detect Tesla browsers reliably.
+Tesla mode must be activated explicitly:
+
+### Force-enable via URL parameter
+```
+http://localhost:5173/?tesla=1
+```
+This immediately enables:
+- On-screen touch controls (joystick + action/flashlight/menu buttons)
+- Tesla "T" badge in top-right corner
+
+### Force-disable via URL parameter
+```
+http://localhost:5173/?tesla=0
+```
+Overrides any saved preference in localStorage.
+
+### Settings toggle
+Open the game's Options → Input → Tesla Mode → set to "On" or "Auto-detect".
+The preference persists to `localStorage` key `emilys_game_tesla_mode`.
+
+### Conservative auto-detection heuristic
+Auto-detect returns `true` when ALL of:
+1. UA contains `X11; Linux x86_64`
+2. UA contains `Chrome/` (not Edge, Firefox, Opera, Samsung)
+3. Viewport is ≥ 1200×600px
+
+This is intentionally conservative and does **not** auto-enable Tesla mode — only used as the default value for the "Auto-detect" settings option.
+
+### Playwright test reproduction
+```bash
+npx playwright test tests/ui/tesla-mode.spec.ts --reporter=line
+```

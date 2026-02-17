@@ -2,9 +2,11 @@
  * input.ts - Unified input handling: keyboard, touch, and gamepad.
  * Manages WASD/Arrow keys, virtual touch D-pad, and Gamepad API.
  * Supports edge detection (justPressed) for single-fire actions.
- * Touch overlay auto-shows only on iOS/iPadOS/Tesla UA; 3-way visibility mode (#144).
+ * Touch overlay auto-shows only on iOS/iPadOS/Tesla mode; 3-way visibility mode (#144).
  * TODO: DOC - touch overlay layout, gamepad button mapping, input unification
  */
+
+import { shouldAutoShowTouchOverlay } from './platform';
 
 /** Touch control visibility mode (#144) */
 export type TouchControlMode = 'whisper' | 'slide' | 'visible';
@@ -19,17 +21,6 @@ export interface InputState {
 
 /** Which input device is currently dominant */
 export type InputDevice = 'keyboard' | 'touch' | 'gamepad';
-
-/**
- * Should touch controls auto-show without user opt-in?
- * Only on Apple mobile (iPhone/iPad/iPod) or Tesla in-car browser.
- * Other touch-capable devices (Windows laptops, Android) default to hidden.
- * TODO: DOC - UA detection for touch auto-show
- */
-export function shouldAutoShowTouchOverlay(): boolean {
-  const ua = navigator.userAgent;
-  return /iPhone|iPad|iPod|Tesla/i.test(ua);
-}
 
 // Gamepad axis deadzone
 const GP_DEADZONE = 0.3;

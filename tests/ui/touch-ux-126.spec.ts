@@ -93,15 +93,16 @@ test.describe('Touch UX #126 — UA-based visibility', () => {
     });
   });
 
-  test.describe('Tesla UA mock', () => {
+  test.describe('Tesla UA mock (no "Tesla" token — like real Tesla)', () => {
     test.use({
-      userAgent: 'Mozilla/5.0 (X11; Linux) AppleWebKit/537.36 (KHTML, like Gecko) Tesla/2023.32 Chrome/115.0.0.0 Safari/537.36',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.7103.92 Safari/537.36',
     });
 
-    test('touch overlay auto-shows on Tesla UA', async ({ page }) => {
+    test('touch overlay does NOT auto-show on real Tesla UA without ?tesla=1', async ({ page }) => {
       await waitForGame(page);
+      // Real Tesla UA has no "Tesla" token — auto-show requires ?tesla=1 or settings toggle (#185)
       const overlayExists = await page.evaluate(() => !!document.getElementById('touchControlsOverlay'));
-      expect(overlayExists).toBe(true);
+      expect(overlayExists).toBe(false);
     });
   });
 });
@@ -213,12 +214,12 @@ test.describe('Touch UX #126 — Idle-slide behavior', () => {
 
 test.describe('Touch UX #126 — shouldAutoShowTouchOverlay function', () => {
 
-  test('shouldAutoShowTouchOverlay returns false on desktop UA', async ({ page }) => {
+  test('shouldAutoShowTouchOverlay returns false on desktop UA (no Tesla param)', async ({ page }) => {
     await waitForGame(page);
     const result = await page.evaluate(() => {
-      // The function is module-scoped but we can test the same regex
+      // Test Apple mobile detection (the UA-side of shouldAutoShowTouchOverlay)
       const ua = navigator.userAgent;
-      return /iPhone|iPad|iPod|Tesla/i.test(ua);
+      return /iPhone|iPad|iPod/i.test(ua);
     });
     expect(result).toBe(false);
   });
@@ -232,24 +233,18 @@ test.describe('Touch UX #126 — shouldAutoShowTouchOverlay function', () => {
       await waitForGame(page);
       const result = await page.evaluate(() => {
         const ua = navigator.userAgent;
-        return /iPhone|iPad|iPod|Tesla/i.test(ua);
+        return /iPhone|iPad|iPod/i.test(ua);
       });
       expect(result).toBe(true);
     });
   });
 
-  test.describe('with Tesla UA', () => {
-    test.use({
-      userAgent: 'Mozilla/5.0 (X11; Linux) Tesla/2023.32 Chrome/115.0.0.0',
-    });
-
-    test('shouldAutoShowTouchOverlay returns true on Tesla UA', async ({ page }) => {
-      await waitForGame(page);
-      const result = await page.evaluate(() => {
-        const ua = navigator.userAgent;
-        return /iPhone|iPad|iPod|Tesla/i.test(ua);
-      });
-      expect(result).toBe(true);
-    });
+  test('shouldAutoShowTouchOverlay returns true with ?tesla=1 param', async ({ page }) => {
+    // Tesla mode is now URL-param driven (#185), not UA-string driven
+    await page.goto('http://localhost:5173/?test=1&tesla=1');
+    await page.waitForFunction(() => !!(window as any).__gameDebug?.state, { timeout: 15000 });
+    await page.waitForTimeout(500);
+    const overlayExists = await page.evaluate(() => !!document.getElementById('touchControlsOverlay'));
+    expect(overlayExists).toBe(true);
   });
 });

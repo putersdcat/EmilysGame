@@ -10,7 +10,8 @@ import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
-import { InputManager, shouldAutoShowTouchOverlay, type TouchControlMode } from './input';
+import { InputManager, type TouchControlMode } from './input';
+import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
@@ -2044,6 +2045,56 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
     optGamepadStatus.style.color = inputMgr.gamepadConnected ? '#88ff88' : '#888';
   }
 
+  // Tesla Mode (#185)
+  const optTesla = document.getElementById('optTeslaMode') as HTMLSelectElement | null;
+  const teslaBadge = document.getElementById('teslaBadge');
+  const applyTeslaMode = (active: boolean) => {
+    // Show/hide Tesla "T" badge
+    if (teslaBadge) {
+      teslaBadge.classList.toggle('active', active);
+    }
+    // Auto-enable/disable touch controls when Tesla mode changes
+    if (inputMgr) {
+      if (active && !inputMgr.touchEnabled) {
+        inputMgr.enableTouchControls();
+        if (optTouch) optTouch.value = 'on';
+      }
+    }
+  };
+  if (optTesla) {
+    // Determine initial state
+    const teslaActive = isTeslaMode();
+    const teslaAutoDetected = detectTeslaBrowser();
+    if (teslaActive) {
+      optTesla.value = 'on';
+    } else if (teslaAutoDetected) {
+      optTesla.value = 'auto';
+    } else {
+      optTesla.value = 'off';
+    }
+    applyTeslaMode(teslaActive);
+
+    optTesla.onchange = () => {
+      if (optTesla.value === 'on') {
+        setTeslaMode(true);
+        applyTeslaMode(true);
+      } else if (optTesla.value === 'off') {
+        setTeslaMode(false);
+        applyTeslaMode(false);
+      } else {
+        // Auto: enable only if auto-detected
+        const auto = detectTeslaBrowser();
+        setTeslaMode(auto);
+        applyTeslaMode(auto);
+      }
+    };
+  } else {
+    // No settings element — still apply if Tesla mode active (e.g. ?tesla=1)
+    if (isTeslaMode()) {
+      applyTeslaMode(true);
+    }
+  }
+
   // Close button
   document.getElementById('optionsClose')!.onclick = () => {
     overlay.style.display = 'none';
@@ -3055,6 +3106,13 @@ async function main(): Promise<void> {
   if (fogPref !== null) {
     setFogEnabled(fogPref === '1');
   }
+
+  // Apply Tesla mode badge on startup (#185)
+  if (isTeslaMode()) {
+    const teslaBadge = document.getElementById('teslaBadge');
+    if (teslaBadge) teslaBadge.classList.add('active');
+  }
+
   // Wire HTML HUD buttons
   wireHudButtons(
     () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
@@ -3327,6 +3385,17 @@ async function main(): Promise<void> {
     getPerfStats: () => ({ ...perfStats }),
     getFrameBenchmark,
     resetFrameHistory,
+    // #185: Tesla mode
+    isTeslaMode,
+    setTeslaMode,
+    detectTeslaBrowser,
+    applyTeslaMode: (active: boolean) => {
+      const badge = document.getElementById('teslaBadge');
+      if (badge) badge.classList.toggle('active', active);
+      if (active && input && !input.touchEnabled) {
+        input.enableTouchControls();
+      }
+    },
   };
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
