@@ -1,7 +1,7 @@
 {
   "shardId": "quizzes-002",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T20:48:10.024Z",
+  "createdAt": "2026-02-17T08:50:38.722Z",
   "questions": [
     {
       "id": "q_technology_hard_100",
@@ -26,10 +26,10 @@
         "programming"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -55,10 +55,10 @@
         "history"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -84,10 +84,10 @@
         "future"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -113,10 +113,10 @@
         "data"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -142,10 +142,10 @@
         "trivia"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -171,11 +171,10 @@
         "counting"
       ],
       "provenance": {
-        "source": "educational-commons",
-        "sourceUrl": "https://www.games4esl.com/math-quiz/",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -200,10 +199,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -228,39 +227,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_easy_108",
-      "category": "math",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "How many sides does a square have?",
-      "answers": [
-        "4",
-        "3",
-        "5",
-        "6"
-      ],
-      "hint": "Count the corners too - same number!",
-      "explanation": "A square has 4 equal sides and 4 corners.",
-      "tags": [
-        "geometry",
-        "shapes"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -285,10 +255,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -314,10 +284,10 @@
         "place-value"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -343,10 +313,10 @@
         "times-tables"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -371,39 +341,10 @@
         "division"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_math_medium_113",
-      "category": "math",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is 1/2 + 1/4?",
-      "answers": [
-        "3/4",
-        "2/4",
-        "1/3",
-        "2/6"
-      ],
-      "hint": "Convert 1/2 to fourths first.",
-      "explanation": "1/2 = 2/4, so 2/4 + 1/4 = 3/4.",
-      "tags": [
-        "fractions",
-        "addition"
-      ],
-      "provenance": {
-        "source": "educational-commons",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -429,10 +370,10 @@
         "perimeter"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -458,10 +399,10 @@
         "mental-math"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -487,10 +428,10 @@
         "squares"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -516,10 +457,10 @@
         "equations"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -545,10 +486,10 @@
         "decimals"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.023Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -574,10 +515,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -603,68 +544,10 @@
         "nature"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_121",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What color is the sky on a clear day?",
-      "answers": [
-        "Blue",
-        "Green",
-        "Red",
-        "Yellow"
-      ],
-      "hint": "Look up on a sunny day!",
-      "explanation": "The sky appears blue because of how sunlight scatters in the atmosphere.",
-      "tags": [
-        "weather",
-        "light"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_122",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What do plants need to grow?",
-      "answers": [
-        "Water and sunlight",
-        "Only water",
-        "Only sunlight",
-        "Only soil"
-      ],
-      "hint": "They need more than one thing!",
-      "explanation": "Plants need water, sunlight, air, and nutrients from soil to grow.",
-      "tags": [
-        "plants",
-        "biology"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -690,39 +573,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_science_easy_124",
-      "category": "science",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What season comes after winter?",
-      "answers": [
-        "Spring",
-        "Summer",
-        "Autumn",
-        "Fall"
-      ],
-      "hint": "Flowers start to bloom in this season.",
-      "explanation": "Spring comes after winter, bringing warmer weather and new plant growth.",
-      "tags": [
-        "seasons",
-        "nature"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -748,10 +602,10 @@
         "anatomy"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -777,10 +631,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -806,10 +660,10 @@
         "solar-system"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -835,10 +689,10 @@
         "physics"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -864,10 +718,10 @@
         "rocks"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -893,10 +747,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -922,10 +776,10 @@
         "cells"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -951,10 +805,10 @@
         "temperature"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -980,10 +834,10 @@
         "forces"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1009,10 +863,10 @@
         "compounds"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1038,10 +892,10 @@
         "ancient-history"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1067,10 +921,10 @@
         "voyages"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1096,10 +950,10 @@
         "rulers"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1125,10 +979,10 @@
         "engineering"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1154,39 +1008,10 @@
         "disasters"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_history_medium_140",
-      "category": "history",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "Who wrote the Declaration of Independence?",
-      "answers": [
-        "Thomas Jefferson",
-        "Benjamin Franklin",
-        "George Washington",
-        "John Adams"
-      ],
-      "hint": "He later became the 3rd US President.",
-      "explanation": "Thomas Jefferson was the primary author of the Declaration of Independence in 1776.",
-      "tags": [
-        "american-history",
-        "founding-fathers"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.685Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1212,10 +1037,10 @@
         "writing"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1241,10 +1066,10 @@
         "20th-century"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1270,10 +1095,10 @@
         "emperors"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1299,39 +1124,10 @@
         "architecture"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_language_easy_145",
-      "category": "language",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is the opposite of \"hot\"?",
-      "answers": [
-        "Cold",
-        "Warm",
-        "Cool",
-        "Freezing"
-      ],
-      "hint": "Ice is this!",
-      "explanation": "Cold is the opposite (antonym) of hot.",
-      "tags": [
-        "vocabulary",
-        "antonyms"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1357,10 +1153,10 @@
         "vowels"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1386,39 +1182,10 @@
         "homophones"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_language_medium_148",
-      "category": "language",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "What is the plural of \"child\"?",
-      "answers": [
-        "Children",
-        "Childs",
-        "Childes",
-        "Childrens"
-      ],
-      "hint": "This is an irregular plural.",
-      "explanation": "The plural of child is children, not childs.",
-      "tags": [
-        "grammar",
-        "plurals"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1444,10 +1211,10 @@
         "grammar"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1473,10 +1240,10 @@
         "literary-devices"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1502,10 +1269,10 @@
         "poetry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1531,10 +1298,10 @@
         "etymology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1560,10 +1327,10 @@
         "forms"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1589,39 +1356,10 @@
         "sentence-structure"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_logic_easy_155",
-      "category": "logic",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What comes next: 1, 2, 3, 4, ...?",
-      "answers": [
-        "5",
-        "6",
-        "3",
-        "10"
-      ],
-      "hint": "Keep counting!",
-      "explanation": "This is counting by ones: 1, 2, 3, 4, 5.",
-      "tags": [
-        "patterns",
-        "sequences"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1647,39 +1385,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_logic_easy_157",
-      "category": "logic",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What shape has no corners?",
-      "answers": [
-        "Circle",
-        "Square",
-        "Triangle",
-        "Rectangle"
-      ],
-      "hint": "It's round!",
-      "explanation": "A circle has no corners or straight edges.",
-      "tags": [
-        "shapes",
-        "geometry"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1705,10 +1414,10 @@
         "calendar"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1734,10 +1443,10 @@
         "classification"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1763,10 +1472,10 @@
         "rates"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1792,10 +1501,10 @@
         "fibonacci"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1821,10 +1530,10 @@
         "patterns"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1850,10 +1559,10 @@
         "trick-questions"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1879,68 +1588,10 @@
         "reasoning"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_easy_165",
-      "category": "geography",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is the largest ocean on Earth?",
-      "answers": [
-        "Pacific Ocean",
-        "Atlantic Ocean",
-        "Indian Ocean",
-        "Arctic Ocean"
-      ],
-      "hint": "It's between Asia and the Americas.",
-      "explanation": "The Pacific Ocean is the largest and deepest ocean on Earth.",
-      "tags": [
-        "oceans",
-        "world-geography"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_easy_166",
-      "category": "geography",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "What is the capital of France?",
-      "answers": [
-        "Paris",
-        "London",
-        "Rome",
-        "Berlin"
-      ],
-      "hint": "It has the Eiffel Tower!",
-      "explanation": "Paris is the capital city of France.",
-      "tags": [
-        "capitals",
-        "europe"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1966,10 +1617,10 @@
         "continents"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -1995,126 +1646,10 @@
         "africa"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_medium_169",
-      "category": "geography",
-      "difficulty": "medium",
-      "ageMetadata": {
-        "minAge": 8,
-        "maxAge": 10,
-        "ageBand": "8-10"
-      },
-      "question": "How many continents are there?",
-      "answers": [
-        "7",
-        "5",
-        "6",
-        "8"
-      ],
-      "hint": "Count them: Africa, Antarctica, Asia...",
-      "explanation": "There are 7 continents: Africa, Antarctica, Asia, Europe, North America, Australia/Oceania, South America.",
-      "tags": [
-        "continents",
-        "world-geography"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_hard_170",
-      "category": "geography",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is the smallest country in the world?",
-      "answers": [
-        "Vatican City",
-        "Monaco",
-        "San Marino",
-        "Liechtenstein"
-      ],
-      "hint": "It's inside Rome, Italy.",
-      "explanation": "Vatican City is the smallest country, with an area of about 0.44 km².",
-      "tags": [
-        "countries",
-        "records"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_hard_171",
-      "category": "geography",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "Which desert is the largest hot desert in the world?",
-      "answers": [
-        "Sahara Desert",
-        "Arabian Desert",
-        "Gobi Desert",
-        "Kalahari Desert"
-      ],
-      "hint": "It's in North Africa.",
-      "explanation": "The Sahara Desert in Africa is the largest hot desert in the world.",
-      "tags": [
-        "deserts",
-        "africa"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_geography_hard_172",
-      "category": "geography",
-      "difficulty": "hard",
-      "ageMetadata": {
-        "minAge": 11,
-        "maxAge": null,
-        "ageBand": "11-12+"
-      },
-      "question": "What is the tallest mountain in the world?",
-      "answers": [
-        "Mount Everest",
-        "K2",
-        "Kilimanjaro",
-        "Denali"
-      ],
-      "hint": "It's in the Himalayas.",
-      "explanation": "Mount Everest is 8,849 meters (29,032 feet) tall, the highest point on Earth.",
-      "tags": [
-        "mountains",
-        "records"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2140,10 +1675,10 @@
         "countries"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2169,10 +1704,10 @@
         "hemispheres"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2197,10 +1732,10 @@
         "addition"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2225,10 +1760,10 @@
         "subtraction"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2253,10 +1788,10 @@
         "multiplication"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2281,10 +1816,10 @@
         "percentages"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2310,10 +1845,10 @@
         "area"
       ],
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2338,10 +1873,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2367,10 +1902,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2396,10 +1931,10 @@
         "records"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2425,10 +1960,10 @@
         "chemistry"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2454,10 +1989,10 @@
         "biology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2483,39 +2018,10 @@
         "daily-life"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "q_history_easy_186",
-      "category": "history",
-      "difficulty": "easy",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "question": "Who was the first president of the United States?",
-      "answers": [
-        "George Washington",
-        "Abraham Lincoln",
-        "Thomas Jefferson",
-        "Benjamin Franklin"
-      ],
-      "hint": "His face is on the $1 bill.",
-      "explanation": "George Washington was the first U.S. president (1789-1797).",
-      "tags": [
-        "american-history",
-        "presidents"
-      ],
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2541,10 +2047,10 @@
         "colonization"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2570,10 +2076,10 @@
         "innovation"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2599,10 +2105,10 @@
         "technology"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2628,10 +2134,10 @@
         "animals"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2657,10 +2163,10 @@
         "rhyme"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2686,10 +2192,10 @@
         "comparatives"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2715,10 +2221,10 @@
         "vocabulary"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2744,10 +2250,10 @@
         "vocabulary"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2773,10 +2279,10 @@
         "colors"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2802,10 +2308,10 @@
         "logic"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2831,10 +2337,10 @@
         "skip-counting"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2860,10 +2366,10 @@
         "wordplay"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -2889,10 +2395,496 @@
         "doubling"
       ],
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:48:10.024Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_easy_200",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What color are most school buses?",
+      "answers": [
+        "Yellow",
+        "Red",
+        "Blue",
+        "Green"
+      ],
+      "hint": "Think of the color of the sun.",
+      "explanation": "School buses are usually yellow for high visibility.",
+      "tags": [
+        "everyday-knowledge",
+        "colors"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_medium_201",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Which ocean is on the west coast of the United States?",
+      "answers": [
+        "Pacific Ocean",
+        "Atlantic Ocean",
+        "Indian Ocean",
+        "Arctic Ocean"
+      ],
+      "hint": "California touches this ocean.",
+      "explanation": "The Pacific Ocean is on the west coast of the U.S.",
+      "tags": [
+        "oceans",
+        "usa"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_hard_203",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Which continent is also a country?",
+      "answers": [
+        "Australia",
+        "Africa",
+        "Europe",
+        "Asia"
+      ],
+      "hint": "It's in the Southern Hemisphere.",
+      "explanation": "Australia is both a continent and a country.",
+      "tags": [
+        "continents",
+        "countries"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_geography_hard_204",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the capital of Canada?",
+      "answers": [
+        "Ottawa",
+        "Toronto",
+        "Montreal",
+        "Vancouver"
+      ],
+      "hint": "It's not the largest city.",
+      "explanation": "Ottawa is the capital of Canada, located in Ontario.",
+      "tags": [
+        "capitals",
+        "north-america"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_technology_easy_205",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we use to type on a computer?",
+      "answers": [
+        "Keyboard",
+        "Mouse",
+        "Screen",
+        "Speaker"
+      ],
+      "hint": "It has letters and numbers on it.",
+      "explanation": "A keyboard is used to type letters and numbers on a computer.",
+      "tags": [
+        "hardware",
+        "basics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_technology_medium_207",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What company makes the iPhone?",
+      "answers": [
+        "Apple",
+        "Samsung",
+        "Google",
+        "Microsoft"
+      ],
+      "hint": "It's named after a fruit.",
+      "explanation": "Apple Inc. makes the iPhone and other products.",
+      "tags": [
+        "companies",
+        "devices"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_technology_hard_208",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does \"CPU\" stand for?",
+      "answers": [
+        "Central Processing Unit",
+        "Computer Personal Unit",
+        "Central Program Unit",
+        "Computer Processing Unit"
+      ],
+      "hint": "It's the \"brain\" of the computer.",
+      "explanation": "CPU stands for Central Processing Unit - the main chip that runs programs.",
+      "tags": [
+        "hardware",
+        "acronyms"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_technology_hard_209",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Who co-founded Microsoft with Bill Gates?",
+      "answers": [
+        "Paul Allen",
+        "Steve Jobs",
+        "Steve Wozniak",
+        "Mark Zuckerberg"
+      ],
+      "hint": "His first name is Paul.",
+      "explanation": "Paul Allen and Bill Gates co-founded Microsoft in 1975.",
+      "tags": [
+        "history",
+        "founders"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_210",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 7+5?",
+      "answers": [
+        "12",
+        "11",
+        "13",
+        "10"
+      ],
+      "hint": "Count on your fingers!",
+      "explanation": "7+5=12",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_211",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 20-8?",
+      "answers": [
+        "12",
+        "10",
+        "14",
+        "11"
+      ],
+      "hint": "Count back from 20",
+      "explanation": "20-8=12",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_212",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 3×4?",
+      "answers": [
+        "12",
+        "10",
+        "14",
+        "15"
+      ],
+      "hint": "3 groups of 4",
+      "explanation": "3×4=12",
+      "tags": [
+        "multiplication"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_213",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many corners does a triangle have?",
+      "answers": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "hint": "Count them!",
+      "explanation": "A triangle has 3 corners and 3 sides.",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_214",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 10+10?",
+      "answers": [
+        "20",
+        "15",
+        "25",
+        "30"
+      ],
+      "hint": "Double 10",
+      "explanation": "10+10=20",
+      "tags": [
+        "addition",
+        "doubles"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_215",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is half of 10?",
+      "answers": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "hint": "Cut it in the middle",
+      "explanation": "Half of 10 is 5",
+      "tags": [
+        "division",
+        "fractions"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_216",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 8+9?",
+      "answers": [
+        "17",
+        "16",
+        "18",
+        "15"
+      ],
+      "hint": "Almost 8+10",
+      "explanation": "8+9=17",
+      "tags": [
+        "addition"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_217",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is 14-6?",
+      "answers": [
+        "8",
+        "7",
+        "9",
+        "6"
+      ],
+      "hint": "Count back",
+      "explanation": "14-6=8",
+      "tags": [
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "q_math_easy_218",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "How many sides does a rectangle have?",
+      "answers": [
+        "4",
+        "3",
+        "5",
+        "6"
+      ],
+      "hint": "Same as a square",
+      "explanation": "A rectangle has 4 sides",
+      "tags": [
+        "geometry"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.686Z",
+        "curator": "content-pipeline-v2"
       }
     }
   ]

@@ -1,7 +1,7 @@
 {
   "shardId": "articles-001",
   "schemaVersion": "1.0.0",
-  "createdAt": "2026-02-15T20:46:10.136Z",
+  "createdAt": "2026-02-17T08:50:38.738Z",
   "articles": [
     {
       "id": "article_math_000",
@@ -25,8 +25,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -50,8 +50,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -77,8 +77,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -106,8 +106,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -133,8 +133,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -160,8 +160,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -186,8 +186,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -212,11 +212,10 @@
       ],
       "readingLevel": 4.5,
       "provenance": {
-        "source": "public-domain",
-        "sourceUrl": "https://en.wikipedia.org/wiki/Ancient_Egypt",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -241,11 +240,10 @@
       ],
       "readingLevel": 6,
       "provenance": {
-        "source": "public-domain",
-        "sourceUrl": "https://en.wikipedia.org/wiki/Space_Race",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -272,8 +270,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -299,8 +297,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -326,8 +324,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -355,8 +353,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -384,8 +382,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -412,8 +410,8 @@
       "provenance": {
         "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.689Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -436,10 +434,10 @@
       ],
       "readingLevel": 4,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -461,10 +459,10 @@
       ],
       "readingLevel": 3.5,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -493,46 +491,19 @@
       ],
       "readingLevel": 4.5,
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
-      }
-    },
-    {
-      "id": "article_science_018",
-      "subject": "science",
-      "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
-      },
-      "title": "The Water Cycle",
-      "summary": "How water moves around Earth in a never-ending cycle!",
-      "content": "Water on Earth is always moving in a continuous cycle called the **water cycle**.\n\n**4 Main Steps:**\n\n**1. Evaporation** ☀️💧\nWhen the Sun heats water in oceans, lakes, and rivers, it turns into invisible water vapor (gas) and rises into the air.\n\n**2. Condensation** ☁️\nAs water vapor rises and cools, it turns back into tiny water droplets. These droplets form clouds.\n\n**3. Precipitation** 🌧️❄️\nWhen droplets in clouds get too heavy, they fall as:\n- Rain\n- Snow\n- Sleet\n- Hail\n\n**4. Collection** 🌊\nWater collects in oceans, rivers, lakes, and underground. Then the cycle starts again!\n\n**Bonus Step: Transpiration** 🌱\nPlants also release water vapor from their leaves! This adds moisture to the air.\n\n**Fun Facts:**\n- The water you drink could be millions of years old!\n- The same water has been recycling since Earth formed\n- About 96.5% of Earth's water is in the oceans\n- Only about 1% of Earth's water is available for humans to use\n\n**Why It Matters:**\nThe water cycle gives us fresh water to drink, helps plants grow, and creates weather patterns!",
-      "keyTerms": [
-        "water cycle",
-        "evaporation",
-        "condensation",
-        "precipitation",
-        "collection",
-        "transpiration"
-      ],
-      "readingLevel": 2.5,
-      "provenance": {
-        "source": "public-domain",
-        "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
       "id": "article_science_019",
       "subject": "science",
       "ageMetadata": {
-        "minAge": 5,
-        "maxAge": 7,
-        "ageBand": "5-7"
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
       },
       "title": "Dinosaurs: Ancient Giants",
       "summary": "Learn about the amazing creatures that lived millions of years ago!",
@@ -548,10 +519,10 @@
       ],
       "readingLevel": 2.8,
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -576,10 +547,10 @@
       ],
       "readingLevel": 6,
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -602,10 +573,10 @@
       ],
       "readingLevel": 6.5,
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -628,10 +599,10 @@
       ],
       "readingLevel": 6,
       "provenance": {
-        "source": "public-domain",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -654,10 +625,10 @@
       ],
       "readingLevel": 1.5,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -681,10 +652,10 @@
       ],
       "readingLevel": 3.5,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -709,10 +680,10 @@
       ],
       "readingLevel": 4,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -737,10 +708,10 @@
       ],
       "readingLevel": 4.5,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -764,10 +735,10 @@
       ],
       "readingLevel": 2,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -792,10 +763,10 @@
       ],
       "readingLevel": 4,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     },
     {
@@ -822,10 +793,39 @@
       ],
       "readingLevel": 6,
       "provenance": {
-        "source": "educational-commons",
+        "source": "manual-curation",
         "license": "CC0-1.0",
-        "dateIngested": "2026-02-15T20:46:10.136Z",
-        "curator": "content-pipeline-v1"
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
+      }
+    },
+    {
+      "id": "article_art_050",
+      "subject": "art",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Shapes in Art",
+      "summary": "Basic shapes and how artists use them.",
+      "content": "Artists use **shapes** to create everything we see in art!\n\n**Basic Shapes:**\n- **Circle** ⭕: Round, no corners (sun, wheels)\n- **Square** ⬜: 4 equal sides, 4 corners\n- **Rectangle** ▭: 4 sides, opposite sides equal\n- **Triangle** 🔺: 3 sides, 3 corners\n- **Oval** : Stretched circle (egg shape)\n\n**2D vs. 3D:**\n- **2D (flat):** Drawing on paper, paintings\n- **3D (solid):** Sculptures, buildings\n  - Circle → Sphere (ball)\n  - Square → Cube (box)\n  - Triangle → Pyramid\n  - Rectangle → Rectangular prism\n\n**Shapes in Famous Art:**\n- **Piet Mondrian:** Used rectangles and squares with primary colors\n- **Wassily Kandinsky:** Circles and abstract shapes\n- **Pablo Picasso:** Broke objects into geometric shapes (Cubism)\n\n**Organic vs. Geometric:**\n- **Geometric:** Perfect, measured shapes (square, circle)\n- **Organic:** Natural, irregular shapes (leaf, cloud)\n\n**Creating Art with Shapes:**\n1. Draw a house: triangle roof + square base\n2. Draw a person: circle head + rectangle body\n3. Draw a flower: circle center + oval petals\n\n**Shape Activities:**\n- Shape collage (cut and glue shapes)\n- Shape hunt (find shapes around you)\n- Draw pictures using only one shape\n\n**Artists' Tip:** Every complex object can be broken down into simple shapes! Start with basic shapes, then add details.",
+      "keyTerms": [
+        "shapes",
+        "circle",
+        "square",
+        "triangle",
+        "geometric",
+        "organic",
+        "2D",
+        "3D"
+      ],
+      "readingLevel": 2,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-02-17T08:50:38.690Z",
+        "curator": "content-pipeline-v2"
       }
     }
   ]
