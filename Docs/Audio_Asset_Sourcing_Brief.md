@@ -38,7 +38,9 @@
 - Avoid MP3 as source when possible.
 
 ## Loop prep expectations
-- Ambience loops: 30s-120s ideal.
+- Ambience loops: 30s–120s ideal; biome beds & life layers should be loopable with smooth seams.
+- Positional emitters (waterfall, campfire, local crowd/murmur): Loop = Yes; suggested length 15–60 s and designed to loop seamlessly (shorter loops OK).
+- UI sounds (ui_*, menu, dialog): One-shot (Loop = No); suggested length 0.05–0.35 s — please provide 2–4 short variants for interactive affordances.
 - Should be naturally loopable (no abrupt seam/click).
 - If not perfectly looped, still provide best candidate; I will do loop cleanup/transcode.
 
@@ -102,6 +104,123 @@ Each area/time can layer:
 ---
 
 ## 4) Complete SFX Inventory Checklist (All game systems)
+
+### Expected duration & loop behavior (design guidance)
+
+Durations and explicit loop classification directly affect runtime memory, loop management, and mix staging; providing correctly-sized, clearly looped or one‑shot source files reduces engineering cleanup and preserves headroom in the mix. Use the guidance below when sourcing so each asset arrives either ready-to-loop or clearly identified as a one-shot.
+
+| Checklist ID | Loop? | Suggested length (seconds or range) | Notes |
+|---|:---:|---:|---|
+| `amb_global_day_clear_base` | Yes | 30–120 | Biome base bed — loopable area bed |
+| `amb_global_dusk_clear_base` | Yes | 30–120 | Biome base bed — loopable area bed |
+| `amb_global_night_clear_base` | Yes | 30–120 | Biome base bed — loopable area bed |
+| `amb_weather_rain_base` | Yes | 30–120 | Weather bed (layerable) |
+| `amb_weather_storm_base` | Yes | 30–120 | Weather bed (layerable) |
+| `amb_weather_fog_base` | Yes | 30–120 | Weather/atmosphere bed |
+| `amb_emit_waterfall_loop` | Yes | 15–60 | Positional emitter — short seamless loop |
+| `amb_emit_campfire_loop` | Yes | 15–60 | Positional emitter — short seamless loop |
+| `amb_emit_wind_loop_soft` | Yes | 15–60 | Localized emitter — short loop OK |
+| `amb_emit_crickets_loop` | Yes | 15–60 | Life-layer emitter — short loop |
+| `amb_biome_meadow_day` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_meadow_night` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_forest_day` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_forest_night` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_cave_day` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_cave_night` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_castle_day` | Yes | 30–120 | Biome bed — loopable |
+| `amb_biome_castle_night` | Yes | 30–120 | Biome bed — loopable |
+| `sfx_player_footstep_grass_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_grass_02` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_dirt_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_dirt_02` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_stone_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_stone_02` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_wall_bump_soft` | No | 0.12–0.45 | Small foley/contact one-shot |
+| `sfx_player_footstep_wood_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_sand_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_player_footstep_shallowwater_01` | No | 0.12–0.45 | Footstep one-shot / foley |
+| `sfx_item_pickup_generic_01` | No | 0.05–0.35 | Short one-shot; provide variants |
+| `sfx_item_pickup_coin_01` | No | 0.05–0.25 | Short one-shot (coin) |
+| `sfx_container_chest_open_01` | No | 0.15–0.80 | Mechanical/open one-shot |
+| `sfx_gate_open_quiz_01` | No | 0.15–0.80 | Mechanical/open one-shot |
+| `sfx_obstacle_resolved_01` | No | 0.12–0.60 | Event one-shot |
+| `sfx_obstacle_blocked_01` | No | 0.12–0.60 | Event one-shot |
+| `sfx_drink_stream_01` | TBD | TBD | To be clarified: stream (loop) vs short pour one-shot |
+| `sfx_outhouse_enter_01` | No | 0.15–0.80 | Scene entry one-shot |
+| `sfx_outhouse_clean_bonus_01` | No | 0.12–0.60 | Reward/bonus one-shot |
+| `sfx_eat_worms_01` | No | 0.20–1.00 | Bite/chew one-shot (player) |
+| `sfx_campfire_rest_01` | No | 0.12–0.60 | Interaction one-shot (use) |
+| `sfx_structure_interact_generic_01` | No | 0.12–0.60 | Generic interact one-shot |
+| `sfx_shop_open_stall_01` | No | 0.12–0.60 | Shop-open one-shot |
+| `sfx_player_ouch_01` | No | 0.20–1.50 | Player vocal/ouch one-shot |
+| `sfx_player_bandaid_use_01` | No | 0.20–1.50 | Healing/use one-shot |
+| `sfx_player_eat_food_01` | No | 0.20–1.50 | Eating one-shot |
+| `sfx_player_drink_flask_01` | No | 0.20–1.50 | Drinking one-shot |
+| `sfx_status_warning_soft_01` | No | 0.05–0.35 | Short UI/status cue |
+| `sfx_status_critical_soft_01` | No | 0.05–0.35 | Short UI/status cue |
+| `sfx_status_relief_recover_01` | No | 0.05–0.60 | One-shot recovery cue |
+| `sfx_illness_gurgle_01` | No | 0.20–1.00 | Body/condition one-shot |
+| `sfx_illness_marker_place_01` | No | 0.08–0.35 | Small marker/place one-shot |
+| `ui_quiz_start_01` | No | 0.05–0.35 | UI one-shot (short) |
+| `ui_quiz_correct_01` | No | 0.05–0.35 | Positive feedback one-shot |
+| `ui_quiz_wrong_01` | No | 0.05–0.35 | Negative feedback one-shot |
+| `ui_menu_navigate_01` | No | 0.05–0.35 | Navigation one-shot; provide variants |
+| `ui_dialog_open_01` | No | 0.05–0.35 | Dialog open one-shot |
+| `ui_dialog_advance_01` | No | 0.05–0.35 | Dialog advance one-shot |
+| `ui_dialog_close_01` | No | 0.05–0.35 | Dialog close one-shot |
+| `ui_book_open_01` | No | 0.05–0.35 | Book open/close one-shot |
+| `ui_book_close_01` | No | 0.05–0.35 | Book close one-shot |
+| `ui_hint_popup_01` | No | 0.05–0.35 | Popup one-shot |
+| `ui_shop_open_01` | No | 0.05–0.35 | UI/shop one-shot |
+| `ui_shop_buy_success_01` | No | 0.05–0.35 | Purchase success one-shot |
+| `ui_shop_fail_01` | No | 0.05–0.35 | Purchase fail one-shot |
+| `ui_trade_mode_toggle_01` | No | 0.05–0.35 | Toggle one-shot |
+| `ui_barter_offer_present_01` | No | 0.05–0.35 | Offer present one-shot |
+| `ui_barter_result_success_01` | No | 0.05–0.35 | Barter success one-shot |
+| `ui_barter_result_fail_01` | No | 0.05–0.35 | Barter fail one-shot |
+| `voc_bird_chirp_01` | No | 0.08–0.40 | Short bird chirp (one-shot) |
+| `voc_bird_chirp_02` | No | 0.08–0.40 | Short bird chirp (one-shot) |
+| `voc_bird_chirp_03` | No | 0.08–0.40 | Short bird chirp (one-shot) |
+| `voc_frog_croak_01` | No | 0.10–1.20 | Frog croak one-shot |
+| `voc_owl_hoot_01` | No | 0.40–1.20 | Longer nocturnal call |
+| `voc_rooster_crow_01` | No | 0.40–1.20 | Rooster crow one-shot |
+| `voc_rabbit_01` | No | 0.08–0.60 | Small creature call/foley |
+| `voc_squirrel_01` | No | 0.08–0.60 | Small creature call/foley |
+| `voc_deer_01` | No | 0.08–1.20 | Medium creature call |
+| `voc_hedgehog_01` | No | 0.08–0.60 | Small creature one-shot |
+| `voc_fox_01` | No | 0.08–1.20 | Fox call one-shot |
+| `voc_raccoon_01` | No | 0.08–0.60 | Small creature one-shot |
+| `voc_bat_01` | No | 0.08–0.60 | Bat call/echo one-shot |
+| `voc_wolf_01` | No | 0.20–1.20 | Wolf call one-shot |
+| `voc_turtle_01` | No | 0.08–0.60 | Small creature call |
+| `voc_duck_01` | No | 0.08–0.60 | Duck call one-shot |
+| `voc_heron_01` | No | 0.08–0.60 | Heron call one-shot |
+| `voc_spider_foley_01` | No | 0.12–0.45 | Tiny skitter foley one-shot |
+| `voc_rat_01` | No | 0.08–0.60 | Small creature call |
+| `voc_cat_purr_loop_orange` | Yes | 15–60 | Named loop — short loop acceptable |
+| `voc_cat_meow_orange_01` | No | 0.20–1.50 | Cat vocal one-shot |
+| `voc_cat_purr_loop_black` | Yes | 15–60 | Named loop |
+| `voc_cat_meow_black_01` | No | 0.20–1.50 | Cat vocal one-shot |
+| `voc_cat_purr_loop_persian` | Yes | 15–60 | Named loop |
+| `voc_cat_meow_persian_01` | No | 0.20–1.50 | Cat vocal one-shot |
+| `sfx_weather_thunder_01` | No | 0.50–3.00 | Weather one-shot (thunder) |
+| `sfx_weather_light_rain_drip_oneshot_01` | No | 0.05–0.80 | Explicit one-shot |
+| `sfx_weather_storm_gust_oneshot_01` | No | 0.05–0.80 | Explicit one-shot |
+| `ui_hud_button_click_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_sidebar_toggle_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_save_success_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_load_success_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_slot_delete_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_pause_open_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_pause_close_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_mainmenu_confirm_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_mainmenu_back_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_customize_open_01` | No | 0.05–0.35 | UI one-shot |
+| `ui_customize_apply_01` | No | 0.05–0.35 | UI one-shot |
+| `amb_emit_campfire_loop` | Yes | 15–60 | Positional emitter — short loop |
+| `amb_emit_waterfall_loop` | Yes | 15–60 | Positional emitter — short loop |
+| `amb_emit_shop_crowd_low_loop` | Yes | 15–60 | Positional/local crowd loop |
+| `amb_emit_settlement_murmur_loop` | Yes | 15–60 | Positional/local murmur loop |
 
 This list is **full target coverage** for current gameplay + UI + known systems. Even if a sound exists today, source a quality replacement candidate.
 
