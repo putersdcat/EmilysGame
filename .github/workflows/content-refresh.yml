@@ -1,0 +1,293 @@
+# Content Refresh Workflow (#95)
+# Validates content packs and runs QA checks.
+# Publishes validation + QA reports as build artifacts.
+# Fail conditions: schema violations or QA errors block merge.
+#
+# Triggers:
+#   - Manual (workflow_dispatch): run on-demand with options
+#   - Push/PR: auto-validate when content files change
+#   - Schedule: weekly freshness check (Sundays 06:00 UTC)
+#
+# Recovery: re-run the workflow after fixing flagged content.
+# If ingestion needed, run `npm run content:ingest` locally first,
+# commit the updated packs, then push. Workflow validates the result.
+
+name: Content — Validate & QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_qa:
+        description: 'Run full QA checks (readability, safety, age-appropriateness)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      run_rephrase_dry:
+        description: 'Run rephrase dry-run (generates prompts, no LLM calls)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      target_age:
+        description: 'Target age band filter (leave empty for all)'
+        required: false
+        default: ''
+        type: choice
+        options:
+          - ''
+          - '5-7'
+          - '8-10'
+          - '11-12+'
+
+  push:
+    branches: [ main ]
+    paths:
+      - 'public/content/packs/**'
+      - 'scripts/content-pipeline/**'
+      - 'src/types/content-pack.types.ts'
+
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'public/content/packs/**'
+      - 'scripts/content-pipeline/**'
+      - 'src/types/content-pack.types.ts'
+
+  schedule:
+    # Weekly freshness check — Sundays at 06:00 UTC
+    - cron: '0 6 * * 0'
+
+concurrency:
+  group: content-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate:
+    name: Schema Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run schema validation
+        id: validate
+        run: |
+          echo "## 📋 Content Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npm run content:validate -- --verbose 2>&1 | tee validation-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Content schema validation failed"
+            echo "❌ **Schema validation FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat validation-output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **Schema validation passed**" >> $GITHUB_STEP_SUMMARY
+          fi
+          exit $EXIT_CODE
+
+      - name: Upload validation output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-report
+          path: validation-output.txt
+          retention-days: 30
+
+  qa-checks:
+    name: Quality Assurance
+    runs-on: ubuntu-latest
+    needs: validate
+    # Only run QA if validation passes and QA is requested (or on schedule/PR)
+    if: |
+      always() && needs.validate.result == 'success' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.run_qa == 'true')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run QA checks
+        id: qa
+        run: |
+          echo "## 🔍 Content QA Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          npm run content:qa 2>&1 | tee qa-output.txt
+          EXIT_CODE=${PIPESTATUS[0]}
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "::error::Content QA checks found errors that must be fixed"
+            echo "❌ **QA checks FAILED** — errors found" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **QA checks passed**" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          # Extract summary lines from QA output
+          grep -E '(errors|warnings|info|Items flagged|QA Result)' qa-output.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          exit $EXIT_CODE
+
+      - name: Collect QA reports
+        if: always()
+        run: |
+          mkdir -p qa-artifacts
+          cp qa-output.txt qa-artifacts/
+          # Copy any generated report files
+          cp public/content/packs/default-v1/qa-reports/*.md qa-artifacts/ 2>/dev/null || true
+          cp public/content/packs/default-v1/qa-reports/*.json qa-artifacts/ 2>/dev/null || true
+
+      - name: Upload QA reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-reports
+          path: qa-artifacts/
+          retention-days: 30
+
+  rephrase-dry-run:
+    name: Rephrase Dry Run
+    runs-on: ubuntu-latest
+    needs: [validate, qa-checks]
+    # Only run on manual trigger with rephrase enabled
+    if: |
+      always() && needs.validate.result == 'success' &&
+      github.event_name == 'workflow_dispatch' && github.event.inputs.run_rephrase_dry == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run rephrase dry-run
+        id: rephrase
+        run: |
+          TARGET_AGE="${{ github.event.inputs.target_age }}"
+          CMD="npm run content:rephrase:dry"
+          if [ -n "$TARGET_AGE" ]; then
+            CMD="npx tsx scripts/content-pipeline/index.ts --rephrase --dry-run --verbose --target-age=$TARGET_AGE"
+          fi
+          echo "Running: $CMD"
+          echo "## 🔄 Rephrase Dry-Run Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          $CMD 2>&1 | tee rephrase-output.txt
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -E '(Rephrased|Skipped|Failed|Dry-run|prompt generated)' rephrase-output.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Collect rephrase reports
+        if: always()
+        run: |
+          mkdir -p rephrase-artifacts
+          cp rephrase-output.txt rephrase-artifacts/
+          cp public/content/packs/default-v1/qa-reports/rephrase-*.md rephrase-artifacts/ 2>/dev/null || true
+          cp public/content/packs/default-v1/qa-reports/rephrase-*.json rephrase-artifacts/ 2>/dev/null || true
+
+      - name: Upload rephrase reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rephrase-reports
+          path: rephrase-artifacts/
+          retention-days: 30
+
+  # Gate: summarize overall result, block merge if checks failed
+  review-gate:
+    name: Content Review Gate
+    runs-on: ubuntu-latest
+    needs: [validate, qa-checks]
+    if: always()
+    steps:
+      - name: Check results
+        run: |
+          echo "## 🚦 Content Review Gate" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          VALIDATE="${{ needs.validate.result }}"
+          QA="${{ needs.qa-checks.result }}"
+
+          if [ "$VALIDATE" = "success" ]; then
+            echo "✅ Schema validation: **passed**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Schema validation: **$VALIDATE**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "$QA" = "success" ]; then
+            echo "✅ QA checks: **passed**" >> $GITHUB_STEP_SUMMARY
+          elif [ "$QA" = "skipped" ]; then
+            echo "⏭️ QA checks: **skipped**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ QA checks: **$QA**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Human review is required** before merging content changes." >> $GITHUB_STEP_SUMMARY
+          echo "Download the QA report artifacts for detailed review." >> $GITHUB_STEP_SUMMARY
+
+          # Fail if either check failed
+          if [ "$VALIDATE" != "success" ]; then
+            echo "::error::Content review gate FAILED — schema validation errors"
+            exit 1
+          fi
+          # QA failures are blocking too
+          if [ "$QA" = "failure" ]; then
+            echo "::error::Content review gate FAILED — QA errors found"
+            exit 1
+          fi
+
+          echo "✅ Automated checks passed. Human review still required."

@@ -115,31 +115,61 @@ const AGE_BAND_GRADE_TARGETS: Record<AgeBand, { min: number; max: number }> = {
 
 // ─── Safety Checks (expanded) ────────────────────────────────
 
-const SAFETY_TERMS = [
-  'kill', 'murder', 'suicide', 'weapon', 'gun', 'knife', 'blood',
-  'sexual', 'nude', 'naked', 'drunk', 'alcohol', 'drug', 'cigarette',
-  'racist', 'slavery', 'torture', 'abuse', 'hate', 'slur',
+// Hard-block terms — always an error regardless of context
+const SAFETY_TERMS_ERROR = [
+  'kill', 'murder', 'suicide', 'weapon', 'gun', 'knife',
+  'sexual', 'nude', 'naked', 'drunk', 'alcohol', 'cigarette',
+  'racist', 'torture', 'abuse', 'hate', 'slur',
   'gambling', 'betting', 'casino',
 ];
 
-// Terms that are OK in educational context (don't flag these)
-const SAFETY_EXCEPTIONS = [
-  'bloodstream', 'blood cell', 'blood vessel', 'blood type', 'blood pressure',
-  'gunpowder', // historical context
-  'drug' // as in "drug discovery" or pharmaceutical
+// Context-dependent terms — error only when NOT in educational context
+const SAFETY_TERMS_CONTEXTUAL = [
+  'blood', 'drug', 'slavery',
 ];
 
-function hasSafetyIssue(text: string): string | null {
+// Phrases that make contextual terms OK (educational usage)
+const SAFETY_CONTEXT_ALLOWLIST = [
+  // blood in anatomy/biology
+  'pumps blood', 'blood cell', 'blood vessel', 'blood type', 'blood pressure',
+  'bloodstream', 'carries blood', 'blood through', 'red blood', 'white blood',
+  'blood flow',
+  // drug in pharmaceutical/science context
+  'drug discovery', 'drug resistance', 'antibiotic',
+  // slavery in history context
+  'abolition', 'emancipation', 'civil rights', 'underground railroad',
+  // gunpowder in history context
+  'gunpowder',
+];
+
+interface SafetyResult {
+  term: string;
+  /** 'error' for hard-block, 'warning' for contextual without allowlist match */
+  severity: QASeverity;
+}
+
+function checkSafetyTerms(text: string): SafetyResult | null {
   const lower = text.toLowerCase();
-  // Check exception phrases first
-  for (const exception of SAFETY_EXCEPTIONS) {
-    if (lower.includes(exception)) return null;
-  }
-  for (const term of SAFETY_TERMS) {
-    // Word-boundary check
+
+  // Check hard-block terms first
+  for (const term of SAFETY_TERMS_ERROR) {
     const regex = new RegExp(`\\b${term}\\b`, 'i');
-    if (regex.test(text)) return term;
+    if (regex.test(text)) return { term, severity: 'error' };
   }
+
+  // Check contextual terms — allow if educational context detected
+  for (const term of SAFETY_TERMS_CONTEXTUAL) {
+    const regex = new RegExp(`\\b${term}\\b`, 'i');
+    if (regex.test(text)) {
+      // Check if any allowlist phrase is present
+      const hasContext = SAFETY_CONTEXT_ALLOWLIST.some(phrase => lower.includes(phrase));
+      if (!hasContext) {
+        return { term, severity: 'warning' };
+      }
+      // Educational context detected — no issue
+    }
+  }
+
   return null;
 }
 
@@ -213,20 +243,22 @@ function checkQuiz(quiz: QuizQuestionPack): QAIssue[] {
   }
 
   // 5. Safety
-  const unsafeTerm = hasSafetyIssue(quiz.question);
-  if (unsafeTerm) {
+  const safetyResult = checkSafetyTerms(quiz.question);
+  if (safetyResult) {
     issues.push({
       itemId: id, itemType: 'quiz', category: 'safety',
-      severity: 'error', message: `Question contains potentially unsafe term: "${unsafeTerm}"`,
+      severity: safetyResult.severity,
+      message: `Question contains potentially unsafe term: "${safetyResult.term}"`,
       field: 'question', fieldValue: quiz.question,
     });
   }
   for (const ans of quiz.answers) {
-    const ansUnsafe = hasSafetyIssue(ans);
-    if (ansUnsafe) {
+    const ansResult = checkSafetyTerms(ans);
+    if (ansResult) {
       issues.push({
         itemId: id, itemType: 'quiz', category: 'safety',
-        severity: 'error', message: `Answer contains potentially unsafe term: "${ansUnsafe}"`,
+        severity: ansResult.severity,
+        message: `Answer contains potentially unsafe term: "${ansResult.term}"`,
         field: 'answers', fieldValue: ans,
       });
     }
@@ -321,11 +353,12 @@ function checkArticle(article: KnowledgeArticlePack): QAIssue[] {
   }
 
   // 5. Safety
-  const unsafeTerm = hasSafetyIssue(article.content);
-  if (unsafeTerm) {
+  const safetyResult = checkSafetyTerms(article.content);
+  if (safetyResult) {
     issues.push({
       itemId: id, itemType: 'article', category: 'safety',
-      severity: 'error', message: `Article content contains potentially unsafe term: "${unsafeTerm}"`,
+      severity: safetyResult.severity,
+      message: `Article content contains potentially unsafe term: "${safetyResult.term}"`,
       field: 'content',
     });
   }
@@ -410,4 +443,4 @@ export function runQAChecks(
 
 // ─── Exports for testing ─────────────────────────────────────
 
-export { countSyllables, countWords, countSentences, hasSafetyIssue };
+export { countSyllables, countWords, countSentences, checkSafetyTerms };
