@@ -105,7 +105,4 @@ export function getBiome(id: number): BiomeDef {
   return BIOME_DEFS[id % BIOME_DEFS.length];
 }
 
-/** Lookup biome by name */
-export function getBiomeByName(name: string): BiomeDef | undefined {
-  return BIOME_DEFS.find((b) => b.name === name);
-}
+

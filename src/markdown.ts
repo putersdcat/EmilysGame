@@ -15,72 +15,8 @@
  * TODO: DOC - Markdown renderer feature overview
  */
 
-// ─── Sanitizer ──────────────────────────────────────────────
-
-/** Allowed HTML tags in rendered output */
-const ALLOWED_TAGS = new Set([
-  'p', 'br', 'strong', 'em', 'ul', 'ol', 'li', 'h4', 'span',
-]);
-
-/** Allowed attributes per tag */
-const ALLOWED_ATTRS: Record<string, Set<string>> = {
-  span: new Set(['class']),
-};
-
-/**
- * Strip any HTML tags/attributes not in the allow-list.
- * Prevents XSS from content pack injection.
- */
-export function sanitizeHtml(html: string): string {
-  // Replace all < with entity, then selectively restore allowed tags
-  let safe = html
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-
-  // Restore allowed self-closing and paired tags
-  for (const tag of ALLOWED_TAGS) {
-    // Opening tag with optional attributes: &lt;tag ...&gt;
-    const openRe = new RegExp(`&lt;(${tag})(\\s[^&]*?)?&gt;`, 'gi');
-    safe = safe.replace(openRe, (_match, tagName: string, attrsRaw: string | undefined) => {
-      const cleanAttrs = filterAttributes(tagName.toLowerCase(), attrsRaw || '');
-      return `<${tagName}${cleanAttrs}>`;
-    });
-    // Closing tag: &lt;/tag&gt;
-    const closeRe = new RegExp(`&lt;/${tag}&gt;`, 'gi');
-    safe = safe.replace(closeRe, `</${tag}>`);
-  }
-
-  return safe;
-}
-
-/** Filter attributes to only those on the allow-list */
-function filterAttributes(tag: string, raw: string): string {
-  const allowed = ALLOWED_ATTRS[tag];
-  if (!allowed || !raw.trim()) return '';
-
-  const result: string[] = [];
-  // Match attr="value" or attr='value' patterns
-  const attrRe = /(\w+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
-  let m: RegExpExecArray | null;
-  while ((m = attrRe.exec(raw)) !== null) {
-    const name = m[1].toLowerCase();
-    const value = m[2] ?? m[3] ?? '';
-    if (allowed.has(name)) {
-      // Extra safety: no javascript: in values
-      if (!/javascript\s*:/i.test(value) && !/on\w+\s*=/i.test(value)) {
-        result.push(`${name}="${escapeAttrValue(value)}"`);
-      }
-    }
-  }
-  return result.length ? ' ' + result.join(' ') : '';
-}
-
-function escapeAttrValue(v: string): string {
-  return v.replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
 // ─── Markdown Parser ────────────────────────────────────────
+// #159: sanitizer (sanitizeHtml, filterAttributes, escapeAttrValue) deleted — recoverable from git
 
 /**
  * Render a markdown-subset string to sanitized HTML.

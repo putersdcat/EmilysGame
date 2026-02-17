@@ -628,11 +628,6 @@ export function getAnimationOffset(entity: WildlifeEntity): { dx: number; dy: nu
   }
 }
 
-/** Get set of discovered species IDs */
-export function getDiscoveredSpecies(): ReadonlySet<string> {
-  return discoveredSpecies;
-}
-
 /** Restore discovered species from save data */
 export function restoreDiscoveredSpecies(ids: string[]): void {
   discoveredSpecies.clear();
@@ -648,11 +643,6 @@ export function getDiscoveredSpeciesArray(): string[] {
 export function clearWildlife(): void {
   wildlifeCache.clear();
   _lastTimeSlot = 'day';
-}
-
-/** Get current time slot (exposed for external use) */
-export function getCurrentTimeSlot(): TimeSlot {
-  return _lastTimeSlot;
 }
 
 /** Get total wildlife count in cache (for debug/stats) */

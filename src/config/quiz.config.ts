@@ -280,13 +280,4 @@ export function getQuestions(
   });
 }
 
-/** Pick N random questions from filtered set */
-export function pickRandomQuestions(
-  count: number,
-  category?: QuizCategory,
-  difficulty?: QuizDifficulty,
-): QuizQuestion[] {
-  const pool = getQuestions(category, difficulty);
-  const shuffled = [...pool].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(count, shuffled.length));
-}
+

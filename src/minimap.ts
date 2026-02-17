@@ -124,13 +124,6 @@ function buildChunkMini(key: string, chunk: ChunkData): ChunkMiniData {
   return cached;
 }
 
-/**
- * Invalidate a chunk's minimap cache (when chunk content changes).
- */
-export function invalidateMinimapChunk(chunkKey: string): void {
-  chunkMiniCache.delete(chunkKey);
-}
-
 // --- Render ---
 
 /**

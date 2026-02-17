@@ -110,14 +110,6 @@ export function checkHazardInjury(injury: InjuryState, hazardDamage: number): bo
 }
 
 /**
- * @deprecated Use checkHazardInjury() for deterministic injuries (#137).
- * Kept for backward compat with tests/external callers.
- */
-export function rollInjury(injury: InjuryState): boolean {
-  return checkHazardInjury(injury, 1.0);
-}
-
-/**
  * Apply bandaid: clear injury state, mark pending wound-care quiz.
  * Returns heal amount (base). Caller should add bonus if quiz correct.
  */

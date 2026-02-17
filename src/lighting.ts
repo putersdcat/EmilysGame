@@ -6,7 +6,6 @@
  * TODO: DOC - lighting system, color grading, time cycle
  */
 
-import { RENDER_CONFIG } from './config/game.config';
 
 // ─── Config ─────────────────────────────────────────────────
 
@@ -53,7 +52,6 @@ const STOPS: { phase: number; light: LightingStop }[] = [
 
 /** Current cycle position in milliseconds (wall-clock) */
 let gameTimeMs = Math.floor(CYCLE_DURATION_MS * 0.17); // Start at early day
-let enabled = true;
 let lastTickTs = 0; // Last performance.now() for delta calc
 /** Cumulative active playtime in seconds (not counting paused time) */
 let _playedSeconds = 0;
@@ -108,39 +106,6 @@ function getLightingForTime(t: number): LightingStop {
  * Advance game time by one frame and apply lighting overlay to canvas.
  * Call after scene render, before UI overlay.
  */
-export function updateAndRenderLighting(ctx: CanvasRenderingContext2D): void {
-  if (!enabled) return;
-
-  tickLighting(false); // Advance clock (not paused when rendering)
-  const t = gameTimeMs / CYCLE_DURATION_MS;
-  const light = getLightingForTime(t);
-
-  if (light.alpha < 0.005) return; // Skip rendering at full daylight
-
-  const cw = RENDER_CONFIG.canvasWidth;
-  const ch = RENDER_CONFIG.canvasHeight;
-
-  ctx.save();
-
-  // Darken layer (simulate reduced light at night)
-  if (light.brightness < 0.95) {
-    const darkenAlpha = (1 - light.brightness) * 0.6;
-    ctx.globalCompositeOperation = 'multiply';
-    const bv = Math.round(light.brightness * 255);
-    ctx.fillStyle = `rgb(${bv}, ${bv}, ${Math.min(255, bv + 15)})`;
-    ctx.globalAlpha = darkenAlpha;
-    ctx.fillRect(0, 0, cw, ch);
-  }
-
-  // Color tint layer
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = light.alpha;
-  ctx.fillStyle = `rgb(${Math.round(light.r)}, ${Math.round(light.g)}, ${Math.round(light.b)})`;
-  ctx.fillRect(0, 0, cw, ch);
-
-  ctx.restore();
-}
-
 /** Advance the lighting clock using wall-clock delta. Skips when paused. */
 export function tickLighting(paused = false): void {
   const now = performance.now();
@@ -169,16 +134,6 @@ export function getTimeOfDay(): string {
 /** Get cycle progress (0..1) for debug/UI */
 export function getCycleProgress(): number {
   return gameTimeMs / CYCLE_DURATION_MS;
-}
-
-/** Toggle day/night cycle on/off */
-export function toggleLighting(): void {
-  enabled = !enabled;
-}
-
-/** Check if lighting is enabled */
-export function isLightingEnabled(): boolean {
-  return enabled;
 }
 
 /** Reset cycle to a specific time (0..1) */

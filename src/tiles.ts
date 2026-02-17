@@ -630,9 +630,4 @@ const dirtVariantCache: HTMLCanvasElement[] = [];
 /** Pre-rendered rock variant isometric tiles */
 const rockVariantCache: HTMLCanvasElement[] = [];
 
-/**
- * Check if tiles have been preloaded.
- */
-export function tilesReady(): boolean {
-  return isoTileCache.size === ALL_TILE_TYPES.length;
-}
+

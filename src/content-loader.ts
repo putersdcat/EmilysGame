@@ -14,7 +14,6 @@ import type {
   QuizCategory,
   QuizDifficulty,
   SubjectId,
-  AgeBand,
 } from './types/content-pack.types';
 
 // ─── Content Pack Loader ────────────────────────────────────
@@ -179,80 +178,3 @@ class ContentPackLoader {
 // ─── Singleton Instance ──────────────────────────────────────
 
 export const contentPackLoader = new ContentPackLoader();
-
-// ─── Fallback Adapter ────────────────────────────────────────
-
-/**
- * Convert in-code quiz format to content pack format.
- * This is used as a fallback when content packs are not available.
- */
-export function convertInCodeQuizToPackFormat(
-  inCodeQuiz: {
-    id: string;
-    category: QuizCategory;
-    difficulty: QuizDifficulty;
-    question: string;
-    answers: string[];
-    correctIndex: 0;
-    hint: string;
-  },
-): QuizQuestionPack {
-  const ageBand: AgeBand =
-    inCodeQuiz.difficulty === 'easy' ? '5-7' :
-    inCodeQuiz.difficulty === 'medium' ? '8-10' : '11-12+';
-
-  return {
-    id: inCodeQuiz.id,
-    category: inCodeQuiz.category,
-    difficulty: inCodeQuiz.difficulty,
-    ageMetadata: {
-      minAge: ageBand === '5-7' ? 5 : ageBand === '8-10' ? 8 : 11,
-      maxAge: ageBand === '5-7' ? 7 : ageBand === '8-10' ? 10 : null,
-      ageBand,
-    },
-    question: inCodeQuiz.question,
-    answers: inCodeQuiz.answers,
-    hint: inCodeQuiz.hint,
-    provenance: {
-      source: 'in-code-fallback',
-      license: 'game-license',
-      dateIngested: new Date().toISOString(),
-    },
-  };
-}
-
-/**
- * Convert in-code knowledge article to content pack format.
- */
-export function convertInCodeArticleToPackFormat(
-  inCodeArticle: {
-    id: string;
-    subject: SubjectId;
-    title: string;
-    summary: string;
-    content: string;
-    keyTerms: string[];
-    related?: string[];
-  },
-): KnowledgeArticlePack {
-  // Default to ages 8-10 for in-code articles
-  return {
-    id: inCodeArticle.id,
-    subject: inCodeArticle.subject,
-    ageMetadata: {
-      minAge: 8,
-      maxAge: 10,
-      ageBand: '8-10',
-    },
-    title: inCodeArticle.title,
-    summary: inCodeArticle.summary,
-    content: inCodeArticle.content,
-    keyTerms: inCodeArticle.keyTerms,
-    related: inCodeArticle.related,
-    provenance: {
-      source: 'in-code-fallback',
-      license: 'game-license',
-      dateIngested: new Date().toISOString(),
-    },
-  };
-}

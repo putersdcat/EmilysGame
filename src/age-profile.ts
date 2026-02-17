@@ -43,15 +43,10 @@ export function setAgeBand(profile: AgeProfile, band: AgeBand): void {
   profile.profileSet = true;
 }
 
-export function clearAgeBand(profile: AgeProfile): void {
-  profile.ageBand = null;
-  profile.profileSet = false;
-}
-
 // ─── Age Range Helpers ──────────────────────────────────────
 
 /** Get min/max age values for a given band */
-export function getAgeRange(band: AgeBand): { minAge: number; maxAge: number | null } {
+function getAgeRange(band: AgeBand): { minAge: number; maxAge: number | null } {
   switch (band) {
     case '5-7':    return { minAge: 5, maxAge: 7 };
     case '8-10':   return { minAge: 8, maxAge: 10 };
@@ -65,7 +60,7 @@ export function getAgeRange(band: AgeBand): { minAge: number; maxAge: number | n
  * Filter pack quiz questions by age band with fallback.
  * Returns age-filtered pool if large enough, otherwise expands range.
  */
-export function getAgeFilteredQuizCount(band: AgeBand | null): {
+function getAgeFilteredQuizCount(band: AgeBand | null): {
   filtered: number;
   total: number;
   usedFallback: boolean;
@@ -91,27 +86,6 @@ export function getAgeFilteredQuizCount(band: AgeBand | null): {
     maxAge: range.maxAge !== null ? range.maxAge + 2 : undefined,
   });
   return { filtered: expanded.length, total, usedFallback: true };
-}
-
-/**
- * Check if an article matches the player's age band.
- * Static in-code articles (no ageMetadata) always match.
- */
-export function articleMatchesAgeBand(
-  articleAgeBand: AgeBand | undefined,
-  playerBand: AgeBand | null,
-): boolean {
-  // No player band set → show everything
-  if (!playerBand) return true;
-  // No age data on article → show it (in-code fallback articles)
-  if (!articleAgeBand) return true;
-  // Exact match
-  if (articleAgeBand === playerBand) return true;
-  // Adjacent match: allow ±1 band for wider selection
-  const bands: AgeBand[] = ['5-7', '8-10', '11-12+'];
-  const pi = bands.indexOf(playerBand);
-  const ai = bands.indexOf(articleAgeBand);
-  return Math.abs(pi - ai) <= 1;
 }
 
 // ─── Debug Stats ────────────────────────────────────────────

@@ -187,15 +187,4 @@ export function getArticleById(id: string): KnowledgeArticle | undefined {
   return KNOWLEDGE_ARTICLES.find(a => a.id === id);
 }
 
-/** Search articles by title/content (simple case-insensitive match) */
-export function searchArticles(query: string, subjects?: SubjectId[]): KnowledgeArticle[] {
-  const q = query.toLowerCase().trim();
-  if (!q) return [];
-  return KNOWLEDGE_ARTICLES.filter(a => {
-    if (subjects && subjects.length > 0 && !subjects.includes(a.subject)) return false;
-    return a.title.toLowerCase().includes(q)
-      || a.summary.toLowerCase().includes(q)
-      || a.content.toLowerCase().includes(q)
-      || a.keyTerms.some(t => t.toLowerCase().includes(q));
-  });
-}
+

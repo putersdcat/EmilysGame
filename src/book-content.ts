@@ -86,14 +86,6 @@ function _convertPackArticle(pa: KnowledgeArticlePack): KnowledgeArticle {
 // ─── Public API ─────────────────────────────────────────────
 
 /**
- * Get all available book articles (pack + static merged).
- * If content pack was loaded, pack articles are included.
- */
-export function getAllBookArticles(): KnowledgeArticle[] {
-  return _articles;
-}
-
-/**
  * Get filtered articles by subject(s).
  */
 export function getBookArticlesBySubject(subjects?: SubjectId[]): KnowledgeArticle[] {

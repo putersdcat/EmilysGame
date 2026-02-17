@@ -98,9 +98,6 @@ export function isTestMode(): boolean {
   return false;
 }
 
-/** Force test mode on/off (for programmatic use) */
-export function setTestMode(on: boolean): void { _testMode = on; }
-
 // ─── Wordlist Cache ──────────────────────────────────────────
 // Cache generated wordlist to avoid hammering LLM on every startup
 
@@ -472,7 +469,4 @@ export async function cleanupLlmSessions(): Promise<void> {
   }
 }
 
-/** Clear the wordlist cache (forces re-generation on next startup) */
-export function clearWordlistCache(): void {
-  try { sessionStorage.removeItem(WORDLIST_CACHE_KEY); } catch { /* */ }
-}
+

@@ -96,10 +96,6 @@ export function loadGame(): SaveData | null {
   }
 }
 
-export function hasSave(): boolean {
-  return localStorage.getItem(SAVE_KEY) !== null;
-}
-
 export function deleteSave(): void {
   localStorage.removeItem(SAVE_KEY);
 }
@@ -127,10 +123,6 @@ export function loadFromSlot(slot: number): SaveData | null {
   } catch {
     return null;
   }
-}
-
-export function hasSlotSave(slot: number): boolean {
-  return localStorage.getItem(SAVE_SLOT_PREFIX + slot) !== null;
 }
 
 export function deleteSlot(slot: number): void {
