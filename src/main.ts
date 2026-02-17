@@ -12,7 +12,7 @@ import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './render';
 import { InputManager, shouldAutoShowTouchOverlay, type TouchControlMode } from './input';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
+import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './mechanics';
@@ -3298,6 +3298,8 @@ async function main(): Promise<void> {
     // Mood + biome transitions debug (#46)
     deriveMood,
     detectBiomeTransitions,
+    // #175: Biome selection with entropy bias
+    selectBiomeCoherent,
     getChunkMood: (cx: number, cy: number) => {
       const key = chunkKey(cx, cy);
       return state.chunks.get(key)?.mood ?? null;
@@ -3306,6 +3308,11 @@ async function main(): Promise<void> {
       const key = chunkKey(cx, cy);
       return state.chunks.get(key)?.biomeTransitions ?? null;
     },
+    // #175: Get all generated chunks for inspection
+    getChunks: () => Array.from(state.chunks.entries()).map(([k, c]) => ({
+      key: k, chunkX: c.chunkX, chunkY: c.chunkY,
+      biomeId: c.biomeId, biomeName: c.biomeName,
+    })),
     // Playability validation debug (#46 Solver F)
     getPlayabilityStats,
   };

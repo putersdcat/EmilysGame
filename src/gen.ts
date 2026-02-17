@@ -17,6 +17,7 @@ import { getBiome, type BiomeDef } from './config/biomes.config';
 import {
   sha256,
   fastHash,
+  asciiModulo,
   seededRandom,
   PerlinNoise,
   bfsFloodFill,
@@ -218,8 +219,9 @@ export function getChunkClimate(chunkX: number, chunkY: number): { moisture: num
  * - Low-frequency Perlin noise creates spatially coherent biome regions.
  * - Distance from origin gates which biomes are available (progression).
  * - Two noise channels (biome type + variation) create organic shapes.
+ * - LLM entropy bias (#175) shifts thresholds so biome boundaries vary per-chunk.
  */
-function selectBiomeCoherent(chunkX: number, chunkY: number): BiomeDef {
+export function selectBiomeCoherent(chunkX: number, chunkY: number, entropyBias = 0.5): BiomeDef {
   const dist = Math.max(Math.abs(chunkX), Math.abs(chunkY));
   const noise = getBiomeNoise();
 
@@ -227,28 +229,32 @@ function selectBiomeCoherent(chunkX: number, chunkY: number): BiomeDef {
   const biomeVal = (noise.noise(chunkX * 0.08, chunkY * 0.08) + 1) / 2; // 0-1
   const subVal = (noise.noise(chunkX * 0.15 + 100, chunkY * 0.15 + 100) + 1) / 2; // 0-1
 
+  // #175: LLM entropy shifts boundary thresholds (±0.075 max)
+  const shift = (entropyBias - 0.5) * 0.15;
+
   // Build available biome pool based on distance (progression gating)
   if (dist <= 2) {
-    // Safe zone: meadow only
+    // Safe zone: meadow only (unaffected by entropy)
     return getBiome(0);
   }
 
   if (dist <= 4) {
     // Meadow + forest transition zone
-    // Use noise to create coherent meadow/forest boundary
-    return getBiome(biomeVal < 0.65 ? 0 : 1);
+    // Use noise + entropy bias to create coherent meadow/forest boundary
+    return getBiome((biomeVal + shift) < 0.65 ? 0 : 1);
   }
 
   if (dist <= 6) {
     // Meadow + forest + cave emerges
-    if (biomeVal < 0.35) return getBiome(0);       // meadow
-    if (biomeVal < 0.70) return getBiome(1);        // forest
+    const adjusted = biomeVal + shift;
+    if (adjusted < 0.35) return getBiome(0);       // meadow
+    if (adjusted < 0.70) return getBiome(1);        // forest
     return getBiome(2);                              // cave
   }
 
-  // dist 7+: all biomes, noise-driven regions
+  // dist 7+: all biomes, noise-driven regions with entropy influence
   // Primary noise selects major biome, sub-noise adds variation at boundaries
-  const combined = biomeVal * 0.7 + subVal * 0.3;
+  const combined = biomeVal * 0.7 + subVal * 0.3 + shift;
   if (combined < 0.20) return getBiome(0);       // meadow (~20%)
   if (combined < 0.50) return getBiome(1);        // forest (~30%)
   if (combined < 0.75) return getBiome(2);        // cave (~25%)
@@ -358,14 +364,14 @@ export function deriveMood(seed: string): MoodProfile {
  * Returns flags indicating which borders are transition zones.
  */
 export function detectBiomeTransitions(
-  cx: number, cy: number,
+  cx: number, cy: number, entropyBias = 0.5,
 ): { n: boolean; s: boolean; e: boolean; w: boolean } {
-  const myBiome = selectBiomeCoherent(cx, cy);
+  const myBiome = selectBiomeCoherent(cx, cy, entropyBias);
   return {
-    n: selectBiomeCoherent(cx, cy - 1).id !== myBiome.id,
-    s: selectBiomeCoherent(cx, cy + 1).id !== myBiome.id,
-    e: selectBiomeCoherent(cx + 1, cy).id !== myBiome.id,
-    w: selectBiomeCoherent(cx - 1, cy).id !== myBiome.id,
+    n: selectBiomeCoherent(cx, cy - 1, entropyBias).id !== myBiome.id,
+    s: selectBiomeCoherent(cx, cy + 1, entropyBias).id !== myBiome.id,
+    e: selectBiomeCoherent(cx + 1, cy, entropyBias).id !== myBiome.id,
+    w: selectBiomeCoherent(cx - 1, cy, entropyBias).id !== myBiome.id,
   };
 }
 
@@ -393,10 +399,12 @@ export async function generateChunk(
   const noiseSeed = fastHash(hashHex.slice(8, 16));
   const featureSeed = fastHash(hashHex.slice(16, 24));
 
-  const biome = selectBiomeCoherent(chunkX, chunkY);
+  // #175: ASCII-sum of LLM entropy text → per-chunk biome bias (0–1)
+  const entropyBias = asciiModulo(hashHex, 100) / 100;
+  const biome = selectBiomeCoherent(chunkX, chunkY, entropyBias);
   const climate = getChunkClimate(chunkX, chunkY);
   const mood = deriveMood(entropyText);
-  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY);
+  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY, entropyBias);
   const { cells, borderEdges } = generateGridChunk(size, noiseSeed, featureSeed, biome, chunkX, chunkY, undefined, mood, biomeTransitions);
 
   return {
@@ -431,10 +439,12 @@ export function generateChunkSync(
 
   const noiseSeed = fastHash(seedText);
   const featureSeed = fastHash(seedText + '_features');
-  const biome = selectBiomeCoherent(chunkX, chunkY);
+  // #175: ASCII-sum of seed text → per-chunk biome bias (0–1)
+  const entropyBias = asciiModulo(seedText, 100) / 100;
+  const biome = selectBiomeCoherent(chunkX, chunkY, entropyBias);
   const climate = getChunkClimate(chunkX, chunkY);
   const mood = deriveMood(seedText);
-  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY);
+  const biomeTransitions = detectBiomeTransitions(chunkX, chunkY, entropyBias);
 
   const { cells, borderEdges } = generateGridChunk(
     size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints, mood, biomeTransitions,
