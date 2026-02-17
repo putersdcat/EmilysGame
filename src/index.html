@@ -153,7 +153,103 @@
       image-rendering: -webkit-optimize-contrast;
     }
 
-    /* Cassette Player (#107 Phase 2) */
+    /* Cassette Player (#107 Phase 2) — now in music popup (#138) */
+    .music-popup {
+      position: absolute;
+      bottom: 56px;
+      right: 248px;
+      width: 240px;
+      z-index: 45;
+      background: rgba(15, 12, 25, 0.96);
+      border: 1px solid rgba(100, 100, 140, 0.35);
+      border-radius: 10px;
+      padding: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      animation: musicPopIn 0.2s ease;
+    }
+    /* When sidebar collapsed, popup shifts right */
+    #gameWrapper:has(#sidebar.collapsed) .music-popup {
+      right: 8px;
+    }
+    @keyframes musicPopIn {
+      from { opacity: 0; transform: translateY(8px) scale(0.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .music-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px 4px;
+      font-size: 0.72rem;
+      color: #b8956a;
+      letter-spacing: 1px;
+      font-weight: bold;
+    }
+    .music-popup-close {
+      background: none;
+      border: none;
+      color: #887;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .music-popup-close:hover { color: #edc; }
+    .music-popup .cassette-deck {
+      border: none;
+      border-top: 1px solid rgba(92, 74, 53, 0.4);
+      border-radius: 0 0 10px 10px;
+      margin: 0;
+    }
+
+    /* Mini Status Meters (#138 — visible when sidebar collapsed) */
+    .mini-status-strip {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 3px;
+      z-index: 30;
+      pointer-events: none;
+      opacity: 0.92;
+    }
+    #gameWrapper:has(#sidebar.collapsed) .mini-status-strip {
+      display: flex;
+    }
+    .mini-meter {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(10, 8, 20, 0.75);
+      border: 1px solid rgba(100, 100, 140, 0.25);
+      border-radius: 6px;
+      padding: 2px 6px;
+    }
+    .mini-meter-emoji { font-size: 10px; }
+    .mini-meter-bar {
+      width: 50px;
+      height: 5px;
+      background: rgba(40, 35, 60, 0.6);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .mini-meter-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+    .mini-meter-fill.energy { background: linear-gradient(90deg, #e8a020, #f0c040); }
+    .mini-meter-fill.hydration { background: linear-gradient(90deg, #3090e0, #50b0f0); }
+    .mini-meter-fill.cleanliness { background: linear-gradient(90deg, #40c080, #60e0a0); }
+    .mini-meter-val {
+      font-size: 9px;
+      color: #aaa;
+      min-width: 18px;
+      text-align: right;
+      font-family: monospace;
+    }
+
     .cassette-deck {
       background: linear-gradient(135deg, #2a1f14 0%, #3d2e1e 50%, #2a1f14 100%);
       border: 2px solid #5c4a35;
@@ -1860,6 +1956,13 @@
           <label>URL</label>
           <input type="text" id="optLlmUrl" placeholder="http://127.0.0.1:8000" aria-label="LLM URL">
         </div>
+        <div class="options-row">
+          <label>API Key</label>
+          <input type="password" id="optLlmApiKey" placeholder="local-secret" aria-label="LLM API Key">
+        </div>
+        <div class="options-row" style="justify-content:flex-end">
+          <button id="optLlmApply" class="menu-btn" style="padding:4px 12px;font-size:0.75rem;width:auto">Apply</button>
+        </div>
       </div>
 
       <!-- Gameplay Options (#127) -->
@@ -1989,6 +2092,25 @@
       <!-- Debug info (toggle with F3) -->
       <div id="debugOverlay" style="display:none"></div>
 
+      <!-- Mini Status Meters (#138 — visible when sidebar collapsed) -->
+      <div class="mini-status-strip" id="miniStatusStrip">
+        <div class="mini-meter">
+          <span class="mini-meter-emoji">⚡</span>
+          <div class="mini-meter-bar"><div class="mini-meter-fill energy" id="miniEnergy" style="width:100%"></div></div>
+          <span class="mini-meter-val" id="miniEnergyVal">100</span>
+        </div>
+        <div class="mini-meter">
+          <span class="mini-meter-emoji">💧</span>
+          <div class="mini-meter-bar"><div class="mini-meter-fill hydration" id="miniHydration" style="width:100%"></div></div>
+          <span class="mini-meter-val" id="miniHydrationVal">100</span>
+        </div>
+        <div class="mini-meter">
+          <span class="mini-meter-emoji">🧼</span>
+          <div class="mini-meter-bar"><div class="mini-meter-fill cleanliness" id="miniCleanliness" style="width:100%"></div></div>
+          <span class="mini-meter-val" id="miniCleanlinessVal">100</span>
+        </div>
+      </div>
+
       <!-- Toast notifications -->
       <div id="toastContainer"></div>
 
@@ -2084,6 +2206,7 @@
           <button class="hud-btn" id="btnInventory" title="Toggle inventory (I)">📦</button>
           <button class="hud-btn" id="btnBook" title="Book of Knowledge (B)">📖</button>
           <button class="hud-btn" id="btnCustomize" title="Customize character (C)">🎨</button>
+          <button class="hud-btn" id="btnMusic" title="Music player">🎵</button>
           <button class="hud-btn" id="btnDebug" title="Toggle debug info (F3)">🐛</button>
           <button class="hud-btn" id="btnSave" title="Save game">💾</button>
           <button class="hud-btn" id="btnExpand" title="Expand / collapse HUD panel">▲</button>
@@ -2091,6 +2214,40 @@
         </div>
         <div id="hudTray">
           <div id="invList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Music Popup (#138 — flyout from HUD bar) -->
+    <div id="musicPopup" class="music-popup" style="display:none">
+      <div class="music-popup-header">
+        <span>🎵 Music Player</span>
+        <button id="btnMusicPopupClose" class="music-popup-close" title="Close">&times;</button>
+      </div>
+      <div class="cassette-deck">
+        <div class="cassette-brand">Sonny WalkGirl</div>
+        <div class="cassette-window">
+          <div class="cassette-reels">
+            <div class="cassette-reel" id="cassetteReelL"></div>
+            <div class="cassette-tape-path"></div>
+            <div class="cassette-reel" id="cassetteReelR"></div>
+          </div>
+          <div class="cassette-track-info" id="sbMusicTrack">▸ INSERT TAPE ◂</div>
+          <div class="cassette-composer-info" id="sbMusicComposer"></div>
+          <div class="cassette-progress">
+            <div class="cassette-progress-fill" id="cassetteProgress"></div>
+          </div>
+        </div>
+        <div class="cassette-controls">
+          <button id="btnMusicPrev" class="cass-btn" title="Previous track">⏮</button>
+          <button id="btnMusicPlayPause" class="cass-btn cass-btn-play" title="Play / Pause">▶</button>
+          <button id="btnMusicNext" class="cass-btn" title="Next track">⏭</button>
+          <button id="btnMusicMute" class="cass-btn" title="Mute / Unmute">🔊</button>
+        </div>
+        <div class="cassette-vol-row">
+          <span class="cassette-vol-label">Vol</span>
+          <input type="range" id="musicVolume" class="cassette-vol-slider" min="0" max="100" value="50" title="Volume">
+          <span class="cassette-counter" id="cassetteCounter">000</span>
         </div>
       </div>
     </div>
@@ -2137,35 +2294,6 @@
       <div class="sb-section">
         <div class="sb-header"><span class="icon">🎒</span> Inventory</div>
         <div class="sb-inv-grid" id="sbInvGrid"></div>
-      </div>
-      <!-- Cassette Player (#107 Phase 2) -->
-      <div class="sb-section" id="sbMusicSection">
-        <div class="cassette-deck">
-          <div class="cassette-brand">Sonny WalkGirl</div>
-          <div class="cassette-window">
-            <div class="cassette-reels">
-              <div class="cassette-reel" id="cassetteReelL"></div>
-              <div class="cassette-tape-path"></div>
-              <div class="cassette-reel" id="cassetteReelR"></div>
-            </div>
-            <div class="cassette-track-info" id="sbMusicTrack">▸ INSERT TAPE ◂</div>
-            <div class="cassette-composer-info" id="sbMusicComposer"></div>
-            <div class="cassette-progress">
-              <div class="cassette-progress-fill" id="cassetteProgress"></div>
-            </div>
-          </div>
-          <div class="cassette-controls">
-            <button id="btnMusicPrev" class="cass-btn" title="Previous track">⏮</button>
-            <button id="btnMusicPlayPause" class="cass-btn cass-btn-play" title="Play / Pause">▶</button>
-            <button id="btnMusicNext" class="cass-btn" title="Next track">⏭</button>
-            <button id="btnMusicMute" class="cass-btn" title="Mute / Unmute">🔊</button>
-          </div>
-          <div class="cassette-vol-row">
-            <span class="cassette-vol-label">Vol</span>
-            <input type="range" id="musicVolume" class="cassette-vol-slider" min="0" max="100" value="50" title="Volume">
-            <span class="cassette-counter" id="cassetteCounter">000</span>
-          </div>
-        </div>
       </div>
       <!-- SFX & Ambience (#75) -->
       <div class="sb-section" id="sbSfxSection">
@@ -2226,29 +2354,6 @@
         <div class="sb-stat-row"><span>Biome</span><span class="val" id="sbBiome">—</span></div>
         <div class="sb-stat-row"><span>FPS</span><span class="val" id="sbFps">—</span></div>
         <div class="sb-stat-row"><span>Cache</span><span class="val" id="sbCache">—</span></div>
-      </div>
-      <!-- LLM Settings -->
-      <div class="sb-section">
-        <div class="sb-header"><span class="icon">🤖</span> LLM Config</div>
-        <div class="sb-config-row">
-          <label for="llmMode">Mode</label>
-          <select id="llmMode" class="sb-input" title="LLM connection mode">
-            <option value="local">Local</option>
-            <option value="remote">Remote</option>
-            <option value="off">Off (RNG only)</option>
-          </select>
-        </div>
-        <div class="sb-config-row">
-          <label for="llmUrl">URL</label>
-          <input id="llmUrl" class="sb-input" type="text" placeholder="http://127.0.0.1:8000" title="LLM API endpoint URL" />
-        </div>
-        <div class="sb-config-row">
-          <label for="llmApiKey">API Key</label>
-          <input id="llmApiKey" class="sb-input" type="password" placeholder="local-secret" title="Bearer token for LLM API" />
-        </div>
-        <div class="sb-config-row" style="justify-content:flex-end;margin-top:4px">
-          <button id="llmApply" class="slot-btn" style="padding:3px 10px;font-size:0.75rem" title="Apply LLM configuration changes">Apply</button>
-        </div>
       </div>
     </div>
 

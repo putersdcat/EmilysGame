@@ -1843,23 +1843,17 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   const sidebarSfx = document.getElementById('sfxVolume') as HTMLInputElement | null;
   const sidebarAmbience = document.getElementById('ambienceVolume') as HTMLInputElement | null;
   const sidebarVoice = document.getElementById('voiceVolume') as HTMLInputElement | null;
-  const sidebarLlmMode = document.getElementById('llmModeSelect') as HTMLSelectElement | null;
-  const sidebarLlmUrl = document.getElementById('llmUrlInput') as HTMLInputElement | null;
 
   const optMusic = document.getElementById('optMusicVol') as HTMLInputElement;
   const optSfx = document.getElementById('optSfxVol') as HTMLInputElement;
   const optAmbience = document.getElementById('optAmbienceVol') as HTMLInputElement;
   const optVoice = document.getElementById('optVoiceVol') as HTMLInputElement;
-  const optLlmMode = document.getElementById('optLlmMode') as HTMLSelectElement;
-  const optLlmUrl = document.getElementById('optLlmUrl') as HTMLInputElement;
 
-  // Read current values from sidebar
+  // Read current values from sidebar/popup controls
   if (sidebarMusic) optMusic.value = sidebarMusic.value;
   if (sidebarSfx) optSfx.value = sidebarSfx.value;
   if (sidebarAmbience) optAmbience.value = sidebarAmbience.value;
   if (sidebarVoice) optVoice.value = sidebarVoice.value;
-  if (sidebarLlmMode) optLlmMode.value = sidebarLlmMode.value;
-  if (sidebarLlmUrl) optLlmUrl.value = sidebarLlmUrl.value;
 
   // Update display values
   const updateDisplay = () => {
@@ -1884,19 +1878,8 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   optAmbience.oninput = () => syncToSidebar(optAmbience, sidebarAmbience);
   optVoice.oninput = () => syncToSidebar(optVoice, sidebarVoice);
 
-  // LLM config sync
-  optLlmMode.onchange = () => {
-    if (sidebarLlmMode) {
-      sidebarLlmMode.value = optLlmMode.value;
-      sidebarLlmMode.dispatchEvent(new Event('change'));
-    }
-  };
-  optLlmUrl.oninput = () => {
-    if (sidebarLlmUrl) {
-      sidebarLlmUrl.value = optLlmUrl.value;
-      sidebarLlmUrl.dispatchEvent(new Event('input'));
-    }
-  };
+  // #138: LLM config is now Options-only (no sidebar sync needed)
+  // LLM settings load/applied via initLlmConfigPanel() in ui.ts
 
   // Touch controls toggle (#124, #126 — UA-based auto-show)
   const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;

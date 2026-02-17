@@ -559,6 +559,19 @@ export function wireHudButtons(
   btnDbg?.addEventListener('click', onDebug);
   btnSave?.addEventListener('click', onSave);
 
+  // Music popup toggle (#138)
+  const btnMusic = document.getElementById('btnMusic');
+  const musicPopup = document.getElementById('musicPopup');
+  const btnMusicClose = document.getElementById('btnMusicPopupClose');
+  btnMusic?.addEventListener('click', () => {
+    if (!musicPopup) return;
+    const visible = musicPopup.style.display !== 'none';
+    musicPopup.style.display = visible ? 'none' : 'block';
+  });
+  btnMusicClose?.addEventListener('click', () => {
+    if (musicPopup) musicPopup.style.display = 'none';
+  });
+
   btnExpand?.addEventListener('click', () => {
     const expanded = hudOverlay?.classList.toggle('expanded');
     if (btnExpand) btnExpand.textContent = expanded ? '▼' : '▲';
@@ -619,24 +632,25 @@ function saveLlmSettings(settings: LlmSettings): void {
 }
 
 function initLlmConfigPanel(): void {
-  const modeEl = document.getElementById('llmMode') as HTMLSelectElement | null;
-  const urlEl = document.getElementById('llmUrl') as HTMLInputElement | null;
-  const keyEl = document.getElementById('llmApiKey') as HTMLInputElement | null;
-  const applyBtn = document.getElementById('llmApply');
-  if (!modeEl || !urlEl || !keyEl || !applyBtn) return;
+  // #138: LLM config now lives in Options overlay only (removed from sidebar)
+  const modeEl = document.getElementById('optLlmMode') as HTMLSelectElement | null;
+  const urlEl = document.getElementById('optLlmUrl') as HTMLInputElement | null;
+  const keyEl = document.getElementById('optLlmApiKey') as HTMLInputElement | null;
+  const applyBtn = document.getElementById('optLlmApply');
+  if (!modeEl || !urlEl || !applyBtn) return;
 
   // Load saved settings
   const settings = loadLlmSettings();
   modeEl.value = settings.mode;
   urlEl.value = settings.url;
-  keyEl.value = settings.apiKey;
+  if (keyEl) keyEl.value = settings.apiKey;
 
   // Apply: update LLM_CONFIG in-memory and persist
   applyBtn.addEventListener('click', () => {
     const newSettings: LlmSettings = {
       mode: modeEl.value as LlmSettings['mode'],
       url: urlEl.value.trim() || '/api/llm',
-      apiKey: keyEl.value.trim() || 'local-secret',
+      apiKey: keyEl ? keyEl.value.trim() || 'local-secret' : 'local-secret',
     };
     saveLlmSettings(newSettings);
 
@@ -688,6 +702,19 @@ export function syncStatusBars(status: PlayerStatus, injury?: InjuryState): void
     debuffEl.textContent = allDebuffs.length > 0
       ? allDebuffs.join(' · ')
       : '';
+  }
+
+  // Mini status meters (#138 — sync when sidebar collapsed)
+  const miniMeters: Array<{ id: string; valId: string; value: number }> = [
+    { id: 'miniEnergy', valId: 'miniEnergyVal', value: status.energy },
+    { id: 'miniHydration', valId: 'miniHydrationVal', value: status.hydration },
+    { id: 'miniCleanliness', valId: 'miniCleanlinessVal', value: status.cleanliness },
+  ];
+  for (const m of miniMeters) {
+    const fill = document.getElementById(m.id);
+    const val = document.getElementById(m.valId);
+    if (fill) fill.style.width = `${Math.max(0, Math.min(100, m.value))}%`;
+    if (val) val.textContent = String(Math.round(m.value));
   }
 }
 
