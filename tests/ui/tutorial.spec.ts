@@ -155,4 +155,77 @@ test.describe('Tutorial #186 — Overlay and steps', () => {
     const btn = await page.evaluate(() => !!document.getElementById('optReplayTutorial'));
     expect(btn).toBe(true);
   });
+
+  test('COLLECT step advances after 3 inventory items added', async ({ page }) => {
+    await page.goto(TUTORIAL_URL);
+    await waitForGame(page);
+    await startTutorial(page);
+
+    // Advance past MOVE
+    await page.evaluate(() => {
+      const s = (window as any).__gameDebug?.state;
+      if (s) s.player.x += 4;
+    });
+    await page.waitForTimeout(1000);
+
+    // Verify on COLLECT
+    const collectText = await page.evaluate(() => document.getElementById('tutorialText')?.textContent ?? '');
+    expect(collectText).toContain('pick them up');
+
+    // Add 3 items to inventory
+    await page.evaluate(() => {
+      const s = (window as any).__gameDebug?.state;
+      if (s?.inventory?.slots?.length > 0) s.inventory.slots[0].quantity += 3;
+    });
+    await page.waitForTimeout(1200);
+
+    // Should advance to ACTION
+    const actionText = await page.evaluate(() => document.getElementById('tutorialText')?.textContent ?? '');
+    expect(actionText).toContain('interact');
+  });
+
+  test('FLASHLIGHT step only detects toggle AFTER entering step (regression #186)', async ({ page }) => {
+    await page.goto(TUTORIAL_URL);
+    await waitForGame(page);
+    await startTutorial(page);
+
+    // Toggle flashlight BEFORE the FLASHLIGHT step — should not auto-complete it
+    await page.evaluate(() => (window as any).__gameDebug.toggleFlashlight());
+
+    // Advance through MOVE
+    await page.evaluate(() => {
+      const s = (window as any).__gameDebug?.state;
+      if (s) s.player.x += 4;
+    });
+    await page.waitForTimeout(1000);
+
+    // Advance through COLLECT
+    await page.evaluate(() => {
+      const s = (window as any).__gameDebug?.state;
+      if (s?.inventory?.slots?.length > 0) s.inventory.slots[0].quantity += 3;
+    });
+    await page.waitForTimeout(1000);
+
+    // Advance through ACTION (Space)
+    await page.keyboard.press('Space');
+    await page.waitForTimeout(800);
+
+    // Now on FLASHLIGHT — should NOT have auto-completed from the early toggle
+    const flashText = await page.evaluate(() => document.getElementById('tutorialText')?.textContent ?? '');
+    expect(flashText).toContain('flashlight');
+
+    // Now toggle flashlight — should advance to COMPLETE
+    await page.evaluate(() => (window as any).__gameDebug.toggleFlashlight());
+    await page.waitForTimeout(1200);
+
+    // COMPLETE screen should show
+    const completeDisplay = await page.evaluate(() =>
+      document.getElementById('tutorialComplete')?.style.display
+    );
+    expect(completeDisplay).not.toBe('none');
+    const contentDisplay = await page.evaluate(() =>
+      (document.querySelector('.tutorial-content') as HTMLElement | null)?.style.display
+    );
+    expect(contentDisplay).toBe('none');
+  });
 });

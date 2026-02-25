@@ -222,6 +222,9 @@ export function tickTutorial(
       if (interactPressed) {
         tut.interacted = true;
         _advanceStep();
+        // Capture flashlight baseline when entering FLASHLIGHT step,
+        // so any toggles done BEFORE this step don't count as "the toggle"
+        tut.initialFlashlightState = flashlightOn;
       }
       break;
     }
