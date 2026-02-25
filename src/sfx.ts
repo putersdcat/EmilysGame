@@ -182,41 +182,12 @@ export function playSfx(state: SfxState, sfxId: string): void {
   _playSfxDef(ctx, def, state.settings.sfxVolume);
 }
 
-/** Internal: schedule oscillator notes for an SFX definition */
-function _playSfxDef(ctx: AudioContext, def: SfxDef, volume: number): void {
-  const baseTime = ctx.currentTime;
-
-  for (const note of def.notes) {
-    const start = baseTime + (note.delay || 0);
-    const end = start + note.duration;
-
-    // Create oscillator
-    const osc = ctx.createOscillator();
-    osc.type = note.wave;
-    osc.frequency.setValueAtTime(note.freq, start);
-    if (note.slideTo) {
-      osc.frequency.linearRampToValueAtTime(note.slideTo, end);
-    }
-
-    // Gain envelope
-    const gain = ctx.createGain();
-    const peakGain = note.gain * volume;
-    gain.gain.setValueAtTime(0, start);
-    gain.gain.linearRampToValueAtTime(peakGain, start + Math.min(0.01, note.duration * 0.1));
-    gain.gain.linearRampToValueAtTime(0, end);
-
-    osc.connect(gain);
-    gain.connect(_sfxGain!);
-
-    _activeSfxCount++;
-    osc.start(start);
-    osc.stop(end);
-    osc.onended = () => {
-      _activeSfxCount = Math.max(0, _activeSfxCount - 1);
-      osc.disconnect();
-      gain.disconnect();
-    };
-  }
+/** Internal: schedule oscillator notes for an SFX definition.
+ * DISABLED: oscillator SFX removed — OGG asset layer arriving with #147 / #149.
+ * Do NOT re-enable oscillator fallback; add samples to public/audio/sfx/ instead.
+ * TODO: DOC - remove this function entirely once sampled coverage is complete */
+function _playSfxDef(_ctx: AudioContext, _def: SfxDef, _volume: number): void {
+  // DISABLED: see comment above
 }
 
 // ─── Ambience ───────────────────────────────────────────────
@@ -307,40 +278,10 @@ function _startAmbienceProfile(ctx: AudioContext, profile: AmbienceProfile, volu
   }
 }
 
-function _startAmbienceLayer(ctx: AudioContext, layer: AmbienceLayer, volume: number): void {
-  const osc = ctx.createOscillator();
-  osc.type = layer.wave;
-  osc.frequency.value = layer.freq;
-
-  const gain = ctx.createGain();
-  // Fade in over 1s for smooth transition
-  gain.gain.setValueAtTime(0, ctx.currentTime);
-  gain.gain.linearRampToValueAtTime(layer.gain * volume, ctx.currentTime + 1.0);
-
-  const node: ActiveAmbienceNode = { osc, gain };
-
-  // LFO modulation for organic sound
-  if (layer.lfoFreq && layer.lfoDepth) {
-    const lfo = ctx.createOscillator();
-    lfo.type = 'sine';
-    lfo.frequency.value = layer.lfoFreq;
-
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = layer.lfoDepth;
-
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc.frequency);
-    lfo.start();
-
-    node.lfo = lfo;
-    node.lfoGain = lfoGain;
-  }
-
-  osc.connect(gain);
-  gain.connect(_ambienceGain!);
-  osc.start();
-
-  _activeAmbience.push(node);
+function _startAmbienceLayer(_ctx: AudioContext, _layer: AmbienceLayer, _volume: number): void {
+  // DISABLED: oscillator ambience removed — OGG sampled ambience arriving with #147 / #149.
+  // Do NOT re-enable oscillator layers; wire sampled loops in sampled-sfx.ts instead.
+  // TODO: DOC - remove this function once sampled ambience is integrated
 }
 
 // ─── Volume Controls ────────────────────────────────────────
