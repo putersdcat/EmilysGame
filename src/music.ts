@@ -53,6 +53,9 @@ let _trackLoading = false;
 
 const SF2_URL = './audio/music/MidiocrePack.sf2';
 const MIDI_BASE = './audio/music/';
+// Cache MIDI ArrayBuffers to avoid re-fetching on each track switch
+// (workaround for MIDIocre's midiPath URL prepend bug — pass buffer, not URL)
+const _midiBufferCache = new Map<string, ArrayBuffer>();
 
 // --- Player Bootstrap -------------------------------------------------------
 
@@ -241,12 +244,28 @@ async function _startMidiPlayback(track: MusicTrack, state: MusicState): Promise
 
   const midiUrl = MIDI_BASE + entry.midiFile;
 
+  // Fetch MIDI as ArrayBuffer to bypass MIDIocre's midiPath URL prepend bug.
+  // Relative URLs like './audio/...' would be rewritten to 'DemoMidiFiles/./audio/...' (404).
+  let midiBuffer = _midiBufferCache.get(track.id);
+  if (!midiBuffer) {
+    try {
+      const resp = await fetch(midiUrl);
+      if (!resp.ok) throw new Error(`MIDI fetch failed: ${resp.status} ${midiUrl}`);
+      midiBuffer = await resp.arrayBuffer();
+      _midiBufferCache.set(track.id, midiBuffer);
+    } catch (e) {
+      console.warn(`[Music] MIDI fetch failed (${midiUrl}):`, e);
+      setTimeout(() => { if (state._playRequested) nextTrack(state); }, 1000);
+      return;
+    }
+  }
+
   try {
     // Stop silently: _trackLoading=true suppresses the onStateChange('stopped')
     // callback that player.stop() fires, preventing a recursive nextTrack loop.
     _trackLoading = true;
     player.stop();
-    await player.loadMIDI(midiUrl);
+    await player.loadMIDI(midiBuffer as ArrayBuffer);
     _trackLoading = false;
   } catch (e) {
     _trackLoading = false;
