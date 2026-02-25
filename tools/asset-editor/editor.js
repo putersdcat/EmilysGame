@@ -20,6 +20,14 @@ const BLANK_SPRITE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="48" hei
   <text x="24" y="29" text-anchor="middle" font-size="14" fill="#fff" font-family="sans-serif">?</text>
 </svg>`;
 
+/** Reliably trigger a file download — anchor must be in DOM for Chrome/Firefox */
+function dlAnchor(href, filename) {
+  const a = Object.assign(document.createElement('a'), { href, download: filename, style: 'display:none' });
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => document.body.removeChild(a), 200);
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 const state = {
   current: null,         // current asset manifest entry
@@ -302,8 +310,7 @@ async function exportRenderedPng(scale = 2) {
   out.toBlob(blob => {
     const id = state.current?.id || 'asset';
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `${id}_rendered_${scale}x.png`; a.click();
+    dlAnchor(url, `${id}_rendered_${scale}x.png`);
     setTimeout(() => URL.revokeObjectURL(url), 5000);
     showToast(`Downloaded ${id}_rendered_${scale}x.png`);
   });
@@ -338,11 +345,9 @@ async function exportVariantPng(svgText, viewMode, name, scale = 2) {
   ctx.drawImage(canvas, 0, 0, out.width, out.height);
 
   out.toBlob(blob => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${name}_${scale}x.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    const url = URL.createObjectURL(blob);
+    dlAnchor(url, `${name}_${scale}x.png`);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   });
 }
 
@@ -432,10 +437,7 @@ function handleSinglePngImport(file) {
       approveBtn.textContent = '✔ Download as In-Game Asset';
       approveBtn.title = `Save as public/sprites/${state.current?.id || 'asset'}.png`;
       approveBtn.onclick = () => {
-        const a = document.createElement('a');
-        a.href = importedSrc;
-        a.download = `${state.current?.id || 'asset'}.png`;
-        a.click();
+        dlAnchor(importedSrc, `${state.current?.id || 'asset'}.png`);
         showToast(`Downloaded — place in public/sprites/ to use in-game`);
       };
       compare.appendChild(approveBtn);
@@ -551,6 +553,13 @@ function init() {
   document.getElementById('btn-export-1x').addEventListener('click', () => exportRenderedPng(1));
   document.getElementById('btn-export-2x').addEventListener('click', () => exportRenderedPng(2));
   document.getElementById('btn-export-4x').addEventListener('click', () => exportRenderedPng(4));
+
+  // Sidebar collapse toggle
+  document.getElementById('btn-sidebar-toggle').addEventListener('click', () => {
+    const app = document.getElementById('app');
+    const hidden = app.classList.toggle('sidebar-hidden');
+    document.getElementById('btn-sidebar-toggle').textContent = hidden ? '▶' : '☰';
+  });
 
   // New asset buttons
   document.getElementById('btn-new-tile').addEventListener('click', () => newAsset('tile'));

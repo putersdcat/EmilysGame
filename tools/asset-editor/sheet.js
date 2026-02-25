@@ -196,25 +196,32 @@ async function exportSpriteSheet() {
 
     const sheetName = metadata.sheetName;
 
-    // Download PNG
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `${sheetName}.png`;
-    a.click();
+    // Anchor must be in DOM for Firefox + Chrome to trigger download reliably
+    triggerDownload(blobUrl, `${sheetName}.png`);
 
-    // Auto-download companion JSON (small delay so browser queues both)
+    // Companion JSON — small delay so browser queues separately
     setTimeout(() => {
       const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-      const ja = document.createElement('a');
-      ja.href = URL.createObjectURL(jsonBlob);
-      ja.download = `${sheetName}.json`;
-      ja.click();
-      setTimeout(() => URL.revokeObjectURL(ja.href), 5000);
-    }, 300);
+      const jsonUrl = URL.createObjectURL(jsonBlob);
+      triggerDownload(jsonUrl, `${sheetName}.json`);
+      setTimeout(() => URL.revokeObjectURL(jsonUrl), 5000);
+    }, 400);
 
     showSheetStatus(`✅ Downloaded sheet + metadata (${assets.length} assets)`, 'ok');
     setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
   });
+}
+
+/** Reliably trigger a file download by temporarily appending anchor to DOM */
+function triggerDownload(href, filename) {
+  const a = document.createElement('a');
+  a.href = href;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  // Small defer to let browser initiate before removal
+  setTimeout(() => document.body.removeChild(a), 200);
 }
 
 // ─── Sprite Sheet Re-import + Slice ──────────────────────────────────────────

@@ -38,6 +38,33 @@
         "sidebar main variants";
       height: 100vh;
     }
+    /* Sidebar collapse */
+    #sidebar { transition: width 0.2s ease, min-width 0.2s ease; }
+    #app.sidebar-hidden {
+      grid-template-columns: 0 1fr 320px;
+    }
+    #app.sidebar-hidden #sidebar {
+      width: 0;
+      min-width: 0;
+      overflow: hidden;
+      border: none;
+    }
+    /* Sidebar toggle button — always visible in header */
+    #btn-sidebar-toggle {
+      font-size: 15px;
+      padding: 4px 8px;
+      flex-shrink: 0;
+    }
+    /* Right panel collapse on very narrow screens */
+    @media (max-width: 640px) {
+      #app {
+        grid-template-columns: 0 1fr 0;
+        grid-template-areas:
+          "header header header"
+          "sidebar main main";
+      }
+      #variants-panel { display: none; }
+    }
 
     /* ─── Header ─────────────────────────────────────────────── */
     #header {
@@ -432,6 +459,7 @@
     <button id="btn-copy-svg" title="Copy SVG markup to clipboard">📋 Copy SVG</button>
     <button id="btn-export-1x" title="Export rendered PNG at 1×">⬇ 1×</button>
     <button id="btn-export-2x" title="Export rendered PNG at 2×">⬇ 2×</button>
+    <button id="btn-sidebar-toggle" title="Toggle asset picker">☰</button>
     <button id="btn-export-4x" title="Export rendered PNG at 4×">⬇ 4×</button>
     <button id="btn-load-custom" title="Reload preview from editor textarea" style="background:var(--accent2);border-color:var(--accent2);color:#fff;">↻ Preview</button>
   </header>
