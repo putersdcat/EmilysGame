@@ -46,6 +46,10 @@ let _sf2Loading: Promise<void> | null = null;
 let _currentTrack: MusicTrack | null = null;
 /** Points to the active MusicState so onStateChange callbacks can reach it */
 let _activeState: MusicState | null = null;
+/** True while switching tracks — suppresses onStateChange 'stopped' auto-advance.
+ *  Prevents infinite loop: player.stop() in _startMidiPlayback fires onStateChange
+ *  which would call nextTrack while _playRequested=true. Bug fix for MIDIocre. */
+let _trackLoading = false;
 
 const SF2_URL = './audio/music/MidiocrePack.sf2';
 const MIDI_BASE = './audio/music/';
@@ -61,10 +65,14 @@ function getOrCreatePlayer(): Midiocre | null {
       const state = _activeState;
       if (!state) return;
       if (s === 'stopped') {
-        // Natural end-of-track: _playRequested distinguishes manual stop from auto-advance
-        if (state._playRequested) {
+        // Only auto-advance if: playback was requested AND we're not mid-transition.
+        // _trackLoading=true when _startMidiPlayback calls player.stop() to clear the
+        // previous track — without this guard that fires a recursive nextTrack loop.
+        if (state._playRequested && !_trackLoading) {
           state.playState = 'stopped';
           nextTrack(state);
+        } else if (!state._playRequested) {
+          state.playState = 'stopped';
         }
       } else if (s === 'playing') {
         state.playState = 'playing';
@@ -234,10 +242,14 @@ async function _startMidiPlayback(track: MusicTrack, state: MusicState): Promise
   const midiUrl = MIDI_BASE + entry.midiFile;
 
   try {
-    // Stop silently — sets _playRequested=false to avoid auto-advance trigger
+    // Stop silently: _trackLoading=true suppresses the onStateChange('stopped')
+    // callback that player.stop() fires, preventing a recursive nextTrack loop.
+    _trackLoading = true;
     player.stop();
     await player.loadMIDI(midiUrl);
+    _trackLoading = false;
   } catch (e) {
+    _trackLoading = false;
     console.warn(`[Music] MIDI load failed (${midiUrl}):`, e);
     setTimeout(() => { if (state._playRequested) nextTrack(state); }, 1000);
     return;
