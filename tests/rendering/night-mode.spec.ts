@@ -26,6 +26,8 @@ async function waitForGame(page: import('@playwright/test').Page) {
 test.describe('Fog-of-War (#114)', () => {
   test('fog system initializes enabled with visited cells around spawn', async ({ page }) => {
     await waitForGame(page);
+    // Fog is OFF by default (#139) — enable for this test
+    await page.evaluate(() => (window as any).__gameDebug.setFogEnabled(true));
     // Wait for fog update to tick (throttled every 6th frame)
     await page.waitForTimeout(1500);
 
@@ -44,6 +46,9 @@ test.describe('Fog-of-War (#114)', () => {
 
   test('visiting new areas increases visited cell count', async ({ page }) => {
     await waitForGame(page);
+    // Fog is OFF by default (#139) — enable for this test
+    await page.evaluate(() => (window as any).__gameDebug.setFogEnabled(true));
+    await page.waitForTimeout(500);
 
     const initial = await page.evaluate(() => (window as any).__gameDebug.getVisitedCount());
     expect(initial).toBeGreaterThan(0);
@@ -64,6 +69,8 @@ test.describe('Fog-of-War (#114)', () => {
 
   test('toggling fog disables and re-enables the overlay', async ({ page }) => {
     await waitForGame(page);
+    // Fog is OFF by default (#139) — enable before testing toggle
+    await page.evaluate(() => (window as any).__gameDebug.setFogEnabled(true));
 
     const before = await page.evaluate(() => (window as any).__gameDebug.isFogEnabled());
     expect(before).toBe(true);
@@ -251,6 +258,9 @@ test.describe('Glowing Eyes & Flashlight Reveal (#114)', () => {
 test.describe('Fog Save/Load (#114)', () => {
   test('fog visited state persists across save and reload', async ({ page }) => {
     await waitForGame(page);
+    // Fog is OFF by default (#139) — enable so visited cells are tracked
+    await page.evaluate(() => (window as any).__gameDebug.setFogEnabled(true));
+    await page.waitForTimeout(500);
 
     // Explore some area
     for (let i = 0; i < 6; i++) {
@@ -302,6 +312,9 @@ test.describe('Night Mode Backward Compat (#114)', () => {
 
   test('player can move normally with fog and night mode active', async ({ page }) => {
     await waitForGame(page);
+
+    // Click canvas to ensure keyboard focus is captured
+    await page.locator('#gameContainer canvas').click();
 
     // Set night mode
     await page.evaluate(() => (window as any).__gameDebug.setTimeOfDay(0.85));
