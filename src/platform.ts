@@ -49,15 +49,18 @@ function getTeslaPreference(): boolean | null {
 
 /**
  * Is Tesla mode currently active?
- * Priority: ?tesla=0 → false; ?tesla=1 → true; localStorage → stored; default → false.
- * Auto-detection is NOT used to auto-enable (issue #185: conservative, opt-in).
+ * Priority: ?tesla=0 → false; ?tesla=1 → true; localStorage → stored; else → detectTeslaBrowser().
+ * Auto-detection is the fallback when no explicit preference is stored (#188).
  */
 export function isTeslaMode(): boolean {
   if (hasTeslaDisabledParam()) return false;
   if (hasTeslaUrlParam()) return true;
   const pref = getTeslaPreference();
   if (pref !== null) return pref;
-  return false;
+  // No stored preference — fall back to conservative auto-detection.
+  // detectTeslaBrowser() only matches Linux x86_64 + Chrome + large viewport,
+  // so false-positives on real desktop Linux are unlikely.
+  return detectTeslaBrowser();
 }
 
 /** Set and persist Tesla mode preference */

@@ -16,20 +16,43 @@ function key(emoji: string, tint: number): string {
   return `${emoji}|${tint}`;
 }
 
+// Color emoji font stack — explicitly requests color fonts before fallbacks.
+// 'bold' weight is intentionally excluded: color emoji fonts don't have a bold variant
+// and using bold forces Chrome on Linux to fall back to monochrome outline rendering.
+const EMOJI_FONT_STACK = `'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif`;
+
 function renderOne(emoji: string, tint: number): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = SPRITE_SIZE;
   c.height = SPRITE_SIZE;
   const ctx = c.getContext('2d')!;
 
-  // Apply biome tint filter (expensive) only once at cache time
   const hue = tint ? `hue-rotate(${tint}deg) ` : '';
-  ctx.filter = `${hue}brightness(${RENDER_CONFIG.emojiBrightness}) saturate(${RENDER_CONFIG.emojiSaturation})`;
-  ctx.font = `bold ${RENDER_CONFIG.emojiSize}px Arial`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(emoji, SPRITE_SIZE / 2, SPRITE_SIZE / 2);
-  ctx.filter = 'none';
+  const filterStr = `${hue}brightness(${RENDER_CONFIG.emojiBrightness}) saturate(${RENDER_CONFIG.emojiSaturation})`;
+  const needsFilter = !!(tint || RENDER_CONFIG.emojiBrightness !== 1 || RENDER_CONFIG.emojiSaturation !== 1);
+
+  if (needsFilter) {
+    // IMPORTANT: On Linux Chrome (inc. Tesla browser), applying ctx.filter before fillText
+    // causes color emoji fonts to fall back to monochrome/outline rendering.
+    // Workaround: render emoji to a temp canvas without filter, then composite with filter
+    // via drawImage — drawImage + filter works correctly on all platforms.
+    const tmp = document.createElement('canvas');
+    tmp.width = SPRITE_SIZE;
+    tmp.height = SPRITE_SIZE;
+    const tctx = tmp.getContext('2d')!;
+    tctx.font = `${RENDER_CONFIG.emojiSize}px ${EMOJI_FONT_STACK}`;
+    tctx.textAlign = 'center';
+    tctx.textBaseline = 'middle';
+    tctx.fillText(emoji, SPRITE_SIZE / 2, SPRITE_SIZE / 2);
+    ctx.filter = filterStr;
+    ctx.drawImage(tmp, 0, 0);
+    ctx.filter = 'none';
+  } else {
+    ctx.font = `${RENDER_CONFIG.emojiSize}px ${EMOJI_FONT_STACK}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, SPRITE_SIZE / 2, SPRITE_SIZE / 2);
+  }
 
   return c;
 }
