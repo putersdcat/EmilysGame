@@ -380,9 +380,10 @@ export class IsometricRenderer {
 
           // Draw elevated (non-base) objects
           if (!isBase) {
-            // Sort key: cell base Y + half-cell for center anchor + tiny height bias
-            // for stable occlusion. Taller objects with same Y draw slightly later (#179).
-            const depthKey = gy + 0.5 + def.height * 0.01;
+            // Sort key: cell base Y + half-cell for center anchor + height bias.
+            // height * 0.4 means a height=4 wall sorts 1.6 rows "deeper",
+            // correctly occluding objects/player within ~1.6 grid rows south. (#184)
+            const depthKey = gy + 0.5 + def.height * 0.4;
             // Fire animation: scale pulse + vertical wobble (#81)
             const fireVariant = FIRE_VARIANTS[cell.assetKey];
             let drawScale = def.scale;

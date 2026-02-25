@@ -172,7 +172,7 @@ export function processCells(cellCount: i32): i32 {
       }
     } else {
       // Elevated object
-      const depthKey: f32 = gy + height * 0.1;
+      const depthKey: f32 = gy + height * 0.4; // height bias: 0.4 per unit, matches JS path (#184)
       if (tileIdx >= 0.0) {
         pushCmd(CMD_TILE, sx, sy, scale, tint, assetIdx, tileIdx, depthKey, shadow);
       } else {
