@@ -21,6 +21,11 @@ export const RENDER_CONFIG = {
   spriteSize: 48,       // Base SVG sprite render size
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
+  /** Source pixel size of micro-tile SVGs fed into the isometric transform (#192).
+   *  Set to 96 (3× original 32) as prep for the PNG asset pipeline.
+   *  Larger src size = better SVG rasterisation quality into the 64×32 iso diamond.
+   *  TODO: DOC - microTileSize config field, PNG asset pipeline */
+  microTileSize: 96,
 };  // Mutable: canvasWidth/canvasHeight updated on viewport resize
 
 // ─── Grid / World ────────────────────────────────────────────

@@ -1,7 +1,7 @@
 /**
  * tiles.ts - SVG micro tile loading, isometric pre-rendering, and caching.
- * Loads 32x32 SVG tiles, transforms them into 64x32 isometric diamonds,
- * and caches as offscreen canvases for fast blitting.
+ * Loads SVG tiles (source size = RENDER_CONFIG.microTileSize), transforms them
+ * into 64x32 isometric diamonds, and caches as offscreen canvases for fast blitting.
  * TODO: DOC - tile pipeline and caching strategy
  */
 
@@ -464,11 +464,12 @@ const isoTileCache = new Map<TileType, HTMLCanvasElement>();
 export const ALL_TILE_TYPES: TileType[] = Object.keys(TILE_SVG_SOURCES) as TileType[];
 
 /**
- * Render a 32x32 SVG into a 64x32 isometric diamond on an offscreen canvas.
- * Uses affine transform: maps unit square to isometric diamond.
+ * Render an SVG into a 64x32 isometric diamond on an offscreen canvas.
+ * Uses affine transform: maps unit square (RENDER_CONFIG.microTileSize) to isometric diamond.
+ * SVG size 96 → rasterises at 96px for crisp downsampling into the 64×32 diamond (#192).
  */
 async function renderIsoTile(svg: string): Promise<HTMLCanvasElement> {
-  const tileSize = 32;
+  const tileSize = RENDER_CONFIG.microTileSize;
   const tw = RENDER_CONFIG.tileWidth;   // 64
   const th = RENDER_CONFIG.tileHeight;  // 32
 

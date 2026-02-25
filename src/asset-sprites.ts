@@ -10,6 +10,7 @@
 
 import { BIOME_DEFS } from './config/biomes.config';
 import { RENDER_CONFIG } from './config/game.config';
+import { getPngSprite, hasPngConfig, preloadPngAssets } from './asset-library';
 
 const cache = new Map<string, HTMLCanvasElement>();
 const SPRITE_SIZE = 48; // Matches emoji-cache size for drop-in replacement
@@ -1136,12 +1137,14 @@ export async function preloadAssetSprites(): Promise<void> {
   }
 
   await Promise.all(promises);
+  // Load any PNG overrides from the asset library config (#189)
+  await preloadPngAssets();
   console.log(`[PERF] Asset sprite cache: ${cache.size} entries`);
 }
 
-/** Check if an asset key has SVG sprites available. */
+/** Check if an asset key has SVG sprites or a PNG entry configured. */
 export function hasAssetSprite(assetKey: string): boolean {
-  return SUPPORTED_KEYS.has(assetKey);
+  return SUPPORTED_KEYS.has(assetKey) || hasPngConfig(assetKey);
 }
 
 /**
@@ -1160,6 +1163,9 @@ export function getAssetSprite(assetKey: string, tint: number, gx = 0, gy = 0): 
   if (assetKey === 'shop_general' || assetKey === 'shop_snack' || assetKey === 'shop_trading') {
     key = 'shop';
   }
+  // PNG overrides from asset library (#189): PNG wins if loaded, else fall through to SVG
+  const png = getPngSprite(key);
+  if (png !== undefined) return png ?? undefined; // null → undefined (PNG failed, use SVG)
   return cache.get(cacheKey(key, tint));
 }
 
