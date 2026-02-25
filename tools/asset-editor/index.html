@@ -126,6 +126,16 @@
     .sidebar-item:hover { background: var(--panel2); color: var(--text); }
     .sidebar-item.active { background: var(--accent); color: #fff; }
 
+    /* Sidebar row wrapper for multiselect checkbox + button */
+    .sidebar-row { display: flex; align-items: center; }
+    .sidebar-check {
+      flex-shrink: 0; width: 14px; height: 14px;
+      margin: 0 4px 0 6px; cursor: pointer;
+      accent-color: var(--accent2);
+    }
+    .sidebar-row .sidebar-item { flex: 1; min-width: 0; }
+    #header button.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
     /* ─── Main ───────────────────────────────────────────────── */
     #main {
       grid-area: main;
@@ -229,37 +239,103 @@
       flex-direction: column;
       overflow: hidden;
     }
-    #variants-header {
+    /* Right panel tabs */
+    .right-panel-tabs {
       display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px;
       border-bottom: 1px solid var(--border);
-      font-size: 11px;
-      font-weight: 600;
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+    .right-tab-btn {
+      flex: 1; padding: 6px 4px;
+      border: none; background: none;
+      color: var(--dim); cursor: pointer;
+      font-size: 11px; white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .right-tab-btn:hover { color: var(--text); }
+    .right-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .right-tab-content {
+      flex: 1; overflow-y: auto;
+      display: none; flex-direction: column;
+    }
+    #variants-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px; border-bottom: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; flex-shrink: 0;
     }
     #variants-header span { flex: 1; }
     #variants-header button {
-      padding: 3px 8px;
-      border: 1px solid var(--border);
-      background: var(--accent2);
-      color: #fff;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 11px;
+      padding: 3px 8px; border: 1px solid var(--border);
+      background: var(--accent2); color: #fff;
+      border-radius: 4px; cursor: pointer; font-size: 11px;
     }
     #variants-header button:hover { opacity: 0.85; }
     #variants-header .btn-danger { background: var(--danger); }
-
     #variants-panel {
-      flex: 1;
-      overflow-y: auto;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex: 1; overflow-y: auto; padding: 8px;
+      display: flex; flex-direction: column; gap: 10px;
     }
     .hint { color: var(--dim); font-size: 11px; padding: 8px; }
+
+    /* ─── Import PNG tab ─────────────────────────────────────── */
+    #import-tab-header { padding: 8px; font-size: 11px; border-bottom: 1px solid var(--border); background: var(--panel2); flex-shrink: 0; }
+    #import-tab-asset-label { color: var(--accent); font-weight: 600; }
+    #import-drop-zone {
+      margin: 10px 8px; border: 2px dashed var(--border);
+      border-radius: 6px; padding: 20px; text-align: center;
+      color: var(--dim); font-size: 11px; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    #import-drop-zone:hover, #import-drop-zone.drag-over {
+      border-color: var(--accent); background: rgba(124,92,191,0.1); color: var(--text);
+    }
+    #import-drop-zone button {
+      margin: 8px auto 0; padding: 4px 12px; border: 1px solid var(--border);
+      background: var(--panel2); color: var(--text); border-radius: 4px;
+      cursor: pointer; font-size: 11px; display: block;
+    }
+    #import-drop-zone button:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #import-compare { padding: 8px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+    .import-card { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; width: 100%; }
+    .import-card-label { font-size: 10px; color: var(--dim); padding: 3px 8px; background: var(--bg); text-transform: uppercase; letter-spacing: 1px; }
+    .import-card-content { display: flex; align-items: center; justify-content: center; padding: 10px; min-height: 60px; background: var(--tile-bg); }
+    .approve-btn { width: calc(100% - 16px); margin: 0 8px; padding: 8px; background: var(--accent2); border: none; border-radius: 6px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .approve-btn:hover { opacity: 0.85; }
+
+    /* ─── Sheet tab ──────────────────────────────────────────── */
+    #sheet-instructions { padding: 8px; font-size: 11px; color: var(--dim); border-bottom: 1px solid var(--border); }
+    #sheet-selected-list { flex: 1; overflow-y: auto; padding: 6px 8px; min-height: 60px; }
+    #sheet-actions { padding: 8px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+    #sheet-actions button { padding: 6px; border: 1px solid var(--border); border-radius: 4px; background: var(--panel2); color: var(--text); cursor: pointer; font-size: 11px; width: 100%; }
+    #sheet-actions button:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #sheet-actions .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    #sheet-import-drop { margin: 0; border: 2px dashed var(--border); border-radius: 4px; padding: 12px 8px; text-align: center; color: var(--dim); font-size: 10px; cursor: pointer; }
+    #sheet-import-drop.drag-over { border-color: var(--accent2); background: rgba(76,159,110,0.1); }
+
+    /* Sheet status, slice review, import compare (used by sheet.js) */
+    .sheet-status { font-size: 10px; padding: 3px; border-radius: 3px; }
+    .sheet-status.ok  { background: rgba(76,159,110,0.2); color: #7ddb9c; }
+    .sheet-status.err { background: rgba(184,64,64,0.2);  color: #f68; }
+    .sheet-status.info { color: var(--dim); }
+    .import-compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; width: 100%; }
+    .import-col { display: flex; flex-direction: column; gap: 4px; }
+    .import-col-label { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+    .import-preview { background: var(--tile-bg); border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 6px; min-height: 50px; }
+    .import-actions { display: flex; gap: 6px; width: 100%; margin-top: 4px; }
+    .import-actions button { flex: 1; padding: 5px; border-radius: 4px; cursor: pointer; font-size: 11px; border: 1px solid var(--border); background: var(--panel2); color: var(--text); }
+    .btn-approve-all { background: var(--accent2) !important; border-color: var(--accent2) !important; color: #fff !important; }
+    .btn-save-all { background: var(--accent) !important; border-color: var(--accent) !important; color: #fff !important; }
+    .slice-header { display: flex; gap: 6px; padding: 4px 0; }
+    .slice-card { display: grid; grid-template-columns: 1fr 1fr auto; gap: 4px; padding: 6px; background: var(--panel2); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 4px; }
+    .slice-card.slice-approved { border-color: var(--accent2); }
+    .slice-preview-pane { background: var(--tile-bg); display: flex; align-items: center; justify-content: center; padding: 4px; min-height: 40px; border-radius: 3px; }
+    .slice-label { font-size: 9px; color: var(--dim); text-transform: uppercase; }
+    .slice-id { font-size: 10px; color: var(--text); display: block; margin-bottom: 3px; word-break: break-all; }
+    .slice-info { display: flex; flex-direction: column; gap: 3px; }
+    .btn-approve, .btn-approved { font-size: 10px; padding: 2px 4px; border-radius: 3px; cursor: pointer; border: 1px solid var(--border); }
+    .btn-approved { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+    .ok-text { color: var(--accent2); }
     .variant-card {
       background: var(--panel2);
       border: 1px solid var(--border);
@@ -349,10 +425,14 @@
       <option value="raw">Raw SVG</option>
     </select>
     <div class="sep"></div>
+    <button id="btn-new-tile" title="Create new blank tile">🏔 New Tile</button>
+    <button id="btn-new-sprite" title="Create new blank sprite">🧑 New Sprite</button>
+    <button id="btn-toggle-multiselect" title="Toggle sheet-export selection mode">📋 Sheet Mode</button>
+    <div class="sep"></div>
     <button id="btn-copy-svg" title="Copy SVG markup to clipboard">📋 Copy SVG</button>
-    <button id="btn-export-1x" title="Export PNG at 1× scale">⬇ 1×</button>
-    <button id="btn-export-2x" title="Export PNG at 2× scale">⬇ 2×</button>
-    <button id="btn-export-4x" title="Export PNG at 4× scale">⬇ 4×</button>
+    <button id="btn-export-1x" title="Export rendered PNG at 1×">⬇ 1×</button>
+    <button id="btn-export-2x" title="Export rendered PNG at 2×">⬇ 2×</button>
+    <button id="btn-export-4x" title="Export rendered PNG at 4×">⬇ 4×</button>
     <button id="btn-load-custom" title="Reload preview from editor textarea" style="background:var(--accent2);border-color:var(--accent2);color:#fff;">↻ Preview</button>
   </header>
 
@@ -393,23 +473,93 @@
     </div>
   </main>
 
-  <!-- Variants / A-B panel -->
+  <!-- Right panel: tabbed (Variants | Import PNG | Sheet) -->
   <aside id="variants">
-    <div id="variants-header">
-      <span>A/B Variants</span>
-      <button id="btn-add-variant" title="Save current SVG as a new variant">+ Add Variant</button>
-      <button id="btn-clear-votes" class="btn-danger" title="Reset all votes">Reset Votes</button>
+    <div class="right-panel-tabs">
+      <button class="right-tab-btn" data-tab="variants">🔄 Variants</button>
+      <button class="right-tab-btn" data-tab="import">⬆ Import</button>
+      <button class="right-tab-btn" data-tab="sheet">📸 Sheet</button>
     </div>
-    <div id="variants-panel">
-      <p class="hint">Click "+ Add Variant" to save the current SVG for comparison. Vote with 👍 to rank variants.</p>
+
+    <!-- Tab: A/B Variants -->
+    <div class="right-tab-content" id="rtab-variants">
+      <div id="variants-header">
+        <span>A/B Variants</span>
+        <button id="btn-add-variant" title="Save current SVG as a variant">+ Add Variant</button>
+        <button id="btn-clear-votes" class="btn-danger" title="Reset all votes">Reset Votes</button>
+      </div>
+      <div id="variants-panel">
+        <p class="hint">Click "+ Add Variant" to save the current SVG for comparison. Vote 👍 to rank.</p>
+      </div>
+    </div>
+
+    <!-- Tab: Import PNG -->
+    <div class="right-tab-content" id="rtab-import">
+      <div id="import-tab-header">
+        Target: <span id="import-tab-asset-label">select an asset first</span>
+      </div>
+      <div id="import-drop-zone">
+        🖼 Drag &amp; drop a PNG here, or
+        <button id="btn-import-png">📂 Browse…</button>
+        <small style="display:block;margin-top:6px;color:var(--dim);">Compared side-by-side with current render</small>
+      </div>
+      <div id="import-compare">
+        <p class="hint">Upload a PNG to compare with the current game render</p>
+      </div>
+    </div>
+
+    <!-- Tab: Sprite Sheet -->
+    <div class="right-tab-content" id="rtab-sheet">
+      <div id="sheet-instructions">
+        Enable 📋 <strong>Sheet Mode</strong> then tick assets in sidebar to add to sheet.
+      </div>
+      <div style="padding:4px 8px;display:flex;gap:4px;border-bottom:1px solid var(--border);background:var(--bg)">
+        <button id="btn-select-all" style="flex:1;padding:3px 6px;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:4px;cursor:pointer;font-size:10px">Select All</button>
+        <button id="btn-clear-selection" style="flex:1;padding:3px 6px;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:4px;cursor:pointer;font-size:10px">Clear</button>
+        <label style="font-size:10px;color:var(--dim);display:flex;align-items:center;gap:3px">
+          Cols <input id="sheet-cols" type="number" value="4" min="1" max="12" style="width:36px;padding:2px;background:var(--panel2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:10px">
+        </label>
+        <label style="font-size:10px;color:var(--dim);display:flex;align-items:center;gap:3px">
+          Margin <input id="sheet-margin" type="number" value="20" min="0" max="60" style="width:36px;padding:2px;background:var(--panel2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-size:10px">
+        </label>
+      </div>
+      <div id="sheet-selected-list" style="padding:6px 8px;min-height:40px;overflow-y:auto">
+        <p class="hint" id="sheet-count">No assets selected yet</p>
+      </div>
+      <div id="sheet-actions" style="padding:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:5px">
+        <button id="btn-export-sheet" class="btn-primary">⬇ Export Sheet PNG</button>
+        <div id="sheet-drop-zone" style="border:2px dashed var(--border);border-radius:4px;padding:10px 8px;text-align:center;color:var(--dim);font-size:10px;cursor:pointer">
+          📥 Drop re-edited sheet PNG (+companion .json) here to auto-slice
+        </div>
+        <button id="btn-import-sheet">📂 Browse Sheet PNG…</button>
+        <div id="sheet-status" class="sheet-status"></div>
+      </div>
+      <div id="slice-review" style="padding:6px 8px;overflow-y:auto"></div>
     </div>
   </aside>
 
 </div>
 
+<input type="file" id="single-png-input" accept="image/*" style="display:none">
+<input type="file" id="sheet-png-input" accept="image/png" style="display:none">
+<input type="file" id="sheet-json-input" accept=".json,application/json" style="display:none">
 <div id="toast"></div>
 
+<!-- Config snippet modal -->
+<div id="config-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;max-width:560px;width:90%;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <strong style="color:var(--accent)">📋 Add to asset-library.config.ts</strong>
+      <button id="config-modal-close" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:16px">✕</button>
+    </div>
+    <pre id="config-snippet-code" style="background:#12131a;color:#b8c0d8;padding:10px;border-radius:4px;font-size:11px;overflow-x:auto;white-space:pre-wrap"></pre>
+    <button id="btn-copy-snippet" style="padding:6px;background:var(--accent2);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:12px">📋 Copy Snippet</button>
+    <p style="font-size:11px;color:var(--dim)">Place the downloaded PNG in <code>public/sprites/</code>, then add the config entry above.</p>
+  </div>
+</div>
+
 <script src="assets-manifest.js"></script>
+<script src="sheet.js"></script>
 <script src="editor.js"></script>
 <script>
   // Sidebar search filter
