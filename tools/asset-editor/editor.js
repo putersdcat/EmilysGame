@@ -307,13 +307,11 @@ async function exportRenderedPng(scale = 2) {
   const ctx = out.getContext('2d');
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(src, 0, 0, out.width, out.height);
-  out.toBlob(blob => {
-    const id = state.current?.id || 'asset';
-    const url = URL.createObjectURL(blob);
-    dlAnchor(url, `${id}_rendered_${scale}x.png`);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast(`Downloaded ${id}_rendered_${scale}x.png`);
-  });
+  // toDataURL is synchronous — avoids async-callback download-blocking in Chrome
+  const id = state.current?.id || 'asset';
+  const filename = `${id}_rendered_${scale}x.png`;
+  dlAnchor(out.toDataURL('image/png'), filename);
+  showToast(`Downloaded ${filename}`);
 }
 
 // Legacy alias used by variant export buttons
@@ -344,11 +342,7 @@ async function exportVariantPng(svgText, viewMode, name, scale = 2) {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(canvas, 0, 0, out.width, out.height);
 
-  out.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    dlAnchor(url, `${name}_${scale}x.png`);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-  });
+  dlAnchor(out.toDataURL('image/png'), `${name}_${scale}x.png`);
 }
 
 // ─── New Asset Creation ──────────────────────────────────────────────────────

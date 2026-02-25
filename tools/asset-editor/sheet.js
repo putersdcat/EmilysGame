@@ -189,27 +189,19 @@ async function exportSpriteSheet() {
 
   sheetState.lastExported = { metadata };
 
-  // Download PNG + companion JSON via blob URL (works everywhere without file system permissions)
-  canvas.toBlob(async blob => {
-    const blobUrl = URL.createObjectURL(blob);
-    sheetState.lastExported.blobUrl = blobUrl;
+  // toDataURL is synchronous — no async callback, no browser download-blocker issue
+  const sheetName = metadata.sheetName;
+  savePng(canvas, `${sheetName}.png`);
 
-    const sheetName = metadata.sheetName;
+  // JSON companion — tiny delay so browser queues as a separate download
+  setTimeout(() => {
+    const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    triggerDownload(jsonUrl, `${sheetName}.json`);
+    setTimeout(() => URL.revokeObjectURL(jsonUrl), 5000);
+  }, 300);
 
-    // Anchor must be in DOM for Firefox + Chrome to trigger download reliably
-    triggerDownload(blobUrl, `${sheetName}.png`);
-
-    // Companion JSON — small delay so browser queues separately
-    setTimeout(() => {
-      const jsonBlob = new Blob([JSON.stringify(metadata, null, 2)], { type: 'application/json' });
-      const jsonUrl = URL.createObjectURL(jsonBlob);
-      triggerDownload(jsonUrl, `${sheetName}.json`);
-      setTimeout(() => URL.revokeObjectURL(jsonUrl), 5000);
-    }, 400);
-
-    showSheetStatus(`✅ Downloaded sheet + metadata (${assets.length} assets)`, 'ok');
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-  });
+  showSheetStatus(`✅ Downloaded sheet + metadata (${assets.length} assets)`, 'ok');
 }
 
 /** Reliably trigger a file download by temporarily appending anchor to DOM */
@@ -417,9 +409,8 @@ async function saveApprovedSlices() {
   const snippets = [];
 
   for (const slice of toSave) {
-    const blob = await canvasToBlob(slice.sliceCanvas);
     const filename = `${slice.assetMeta.id}.png`;
-    await saveFileWithFallback(blob, filename, 'image/png');
+    savePng(slice.sliceCanvas, filename);
     snippets.push(`  '${slice.assetMeta.id}': { pngPath: 'sprites/${filename}', fallback: 'svg' },`);
   }
 
@@ -493,10 +484,9 @@ async function renderImportCompare(entry, uploadCanvas) {
   const approveBtn = document.createElement('button');
   approveBtn.textContent = '✅ Approve & Save';
   approveBtn.className = 'btn-approve-all';
-  approveBtn.onclick = async () => {
-    const blob = await canvasToBlob(uploadCanvas);
+  approveBtn.onclick = () => {
     const filename = `${entry.id}.png`;
-    await saveFileWithFallback(blob, filename, 'image/png');
+    savePng(uploadCanvas, filename);
     showConfigSnippet([`  '${entry.id}': { pngPath: 'sprites/${filename}', fallback: 'svg' },`]);
     container.innerHTML = '<p class="hint ok-text">✅ Saved! Place the file in public/sprites/ and update asset-library.config.ts</p>';
   };
@@ -521,32 +511,12 @@ function showConfigSnippet(lines) {
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-function canvasToBlob(canvas) {
-  return new Promise(res => canvas.toBlob(res, 'image/png'));
-}
-
-async function saveFileWithFallback(blob, filename, type) {
-  if (window.showSaveFilePicker) {
-    try {
-      const handle = await window.showSaveFilePicker({
-        suggestedName: filename,
-        types: [{ description: 'PNG Image', accept: { [type]: ['.png'] } }],
-      });
-      const w = await handle.createWritable();
-      await w.write(blob);
-      await w.close();
-      return;
-    } catch(e) {
-      if (e.name === 'AbortError') return;
-    }
-  }
-  // Fallback: auto-download
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+/**
+ * Synchronous PNG download — toDataURL() runs inline (no async callback)
+ * so Chrome/Safari don't block it as a non-user-gesture download.
+ */
+function savePng(canvas, filename) {
+  triggerDownload(canvas.toDataURL('image/png'), filename);
 }
 
 function showSheetStatus(msg, type) {
