@@ -24,8 +24,11 @@
     "test:quick": "npx playwright test tests/core/ tests/audio/ --reporter=line",
     "screenshot": "npm run sync-soundfonts && tsx scripts/capture-screenshot.ts",
     "convert-midi": "tsx scripts/convert-midi.ts",
+    "music:refresh": "tsx scripts/convert-midi.ts",
+    "transcode:piano-ogg": "tsx scripts/transcode-piano-to-ogg.ts",
     "sync-soundfonts": "tsx scripts/sync-soundfonts.ts",
     "generate:ab-tests": "tsx scripts/generate-asset-ab-tests.ts",
+    "export:world-tiles": "tsx scripts/export-world-tile-assets.ts",
     "content:ingest": "tsx scripts/content-pipeline/index.ts",
     "content:ingest:offline": "tsx scripts/content-pipeline/index.ts --offline",
     "content:validate": "tsx scripts/content-pipeline/index.ts --validate-only",
@@ -42,8 +45,5 @@
     "typescript": "^5.0.0",
     "vite": "^5.0.0"
   },
-  "dependencies": {
-    "midi-player-js": "^2.0.16",
-    "piano-mp3": "^1.0.2"
-  }
+  "dependencies": {}
 }

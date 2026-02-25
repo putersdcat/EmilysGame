@@ -1,59 +1,27 @@
 #!/usr/bin/env tsx
 /**
  * sync-soundfonts.ts
- * Copies bundled piano note samples from node_modules into public/
- * so runtime music playback never depends on CDN-hosted soundfont assets.
+ * Verifies that MidiocrePack.sf2 is present in public/audio/music/.
+ * The SF2 file is committed directly to the repo — no copy step needed.
+ * Previous piano-mp3 sample sync has been removed (replaced by MIDIocre + SF2).
+ * TODO: DOC - SF2 asset pipeline
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
 
-const SRC_DIR = path.resolve(process.cwd(), 'node_modules', 'piano-mp3', 'piano-mp3');
-const OUT_DIR = path.resolve(process.cwd(), 'public', 'audio', 'piano-mp3');
-
-const SAMPLE_REGEX = /^[A-G](b)?\d\.mp3$/;
-
-function ensureDir(dir: string): void {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-}
+const SF2_PATH = path.resolve(process.cwd(), 'public', 'audio', 'music', 'MidiocrePack.sf2');
 
 function main(): void {
-  if (!fs.existsSync(SRC_DIR)) {
-    throw new Error(
-      `Piano sample source directory missing: ${SRC_DIR}. Run npm install to fetch piano-mp3.`
+  if (!fs.existsSync(SF2_PATH)) {
+    console.error(
+      `[sync-soundfonts] ERROR: MidiocrePack.sf2 missing at ${SF2_PATH}.\n` +
+      'Copy it from C:\\GitRoots\\MIDIocre\\SoundFonts\\MidiocrePack.sf2'
     );
+    process.exit(1);
   }
-
-  ensureDir(OUT_DIR);
-
-  const files = fs.readdirSync(SRC_DIR).filter((f) => SAMPLE_REGEX.test(f));
-
-  let copied = 0;
-  for (const file of files) {
-    const src = path.join(SRC_DIR, file);
-    const dst = path.join(OUT_DIR, file);
-    fs.copyFileSync(src, dst);
-    copied++;
-  }
-
-  const manifestPath = path.join(OUT_DIR, 'manifest.json');
-  fs.writeFileSync(
-    manifestPath,
-    JSON.stringify(
-      {
-        source: 'piano-mp3',
-        copied,
-        totalAvailable: files.length,
-        sampleDirectory: OUT_DIR,
-      },
-      null,
-      2
-    )
-  );
-
-  console.log(`[sync-soundfonts] Copied ${copied} piano samples to ${OUT_DIR}`);
+  const { size } = fs.statSync(SF2_PATH);
+  console.log(`[sync-soundfonts] SF2 OK: MidiocrePack.sf2 (${(size / 1024 / 1024).toFixed(1)} MB)`);
 }
 
 main();

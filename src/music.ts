@@ -1,14 +1,12 @@
 /**
- * music.ts — MIDI-only music playback engine.
+ * music.ts — MIDI music playback engine backed by MIDIocre.
  *
- * Plays .mid files from public/audio/music/midi/ through SoundFont piano samples.
- * All oscillator/note-sequence playback has been purged.
- *
- * All audio routes through AudioContext → GainNode for volume/ducking control.
- * TODO: DOC - MIDI music engine architecture
+ * Single Midiocre player instance per session: SF2 loaded once, MIDI swapped per track.
+ * Exports the same API surface as the previous midi-player-js implementation.
+ * TODO: DOC - MIDIocre integration, SF2 path, auto-advance logic
  */
 
-import MidiPlayer from 'midi-player-js';
+import { Midiocre } from './vendor/midiocre';
 import {
   loadMidiManifest, getLoadedMidiTracks, preloadAllMidiTracks,
   isMidiManifestLoaded, type MidiManifestEntry,
@@ -19,7 +17,7 @@ import {
 } from './config/music.config';
 import { isTestMode } from './llm';
 
-// ─── Types ──────────────────────────────────────────────────
+// --- Types ------------------------------------------------------------------
 
 export interface MusicState {
   playState: 'stopped' | 'playing' | 'paused';
@@ -30,142 +28,85 @@ export interface MusicState {
   ducking: boolean;
   midiLoaded: boolean;
   trackProgress: number;
-  /** Tracks last biome to avoid redundant playlist rebuilds */
   _lastBiomeId: number;
-  /** User requested playback; used to resume after async warmup */
   _playRequested: boolean;
 }
 
-// ─── Audio Globals ──────────────────────────────────────────
+export interface SerializedMusicSettings {
+  volume: number;
+  muted: boolean;
+  enabled: boolean;
+}
 
-let _ctx: AudioContext | null = null;
-let _masterGain: GainNode | null = null;
-let _isPlaying = false;
+// --- Module-Level State -----------------------------------------------------
+
+let _player: Midiocre | null = null;
+let _sf2Loaded = false;
+let _sf2Loading: Promise<void> | null = null;
 let _currentTrack: MusicTrack | null = null;
+/** Points to the active MusicState so onStateChange callbacks can reach it */
+let _activeState: MusicState | null = null;
 
-type PlayedNoteHandle = { stop: () => void };
-type PianoSampler = {
-  play: (note: string, when: number, opts?: { duration?: number; gain?: number }) => PlayedNoteHandle;
-};
+const SF2_URL = './audio/music/MidiocrePack.sf2';
+const MIDI_BASE = './audio/music/';
 
-// Local bundled piano sampler
-let _piano: PianoSampler | null = null;
-let _pianoLoading: Promise<PianoSampler | null> | null = null;
-const _pianoBuffers = new Map<string, AudioBuffer>();
+// --- Player Bootstrap -------------------------------------------------------
 
-// midi-player-js instance for .mid file playback
-let _midiPlayer: InstanceType<typeof MidiPlayer.Player> | null = null;
-// Active note handles for MIDI note-off tracking
-const _activeNotes = new Map<string, PlayedNoteHandle>();
-let _preparePlaybackPromise: Promise<void> | null = null;
-
-const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
-const PIANO_SAMPLE_BASE = './audio/piano-mp3';
-const MIN_MIDI_PIANO = 21; // A0
-const MAX_MIDI_PIANO = 108; // C8
-
-// ─── AudioContext Management ────────────────────────────────
-
-function ensureAudioContext(): AudioContext | null {
-  if (isTestMode()) return null; // Silence during automated tests
-  if (_ctx) return _ctx;
+function getOrCreatePlayer(): Midiocre | null {
+  if (isTestMode()) return null;
+  if (_player) return _player;
   try {
-    _ctx = new AudioContext();
-    _masterGain = _ctx.createGain();
-    _masterGain.gain.value = 0.5;
-    _masterGain.connect(_ctx.destination);
-    return _ctx;
+    _player = new Midiocre({ volume: 0.5, loop: false });
+    _player.onStateChange((s) => {
+      const state = _activeState;
+      if (!state) return;
+      if (s === 'stopped') {
+        // Natural end-of-track: _playRequested distinguishes manual stop from auto-advance
+        if (state._playRequested) {
+          state.playState = 'stopped';
+          nextTrack(state);
+        }
+      } else if (s === 'playing') {
+        state.playState = 'playing';
+      } else if (s === 'paused') {
+        state.playState = 'paused';
+      }
+    });
+    _player.onProgress((progress) => {
+      if (_activeState) _activeState.trackProgress = Math.max(0, Math.min(1, progress));
+    });
+    return _player;
   } catch (e) {
-    console.warn('[Music] AudioContext creation failed:', e);
+    console.warn('[Music] Failed to create Midiocre player:', e);
     return null;
   }
 }
 
-// ─── Local Piano Sample Loading ─────────────────────────────
-
-function midiToNoteName(midiNote: number): string {
-  const clamped = Math.max(MIN_MIDI_PIANO, Math.min(MAX_MIDI_PIANO, Math.trunc(midiNote)));
-  const octave = Math.floor(clamped / 12) - 1;
-  const note = NOTE_NAMES[clamped % 12];
-  return `${note}${octave}`;
-}
-
-async function fetchAndDecodeSample(ctx: AudioContext, noteName: string): Promise<void> {
-  if (_pianoBuffers.has(noteName)) return;
-  const resp = await fetch(`${PIANO_SAMPLE_BASE}/${noteName}.mp3`);
-  if (!resp.ok) {
-    throw new Error(`Sample missing: ${noteName}.mp3 (${resp.status})`);
+async function ensureSF2Loaded(player: Midiocre): Promise<boolean> {
+  if (_sf2Loaded) return true;
+  if (_sf2Loading) {
+    await _sf2Loading;
+    return _sf2Loaded;
   }
-  const arr = await resp.arrayBuffer();
-  const buf = await ctx.decodeAudioData(arr.slice(0));
-  _pianoBuffers.set(noteName, buf);
+  // Fetch the SF2 manually and pass ArrayBuffer to bypass MIDIocre's sf2Path URL resolution
+  _sf2Loading = (async () => {
+    const resp = await fetch(SF2_URL);
+    if (!resp.ok) throw new Error(`SF2 fetch failed: ${resp.status} ${SF2_URL}`);
+    const buffer = await resp.arrayBuffer();
+    await player.loadSF2(buffer);
+    _sf2Loaded = true;
+    console.log('[Music] SF2 loaded:', SF2_URL);
+  })().catch((e: unknown) => {
+    console.warn('[Music] SF2 load failed:', e);
+    _sf2Loaded = false;
+  }).finally(() => {
+    _sf2Loading = null;
+  });
+  await _sf2Loading;
+  return _sf2Loaded;
 }
 
-function createPianoSampler(ctx: AudioContext): PianoSampler {
-  return {
-    play(note: string, when: number, opts?: { duration?: number; gain?: number }): PlayedNoteHandle {
-      const buffer = _pianoBuffers.get(note);
-      if (!buffer || !_masterGain) {
-        return { stop: () => void 0 };
-      }
-
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = Math.max(0, Math.min(1, opts?.gain ?? 0.7));
-      src.connect(gainNode);
-      gainNode.connect(_masterGain);
-
-      const startAt = Math.max(ctx.currentTime, when);
-      src.start(startAt);
-
-      const duration = opts?.duration;
-      if (duration && duration > 0) {
-        const stopAt = startAt + duration;
-        try { src.stop(stopAt); } catch { /* no-op */ }
-      }
-
-      return {
-        stop: () => {
-          try { src.stop(); } catch { /* no-op */ }
-          try { src.disconnect(); } catch { /* no-op */ }
-        },
-      };
-    },
-  };
-}
-
-/** Load the bundled local piano sample set */
-async function loadPiano(): Promise<PianoSampler | null> {
-  if (_piano) return _piano;
-  if (_pianoLoading) return _pianoLoading;
-
-  const ctx = ensureAudioContext();
-  if (!ctx || !_masterGain) return null;
-
-  _pianoLoading = (async () => {
-    try {
-      const loadPromises: Promise<void>[] = [];
-      for (let midi = MIN_MIDI_PIANO; midi <= MAX_MIDI_PIANO; midi++) {
-        loadPromises.push(fetchAndDecodeSample(ctx, midiToNoteName(midi)).catch((e) => {
-          console.warn('[Music] Piano sample load warning:', e);
-        }));
-      }
-      await Promise.all(loadPromises);
-
-      _piano = createPianoSampler(ctx);
-      console.log(`[Music] Local piano samples loaded: ${_pianoBuffers.size}`);
-      return _piano;
-    } catch (e) {
-      console.warn('[Music] Local piano sample load failed:', e);
-      return null;
-    }
-  })();
-
-  return _pianoLoading;
-}
-
-// ─── State Factory ──────────────────────────────────────────
+// --- Public API -------------------------------------------------------------
 
 export function createMusicState(): MusicState {
   return {
@@ -182,191 +123,49 @@ export function createMusicState(): MusicState {
   };
 }
 
-async function ensurePlaybackReady(state: MusicState): Promise<void> {
-  if (getLoadedMidiTracks().length > 0 && _piano) return;
-
-  if (!_preparePlaybackPromise) {
-    _preparePlaybackPromise = (async () => {
+/** Initialize: load SF2 + MIDI manifest in parallel. Call once on game start. */
+export async function initMidiTracks(state: MusicState): Promise<void> {
+  // In test mode: just load manifest so track info queries work
+  if (isTestMode()) {
+    try {
       await loadMidiManifest();
-      try {
-        await preloadAllMidiTracks();
-      } catch {
-        // Best effort; play() will bail if still no tracks.
-      }
-      await loadPiano();
-    })().finally(() => {
-      _preparePlaybackPromise = null;
-    });
+      await preloadAllMidiTracks();
+      state.midiLoaded = getLoadedMidiTracks().length > 0;
+    } catch (e) {
+      console.warn('[Music][test] MIDI manifest failed:', e);
+    }
+    return;
   }
 
-  await _preparePlaybackPromise;
-  state.midiLoaded = getLoadedMidiTracks().length > 0;
-}
+  const player = getOrCreatePlayer();
 
-// ─── Init ───────────────────────────────────────────────────
-
-/** Initialize music system: load SoundFont piano + MIDI manifest */
-export async function initMidiTracks(state: MusicState): Promise<void> {
-  // Load SoundFont piano in parallel with MIDI manifest
-  const [piano] = await Promise.all([
-    loadPiano(),
+  const [, manifest] = await Promise.allSettled([
+    player ? ensureSF2Loaded(player) : Promise.resolve(),
     loadMidiManifest(),
   ]);
 
-  if (piano) {
-    console.log('[Music] SoundFont piano ready');
+  if (manifest.status === 'rejected') {
+    console.warn('[Music] MIDI manifest load failed:', (manifest as PromiseRejectedResult).reason);
   }
 
-  // Also preload MIDI track metadata
   try {
     const tracks = await preloadAllMidiTracks();
     if (tracks.length > 0) {
       state.midiLoaded = true;
-      console.log(`[Music] ${tracks.length} MIDI tracks available`);
+      console.log(`[Music] ${tracks.length} MIDI tracks ready`);
     }
   } catch (e) {
     console.warn('[Music] MIDI track metadata loading failed:', e);
   }
 }
 
-// ─── MIDI File Playback ─────────────────────────────────────
-
-/** Fetch a .mid file as ArrayBuffer */
-async function fetchMidiFile(url: string): Promise<ArrayBuffer | null> {
-  try {
-    const resp = await fetch(url);
-    if (!resp.ok) {
-      console.warn(`[Music] MIDI file fetch failed: ${url} (${resp.status})`);
-      return null;
-    }
-    return await resp.arrayBuffer();
-  } catch (e) {
-    console.warn(`[Music] MIDI file fetch error (${url}):`, e);
-    return null;
-  }
-}
-
-/** Convert ArrayBuffer to base64 data URI for midi-player-js */
-function arrayBufferToDataUri(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return 'data:audio/midi;base64,' + btoa(binary);
-}
-
-/** Handle MIDI events from midi-player-js */
-function handleMidiEvent(event: MidiPlayer.Event, _state: MusicState): void {
-  if (!_ctx) return;
-
-  if (event.name === 'Note on' && event.velocity && event.velocity > 0) {
-    const channel = event.channel ?? 0;
-    const noteNum = event.noteNumber ?? 0;
-    const key = `${channel}-${noteNum}`;
-
-    // Stop any existing note with same key
-    const existing = _activeNotes.get(key);
-    if (existing) {
-      try { existing.stop(); } catch { /* ok */ }
-      _activeNotes.delete(key);
-    }
-
-    // Channel 10 (9 in 0-indexed) is percussion — skip for now
-    if (channel === 10) return;
-
-    if (_piano) {
-      const gain = (event.velocity! / 127) * 0.8;
-      try {
-        const noteName = midiToNoteName(noteNum);
-        const node = _piano.play(noteName, _ctx.currentTime, { gain });
-        _activeNotes.set(key, node);
-      } catch { /* instrument may not have this note */ }
-    }
-  } else if (
-    event.name === 'Note off' ||
-    (event.name === 'Note on' && (event.velocity === 0 || !event.velocity))
-  ) {
-    const channel = event.channel ?? 0;
-    const noteNum = event.noteNumber ?? 0;
-    const key = `${channel}-${noteNum}`;
-    const node = _activeNotes.get(key);
-    if (node) {
-      try { node.stop(); } catch { /* ok */ }
-      _activeNotes.delete(key);
-    }
-  }
-}
-
-/** Start MIDI file playback for a track */
-async function startMidiPlayback(track: MusicTrack, state: MusicState): Promise<boolean> {
-  // Find the manifest entry with midiFile path
-  const manifest = await loadMidiManifest();
-  const entry = manifest.tracks.find(
-    (t: MidiManifestEntry & { midiFile?: string }) => t.id === track.id
-  ) as (MidiManifestEntry & { midiFile?: string }) | undefined;
-
-  if (!entry?.midiFile) {
-    console.warn(`[Music] No .mid file for track: ${track.id}`);
-    return false;
-  }
-
-  const midiUrl = `./audio/music/${entry.midiFile}`;
-  const buffer = await fetchMidiFile(midiUrl);
-  if (!buffer) return false;
-
-  // Stop any existing player
-  stopMidiPlayer();
-  _midiPlayer = new MidiPlayer.Player();
-
-  _midiPlayer.on('midiEvent', (event: MidiPlayer.Event) => {
-    handleMidiEvent(event, state);
-  });
-
-  _midiPlayer.on('endOfFile', () => {
-    stopAllNotes();
-    _isPlaying = false;
-    state.playState = 'stopped';
-    state.trackProgress = 1;
-    // Auto-advance after short pause
-    setTimeout(() => {
-      if (state.settings.enabled && !state.settings.muted) {
-        nextTrack(state);
-      }
-    }, 1500);
-  });
-
-  const dataUri = arrayBufferToDataUri(buffer);
-  _midiPlayer.loadDataUri(dataUri);
-  _midiPlayer.play();
-  console.log(`[Music] MIDI playing: ${track.name}`);
-  return true;
-}
-
-/** Stop the midi-player-js player and clear active notes */
-function stopMidiPlayer(): void {
-  if (_midiPlayer) {
-    try { _midiPlayer.stop(); } catch { /* ok */ }
-    _midiPlayer = null;
-  }
-  stopAllNotes();
-}
-
-/** Stop all currently sounding SoundFont notes */
-function stopAllNotes(): void {
-  for (const [, node] of _activeNotes) {
-    try { node.stop(); } catch { /* ok */ }
-  }
-  _activeNotes.clear();
-}
-
-// ─── Playback Control ───────────────────────────────────────
-
 export function play(state: MusicState): void {
-  // In test mode: update state machine with a dummy track — no real audio
+  if (!state.settings.enabled || state.settings.muted) return;
+  state._playRequested = true;
+  _activeState = state;
+
+  // Test mode: fake playback state, no real audio
   if (isTestMode()) {
-    if (state.settings.muted || !state.settings.enabled) return;
-    state._playRequested = true;
     if (state.playlist.length === 0) {
       state.playlist = [{
         id: 'test-track', name: 'Test Track',
@@ -377,83 +176,109 @@ export function play(state: MusicState): void {
     _currentTrack = track;
     state.currentTrackId = track.id;
     state.playState = 'playing';
-    _isPlaying = true;
     return;
   }
 
-  const ctx = ensureAudioContext();
-  if (!ctx) return;
-  if (ctx.state === 'suspended') ctx.resume();
-
-  if (state.settings.muted || !state.settings.enabled) return;
-  state._playRequested = true;
-
-  // Build playlist if empty
+  // Build playlist on first play if empty
   if (state.playlist.length === 0) {
-    state.playlist = buildFullPlaylist();
-  }
-
-  if (state.playlist.length === 0) {
-    // Lazy warmup path: allow play() before async init completes.
-    ensurePlaybackReady(state).then(() => {
-      if (!state._playRequested) return;
-      if (state.settings.muted || !state.settings.enabled) return;
-      if (state.playState === 'playing') return;
-      play(state);
-    }).catch((e) => {
-      console.warn('[Music] Playback warmup failed:', e);
-    });
-    console.warn('[Music] No MIDI tracks available yet (warming up)');
-    return;
+    const tracks = getLoadedMidiTracks();
+    if (tracks.length > 0) {
+      state.playlist = tracks;
+    } else {
+      // Async warmup: wait for MIDI manifest then retry
+      void _warmupAndPlay(state);
+      return;
+    }
   }
 
   const track = state.playlist[state.currentTrackIndex % state.playlist.length];
   _currentTrack = track;
   state.currentTrackId = track.id;
   state.playState = 'playing';
-  _isPlaying = true;
+
+  void _startMidiPlayback(track, state);
+}
+
+async function _warmupAndPlay(state: MusicState): Promise<void> {
+  try {
+    await loadMidiManifest();
+    await preloadAllMidiTracks();
+    state.midiLoaded = getLoadedMidiTracks().length > 0;
+  } catch { /* best effort */ }
+  if (state._playRequested && state.settings.enabled && !state.settings.muted) {
+    play(state);
+  }
+}
+
+async function _startMidiPlayback(track: MusicTrack, state: MusicState): Promise<void> {
+  const player = getOrCreatePlayer();
+  if (!player) return;
+
+  const sf2Ready = await ensureSF2Loaded(player);
+  if (!sf2Ready) {
+    console.warn('[Music] SF2 not ready, skipping track:', track.name);
+    return;
+  }
+
+  // Resolve MIDI URL from manifest
+  const manifest = await loadMidiManifest();
+  const entry: MidiManifestEntry | undefined = manifest.tracks.find(
+    (t: MidiManifestEntry) => t.id === track.id,
+  );
+  if (!entry) {
+    console.warn('[Music] Track missing in manifest:', track.id);
+    setTimeout(() => { if (state._playRequested) nextTrack(state); }, 500);
+    return;
+  }
+
+  const midiUrl = MIDI_BASE + entry.midiFile;
+
+  try {
+    // Stop silently — sets _playRequested=false to avoid auto-advance trigger
+    player.stop();
+    await player.loadMIDI(midiUrl);
+  } catch (e) {
+    console.warn(`[Music] MIDI load failed (${midiUrl}):`, e);
+    setTimeout(() => { if (state._playRequested) nextTrack(state); }, 1000);
+    return;
+  }
 
   applyVolume(state);
 
-  // MIDI file playback only
-  startMidiPlayback(track, state).then(success => {
-    if (!success) {
-      console.warn(`[Music] Failed to play MIDI: ${track.name}, skipping`);
-      // Auto-skip to next track after brief pause
-      setTimeout(() => {
-        if (_isPlaying) nextTrack(state);
-      }, 1000);
-    }
-  });
-
-  console.log(`[Music] Playing: ${track.name}`);
+  try {
+    await player.play();
+    console.log(`[Music] Playing: ${track.name}`);
+  } catch (e) {
+    console.warn(`[Music] Playback failed (${track.name}):`, e);
+    setTimeout(() => { if (state._playRequested) nextTrack(state); }, 1000);
+  }
 }
 
 export function pause(state: MusicState): void {
   state._playRequested = false;
-  _isPlaying = false;
   state.playState = 'paused';
-  stopMidiPlayer();
+  _player?.pause();
 }
 
 export function stop(state: MusicState): void {
   state._playRequested = false;
-  _isPlaying = false;
   state.playState = 'stopped';
-  stopMidiPlayer();
+  state.trackProgress = 0;
+  _player?.stop();
 }
 
 export function nextTrack(state: MusicState): void {
-  const wasPlaying = state.playState === 'playing';
+  const wasPlaying = state.playState === 'playing' || state._playRequested;
   stop(state);
   state.currentTrackIndex = (state.currentTrackIndex + 1) % Math.max(1, state.playlist.length);
   if (wasPlaying) play(state);
 }
 
 export function prevTrack(state: MusicState): void {
-  const wasPlaying = state.playState === 'playing';
+  const wasPlaying = state.playState === 'playing' || state._playRequested;
   stop(state);
-  state.currentTrackIndex = (state.currentTrackIndex - 1 + state.playlist.length) % Math.max(1, state.playlist.length);
+  state.currentTrackIndex =
+    (state.currentTrackIndex - 1 + state.playlist.length) % Math.max(1, state.playlist.length);
   if (wasPlaying) play(state);
 }
 
@@ -469,7 +294,7 @@ export function toggleMute(state: MusicState): void {
   state.settings.muted = !state.settings.muted;
   if (state.settings.muted) {
     pause(state);
-  } else if (state.playState === 'paused') {
+  } else {
     state._playRequested = true;
     play(state);
   }
@@ -481,8 +306,6 @@ export function setVolume(state: MusicState, vol: number): void {
   applyVolume(state);
 }
 
-// ─── Ducking ────────────────────────────────────────────────
-
 export function startDucking(state: MusicState): void {
   state.ducking = true;
   applyVolume(state);
@@ -493,16 +316,13 @@ export function stopDucking(state: MusicState): void {
   applyVolume(state);
 }
 
-// ─── Biome Awareness ────────────────────────────────────────
-
 export function setBiome(state: MusicState, biomeId: number): void {
-  // Only react to actual biome changes
   if (biomeId === state._lastBiomeId) return;
   state._lastBiomeId = biomeId;
 
-  const midiTracks = getMidiTracksForBiome(biomeId);
-  // If biome has specific tracks, use them; otherwise keep full playlist
-  const newPlaylist = midiTracks.length > 0 ? midiTracks : getLoadedMidiTracks();
+  if (!isMidiManifestLoaded()) return;
+  const biomeTracks = getLoadedMidiTracks().filter((t) => t.biomes.includes(biomeId));
+  const newPlaylist = biomeTracks.length > 0 ? biomeTracks : getLoadedMidiTracks();
   if (newPlaylist.length > 0 && newPlaylist[0]?.id !== state.playlist[0]?.id) {
     const wasPlaying = state.playState === 'playing';
     stop(state);
@@ -512,42 +332,16 @@ export function setBiome(state: MusicState, biomeId: number): void {
   }
 }
 
-// ─── Internal Helpers ───────────────────────────────────────
-
-function buildFullPlaylist(): MusicTrack[] {
-  return getLoadedMidiTracks();
-}
-
-function getMidiTracksForBiome(biomeId: number): MusicTrack[] {
-  if (!isMidiManifestLoaded()) return [];
-  return getLoadedMidiTracks().filter(t => t.biomes.includes(biomeId));
-}
-
-function applyVolume(state: MusicState): void {
-  if (!_masterGain) return;
-  const vol = state.settings.muted ? 0 : state.settings.volume;
-  const duckMult = state.ducking ? 0.3 : 1.0;
-  const trackVol = _currentTrack?.volume ?? 1.0;
-  _masterGain.gain.value = vol * duckMult * trackVol;
-}
-
-// ─── Track Progress (for cassette UI) ───────────────────────
-
-/** Call periodically to update trackProgress for MIDI file playback */
+/** Call from the game loop to keep trackProgress synced (fallback; onProgress handles live updates). */
 export function updateMidiProgress(state: MusicState): void {
-  if (_midiPlayer && state.playState === 'playing' && _midiPlayer.isPlaying()) {
-    const remaining = _midiPlayer.getSongPercentRemaining();
-    state.trackProgress = Math.max(0, Math.min(1, (100 - remaining) / 100));
+  if (!_player || state.playState !== 'playing') return;
+  const dur = _player.duration;
+  if (dur > 0) {
+    state.trackProgress = Math.max(0, Math.min(1, _player.currentTime / dur));
   }
 }
 
-// ─── Serialization ──────────────────────────────────────────
-
-export interface SerializedMusicSettings {
-  volume: number;
-  muted: boolean;
-  enabled: boolean;
-}
+// --- Serialization ----------------------------------------------------------
 
 export function serializeMusicSettings(state: MusicState): SerializedMusicSettings {
   return { ...state.settings };
@@ -562,27 +356,32 @@ export function deserializeMusicSettings(data?: SerializedMusicSettings): MusicS
   };
 }
 
-// ─── Info ───────────────────────────────────────────────────
+// --- Info -------------------------------------------------------------------
 
-export function getCurrentTrackInfo(state: MusicState): {
-  name: string; id: string; composer?: string; source?: string;
-} | null {
+export function getCurrentTrackInfo(
+  state: MusicState,
+): { name: string; id: string; composer?: string; source?: string } | null {
   if (!state.currentTrackId) return null;
-  let track: MusicTrack | undefined = getLoadedMidiTracks().find(t => t.id === state.currentTrackId);
-  if (!track) track = state.playlist.find(t => t.id === state.currentTrackId);
+  let track = getLoadedMidiTracks().find((t) => t.id === state.currentTrackId);
+  if (!track) track = state.playlist.find((t) => t.id === state.currentTrackId);
   if (!track) return null;
-  return {
-    name: track.name,
-    id: track.id,
-    composer: track.composer,
-    source: track.source,
-  };
+  return { name: track.name, id: track.id, composer: track.composer, source: track.source };
 }
 
 export function getAllTrackNames(): { id: string; name: string; composer?: string }[] {
-  return getLoadedMidiTracks().map(t => ({ id: t.id, name: t.name, composer: t.composer }));
+  return getLoadedMidiTracks().map((t) => ({ id: t.id, name: t.name, composer: t.composer }));
 }
 
 export function getTotalTrackCount(): number {
   return getLoadedMidiTracks().length;
+}
+
+// --- Internal Helpers -------------------------------------------------------
+
+function applyVolume(state: MusicState): void {
+  if (!_player) return;
+  const vol = state.settings.muted ? 0 : state.settings.volume;
+  const duckMult = state.ducking ? 0.3 : 1.0;
+  const trackVol = _currentTrack?.volume ?? 1.0;
+  _player.volume = vol * duckMult * trackVol;
 }
