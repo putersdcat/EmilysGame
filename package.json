@@ -35,7 +35,8 @@
     "content:qa": "tsx scripts/content-pipeline/index.ts --qa --verbose",
     "content:rephrase": "tsx scripts/content-pipeline/index.ts --rephrase",
     "content:rephrase:dry": "tsx scripts/content-pipeline/index.ts --rephrase --dry-run --verbose",
-    "content:pipeline": "tsx scripts/content-pipeline/index.ts"
+    "content:pipeline": "tsx scripts/content-pipeline/index.ts",
+    "editor": "npx serve tools/asset-editor"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
