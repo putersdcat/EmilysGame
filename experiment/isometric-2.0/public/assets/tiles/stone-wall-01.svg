@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- stone-wall-01: Stacked stone wall segment (elevated) -->
+  <rect width="128" height="128" fill="#6a6a6a"/>
+  <!-- Stone rows -->
+  <g stroke="#505050" stroke-width="1.5" fill="none">
+    <!-- Row 1 (bottom) -->
+    <rect x="2" y="90" width="40" height="36" rx="2" fill="#707070"/>
+    <rect x="44" y="90" width="42" height="36" rx="2" fill="#646464"/>
+    <rect x="88" y="90" width="38" height="36" rx="2" fill="#6c6c6c"/>
+    <!-- Row 2 -->
+    <rect x="10" y="58" width="35" height="30" rx="2" fill="#727272"/>
+    <rect x="47" y="58" width="40" height="30" rx="2" fill="#666666"/>
+    <rect x="89" y="58" width="30" height="30" rx="2" fill="#6e6e6e"/>
+    <!-- Row 3 -->
+    <rect x="5" y="28" width="38" height="28" rx="2" fill="#6a6a6a"/>
+    <rect x="45" y="28" width="42" height="28" rx="2" fill="#626262"/>
+    <rect x="89" y="28" width="35" height="28" rx="2" fill="#6c6c6c"/>
+    <!-- Row 4 (top) -->
+    <rect x="8" y="2" width="36" height="24" rx="2" fill="#747474"/>
+    <rect x="46" y="2" width="38" height="24" rx="2" fill="#686868"/>
+    <rect x="86" y="2" width="38" height="24" rx="2" fill="#707070"/>
+  </g>
+  <!-- Mortar lines (gap highlights) -->
+  <g stroke="#585858" stroke-width="0.5" opacity="0.4">
+    <line x1="42" y1="90" x2="42" y2="128"/>
+    <line x1="86" y1="90" x2="86" y2="128"/>
+    <line x1="45" y1="58" x2="45" y2="88"/>
+    <line x1="87" y1="58" x2="87" y2="88"/>
+    <line x1="43" y1="28" x2="43" y2="56"/>
+    <line x1="87" y1="28" x2="87" y2="56"/>
+  </g>
+  <!-- Weathering -->
+  <g fill="#5a5a5a" opacity="0.2">
+    <circle cx="25" cy="75" r="4"/>
+    <circle cx="70" cy="42" r="3"/>
+    <circle cx="100" cy="105" r="5"/>
+  </g>
+</svg>

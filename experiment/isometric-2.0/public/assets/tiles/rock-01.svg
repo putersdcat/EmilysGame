@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- rock-01: Light gray stone with cracks and facets -->
+  <rect width="128" height="128" fill="#808080"/>
+  <!-- Facet planes -->
+  <polygon points="0,0 60,10 50,60 0,55" fill="#8a8a8a" opacity="0.5"/>
+  <polygon points="60,10 128,0 128,50 70,55" fill="#757575" opacity="0.5"/>
+  <polygon points="50,60 70,55 128,50 128,128 0,128 0,55" fill="#727272" opacity="0.4"/>
+  <!-- Highlight facet -->
+  <polygon points="60,10 90,20 80,45 50,40" fill="#9a9a9a" opacity="0.3"/>
+  <!-- Cracks -->
+  <g stroke="#555" stroke-width="1.2" fill="none" opacity="0.5">
+    <polyline points="35,20 42,35 38,55 45,70"/>
+    <polyline points="75,15 82,30 90,28"/>
+    <polyline points="20,80 35,85 40,100 55,105"/>
+    <polyline points="85,60 95,70 88,90 100,105"/>
+  </g>
+  <!-- Lichen spots -->
+  <g fill="#6a7a5a" opacity="0.25">
+    <circle cx="25" cy="45" r="5"/>
+    <circle cx="95" cy="40" r="4"/>
+    <circle cx="60" cy="95" r="6"/>
+  </g>
+</svg>

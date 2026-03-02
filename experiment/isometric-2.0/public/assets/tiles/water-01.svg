@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- water-01: Clear pond water with ripple rings -->
+  <defs>
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2277bb"/>
+      <stop offset="50%" stop-color="#2266aa"/>
+      <stop offset="100%" stop-color="#1a5599"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#waterGrad)"/>
+  <!-- Depth variation -->
+  <ellipse cx="64" cy="64" rx="40" ry="35" fill="#1a5090" opacity="0.3"/>
+  <!-- Ripple rings -->
+  <g stroke="#4499cc" stroke-width="0.8" fill="none" opacity="0.4">
+    <ellipse cx="40" cy="45" rx="12" ry="8"/>
+    <ellipse cx="40" cy="45" rx="18" ry="12"/>
+    <ellipse cx="90" cy="85" rx="10" ry="7"/>
+    <ellipse cx="90" cy="85" rx="16" ry="11"/>
+  </g>
+  <!-- Surface highlights (sun reflection) -->
+  <g fill="#88ccee" opacity="0.25">
+    <ellipse cx="55" cy="30" rx="8" ry="3"/>
+    <ellipse cx="80" cy="50" rx="6" ry="2.5"/>
+    <ellipse cx="35" cy="80" rx="5" ry="2"/>
+  </g>
+  <!-- Subtle wave lines -->
+  <g stroke="#3388bb" stroke-width="0.6" fill="none" opacity="0.3">
+    <path d="M 10,60 Q 30,55 50,60 Q 70,65 90,60 Q 110,55 128,60"/>
+    <path d="M 0,90 Q 20,85 40,90 Q 60,95 80,90 Q 100,85 128,90"/>
+  </g>
+</svg>

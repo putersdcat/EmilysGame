@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- rock-02: Dark elevated granite with angular facets -->
+  <rect width="128" height="128" fill="#606060"/>
+  <!-- Angular facets -->
+  <polygon points="0,0 65,5 55,55 10,50" fill="#6a6a6a" opacity="0.6"/>
+  <polygon points="65,5 128,0 120,45 70,50" fill="#545454" opacity="0.6"/>
+  <polygon points="10,50 55,55 60,128 0,128" fill="#585858" opacity="0.5"/>
+  <polygon points="70,50 120,45 128,128 60,128" fill="#505050" opacity="0.5"/>
+  <!-- Deep cracks -->
+  <g stroke="#3a3a3a" stroke-width="1.5" fill="none" opacity="0.6">
+    <polyline points="30,15 40,40 35,65 50,85"/>
+    <polyline points="80,10 75,35 85,50"/>
+    <polyline points="15,90 30,95 45,110"/>
+    <polyline points="90,70 100,85 95,105 110,115"/>
+  </g>
+  <!-- Crystal/mineral flecks -->
+  <g fill="#8a8aaa" opacity="0.3">
+    <rect x="40" y="30" width="3" height="3" transform="rotate(20,41.5,31.5)"/>
+    <rect x="85" y="60" width="2.5" height="2.5" transform="rotate(45,86.25,61.25)"/>
+    <rect x="25" y="75" width="2" height="2" transform="rotate(10,26,76)"/>
+  </g>
+</svg>
