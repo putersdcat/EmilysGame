@@ -135,194 +135,367 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 }
 
 // ─── Variant SVG Generation ──────────────────────────────────
-// Procedural SVGs for different connection variants.
-// These serve as visual placeholders until hand-crafted assets are made.
+// High-quality procedural SVGs for connection variants.
+// TODO: DOC — SVG generation patterns for each feature kind
+
+/**
+ * Generate individual stone block SVGs for a rectangular region.
+ * Produces staggered rows of stones with mortar gaps, color variation, and cracks.
+ */
+function stoneBlocks(x: number, y: number, w: number, h: number, seed: number): string {
+  const blocks: string[] = [];
+  const gap = 2; // mortar gap
+  const rowH = 12;
+  let row = 0;
+
+  for (let ry = y; ry < y + h - 2; ry += rowH + gap) {
+    const remainH = Math.min(rowH, y + h - ry - gap);
+    if (remainH < 4) break;
+    // Stagger every other row
+    const offset = (row % 2 === 0) ? 0 : 14;
+    let bx = x + offset;
+    let stoneIdx = 0;
+
+    while (bx < x + w - 2) {
+      const hash = ((seed * 7919 + row * 6581 + stoneIdx * 3571) >>> 0);
+      const bw = 20 + (hash % 18); // Stone width 20-37
+      const actualW = Math.min(bw, x + w - bx - gap);
+      if (actualW < 8) break;
+
+      // Color variation: base grey with slight warm/cool shift
+      const base = 88 + (hash >> 8) % 30;
+      const r = base + ((hash >> 12) % 10) - 5;
+      const g = base + ((hash >> 16) % 8) - 4;
+      const b = base + ((hash >> 20) % 12) - 2;
+
+      blocks.push(
+        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${remainH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
+      );
+
+      // Top highlight
+      blocks.push(
+        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${Math.min(3, remainH)}" rx="1" fill="rgba(255,255,255,0.08)" />`
+      );
+
+      // Bottom shadow
+      blocks.push(
+        `<rect x="${bx}" y="${ry + remainH - 2}" width="${actualW}" height="2" rx="0.5" fill="rgba(0,0,0,0.12)" />`
+      );
+
+      // Occasional crack
+      if ((hash >> 24) % 5 === 0 && actualW > 14) {
+        const cx1 = bx + 4 + (hash % (actualW - 8));
+        const cy1 = ry + 2;
+        const cx2 = cx1 + ((hash >> 4) % 5) - 2;
+        const cy2 = ry + remainH - 2;
+        blocks.push(
+          `<line x1="${cx1}" y1="${cy1}" x2="${cx2}" y2="${cy2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
+        );
+      }
+
+      bx += actualW + gap;
+      stoneIdx++;
+    }
+    row++;
+  }
+  return blocks.join('\n    ');
+}
+
+/**
+ * Generate capstone row (slightly different colored stones on top of wall).
+ */
+function capStones(x: number, y: number, w: number, seed: number): string {
+  const caps: string[] = [];
+  const capH = 6;
+  let bx = x;
+  let idx = 0;
+  while (bx < x + w - 2) {
+    const hash = ((seed * 4271 + idx * 9137) >>> 0);
+    const bw = 16 + (hash % 14);
+    const actualW = Math.min(bw, x + w - bx - 2);
+    if (actualW < 6) break;
+    const grey = 105 + (hash >> 8) % 20;
+    caps.push(
+      `<rect x="${bx}" y="${y}" width="${actualW}" height="${capH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
+    );
+    bx += actualW + 2;
+    idx++;
+  }
+  return caps.join('\n    ');
+}
+
+/** Get wall footprint bounds based on variant and connection direction. */
+function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
+  const W = 48; // wall thickness
+  const off = (128 - W) / 2; // 40
+  const rects: Array<{x:number,y:number,w:number,h:number}> = [];
+
+  // Arm definitions: which edges the wall extends to
+  const arms = { top: false, right: false, bottom: false, left: false };
+  switch (variant) {
+    case 'straight-h': arms.left = true; arms.right = true; break;
+    case 'straight-v': arms.top = true; arms.bottom = true; break;
+    case 'corner-tr': arms.top = true; arms.right = true; break;
+    case 'corner-tl': arms.top = true; arms.left = true; break;
+    case 'corner-br': arms.bottom = true; arms.right = true; break;
+    case 'corner-bl': arms.bottom = true; arms.left = true; break;
+    case 'cross': arms.top = arms.right = arms.bottom = arms.left = true; break;
+    case 'tee-t': arms.left = arms.right = arms.bottom = true; break;
+    case 'tee-b': arms.left = arms.right = arms.top = true; break;
+    case 'tee-r': arms.top = arms.bottom = arms.left = true; break;
+    case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
+    case 'end-t': arms.bottom = true; break;
+    case 'end-b': arms.top = true; break;
+    case 'end-r': arms.left = true; break;
+    case 'end-l': arms.right = true; break;
+    default: // isolated — central block
+      rects.push({ x: off, y: off, w: W, h: W });
+      return { rects };
+  }
+
+  // Central core
+  rects.push({ x: off, y: off, w: W, h: W });
+  // Arms extending to tile edges
+  if (arms.top) rects.push({ x: off, y: 0, w: W, h: off });
+  if (arms.bottom) rects.push({ x: off, y: off + W, w: W, h: off });
+  if (arms.left) rects.push({ x: 0, y: off, w: off, h: W });
+  if (arms.right) rects.push({ x: off + W, y: off, w: off, h: W });
+
+  return { rects };
+}
 
 /** Generate an SVG for a stone-wall tile variant. */
 function stoneWallSvg(variant: FeatureVariant): string {
-  const wallColor = '#5a5a6a';
-  const wallDark = '#3a3a4a';
-  const mortarColor = '#8a8a8a';
+  const { rects } = wallBounds(variant);
+  const parts: string[] = [];
+  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
 
-  // Base wall block on all variants
-  let paths = '';
+  // Grass background
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  // Subtle grass patches under the wall
+  parts.push(`<ellipse cx="30" cy="100" rx="18" ry="12" fill="#458550" opacity="0.4" />`);
+  parts.push(`<ellipse cx="100" cy="30" rx="16" ry="10" fill="#2d6838" opacity="0.3" />`);
 
-  switch (variant) {
-    case 'straight-h':
-      paths = `
-        <rect x="0" y="36" width="128" height="56" fill="${wallColor}" />
-        <line x1="0" y1="52" x2="128" y2="52" stroke="${mortarColor}" stroke-width="1.5" />
-        <line x1="0" y1="68" x2="128" y2="68" stroke="${mortarColor}" stroke-width="1.5" />
-        <rect x="0" y="36" width="128" height="4" fill="${wallDark}" />`;
-      break;
-    case 'straight-v':
-      paths = `
-        <rect x="36" y="0" width="56" height="128" fill="${wallColor}" />
-        <line x1="52" y1="0" x2="52" y2="128" stroke="${mortarColor}" stroke-width="1.5" />
-        <line x1="68" y1="0" x2="68" y2="128" stroke="${mortarColor}" stroke-width="1.5" />
-        <rect x="36" y="0" width="4" height="128" fill="${wallDark}" />`;
-      break;
-    case 'corner-tr':
-      paths = `
-        <rect x="36" y="0" width="56" height="92" fill="${wallColor}" />
-        <rect x="36" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="36" y="36" width="4" height="56" fill="${wallDark}" />
-        <rect x="36" y="0" width="4" height="40" fill="${wallDark}" />
-        <line x1="52" y1="0" x2="52" y2="36" stroke="${mortarColor}" stroke-width="1" />`;
-      break;
-    case 'corner-tl':
-      paths = `
-        <rect x="36" y="0" width="56" height="92" fill="${wallColor}" />
-        <rect x="0" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="88" y="36" width="4" height="56" fill="${wallDark}" />
-        <rect x="88" y="0" width="4" height="40" fill="${wallDark}" />
-        <line x1="76" y1="0" x2="76" y2="36" stroke="${mortarColor}" stroke-width="1" />`;
-      break;
-    case 'corner-br':
-      paths = `
-        <rect x="36" y="36" width="56" height="92" fill="${wallColor}" />
-        <rect x="36" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="36" y="36" width="4" height="92" fill="${wallDark}" />
-        <line x1="52" y1="92" x2="52" y2="128" stroke="${mortarColor}" stroke-width="1" />`;
-      break;
-    case 'corner-bl':
-      paths = `
-        <rect x="36" y="36" width="56" height="92" fill="${wallColor}" />
-        <rect x="0" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="88" y="36" width="4" height="92" fill="${wallDark}" />
-        <line x1="76" y1="92" x2="76" y2="128" stroke="${mortarColor}" stroke-width="1" />`;
-      break;
-    case 'cross':
-      paths = `
-        <rect x="36" y="0" width="56" height="128" fill="${wallColor}" />
-        <rect x="0" y="36" width="128" height="56" fill="${wallColor}" />
-        <rect x="36" y="0" width="4" height="128" fill="${wallDark}" />
-        <line x1="0" y1="52" x2="36" y2="52" stroke="${mortarColor}" stroke-width="1" />
-        <line x1="92" y1="52" x2="128" y2="52" stroke="${mortarColor}" stroke-width="1" />`;
-      break;
-    case 'tee-t':
-      paths = `
-        <rect x="0" y="36" width="128" height="56" fill="${wallColor}" />
-        <rect x="36" y="36" width="56" height="92" fill="${wallColor}" />
-        <line x1="0" y1="52" x2="128" y2="52" stroke="${mortarColor}" stroke-width="1" />
-        <rect x="36" y="36" width="4" height="92" fill="${wallDark}" />`;
-      break;
-    case 'tee-b':
-      paths = `
-        <rect x="0" y="36" width="128" height="56" fill="${wallColor}" />
-        <rect x="36" y="0" width="56" height="92" fill="${wallColor}" />
-        <line x1="0" y1="68" x2="128" y2="68" stroke="${mortarColor}" stroke-width="1" />
-        <rect x="36" y="0" width="4" height="92" fill="${wallDark}" />`;
-      break;
-    case 'tee-r':
-      paths = `
-        <rect x="36" y="0" width="56" height="128" fill="${wallColor}" />
-        <rect x="0" y="36" width="92" height="56" fill="${wallColor}" />
-        <line x1="52" y1="0" x2="52" y2="128" stroke="${mortarColor}" stroke-width="1" />
-        <rect x="0" y="36" width="92" height="4" fill="${wallDark}" />`;
-      break;
-    case 'tee-l':
-      paths = `
-        <rect x="36" y="0" width="56" height="128" fill="${wallColor}" />
-        <rect x="36" y="36" width="92" height="56" fill="${wallColor}" />
-        <line x1="68" y1="0" x2="68" y2="128" stroke="${mortarColor}" stroke-width="1" />
-        <rect x="36" y="36" width="92" height="4" fill="${wallDark}" />`;
-      break;
-    case 'end-t':
-      paths = `
-        <rect x="36" y="36" width="56" height="92" fill="${wallColor}" />
-        <rect x="36" y="36" width="4" height="92" fill="${wallDark}" />
-        <circle cx="64" cy="50" r="8" fill="${wallDark}" opacity="0.4" />`;
-      break;
-    case 'end-b':
-      paths = `
-        <rect x="36" y="0" width="56" height="92" fill="${wallColor}" />
-        <rect x="36" y="0" width="4" height="92" fill="${wallDark}" />
-        <circle cx="64" cy="78" r="8" fill="${wallDark}" opacity="0.4" />`;
-      break;
-    case 'end-r':
-      paths = `
-        <rect x="0" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="0" y="36" width="92" height="4" fill="${wallDark}" />
-        <circle cx="78" cy="64" r="8" fill="${wallDark}" opacity="0.4" />`;
-      break;
-    case 'end-l':
-      paths = `
-        <rect x="36" y="36" width="92" height="56" fill="${wallColor}" />
-        <rect x="36" y="36" width="92" height="4" fill="${wallDark}" />
-        <circle cx="50" cy="64" r="8" fill="${wallDark}" opacity="0.4" />`;
-      break;
-    default: // isolated
-      paths = `
-        <rect x="32" y="32" width="64" height="64" fill="${wallColor}" rx="4" />
-        <rect x="32" y="32" width="64" height="4" fill="${wallDark}" />
-        <rect x="32" y="32" width="4" height="64" fill="${wallDark}" />`;
+  // Wall shadow (offset slightly)
+  for (const r of rects) {
+    parts.push(
+      `<rect x="${r.x + 3}" y="${r.y + 3}" width="${r.w}" height="${r.h}" fill="rgba(0,0,0,0.2)" rx="1" />`
+    );
   }
 
+  // Stone body — clip to wall footprint then draw stones
+  const clipId = `wc-${variant.replace(/[^a-z]/g, '')}`;
+  let clipRects = '';
+  for (const r of rects) {
+    clipRects += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" />`;
+  }
+  parts.push(`<defs><clipPath id="${clipId}">${clipRects}</clipPath></defs>`);
+
+  // Wall base fill
+  for (const r of rects) {
+    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#6a6a72" rx="1" />`);
+  }
+
+  // Stone blocks (clipped to wall shape)
+  parts.push(`<g clip-path="url(#${clipId})">`);
+  // Draw stones into the bounding box of all rects
+  const minX = Math.min(...rects.map(r => r.x));
+  const minY = Math.min(...rects.map(r => r.y));
+  const maxX = Math.max(...rects.map(r => r.x + r.w));
+  const maxY = Math.max(...rects.map(r => r.y + r.h));
+  parts.push(stoneBlocks(minX, minY, maxX - minX, maxY - minY, seed));
+
+  // Cap stones along top edges
+  for (const r of rects) {
+    parts.push(capStones(r.x, r.y, r.w, seed + r.x * 17 + r.y * 31));
+  }
+  parts.push(`</g>`);
+
+  // Wall border/outline
+  for (const r of rects) {
+    parts.push(
+      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" rx="1" />`
+    );
+  }
+
+  // Small vegetation at wall base
+  const grassSeeds = [
+    { x: 8, y: 118 }, { x: 35, y: 122 }, { x: 90, y: 120 }, { x: 115, y: 116 },
+    { x: 60, y: 124 }, { x: 20, y: 6 }, { x: 75, y: 4 }, { x: 110, y: 8 },
+  ];
+  parts.push(`<g stroke="#4a8a54" stroke-width="1.2" stroke-linecap="round" opacity="0.5">`);
+  for (const gs of grassSeeds) {
+    // Only draw grass if it's NOT inside the wall footprint
+    const insideWall = rects.some(r =>
+      gs.x >= r.x && gs.x <= r.x + r.w && gs.y >= r.y && gs.y <= r.y + r.h
+    );
+    if (!insideWall) {
+      parts.push(`<line x1="${gs.x}" y1="${gs.y}" x2="${gs.x - 2}" y2="${gs.y - 6}" />`);
+      parts.push(`<line x1="${gs.x + 4}" y1="${gs.y}" x2="${gs.x + 6}" y2="${gs.y - 5}" />`);
+    }
+  }
+  parts.push(`</g>`);
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" fill="#3a7d44" />
-    ${paths}
+    ${parts.join('\n    ')}
   </svg>`;
 }
 
 /** Generate an SVG for a river tile variant. */
 function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
-  const waterColor = '#1a5588';
-  const waterLight = '#2277aa';
-  const bankColor = '#7a6a30';
+  const parts: string[] = [];
 
-  let water = '';
-  let banks = '';
+  // Grass background
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  parts.push(`<ellipse cx="20" cy="20" rx="14" ry="10" fill="#458550" opacity="0.3" />`);
+  parts.push(`<ellipse cx="108" cy="108" rx="12" ry="8" fill="#2d6838" opacity="0.25" />`);
 
-  // Draw water channel based on connections
+  // Determine channel areas
+  const chW = 64; // channel width
+  const off = (128 - chW) / 2; // 32
+  const bankW = 10; // bank thickness
+
+  // Helper: draw a natural-edged bank using wavy paths
+  function bankPath(x1: number, y1: number, x2: number, y2: number, waveSide: number): string {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const steps = Math.max(4, Math.floor(len / 16));
+    let d = `M ${x1} ${y1}`;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const mx = x1 + dx * t;
+      const my = y1 + dy * t;
+      const wave = Math.sin(t * Math.PI * 3) * 3 * waveSide;
+      // Perpendicular offset
+      const nx = -dy / len * wave;
+      const ny = dx / len * wave;
+      d += ` L ${(mx + nx).toFixed(1)} ${(my + ny).toFixed(1)}`;
+    }
+    return d;
+  }
+
+  // Isolated: circular pond
+  if (variant === 'isolated') {
+    parts.push(`<circle cx="64" cy="64" r="38" fill="#5a4a28" />`);
+    parts.push(`<circle cx="64" cy="64" r="34" fill="#1a5588" />`);
+    parts.push(`<circle cx="64" cy="64" r="24" fill="#2277aa" opacity="0.5" />`);
+    parts.push(`<ellipse cx="58" cy="55" rx="10" ry="4" fill="rgba(255,255,255,0.1)" />`);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">\n    ${parts.join('\n    ')}\n  </svg>`;
+  }
+
+  // Draw channel water with depth gradient
+  const waterDefsId = `wg-${variant.replace(/[^a-z]/g, '')}`;
+  parts.push(`<defs>`);
+  parts.push(`  <linearGradient id="${waterDefsId}-h" x1="0" y1="0" x2="0" y2="1">`);
+  parts.push(`    <stop offset="0%" stop-color="#3a6a30" />`);
+  parts.push(`    <stop offset="15%" stop-color="#1a5588" />`);
+  parts.push(`    <stop offset="50%" stop-color="#0d3a6a" />`);
+  parts.push(`    <stop offset="85%" stop-color="#1a5588" />`);
+  parts.push(`    <stop offset="100%" stop-color="#3a6a30" />`);
+  parts.push(`  </linearGradient>`);
+  parts.push(`  <linearGradient id="${waterDefsId}-v" x1="0" y1="0" x2="1" y2="0">`);
+  parts.push(`    <stop offset="0%" stop-color="#3a6a30" />`);
+  parts.push(`    <stop offset="15%" stop-color="#1a5588" />`);
+  parts.push(`    <stop offset="50%" stop-color="#0d3a6a" />`);
+  parts.push(`    <stop offset="85%" stop-color="#1a5588" />`);
+  parts.push(`    <stop offset="100%" stop-color="#3a6a30" />`);
+  parts.push(`  </linearGradient>`);
+  parts.push(`</defs>`);
+
+  // Water channels
   if (conn.top || conn.bottom) {
-    water += `<rect x="28" y="0" width="72" height="128" fill="${waterColor}" />`;
-    water += `<rect x="40" y="0" width="48" height="128" fill="${waterLight}" opacity="0.4" />`;
+    const y1 = conn.top ? 0 : off;
+    const y2 = conn.bottom ? 128 : off + chW;
+    parts.push(`<rect x="${off - 4}" y="${y1}" width="${chW + 8}" height="${y2 - y1}" fill="url(#${waterDefsId}-v)" />`);
   }
   if (conn.left || conn.right) {
-    water += `<rect x="0" y="28" width="128" height="72" fill="${waterColor}" />`;
-    water += `<rect x="0" y="40" width="128" height="48" fill="${waterLight}" opacity="0.4" />`;
+    const x1 = conn.left ? 0 : off;
+    const x2 = conn.right ? 128 : off + chW;
+    parts.push(`<rect x="${x1}" y="${off - 4}" width="${x2 - x1}" height="${chW + 8}" fill="url(#${waterDefsId}-h)" />`);
   }
 
-  // Central pool for isolated / single-end
-  if (variant === 'isolated') {
-    water = `<circle cx="64" cy="64" r="40" fill="${waterColor}" />
-             <circle cx="64" cy="64" r="28" fill="${waterLight}" opacity="0.4" />`;
+  // Deeper center highlight
+  if (conn.top || conn.bottom) {
+    const y1 = conn.top ? 0 : off + 8;
+    const y2 = conn.bottom ? 128 : off + chW - 8;
+    parts.push(`<rect x="${off + 14}" y="${y1}" width="${chW - 28}" height="${y2 - y1}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
+  }
+  if (conn.left || conn.right) {
+    const x1 = conn.left ? 0 : off + 8;
+    const x2 = conn.right ? 128 : off + chW - 8;
+    parts.push(`<rect x="${x1}" y="${off + 14}" width="${x2 - x1}" height="${chW - 28}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
   }
 
-  // Banks: filled strips on non-connected sides
-  if (!conn.top && variant !== 'isolated') {
-    banks += `<rect x="24" y="0" width="80" height="8" fill="${bankColor}" rx="2" />`;
+  // Natural-edge banks with earthy colors
+  const bankColors = ['#6a5a28', '#5a4a20', '#7a6a34'];
+  if (!conn.top) {
+    const by = conn.left || conn.right ? off - 4 : off;
+    parts.push(`<path d="${bankPath(off - 6, by, off + chW + 6, by, 1)} L ${off + chW + 6} ${by + bankW} L ${off - 6} ${by + bankW} Z" fill="${bankColors[0]}" />`);
+    // Pebbles on bank
+    parts.push(`<circle cx="${off + 10}" cy="${by + 5}" r="2" fill="#8a7a48" opacity="0.5" />`);
+    parts.push(`<circle cx="${off + chW - 8}" cy="${by + 4}" r="1.5" fill="#9a8a58" opacity="0.4" />`);
   }
-  if (!conn.bottom && variant !== 'isolated') {
-    banks += `<rect x="24" y="120" width="80" height="8" fill="${bankColor}" rx="2" />`;
+  if (!conn.bottom) {
+    const by = conn.left || conn.right ? off + chW + 4 : off + chW;
+    parts.push(`<path d="${bankPath(off - 6, by, off + chW + 6, by, -1)} L ${off + chW + 6} ${by - bankW} L ${off - 6} ${by - bankW} Z" fill="${bankColors[1]}" />`);
+    parts.push(`<circle cx="${off + 20}" cy="${by - 4}" r="2" fill="#8a7a48" opacity="0.4" />`);
   }
-  if (!conn.left && variant !== 'isolated') {
-    banks += `<rect x="0" y="24" width="8" height="80" fill="${bankColor}" rx="2" />`;
+  if (!conn.left) {
+    const bx = conn.top || conn.bottom ? off - 4 : off;
+    parts.push(`<path d="${bankPath(bx, off - 6, bx, off + chW + 6, 1)} L ${bx + bankW} ${off + chW + 6} L ${bx + bankW} ${off - 6} Z" fill="${bankColors[2]}" />`);
+    parts.push(`<circle cx="${bx + 5}" cy="${off + 14}" r="1.5" fill="#8a7a48" opacity="0.5" />`);
   }
-  if (!conn.right && variant !== 'isolated') {
-    banks += `<rect x="120" y="24" width="8" height="80" fill="${bankColor}" rx="2" />`;
+  if (!conn.right) {
+    const bx = conn.top || conn.bottom ? off + chW + 4 : off + chW;
+    parts.push(`<path d="${bankPath(bx, off - 6, bx, off + chW + 6, -1)} L ${bx - bankW} ${off + chW + 6} L ${bx - bankW} ${off - 6} Z" fill="${bankColors[0]}" />`);
+    parts.push(`<circle cx="${bx - 5}" cy="${off + chW - 10}" r="2" fill="#9a8a58" opacity="0.4" />`);
   }
 
-  // Flow direction indicator (subtle ripple lines)
-  let ripples = '';
+  // Flow ripple lines
+  parts.push(`<g opacity="0.2">`);
   if (conn.top && conn.bottom) {
-    // Vertical flow
-    for (let y = 16; y < 128; y += 24) {
-      ripples += `<line x1="44" y1="${y}" x2="84" y2="${y}" stroke="rgba(255,255,255,0.15)" stroke-width="2" />`;
-    }
-  } else if (conn.left && conn.right) {
-    // Horizontal flow
-    for (let x = 16; x < 128; x += 24) {
-      ripples += `<line x1="${x}" y1="44" x2="${x}" y2="84" stroke="rgba(255,255,255,0.15)" stroke-width="2" />`;
+    for (let y = 10; y < 128; y += 18) {
+      const x1 = off + 10 + Math.sin(y * 0.1) * 4;
+      const x2 = off + chW - 10 + Math.sin(y * 0.1 + 1) * 4;
+      parts.push(`<path d="M ${x1} ${y} Q ${64 + Math.sin(y * 0.08) * 6} ${y + 3} ${x2} ${y}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
     }
   }
+  if (conn.left && conn.right) {
+    for (let x = 10; x < 128; x += 18) {
+      const y1 = off + 10 + Math.sin(x * 0.1) * 4;
+      const y2 = off + chW - 10 + Math.sin(x * 0.1 + 1) * 4;
+      parts.push(`<path d="M ${x} ${y1} Q ${x + 3} ${64 + Math.sin(x * 0.08) * 6} ${x} ${y2}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
+    }
+  }
+  parts.push(`</g>`);
+
+  // Surface light reflection
+  parts.push(`<g opacity="0.15">`);
+  if (conn.top || conn.bottom) {
+    parts.push(`<ellipse cx="${64 - 6}" cy="40" rx="8" ry="3" fill="white" />`);
+    parts.push(`<ellipse cx="${64 + 4}" cy="88" rx="6" ry="2.5" fill="white" />`);
+  }
+  if (conn.left || conn.right) {
+    parts.push(`<ellipse cx="40" cy="${64 - 4}" rx="3" ry="7" fill="white" />`);
+    parts.push(`<ellipse cx="90" cy="${64 + 2}" rx="2.5" ry="6" fill="white" />`);
+  }
+  parts.push(`</g>`);
+
+  // Shore vegetation (small grass tufts near banks)
+  parts.push(`<g stroke="#4a9a44" stroke-width="1.2" stroke-linecap="round" opacity="0.45">`);
+  if (!conn.top) {
+    parts.push(`<line x1="${off - 2}" y1="${off + bankW + 2}" x2="${off - 5}" y2="${off + bankW - 5}" />`);
+    parts.push(`<line x1="${off + chW + 2}" y1="${off + bankW + 3}" x2="${off + chW + 5}" y2="${off + bankW - 4}" />`);
+  }
+  if (!conn.bottom) {
+    parts.push(`<line x1="${off + 4}" y1="${off + chW - bankW}" x2="${off + 1}" y2="${off + chW - bankW + 6}" />`);
+    parts.push(`<line x1="${off + chW - 4}" y1="${off + chW - bankW - 1}" x2="${off + chW - 1}" y2="${off + chW - bankW + 5}" />`);
+  }
+  parts.push(`</g>`);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" fill="#3a7d44" />
-    ${water}
-    ${banks}
-    ${ripples}
+    ${parts.join('\n    ')}
   </svg>`;
 }
 
@@ -330,25 +503,185 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
 function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
   const hash = ((worldCol * 31337) ^ (worldRow * 82139)) >>> 0;
   const baseGreen = 0x2a + (hash % 30);
+  const parts: string[] = [];
+
+  // Rich base with color patches
+  parts.push(`<rect width="128" height="128" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />`);
+  // Ground variation
+  const p1g = baseGreen + 10;
+  parts.push(`<ellipse cx="40" cy="80" rx="28" ry="20" fill="rgb(${p1g - 5}, ${p1g + 45}, ${p1g - 12})" opacity="0.35" />`);
+  parts.push(`<ellipse cx="95" cy="40" rx="22" ry="16" fill="rgb(${p1g - 15}, ${p1g + 35}, ${p1g - 18})" opacity="0.3" />`);
+
+  // Dark ground shadow at root level
+  parts.push(`<g fill="rgba(0,0,0,0.1)">`);
+  parts.push(`<ellipse cx="35" cy="110" rx="24" ry="10" />`);
+  parts.push(`<ellipse cx="80" cy="105" rx="28" ry="12" />`);
+  parts.push(`<ellipse cx="110" cy="115" rx="16" ry="8" />`);
+  parts.push(`</g>`);
+
+  // Generate blade clusters based on z-height
+  const bladeCount = 20 + z * 10;
   const blades: string[] = [];
 
-  // Generate grass blade clusters based on z-height
-  const bladeCount = 12 + z * 6;
   for (let i = 0; i < bladeCount; i++) {
-    const h = ((hash * (i + 1)) >>> 0);
-    const bx = 8 + (h % 112);
-    const by = 128 - (h >> 8) % (20 + z * 12);
-    const height = 8 + (z * 6) + (h >> 16) % 12;
-    const sway = ((h >> 20) % 8) - 4;
-    const green = baseGreen + (h >> 24) % 20;
+    const h = ((hash * (i + 1) + i * 7717) >>> 0);
+    const bx = 4 + (h % 120);
+    const by = 120 - (h >> 8) % (15 + z * 8);
+    const height = 14 + (z * 10) + (h >> 16) % 18;
+    const sway = ((h >> 20) % 12) - 6;
+    const green = baseGreen + (h >> 24) % 25;
+    const width = 1.2 + z * 0.6 + ((h >> 4) % 3) * 0.3;
+
+    // Curved blade using quadratic bezier
+    const cpx = bx + sway * 0.6;
+    const cpy = by - height * 0.5;
+    const tipX = bx + sway;
+    const tipY = by - height;
+
+    const r = Math.max(0, green - 12);
+    const g2 = Math.min(255, green + 48);
+    const b2 = Math.max(0, green - 22);
+
     blades.push(
-      `<line x1="${bx}" y1="${by}" x2="${bx + sway}" y2="${by - height}" stroke="rgb(${green - 10}, ${green + 40}, ${green - 20})" stroke-width="${1 + z * 0.5}" stroke-linecap="round" />`
+      `<path d="M ${bx} ${by} Q ${cpx} ${cpy} ${tipX} ${tipY}" stroke="rgb(${r},${g2},${b2})" stroke-width="${width}" stroke-linecap="round" fill="none" />`
     );
+
+    // Seed head on some taller blades
+    if (z >= 2 && height > 28 && (h >> 28) % 3 === 0) {
+      blades.push(
+        `<ellipse cx="${tipX}" cy="${tipY}" rx="1.5" ry="3" fill="rgb(${green + 30}, ${green + 20}, ${green - 10})" opacity="0.6" transform="rotate(${sway * 3},${tipX},${tipY})" />`
+      );
+    }
+  }
+
+  // Sort blades by y-position for crude depth
+  parts.push(`<g>`);
+  parts.push(blades.join('\n    '));
+  parts.push(`</g>`);
+
+  // Flower accents on some tiles
+  if ((hash >> 12) % 4 === 0) {
+    const fx = 20 + (hash % 88);
+    const fy = 70 + (hash >> 6) % 30;
+    const fc = (hash >> 10) % 3;
+    const colors = ['#e8e040', '#e86080', '#d0a0e0'];
+    parts.push(`<circle cx="${fx}" cy="${fy}" r="2.5" fill="${colors[fc]}" opacity="0.7" />`);
+    parts.push(`<circle cx="${fx}" cy="${fy}" r="1" fill="white" opacity="0.5" />`);
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />
-    ${blades.join('\n    ')}
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+/** Generate an SVG for a wooden fence tile variant. */
+function woodenFenceSvg(variant: FeatureVariant): string {
+  const parts: string[] = [];
+
+  // Grass background
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  parts.push(`<ellipse cx="35" cy="95" rx="22" ry="14" fill="#458550" opacity="0.4" />`);
+  parts.push(`<ellipse cx="95" cy="35" rx="18" ry="12" fill="#2d6838" opacity="0.35" />`);
+
+  // Fence dimensions
+  const railW = 6;   // rail thickness
+  const postW = 10;  // post width
+  const postH = 48;  // post height (appears as full post in flat space)
+  const mid = 64;    // center
+
+  // Helper to draw a fence post
+  function post(x: number, y: number): string {
+    const px = x - postW / 2;
+    const py = y - postH;
+    return [
+      // Post shadow
+      `<rect x="${px + 2}" y="${py + 4}" width="${postW}" height="${postH}" rx="1" fill="rgba(0,0,0,0.15)" />`,
+      // Post body (wood grain)
+      `<rect x="${px}" y="${py}" width="${postW}" height="${postH}" rx="1.5" fill="#8B6914" />`,
+      // Lighter strip (grain)
+      `<rect x="${px + 2}" y="${py}" width="3" height="${postH}" fill="#a07820" opacity="0.4" />`,
+      // Dark edge
+      `<rect x="${px + postW - 2}" y="${py}" width="2" height="${postH}" fill="#6a5010" opacity="0.3" />`,
+      // Top cap (rounded)
+      `<ellipse cx="${x}" cy="${py}" rx="${postW / 2}" ry="3" fill="#9a7018" />`,
+      `<ellipse cx="${x}" cy="${py}" rx="${postW / 2 - 1}" ry="2" fill="#b08828" opacity="0.5" />`,
+    ].join('\n    ');
+  }
+
+  // Helper to draw horizontal rails
+  function hRails(x1: number, x2: number, cy: number): string {
+    const topY = cy - 18;
+    const botY = cy + 2;
+    return [
+      // Rail shadows
+      `<rect x="${x1}" y="${topY + 2}" width="${x2 - x1}" height="${railW}" rx="1" fill="rgba(0,0,0,0.12)" />`,
+      `<rect x="${x1}" y="${botY + 2}" width="${x2 - x1}" height="${railW}" rx="1" fill="rgba(0,0,0,0.12)" />`,
+      // Top rail
+      `<rect x="${x1}" y="${topY}" width="${x2 - x1}" height="${railW}" rx="1" fill="#9a7018" />`,
+      `<rect x="${x1}" y="${topY}" width="${x2 - x1}" height="2" fill="#b08828" opacity="0.3" />`,
+      // Bottom rail
+      `<rect x="${x1}" y="${botY}" width="${x2 - x1}" height="${railW}" rx="1" fill="#8B6914" />`,
+      `<rect x="${x1}" y="${botY}" width="${x2 - x1}" height="2" fill="#a07820" opacity="0.3" />`,
+    ].join('\n    ');
+  }
+
+  // Helper to draw vertical rails
+  function vRails(y1: number, y2: number, cx: number): string {
+    const leftX = cx - 18;
+    const rightX = cx + 2;
+    return [
+      `<rect x="${leftX + 2}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="rgba(0,0,0,0.12)" />`,
+      `<rect x="${rightX + 2}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="rgba(0,0,0,0.12)" />`,
+      `<rect x="${leftX}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="#9a7018" />`,
+      `<rect x="${leftX}" y="${y1}" width="2" height="${y2 - y1}" fill="#b08828" opacity="0.3" />`,
+      `<rect x="${rightX}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="#8B6914" />`,
+      `<rect x="${rightX}" y="${y1}" width="2" height="${y2 - y1}" fill="#a07820" opacity="0.3" />`,
+    ].join('\n    ');
+  }
+
+  const arms = { top: false, right: false, bottom: false, left: false };
+  switch (variant) {
+    case 'straight-h': arms.left = arms.right = true; break;
+    case 'straight-v': arms.top = arms.bottom = true; break;
+    case 'corner-tr': arms.top = arms.right = true; break;
+    case 'corner-tl': arms.top = arms.left = true; break;
+    case 'corner-br': arms.bottom = arms.right = true; break;
+    case 'corner-bl': arms.bottom = arms.left = true; break;
+    case 'cross': arms.top = arms.right = arms.bottom = arms.left = true; break;
+    case 'tee-t': arms.left = arms.right = arms.bottom = true; break;
+    case 'tee-b': arms.left = arms.right = arms.top = true; break;
+    case 'tee-r': arms.top = arms.bottom = arms.left = true; break;
+    case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
+    case 'end-t': arms.bottom = true; break;
+    case 'end-b': arms.top = true; break;
+    case 'end-r': arms.left = true; break;
+    case 'end-l': arms.right = true; break;
+    default: break; // isolated
+  }
+
+  // Draw rails first (behind posts)
+  if (arms.left) parts.push(hRails(0, mid, mid));
+  if (arms.right) parts.push(hRails(mid, 128, mid));
+  if (arms.top) parts.push(vRails(0, mid, mid));
+  if (arms.bottom) parts.push(vRails(mid, 128, mid));
+
+  // Corner post always
+  parts.push(post(mid, mid + postH / 2));
+
+  // End posts on arms
+  if (arms.left) parts.push(post(postW / 2, mid + postH / 2));
+  if (arms.right) parts.push(post(128 - postW / 2, mid + postH / 2));
+  if (arms.top) parts.push(post(mid, postH / 2 + 4));
+  if (arms.bottom) parts.push(post(mid, 128 - 4));
+
+  // Small grass tufts at base of posts
+  parts.push(`<g stroke="#4a8a54" stroke-width="1" stroke-linecap="round" opacity="0.4">`);
+  parts.push(`<line x1="${mid - 8}" y1="${mid + postH / 2 + 2}" x2="${mid - 11}" y2="${mid + postH / 2 - 4}" />`);
+  parts.push(`<line x1="${mid + 8}" y1="${mid + postH / 2 + 1}" x2="${mid + 11}" y2="${mid + postH / 2 - 3}" />`);
+  parts.push(`</g>`);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
   </svg>`;
 }
 
@@ -376,6 +709,8 @@ export function getVariantSvg(
   switch (tile.kind) {
     case 'stone-wall':
       return stoneWallSvg(tile.variant);
+    case 'wooden-fence':
+      return woodenFenceSvg(tile.variant);
     case 'river':
       return riverSvg(tile.variant, tile.connections);
     case 'tall-grass':
@@ -455,6 +790,21 @@ export function isTallGrassPosition(worldCol: number, worldRow: number): boolean
   return false;
 }
 
+/**
+ * Check if a world position should be a wooden fence.
+ * Creates a rectangular fenced area for demo purposes.
+ */
+export function isFencePosition(worldCol: number, worldRow: number): boolean {
+  // Fenced garden area: rectangle from (20,0) to (28,8)
+  if (worldRow >= 0 && worldRow <= 8 && worldCol >= 20 && worldCol <= 28) {
+    // Only the perimeter
+    if (worldRow === 0 || worldRow === 8 || worldCol === 20 || worldCol === 28) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // ─── Main Solver ─────────────────────────────────────────────
 
 /**
@@ -486,7 +836,9 @@ export function solveChunkFeatures(
           worldRow,
         );
 
-        const edgeMasks = tile.kind === 'river' ? RIVER_EDGE_MASKS : WALL_EDGE_MASKS;
+        const edgeMasks = tile.kind === 'river' ? RIVER_EDGE_MASKS
+          : tile.kind === 'wooden-fence' ? GRASS_BLEND_MASKS
+          : WALL_EDGE_MASKS;
 
         newTiles.push({
           ...tile,
@@ -533,6 +885,7 @@ export function solveChunkFeatures(
  */
 export function getFeatureKind(worldCol: number, worldRow: number): TileKind | null {
   if (isWallPosition(worldCol, worldRow)) return 'stone-wall';
+  if (isFencePosition(worldCol, worldRow)) return 'wooden-fence';
   if (isRiverPosition(worldCol, worldRow)) return 'river';
   if (isTallGrassPosition(worldCol, worldRow)) return 'tall-grass';
   return null;

@@ -1,22 +1,56 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
   <!-- rock-02: Dark elevated granite with angular facets -->
-  <rect width="128" height="128" fill="#606060"/>
-  <!-- Angular facets -->
-  <polygon points="0,0 65,5 55,55 10,50" fill="#6a6a6a" opacity="0.6"/>
-  <polygon points="65,5 128,0 120,45 70,50" fill="#545454" opacity="0.6"/>
-  <polygon points="10,50 55,55 60,128 0,128" fill="#585858" opacity="0.5"/>
-  <polygon points="70,50 120,45 128,128 60,128" fill="#505050" opacity="0.5"/>
-  <!-- Deep cracks -->
-  <g stroke="#3a3a3a" stroke-width="1.5" fill="none" opacity="0.6">
-    <polyline points="30,15 40,40 35,65 50,85"/>
-    <polyline points="80,10 75,35 85,50"/>
-    <polyline points="15,90 30,95 45,110"/>
-    <polyline points="90,70 100,85 95,105 110,115"/>
+  <defs>
+    <linearGradient id="r2Base" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%" stop-color="#686868"/>
+      <stop offset="100%" stop-color="#4a4a4a"/>
+    </linearGradient>
+    <filter id="r2n" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" seed="12"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="soft-light"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" fill="url(#r2Base)"/>
+  <rect width="128" height="128" filter="url(#r2n)" opacity="0.22"/>
+  <polygon points="0,0 62,8 52,55 0,48" fill="#6e6e6e" opacity="0.55"/>
+  <polygon points="62,8 128,0 128,42 68,52" fill="#4e4e4e" opacity="0.55"/>
+  <polygon points="0,48 52,55 58,128 0,128" fill="#525252" opacity="0.45"/>
+  <polygon points="68,52 128,42 128,128 58,128" fill="#444" opacity="0.45"/>
+  <polygon points="15,5 62,8 52,35 12,28" fill="#787878" opacity="0.4"/>
+  <polygon points="52,55 68,52 80,90 48,85" fill="#3e3e3e" opacity="0.3"/>
+  <path d="M8,58 L30,52 L35,78 L12,80Z" fill="#585858" opacity="0.35"/>
+  <path d="M42,60 L72,55 L78,85 L38,82Z" fill="#4a4a4a" opacity="0.3"/>
+  <path d="M85,48 L120,42 L125,72 L82,70Z" fill="#505050" opacity="0.3"/>
+  <path d="M15,88 L45,85 L42,115 L12,112Z" fill="#484848" opacity="0.3"/>
+  <path d="M60,92 L100,88 L105,118 L55,115Z" fill="#424242" opacity="0.3"/>
+  <g stroke="#2a2a2a" stroke-width="1.8" fill="none" opacity="0.6">
+    <path d="M28,12 Q34,28 30,45 Q35,58 40,72"/>
+    <path d="M78,8 Q82,22 90,20 Q95,32 88,45"/>
+    <path d="M15,80 Q28,85 38,98 Q45,105 52,118"/>
+    <path d="M82,62 Q90,72 86,85 Q92,98 100,112"/>
   </g>
-  <!-- Crystal/mineral flecks -->
-  <g fill="#8a8aaa" opacity="0.3">
-    <rect x="40" y="30" width="3" height="3" transform="rotate(20,41.5,31.5)"/>
-    <rect x="85" y="60" width="2.5" height="2.5" transform="rotate(45,86.25,61.25)"/>
-    <rect x="25" y="75" width="2" height="2" transform="rotate(10,26,76)"/>
+  <g stroke="#3a3a3a" stroke-width="0.6" fill="none" opacity="0.4">
+    <path d="M5,30 L18,33 L22,40"/>
+    <path d="M55,18 L65,28 L72,25"/>
+    <path d="M95,55 L110,60 L115,68"/>
+    <path d="M35,108 L48,112 L55,118"/>
+    <path d="M105,85 L118,90 L122,98"/>
+  </g>
+  <g opacity="0.45">
+    <rect x="38" y="28" width="3" height="3" fill="#8888b0" transform="rotate(22,39.5,29.5)"/>
+    <rect x="88" y="58" width="2.5" height="2.5" fill="#9090b8" transform="rotate(45,89.25,59.25)"/>
+    <rect x="22" y="72" width="2" height="2" fill="#8888b0" transform="rotate(12,23,73)"/>
+    <rect x="72" y="95" width="2.5" height="2.5" fill="#8888a8" transform="rotate(35,73.25,96.25)"/>
+    <rect x="108" y="32" width="2" height="2" fill="#9898c0" transform="rotate(55,109,33)"/>
+    <rect x="55" y="75" width="1.8" height="1.8" fill="#8080a8" transform="rotate(8,55.9,75.9)"/>
+  </g>
+  <g opacity="0.3">
+    <ellipse cx="20" cy="40" rx="5" ry="4" fill="#4a6a3a"/>
+    <ellipse cx="95" cy="35" rx="4" ry="3" fill="#3a5a2e"/>
+  </g>
+  <g fill="#909090" opacity="0.25">
+    <circle cx="30" cy="15" r="2.5"/>
+    <circle cx="55" cy="40" r="1.8"/>
   </g>
 </svg>

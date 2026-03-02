@@ -1,38 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
   <!-- stone-wall-01: Stacked stone wall segment (elevated) -->
-  <rect width="128" height="128" fill="#6a6a6a"/>
-  <!-- Stone rows -->
-  <g stroke="#505050" stroke-width="1.5" fill="none">
-    <!-- Row 1 (bottom) -->
-    <rect x="2" y="90" width="40" height="36" rx="2" fill="#707070"/>
-    <rect x="44" y="90" width="42" height="36" rx="2" fill="#646464"/>
-    <rect x="88" y="90" width="38" height="36" rx="2" fill="#6c6c6c"/>
-    <!-- Row 2 -->
-    <rect x="10" y="58" width="35" height="30" rx="2" fill="#727272"/>
-    <rect x="47" y="58" width="40" height="30" rx="2" fill="#666666"/>
-    <rect x="89" y="58" width="30" height="30" rx="2" fill="#6e6e6e"/>
-    <!-- Row 3 -->
-    <rect x="5" y="28" width="38" height="28" rx="2" fill="#6a6a6a"/>
-    <rect x="45" y="28" width="42" height="28" rx="2" fill="#626262"/>
-    <rect x="89" y="28" width="35" height="28" rx="2" fill="#6c6c6c"/>
-    <!-- Row 4 (top) -->
-    <rect x="8" y="2" width="36" height="24" rx="2" fill="#747474"/>
-    <rect x="46" y="2" width="38" height="24" rx="2" fill="#686868"/>
-    <rect x="86" y="2" width="38" height="24" rx="2" fill="#707070"/>
+  <defs>
+    <linearGradient id="swBase" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#787878"/>
+      <stop offset="100%" stop-color="#5a5a5a"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#swBase)"/>
+  <rect width="128" height="128" fill="#4a4a4a" opacity="0.3"/>
+  <rect x="2" y="95" width="42" height="31" rx="2" fill="#6a6a6a" stroke="#505050" stroke-width="1"/>
+  <rect x="46" y="95" width="38" height="31" rx="2" fill="#626262" stroke="#505050" stroke-width="1"/>
+  <rect x="86" y="95" width="40" height="31" rx="2" fill="#686868" stroke="#505050" stroke-width="1"/>
+  <rect x="4" y="97" width="38" height="3" rx="1" fill="#808080" opacity="0.4"/>
+  <rect x="48" y="97" width="34" height="3" rx="1" fill="#787878" opacity="0.35"/>
+  <rect x="88" y="97" width="36" height="3" rx="1" fill="#808080" opacity="0.35"/>
+  <rect x="8" y="68" width="36" height="25" rx="2" fill="#6e6e6e" stroke="#505050" stroke-width="1"/>
+  <rect x="46" y="68" width="40" height="25" rx="2" fill="#646464" stroke="#505050" stroke-width="1"/>
+  <rect x="88" y="68" width="32" height="25" rx="2" fill="#6a6a6a" stroke="#505050" stroke-width="1"/>
+  <rect x="10" y="70" width="32" height="3" rx="1" fill="#828282" opacity="0.35"/>
+  <rect x="48" y="70" width="36" height="3" rx="1" fill="#7a7a7a" opacity="0.3"/>
+  <rect x="90" y="70" width="28" height="3" rx="1" fill="#808080" opacity="0.3"/>
+  <rect x="4" y="42" width="40" height="24" rx="2" fill="#6c6c6c" stroke="#505050" stroke-width="1"/>
+  <rect x="46" y="42" width="36" height="24" rx="2" fill="#606060" stroke="#505050" stroke-width="1"/>
+  <rect x="84" y="42" width="40" height="24" rx="2" fill="#686868" stroke="#505050" stroke-width="1"/>
+  <rect x="6" y="44" width="36" height="3" rx="1" fill="#828282" opacity="0.3"/>
+  <rect x="48" y="44" width="32" height="3" rx="1" fill="#787878" opacity="0.25"/>
+  <rect x="86" y="44" width="36" height="3" rx="1" fill="#808080" opacity="0.25"/>
+  <rect x="6" y="16" width="38" height="24" rx="2" fill="#727272" stroke="#505050" stroke-width="1"/>
+  <rect x="46" y="16" width="40" height="24" rx="2" fill="#666666" stroke="#505050" stroke-width="1"/>
+  <rect x="88" y="16" width="36" height="24" rx="2" fill="#6e6e6e" stroke="#505050" stroke-width="1"/>
+  <rect x="8" y="18" width="34" height="3" rx="1" fill="#868686" opacity="0.35"/>
+  <rect x="48" y="18" width="36" height="3" rx="1" fill="#7e7e7e" opacity="0.3"/>
+  <rect x="90" y="18" width="32" height="3" rx="1" fill="#848484" opacity="0.3"/>
+  <rect x="2" y="2" width="124" height="12" rx="2" fill="#747474" stroke="#505050" stroke-width="1"/>
+  <rect x="4" y="4" width="120" height="3" rx="1" fill="#8a8a8a" opacity="0.4"/>
+  <g fill="#525252" opacity="0.25">
+    <ellipse cx="22" cy="80" rx="5" ry="3"/>
+    <ellipse cx="65" cy="52" rx="4" ry="2.5"/>
+    <ellipse cx="100" cy="108" rx="6" ry="3"/>
+    <ellipse cx="38" cy="30" rx="4" ry="2"/>
   </g>
-  <!-- Mortar lines (gap highlights) -->
-  <g stroke="#585858" stroke-width="0.5" opacity="0.4">
-    <line x1="42" y1="90" x2="42" y2="128"/>
-    <line x1="86" y1="90" x2="86" y2="128"/>
-    <line x1="45" y1="58" x2="45" y2="88"/>
-    <line x1="87" y1="58" x2="87" y2="88"/>
-    <line x1="43" y1="28" x2="43" y2="56"/>
-    <line x1="87" y1="28" x2="87" y2="56"/>
-  </g>
-  <!-- Weathering -->
-  <g fill="#5a5a5a" opacity="0.2">
-    <circle cx="25" cy="75" r="4"/>
-    <circle cx="70" cy="42" r="3"/>
-    <circle cx="100" cy="105" r="5"/>
+  <g stroke="#484848" stroke-width="0.7" fill="none" opacity="0.35">
+    <path d="M25,95 L28,108 L24,120"/>
+    <path d="M70,68 L72,78 L68,88"/>
+    <path d="M110,42 L112,52 L108,60"/>
   </g>
 </svg>

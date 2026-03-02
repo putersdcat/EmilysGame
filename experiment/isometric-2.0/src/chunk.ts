@@ -243,6 +243,7 @@ export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
         // (solver will resolve connections and variant SVGs later)
         let z = 1;
         if (featureKind === 'stone-wall') z = 5;
+        if (featureKind === 'wooden-fence') z = 3;
         if (featureKind === 'river') z = 0;
         if (featureKind === 'tall-grass') z = 1;
 

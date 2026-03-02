@@ -1,23 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
   <!-- rock-01: Light gray stone with cracks and facets -->
-  <rect width="128" height="128" fill="#808080"/>
-  <!-- Facet planes -->
-  <polygon points="0,0 60,10 50,60 0,55" fill="#8a8a8a" opacity="0.5"/>
-  <polygon points="60,10 128,0 128,50 70,55" fill="#757575" opacity="0.5"/>
-  <polygon points="50,60 70,55 128,50 128,128 0,128 0,55" fill="#727272" opacity="0.4"/>
-  <!-- Highlight facet -->
-  <polygon points="60,10 90,20 80,45 50,40" fill="#9a9a9a" opacity="0.3"/>
-  <!-- Cracks -->
-  <g stroke="#555" stroke-width="1.2" fill="none" opacity="0.5">
-    <polyline points="35,20 42,35 38,55 45,70"/>
-    <polyline points="75,15 82,30 90,28"/>
-    <polyline points="20,80 35,85 40,100 55,105"/>
-    <polyline points="85,60 95,70 88,90 100,105"/>
+  <defs>
+    <linearGradient id="rBase" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#8a8a8a"/>
+      <stop offset="100%" stop-color="#6a6a6a"/>
+    </linearGradient>
+    <filter id="rnoise" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" seed="5"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feBlend in="SourceGraphic" mode="soft-light"/>
+    </filter>
+  </defs>
+  <rect width="128" height="128" fill="url(#rBase)"/>
+  <rect width="128" height="128" filter="url(#rnoise)" opacity="0.2"/>
+  <polygon points="0,0 55,5 48,52 0,50" fill="#929292" opacity="0.6"/>
+  <polygon points="55,5 128,0 128,45 65,50" fill="#6e6e6e" opacity="0.55"/>
+  <polygon points="0,50 48,52 62,48 128,45 128,128 0,128" fill="#606060" opacity="0.4"/>
+  <polygon points="20,8 55,5 48,35 18,30" fill="#a8a8a8" opacity="0.35"/>
+  <polygon points="65,50 95,35 128,45 128,70 80,65" fill="#585858" opacity="0.3"/>
+  <path d="M10,60 L35,55 L40,75 L15,78Z" fill="#787878" opacity="0.4"/>
+  <path d="M50,70 L80,65 L85,90 L48,88Z" fill="#6a6a6a" opacity="0.35"/>
+  <path d="M90,75 L120,68 L125,95 L88,92Z" fill="#727272" opacity="0.3"/>
+  <path d="M20,90 L50,88 L45,115 L18,112Z" fill="#666" opacity="0.3"/>
+  <path d="M65,95 L100,92 L105,120 L60,118Z" fill="#5e5e5e" opacity="0.35"/>
+  <g stroke="#444" stroke-width="1.5" fill="none" opacity="0.55">
+    <path d="M30,15 Q35,30 32,48 Q34,60 38,72"/>
+    <path d="M75,10 Q80,25 88,22 Q92,30 85,42"/>
+    <path d="M18,78 Q30,82 42,95 Q50,100 55,112"/>
+    <path d="M85,58 Q92,68 88,82 Q95,95 102,108"/>
   </g>
-  <!-- Lichen spots -->
-  <g fill="#6a7a5a" opacity="0.25">
-    <circle cx="25" cy="45" r="5"/>
-    <circle cx="95" cy="40" r="4"/>
-    <circle cx="60" cy="95" r="6"/>
+  <g stroke="#555" stroke-width="0.6" fill="none" opacity="0.4">
+    <path d="M5,35 L22,38 L25,45"/>
+    <path d="M60,20 L68,32 L75,35"/>
+    <path d="M100,50 L115,55 L120,65"/>
+    <path d="M40,100 L52,105 L58,118"/>
+  </g>
+  <g opacity="0.35">
+    <ellipse cx="22" cy="42" rx="7" ry="5" fill="#5a7a4a"/>
+    <ellipse cx="98" cy="38" rx="5" ry="4" fill="#4a6a3a"/>
+    <ellipse cx="55" cy="100" rx="8" ry="5" fill="#5a7a4a"/>
+    <ellipse cx="108" cy="85" rx="4" ry="3" fill="#4a6a3a"/>
+  </g>
+  <g fill="#b8b8b8" opacity="0.3">
+    <circle cx="35" cy="18" r="2"/>
+    <circle cx="45" cy="38" r="1.5"/>
+    <circle cx="110" cy="30" r="1.8"/>
   </g>
 </svg>
