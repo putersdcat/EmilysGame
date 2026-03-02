@@ -1,0 +1,30 @@
+{
+  "servers": {
+    "svgRenderer": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/CopilotSvgToolv2/dist/index.js"
+      ],
+      "dev": {
+        "watch": "${workspaceFolder}/CopilotSvgToolv2/src/**/*.ts",
+        "debug": {
+          "type": "node"
+        }
+      }
+    },
+    "isoSvgRenderer": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/experiment/isometric-2.0/AiTools/dist/index.js"
+      ],
+      "dev": {
+        "watch": "${workspaceFolder}/experiment/isometric-2.0/AiTools/*.ts",
+        "debug": {
+          "type": "node"
+        }
+      }
+    }
+  }
+}
