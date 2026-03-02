@@ -23,6 +23,12 @@ import {
   applyHeightMapShading,
 } from './tile';
 import { hasLoadedAssets, pickTileForKind } from './asset-loader';
+import {
+  drawTileShadow,
+  drawDefaultShadow,
+  drawRimLighting,
+} from './renderer';
+import type { SunState } from './types';
 
 // ─── Chunk Bounding Box Constants ────────────────────────────
 
@@ -60,10 +66,11 @@ const KIND_COLORS: Record<TileKind, string> = {
 
 /**
  * Bake a chunk's tiles into its cached offscreen canvas.
+ * Includes shadow projection and rim lighting passes when sun state is provided.
  * Returns true if all tile images were loaded (bake complete),
  * false if some are still pending (needs re-bake next frame).
  */
-export function bakeChunk(chunk: WorldUnitChunk): boolean {
+export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
   if (!chunk.cachedCanvas) {
     chunk.cachedCanvas = document.createElement('canvas');
   }
@@ -73,6 +80,25 @@ export function bakeChunk(chunk: WorldUnitChunk): boolean {
   ctx.clearRect(0, 0, CHUNK_CANVAS_W, CHUNK_CANVAS_H);
 
   let allLoaded = true;
+
+  // Pass 0: Shadows (drawn first, so tiles render on top)
+  if (sun) {
+    for (let row = 0; row < CHUNK_TILES; row++) {
+      for (let col = 0; col < CHUNK_TILES; col++) {
+        const tile = chunk.tiles[row * CHUNK_TILES + col];
+        if (tile.z <= 0) continue; // No shadow for ground-level
+        const { sx, sy } = worldToIso(col, row, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+        const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
+        const drawY = sy + PAD_TOP - ISO_TILE_HEIGHT / 2;
+
+        if (tile.shadowPath) {
+          drawTileShadow(ctx, drawX, drawY, tile.shadowPath, tile.z, sun);
+        } else {
+          drawDefaultShadow(ctx, drawX, drawY, tile.z, sun);
+        }
+      }
+    }
+  }
 
   // Pass 1: Draw tiles in back-to-front order (row-major for iso)
   for (let row = 0; row < CHUNK_TILES; row++) {
@@ -136,6 +162,11 @@ export function bakeChunk(chunk: WorldUnitChunk): boolean {
       // Pass 3: Height map shading (if present)
       if (tile.heightMap) {
         applyHeightMapShading(ctx, drawX, drawY, tile.heightMap);
+      }
+
+      // Pass 4: Rim lighting on sun-facing edges
+      if (sun) {
+        drawRimLighting(ctx, drawX, drawY, sun);
       }
     }
   }
