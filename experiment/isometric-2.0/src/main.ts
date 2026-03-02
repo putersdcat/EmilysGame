@@ -26,6 +26,7 @@ import {
   createHillLayer,
   createCloudLayer,
 } from './renderer';
+import { solveChunkFeatures, type NeighborLookup } from './solver';
 
 // ─── Canvas Setup ────────────────────────────────────────────
 
@@ -79,12 +80,25 @@ let _anyChunkDirty = true;
 
 function chunkKey(cx: number, cy: number): string { return `${cx},${cy}`; }
 
+/** Cross-chunk neighbor lookup for the solver. */
+const _neighborLookup: NeighborLookup = (worldCol: number, worldRow: number) => {
+  const cx = Math.floor(worldCol / CHUNK_TILES);
+  const cy = Math.floor(worldRow / CHUNK_TILES);
+  const chunk = _chunks.get(chunkKey(cx, cy));
+  if (!chunk) return null;
+  const localCol = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  const localRow = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  return chunk.tiles[localRow * CHUNK_TILES + localCol] ?? null;
+};
+
 function ensureChunksAroundCamera(): boolean {
   const camChunkX = Math.floor(camera.x / CHUNK_TILES);
   const camChunkY = Math.floor(camera.y / CHUNK_TILES);
   const half = Math.floor(VISIBLE_CHUNKS / 2);
   let added = false;
+  const newKeys = new Set<string>();
 
+  // Phase 1: Generate raw chunks
   for (let dy = -half; dy <= half; dy++) {
     for (let dx = -half; dx <= half; dx++) {
       const cx = camChunkX + dx;
@@ -92,10 +106,33 @@ function ensureChunksAroundCamera(): boolean {
       const key = chunkKey(cx, cy);
       if (!_chunks.has(key)) {
         _chunks.set(key, generateDemoChunk(cx, cy));
+        newKeys.add(key);
         added = true;
       }
     }
   }
+
+  // Phase 2: Solve features on new chunks + re-solve neighbors of new chunks
+  if (added) {
+    // Collect keys that need solving: new chunks + their direct neighbors
+    const solveKeys = new Set<string>(newKeys);
+    for (const nk of newKeys) {
+      const [ncx, ncy] = nk.split(',').map(Number);
+      // Mark cardinal neighbors for re-solve (cross-chunk connections may have changed)
+      for (const [ddx, ddy] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+        const adjKey = chunkKey(ncx + ddx, ncy + ddy);
+        if (_chunks.has(adjKey)) solveKeys.add(adjKey);
+      }
+    }
+
+    for (const key of solveKeys) {
+      const chunk = _chunks.get(key);
+      if (!chunk) continue;
+      const solved = solveChunkFeatures(chunk, _neighborLookup);
+      _chunks.set(key, solved);
+    }
+  }
+
   return added;
 }
 
@@ -332,6 +369,11 @@ interface TestAPI {
     chunks: number;
     visible: number;
   };
+  /** Inspect a tile at world coordinates. Returns kind, variant, connections, z. */
+  getTile: (worldCol: number, worldRow: number) => {
+    kind: string; z: number; variant?: string;
+    connections?: { top: boolean; right: boolean; bottom: boolean; left: boolean };
+  } | null;
 }
 
 function createTestAPI(): TestAPI {
@@ -358,6 +400,22 @@ function createTestAPI(): TestAPI {
         bakes: _displayBakes,
         chunks: _chunks.size,
         visible: _visibleChunkCount,
+      };
+    },
+    getTile(worldCol: number, worldRow: number) {
+      const cx = Math.floor(worldCol / CHUNK_TILES);
+      const cy = Math.floor(worldRow / CHUNK_TILES);
+      const chunk = _chunks.get(`${cx},${cy}`);
+      if (!chunk) return null;
+      const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+      const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+      const tile = chunk.tiles[lr * CHUNK_TILES + lc];
+      if (!tile) return null;
+      return {
+        kind: tile.kind,
+        z: tile.z,
+        variant: tile.variant,
+        connections: tile.connections,
       };
     },
   };

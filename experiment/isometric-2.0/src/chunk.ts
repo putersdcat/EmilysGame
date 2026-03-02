@@ -28,6 +28,7 @@ import {
   drawDefaultShadow,
   drawRimLighting,
 } from './renderer';
+import { getFeatureKind } from './solver';
 import type { SunState } from './types';
 
 // ─── Chunk Bounding Box Constants ────────────────────────────
@@ -219,10 +220,11 @@ const BLEND_EDGE_MASKS = {
 /**
  * Generate a demo chunk at the given chunk coords.
  * Uses loaded tile assets when available, falls back to inline demo SVGs.
+ * Includes continuous feature placement (walls, rivers, tall grass) for solver.
  */
 export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
   const tiles: MicroTile[] = [];
-  const kinds: TileKind[] = ['grass', 'grass', 'grass', 'dirt', 'rock', 'water', 'sand'];
+  const baseKinds: TileKind[] = ['grass', 'grass', 'grass', 'dirt', 'rock', 'water', 'sand'];
   const useAssets = hasLoadedAssets();
 
   for (let row = 0; row < CHUNK_TILES; row++) {
@@ -230,10 +232,32 @@ export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
       const worldCol = cx * CHUNK_TILES + col;
       const worldRow = cy * CHUNK_TILES + row;
 
+      // Check for feature override first
+      const featureKind = getFeatureKind(worldCol, worldRow);
+
       // Deterministic hash for biome selection
       const hash = ((worldCol * 73856093) ^ (worldRow * 19349663)) >>> 0;
-      const kindIdx = hash % kinds.length;
-      const kind = kinds[kindIdx];
+
+      if (featureKind) {
+        // Feature tiles: create with appropriate defaults
+        // (solver will resolve connections and variant SVGs later)
+        let z = 1;
+        if (featureKind === 'stone-wall') z = 5;
+        if (featureKind === 'river') z = 0;
+        if (featureKind === 'tall-grass') z = 1;
+
+        tiles.push({
+          kind: featureKind,
+          z,
+          svg: makeDemoSvg(featureKind === 'stone-wall' ? 'rock' :
+               featureKind === 'river' ? 'water' : 'grass', worldCol, worldRow),
+          edgeMasks: DEFAULT_EDGE_MASKS,
+        });
+        continue;
+      }
+
+      const kindIdx = hash % baseKinds.length;
+      const kind = baseKinds[kindIdx];
 
       // Try to use a loaded asset first
       if (useAssets) {
