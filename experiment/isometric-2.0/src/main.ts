@@ -9,6 +9,7 @@ import {
   type Camera,
   type SunState,
   type ParallaxLayer,
+  type MicroTile,
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
   CHUNK_TILES,
@@ -26,7 +27,16 @@ import {
   createHillLayer,
   createCloudLayer,
 } from './renderer';
-import { solveChunkFeatures, type NeighborLookup } from './solver';
+import { solveChunkFeatures, resolveAllConditions, type NeighborLookup } from './solver';
+import {
+  createPlayerState,
+  preloadPlayerSprites,
+  updatePlayer,
+  updatePlayerSink,
+  updateCameraFollow,
+  drawPlayer,
+  drawOccludingNanos,
+} from './player';
 
 // ─── Canvas Setup ────────────────────────────────────────────
 
@@ -45,7 +55,7 @@ window.addEventListener('resize', resizeCanvas);
 
 // ─── Camera ──────────────────────────────────────────────────
 
-const camera: Camera = { x: 2.5, y: 2.5, zoom: 0.75 };
+const camera: Camera = { x: 8, y: 8, zoom: 0.75 };
 let _prevCamX = NaN;
 let _prevCamY = NaN;
 let _prevZoom = NaN;
@@ -71,6 +81,10 @@ const _keysDown = new Set<string>();
 window.addEventListener('keydown', (e) => { _keysDown.add(e.key); });
 window.addEventListener('keyup', (e) => { _keysDown.delete(e.key); });
 function isKeyDown(key: string): boolean { return _keysDown.has(key); }
+
+// ─── Player ──────────────────────────────────────────────────
+
+const _player = createPlayerState(8, 8); // Start at tile (8, 8) — near walls/fences
 
 // ─── Chunk Management ────────────────────────────────────────
 
@@ -199,23 +213,129 @@ let _frameCount = 0;
 let _fpsAccum = 0;
 let _displayFps = 0;
 let _visibleChunkCount = 0;
+let _dirtyChunksThisFrame = 0;
 let _bakesThisSecond = 0;
 let _displayBakes = 0;
 let _skipsThisSecond = 0;
 let _displaySkips = 0;
+let _showDebugHud = true;
 const FPS_UPDATE_INTERVAL = 500;
 
 // ─── Game Loop ───────────────────────────────────────────────
 
+/** Tile lookup for player sink-depth queries (cross-chunk). */
+function getTileAt(worldCol: number, worldRow: number): MicroTile | null {
+  const cx = Math.floor(worldCol / CHUNK_TILES);
+  const cy = Math.floor(worldRow / CHUNK_TILES);
+  const chunk = _chunks.get(chunkKey(cx, cy));
+  if (!chunk) return null;
+  const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+  return chunk.tiles[lr * CHUNK_TILES + lc] ?? null;
+}
+
+/** Chunk lookup for occlusion nano re-draws. */
+function getChunkAt(cx: number, cy: number): WorldUnitChunk | null {
+  return _chunks.get(chunkKey(cx, cy)) ?? null;
+}
+
+/** Check walkability at a world position. Returns true if walkable, false if blocked, null if no data. */
+function _isWalkableAt(col: number, row: number): boolean | null {
+  const cx = Math.floor(col / CHUNK_TILES);
+  const cy = Math.floor(row / CHUNK_TILES);
+  const chunk = _chunks.get(chunkKey(cx, cy));
+  if (!chunk || chunk.walkableMap.length === 0) return null;
+  const lc = Math.floor((((col % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
+  const lr = Math.floor((((row % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
+  return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
+}
+
 function update(dt: number): boolean {
   let changed = false;
-  const speed = 5 * dt;
 
-  if (isKeyDown('w') || isKeyDown('ArrowUp'))    { camera.y -= speed; changed = true; }
-  if (isKeyDown('s') || isKeyDown('ArrowDown'))  { camera.y += speed; changed = true; }
-  if (isKeyDown('a') || isKeyDown('ArrowLeft'))  { camera.x -= speed; changed = true; }
-  if (isKeyDown('d') || isKeyDown('ArrowRight')) { camera.x += speed; changed = true; }
+  // Player movement via WASD/arrows — per-axis collision with boundary clamping.
+  // Uses separate col/row checks so the player can slide along walls during
+  // diagonal movement, and clamps to tile boundaries for symmetric collision
+  // from all approach directions.
+  const prevCol = _player.worldCol;
+  const prevRow = _player.worldRow;
+  const playerMoved = updatePlayer(_player, _keysDown, dt);
+  if (playerMoved) {
+    const newCol = _player.worldCol;
+    const newRow = _player.worldRow;
 
+    // Reset to previous position — we'll re-apply each axis independently
+    _player.worldCol = prevCol;
+    _player.worldRow = prevRow;
+
+    // --- Col axis ---
+    if (newCol !== prevCol) {
+      const wCol = _isWalkableAt(newCol, prevRow);
+      if (wCol === false) {
+        // Blocked — clamp to tile boundary
+        const blocked = Math.floor(newCol);
+        _player.worldCol = (newCol > prevCol)
+          ? blocked - 0.0001  // moving east → stop at west edge of blocked tile
+          : blocked + 1.0;    // moving west → stop at east edge of blocked tile
+        // Safety: verify clamped position is walkable (edge-case)
+        if (_isWalkableAt(_player.worldCol, prevRow) === false) {
+          _player.worldCol = prevCol;
+        }
+      } else {
+        _player.worldCol = newCol;
+      }
+    }
+
+    // --- Row axis (using potentially updated col) ---
+    if (newRow !== prevRow) {
+      const wRow = _isWalkableAt(_player.worldCol, newRow);
+      if (wRow === false) {
+        const blocked = Math.floor(newRow);
+        _player.worldRow = (newRow > prevRow)
+          ? blocked - 0.0001  // moving south → stop at north edge of blocked tile
+          : blocked + 1.0;    // moving north → stop at south edge of blocked tile
+        if (_isWalkableAt(_player.worldCol, _player.worldRow) === false) {
+          _player.worldRow = prevRow;
+        }
+      } else {
+        _player.worldRow = newRow;
+      }
+    }
+
+    const moved = _player.worldCol !== prevCol || _player.worldRow !== prevRow;
+    _player.moving = moved;
+    if (moved) {
+      updatePlayerSink(_player, getTileAt);
+      changed = true;
+    }
+  }
+
+  // U key: unlock all conditions on visible chunks (debug shortcut)
+  if (_keysDown.has('u') || _keysDown.has('U')) {
+    _keysDown.delete('u'); _keysDown.delete('U'); // consume
+    for (const chunk of _chunks.values()) {
+      if (chunk.activeConditions.size > 0) {
+        resolveAllConditions(chunk);
+        const key = chunkKey(chunk.cx, chunk.cy);
+        _chunks.set(key, { ...chunk }); // trigger re-bake
+      }
+    }
+    changed = true;
+  }
+
+  // F3 key: toggle debug HUD visibility (canvas overlay)
+  // NOTE: 'd' was previously used but conflicts with WASD east movement
+  if (_keysDown.has('F3')) {
+    _keysDown.delete('F3');
+    _showDebugHud = !_showDebugHud;
+    changed = true;
+  }
+
+  // Camera follows player with smooth lerp
+  updateCameraFollow(camera, _player);
+  changed = true; // Camera always potentially dirty from lerp
+
+  // Zoom controls (still on +/-)
   if (isKeyDown('+') || isKeyDown('=')) { camera.zoom = Math.min(3, camera.zoom + 0.02); changed = true; }
   if (isKeyDown('-'))                   { camera.zoom = Math.max(0.1, camera.zoom - 0.02); changed = true; }
 
@@ -261,12 +381,17 @@ function compositeWorld(w: number, h: number): void {
   vCtx.translate(-camIso.sx, -camIso.sy);
 
   _visibleChunkCount = 0;
+  _dirtyChunksThisFrame = 0;
   let bakesThisFrame = 0;
   _anyChunkDirty = false;
 
   for (const chunk of _chunks.values()) {
     if (!isChunkVisible(chunk, camIso.sx, camIso.sy, zoom, w, h)) continue;
     _visibleChunkCount++;
+
+    if (chunk.dirty || !chunk.cachedCanvas) {
+      _dirtyChunksThisFrame++;
+    }
 
     if (chunk.dirty || !chunk.cachedCanvas) {
       bakeChunk(chunk, _sunState);
@@ -280,15 +405,22 @@ function compositeWorld(w: number, h: number): void {
   }
   _bakesThisSecond += bakesThisFrame;
 
+  // ── Draw player character (after chunks, before occlusion overlay) ──
+  drawPlayer(vCtx, _player, _sunState);
+
+  // ── Redraw positive nanos that should occlude the player ──
+  drawOccludingNanos(vCtx, _player, getChunkAt, _sunState);
+
   vCtx.restore();
 
-  // HUD overlay on the buffer
-  vCtx.fillStyle = 'rgba(255,255,255,0.4)';
-  vCtx.font = '11px monospace';
-  vCtx.fillText(
-    `Camera: (${camera.x.toFixed(1)}, ${camera.y.toFixed(1)})  Zoom: ${camera.zoom.toFixed(2)}  Chunks: ${_visibleChunkCount}/${_chunks.size}  Sun: ${(_timeOfDay * 24).toFixed(1)}h  FPS: ${_displayFps}  Bakes/s: ${_displayBakes}  Skip%: ${_displaySkips}`,
-    8, h - 10,
-  );
+  if (_showDebugHud) {
+    vCtx.fillStyle = 'rgba(255,255,255,0.4)';
+    vCtx.font = '11px monospace';
+    vCtx.fillText(
+      `Camera: (${camera.x.toFixed(1)}, ${camera.y.toFixed(1)})  Zoom: ${camera.zoom.toFixed(2)}  Chunks: ${_visibleChunkCount}/${_chunks.size}  Dirty: ${_dirtyChunksThisFrame}  Sun: ${(_timeOfDay * 24).toFixed(1)}h  FPS: ${_displayFps}  Frame: ${_displayRenderMs.toFixed(1)}ms  Bakes/s: ${_displayBakes}  Skip%: ${_displaySkips}`,
+      8, h - 10,
+    );
+  }
 }
 
 // Render-time tracking (ms per actual composite frame)
@@ -373,7 +505,18 @@ interface TestAPI {
   getTile: (worldCol: number, worldRow: number) => {
     kind: string; z: number; variant?: string;
     connections?: { top: boolean; right: boolean; bottom: boolean; left: boolean };
+    nanos?: { kind: string; zMode: string; zOffset: number }[];
   } | null;
+  /** Get current player state. */
+  getPlayer: () => { col: number; row: number; facing: string; sinkPx: number; moving: boolean };
+  /** Set player position directly. */
+  setPlayer: (col: number, row: number) => void;
+  /** Inject a key press directly into _keysDown for automated testing. */
+  simulateKey: (key: string, down: boolean) => void;
+  /** Run update() with the given dt in seconds — needed because forceRender uses dt=0. */
+  tickUpdate: (dt: number) => void;
+  /** Get walkable status at a world tile. */
+  getWalkable: (worldCol: number, worldRow: number) => boolean | null;
 }
 
 function createTestAPI(): TestAPI {
@@ -416,7 +559,40 @@ function createTestAPI(): TestAPI {
         z: tile.z,
         variant: tile.variant,
         connections: tile.connections,
+        nanos: tile.nanos?.map(n => ({ kind: n.kind, zMode: n.zMode, zOffset: n.zOffset, walkableType: n.walkable?.type ?? 'undefined', variant: n.variant ?? 'none', hasSide: !!n.sideTextureSvg, hasTop: !!n.topTextureSvg, svgLen: n.svg?.length ?? 0 })),
       };
+    },
+    getPlayer() {
+      return {
+        col: _player.worldCol,
+        row: _player.worldRow,
+        facing: _player.facing,
+        sinkPx: _player.sinkDepthPx,
+        moving: _player.moving,
+      };
+    },
+    setPlayer(col: number, row: number) {
+      _player.worldCol = col;
+      _player.worldRow = row;
+      updatePlayerSink(_player, getTileAt);
+      _canvasDirty = true;
+    },
+    simulateKey(key: string, down: boolean) {
+      if (down) _keysDown.add(key);
+      else _keysDown.delete(key);
+    },
+    tickUpdate(dt: number) {
+      update(dt);
+      _canvasDirty = true;
+    },
+    getWalkable(worldCol: number, worldRow: number) {
+      const cx = Math.floor(worldCol / CHUNK_TILES);
+      const cy = Math.floor(worldRow / CHUNK_TILES);
+      const chunk = _chunks.get(`${cx},${cy}`);
+      if (!chunk || chunk.walkableMap.length === 0) return null;
+      const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+      const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
+      return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
     },
   };
 }
@@ -425,6 +601,9 @@ function createTestAPI(): TestAPI {
 
 async function boot(): Promise<void> {
   console.log('🔷 Isometric 2.0 Experiment — starting...');
+
+  // Pre-load player sprites
+  preloadPlayerSprites();
 
   // Load tile assets before generating chunks
   const loadState = await loadAllAssets();
