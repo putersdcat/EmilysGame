@@ -745,7 +745,44 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
   const topRailY = 30;          // upper rail
   const botRailY = 80;          // lower rail
 
-  // Determine arm presence (same logic as original)
+  // ── Diagonal / vertex variants: early return with angled rail SVG ──
+  // These don't fit the horizontal-arm model — draw perspective diagonal rails instead.
+  // diagonal-right (\): rails slope downward left→right (fence goes into depth, NE-SW)
+  // diagonal-left  (/): rails slope upward left→right (fence goes NW-SE cross-axis)
+  // vertex: single centre post only (junction of two diagonal runs)
+  if (variant === 'diagonal-right' || variant === 'diagonal-left' || variant === 'vertex') {
+    const diagParts: string[] = [];
+    if (variant === 'vertex') {
+      // Just a single prominent post at centre
+      diagParts.push(sidePost(64, postTopY));
+    } else {
+      // Angled rail: parallelogram strip from left edge to right edge
+      // diagonal-right (\): y decreases left→right (going "up into" the scene)
+      // diagonal-left (/): y increases left→right (coming "out of" the scene)
+      const [yL, yR] = variant === 'diagonal-right'
+        ? [topRailY + 22, topRailY - 8]   // left side lower, right side higher
+        : [topRailY - 8,  topRailY + 22];  // left side higher, right side lower
+      const [yL2, yR2] = variant === 'diagonal-right'
+        ? [botRailY + 18, botRailY - 8]
+        : [botRailY - 8,  botRailY + 18];
+      // Upper rail as polygon parallelogram
+      diagParts.push(
+        `<polygon points="0,${yL + railH} 128,${yR + railH} 128,${yR} 0,${yL}" fill="#9a7018" />`,
+        `<polygon points="0,${yL + 2} 128,${yR + 2} 128,${yR} 0,${yL}" fill="#b08828" opacity="0.3" />`,
+        // Lower rail
+        `<polygon points="0,${yL2 + railH} 128,${yR2 + railH} 128,${yR2} 0,${yL2}" fill="#8B6914" />`,
+        `<polygon points="0,${yL2 + 2} 128,${yR2 + 2} 128,${yR2} 0,${yL2}" fill="#a07820" opacity="0.3" />`,
+      );
+      // Posts at left and right anchor points
+      diagParts.push(sidePost(6,  Math.min(yL,  yL2)  - 6));
+      diagParts.push(sidePost(122, Math.min(yR,  yR2) - 6));
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${diagParts.join('\n    ')}
+  </svg>`;
+  }
+
+  // Determine arm presence for orthogonal variants
   const arms = { left: false, right: false };
 
   switch (variant) {
