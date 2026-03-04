@@ -400,8 +400,9 @@ function stoneWallSvg(variant: FeatureVariant): string {
  * for both wall orientations.
  *
  * Each footprint rect gets its own clip region + block fill + border.
+ * Exported so AiTools game-tile-renderer can use it for the extruded top face.
  */
-function stoneWallTopSvg(variant: FeatureVariant): string {
+export function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
   const parts: string[] = [];
   const seed = variant.charCodeAt(0) * 53 + 7;

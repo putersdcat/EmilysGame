@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { renderSvg, renderAnimatedSvg } from './svg-renderer-tool.js';
 import { renderGeoProof, renderVariationSweep } from './proof-renderer.js';
 import { resolveNamedScene, resolveScene, listScenes, type SceneEntry } from './scene-registry.js';
+import { renderGameTile, buildGameTileSvg } from './game-tile-renderer.js';
 
 type ToolContent =
   | { type: 'text'; text: string }
@@ -585,6 +586,104 @@ server.registerTool(
       const meta: Record<string, unknown> = {
         scene: sceneName ?? 'custom',
         tileCount: chain.length,
+        width: result.width,
+        height: result.height,
+        renderTimeMs: result.renderTimeMs,
+        bytes: result.png.length,
+      };
+      return {
+        content: [
+          { type: 'image' as const, data: result.base64, mimeType: 'image/png' },
+          { type: 'text' as const, text: JSON.stringify(meta) },
+        ],
+        structuredContent: meta,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { isError: true, content: [{ type: 'text' as const, text: JSON.stringify({ error: message }) }], structuredContent: { error: message } };
+    }
+  },
+);
+
+// ─── Tool: render_game_tile ──────────────────────────────────
+// Primary tool for visual validation — uses actual game engine SVG generators.
+// Eliminates the need to hand-craft SVG strings for known game kinds.
+
+server.registerTool(
+  'render_game_tile',
+  {
+    title: 'Render Game Tile (kind + variant)',
+    description:
+      'Render any game tile kind + variant to a PNG by calling the ACTUAL game engine ' +
+      'SVG generators from solver.ts, then wrapping in the correct isometric projection. ' +
+      'This is the preferred tool for validating any tile asset — no SVG markup required. ' +
+      '\n\nExtruded kinds (stone-wall, cathedral-wall, homestead-wall): renders full 3-face ' +
+      'box using the same matrix math as drawExtrudedNano() in nano-tile.ts.' +
+      '\n\nBillboard kinds (fence, gate, troll-bridge, bridge): Z-pinned standing billboard.' +
+      '\n\nNegative kinds (river, river-bank): sunken flat iso projection.' +
+      '\n\nFlat kinds (tall-grass): semi-transparent flat iso overlay.',
+    inputSchema: {
+      kind: z
+        .enum(['stone-wall', 'fence', 'river', 'river-bank', 'tall-grass', 'gate', 'troll-bridge', 'bridge', 'cathedral-wall', 'homestead-wall'])
+        .describe('The NanoTileKind to render. Each has a canonical rendering pathway.'),
+      variant: z
+        .string()
+        .optional()
+        .describe(
+          'Feature variant. Valid values: straight-h, straight-v, cross, end-r, end-l, end-t, end-b, ' +
+          'corner-tr, corner-tl, corner-br, corner-bl, tee-t, tee-r, tee-b, tee-l, isolated. ' +
+          'Default: straight-h.',
+        ),
+      zOffset: z
+        .number()
+        .optional()
+        .describe('Z height level. Default: 4 for walls, 2 for fences/river. NANO_Z_SCALE=12px/level.'),
+      connections: z
+        .object({
+          top:    z.boolean().optional(),
+          right:  z.boolean().optional(),
+          bottom: z.boolean().optional(),
+          left:   z.boolean().optional(),
+        })
+        .optional()
+        .describe('Which sides are connected to a neighbor of the same kind. Auto-inferred from variant if omitted.'),
+      width: z
+        .number().int().min(64).max(1024).optional()
+        .describe('Output canvas width in pixels. Default: 320.'),
+      height: z
+        .number().int().min(64).max(1024).optional()
+        .describe('Output canvas height in pixels. Default: 320.'),
+      background: z
+        .string().optional()
+        .describe('Background color CSS string. Default: "#0d1117".'),
+      worldCol: z.number().optional().describe('World col (for tall-grass procedural variation). Default: 0.'),
+      worldRow: z.number().optional().describe('World row (for tall-grass procedural variation). Default: 0.'),
+      svgOnly: z
+        .boolean().optional()
+        .describe('When true, return the generated SVG markup as text instead of rendering to PNG. Useful for debugging the SVG generator output.'),
+    },
+  },
+  async (args) => {
+    try {
+      const { kind, svgOnly, ...rest } = args;
+      const opts = {
+        ...rest,
+        variant: rest.variant as Parameters<typeof renderGameTile>[1]['variant'],
+        connections: rest.connections
+          ? { top: rest.connections.top ?? false, right: rest.connections.right ?? false, bottom: rest.connections.bottom ?? false, left: rest.connections.left ?? false }
+          : undefined,
+      };
+
+      if (svgOnly) {
+        const svg = buildGameTileSvg(kind, opts);
+        return { content: [{ type: 'text' as const, text: svg }] };
+      }
+
+      const result = renderGameTile(kind, opts);
+      const meta: Record<string, unknown> = {
+        kind,
+        variant: opts.variant ?? 'straight-h',
+        zOffset: opts.zOffset,
         width: result.width,
         height: result.height,
         renderTimeMs: result.renderTimeMs,

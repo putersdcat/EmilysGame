@@ -9,8 +9,20 @@ import { Resvg } from '@resvg/resvg-js';
 
 // ─── Types ───────────────────────────────────────────────────
 
-/** Render mode: 'flat' = standard, 'isometric' = diamond transform. */
-export type RenderMode = 'flat' | 'isometric';
+/** Render mode: 'flat' = standard, 'isometric' = diamond transform, 'isometric_z_pinned' = upright standing, 'isometric_assembly' = multi-tile composite. */
+export type RenderMode = 'flat' | 'isometric' | 'isometric_z_pinned' | 'isometric_assembly';
+
+export type NanoZMode = 'positive' | 'negative' | 'flat';
+export type PlayerOcclusionPos = 'front' | 'behind' | 'left' | 'right';
+
+export interface AssemblyChainItem {
+  svg: string;
+  col: number;
+  row: number;
+  zMode?: NanoZMode;
+  zOffset?: number;
+  walkable?: boolean;
+}
 
 /** Options for renderSvg. */
 export interface RenderOptions {
@@ -24,6 +36,20 @@ export interface RenderOptions {
   background?: string;
   /** DPI for SVG rendering. Default: 96. */
   dpi?: number;
+  /** Nano z offset used for debug previews. */
+  zOffset?: number;
+  /** Nano z mode. */
+  zMode?: NanoZMode;
+  /** Walkability indicator for debug overlays. */
+  walkable?: boolean;
+  /** Blend edge hint for negative-z previews. */
+  blendEdges?: boolean;
+  /** Debug overlays for nano previews. */
+  debug?: boolean;
+  /** Dummy player position for occlusion checks in nano preview. */
+  currentPlayerPos?: PlayerOcclusionPos;
+  /** Multi-tile chain payload for assembly render mode. */
+  assemblyChain?: AssemblyChainItem[];
 }
 
 /** Result from renderSvg. */
@@ -69,6 +95,10 @@ const ISO_WIDTH = 256;
 const ISO_HEIGHT = 128;
 const MICRO_TILE = 128;
 
+// For Z-pinned nanos, we often want more height so they can stand tall above the tile bounds
+const NANO_WIDTH = 256;
+const NANO_HEIGHT = 256;
+
 // ─── Core Render ─────────────────────────────────────────────
 
 /**
@@ -83,11 +113,20 @@ export function renderSvg(svgString: string, options: RenderOptions = {}): Rende
   let outW: number;
   let outH: number;
 
-  if (mode === 'isometric') {
+  if (mode === 'isometric_assembly') {
+    outW = options.width ?? (ISO_WIDTH * 3);
+    outH = options.height ?? (ISO_HEIGHT * 3);
+    finalSvg = wrapIsometricAssembly(options.assemblyChain ?? [], outW, outH, options);
+  } else if (mode === 'isometric') {
     // Wrap SVG in isometric diamond transform
     outW = options.width ?? ISO_WIDTH;
     outH = options.height ?? ISO_HEIGHT;
     finalSvg = wrapIsometric(svgString, outW, outH);
+  } else if (mode === 'isometric_z_pinned') {
+    // Wrap SVG in standing Z-pinned transform
+    outW = options.width ?? NANO_WIDTH;
+    outH = options.height ?? NANO_HEIGHT;
+    finalSvg = wrapIsometricZPinned(svgString, outW, outH, options);
   } else {
     outW = options.width ?? MICRO_TILE;
     outH = options.height ?? MICRO_TILE;
@@ -146,6 +185,141 @@ function wrapIsometric(innerSvg: string, width: number, height: number): string 
 }
 
 /**
+ * Wrap an SVG in a Z-pinned isometric transformation (standing billboard).
+ * Matches the Z-pinned shear from nano-tile.ts:
+ *   transform(1, 0.5, 0, 1, 0, 0)
+ * anchored at the left vertex of the diamond projection.
+ * Returns an unclipped SVG so the nano can extent beyond the basic tile diamond.
+ */
+function wrapIsometricZPinned(innerSvg: string, width: number, height: number, options: RenderOptions): string {
+  // Use a sensible default origin for testing.
+  // In nano-tile.ts, anchor is at (screenX, screenY + HALF_H).
+  // Here we center horizontally and place the anchor in the lower-middle of the view.
+  const anchorX = width / 2 - 64; // so left vertex of a 128-wide element is centered
+  const anchorY = height * 0.75;
+  
+  const innerContent = stripSvgWrapper(innerSvg);
+  const zOffset = options.zOffset ?? 0;
+  const zMode = options.zMode ?? 'positive';
+  const debug = options.debug ?? false;
+  const walkable = options.walkable ?? true;
+  const playerPos = options.currentPlayerPos;
+
+  let output = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  output += `<g transform="translate(${anchorX}, ${anchorY})">`;
+
+  let baseColor = 'rgba(0,0,0,0.05)';
+  let baseStroke = 'rgba(0,0,0,0.1)';
+  if (debug) {
+    baseColor = walkable ? 'rgba(0,255,0,0.2)' : 'rgba(255,0,0,0.2)';
+    baseStroke = walkable ? 'rgba(0,255,0,0.5)' : 'rgba(255,0,0,0.5)';
+  }
+  output += `<polygon points="0,0 64,32 128,0 64,-32" fill="${baseColor}" stroke="${baseStroke}"/>`;
+
+  if (playerPos === 'behind') {
+    output += renderPlayerSilhouette(64, -32);
+  } else if (playerPos === 'left') {
+    output += renderPlayerSilhouette(32, -16);
+  } else if (playerPos === 'right') {
+    output += renderPlayerSilhouette(96, -16);
+  }
+
+  if (zMode === 'negative') {
+    const sinkPx = zOffset * 8;
+    output += `
+    <g transform="matrix(1, 0.5, -1, 0.5, 64, ${sinkPx - 32})">
+      <svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">
+        ${innerContent}
+      </svg>
+    </g>`;
+  } else {
+    output += `
+    <g transform="matrix(1, 0.5, 0, 1, 0, 0)">
+      <g transform="translate(0, -${MICRO_TILE})">
+        <svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">
+          ${innerContent}
+        </svg>
+      </g>
+    </g>`;
+  }
+
+  if (playerPos === 'front') {
+    output += renderPlayerSilhouette(64, 32);
+  }
+
+  if (debug && zMode === 'positive') {
+    output += `<line x1="0" y1="0" x2="0" y2="-${zOffset * 8}" stroke="blue" stroke-width="2" stroke-dasharray="4" />`;
+    output += `<line x1="128" y1="64" x2="128" y2="${64 - (zOffset * 8)}" stroke="blue" stroke-width="2" stroke-dasharray="4" />`;
+  } else if (debug && zMode === 'negative') {
+    output += `<line x1="64" y1="-32" x2="64" y2="${-32 + (zOffset * 8)}" stroke="red" stroke-width="2" stroke-dasharray="4" />`;
+  }
+
+  output += '</g></svg>';
+  return output;
+}
+
+function wrapIsometricAssembly(
+  chain: AssemblyChainItem[],
+  width: number,
+  height: number,
+  options: RenderOptions,
+): string {
+  const originX = width / 2;
+  const originY = height / 4;
+  const debug = options.debug ?? false;
+
+  let output = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  const sortedChain = [...chain].sort((a, b) => (a.row - b.row) || (a.col - b.col));
+
+  for (const item of sortedChain) {
+    const isoX = originX + (item.col - item.row) * (MICRO_TILE / 2) - 64;
+    const isoY = originY + (item.col + item.row) * (MICRO_TILE / 4);
+
+    const innerContent = stripSvgWrapper(item.svg);
+    const zMode = item.zMode ?? 'positive';
+    const zOffset = item.zOffset ?? 0;
+    const isWalkable = item.walkable !== false;
+
+    output += `<g transform="translate(${isoX}, ${isoY})">`;
+
+    let baseColor = 'rgba(0,0,0,0.05)';
+    let baseStroke = 'rgba(0,0,0,0.1)';
+    if (debug) {
+      baseColor = isWalkable ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
+      baseStroke = isWalkable ? 'rgba(0,255,0,0.5)' : 'rgba(255,0,0,0.5)';
+    }
+    output += `<polygon points="0,0 64,32 128,0 64,-32" fill="${baseColor}" stroke="${baseStroke}"/>`;
+
+    if (zMode === 'negative') {
+      const sinkPx = zOffset * 8;
+      output += `<g transform="matrix(1, 0.5, -1, 0.5, 64, ${sinkPx - 32})">`;
+      output += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
+    } else {
+      output += `<g transform="matrix(1, 0.5, 0, 1, 0, 0)">`;
+      output += `<g transform="translate(0, -${MICRO_TILE})">`;
+      output += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g></g>`;
+    }
+
+    if (debug && zMode === 'positive') {
+      output += `<line x1="0" y1="0" x2="0" y2="-${zOffset * 8}" stroke="blue" stroke-width="2" stroke-dasharray="4" />`;
+    }
+    output += '</g>';
+  }
+
+  output += '</svg>';
+  return output;
+}
+
+function renderPlayerSilhouette(cx: number, cy: number): string {
+  return `
+  <g transform="translate(${cx}, ${cy})">
+     <ellipse cx="0" cy="0" rx="16" ry="8" fill="rgba(0,0,0,0.3)" />
+     <rect x="-12" y="-48" width="24" height="40" rx="6" fill="rgba(80,80,200,0.8)" stroke="white" stroke-width="1.5"/>
+     <circle cx="0" cy="-60" r="14" fill="rgba(80,80,200,0.8)" stroke="white" stroke-width="1.5"/>
+  </g>`;
+}
+
+/**
  * Strip the outer <svg ...> and </svg> tags, returning just the inner content.
  * Handles various SVG formats: self-closing, with attrs, etc.
  */
@@ -188,8 +362,8 @@ export function renderAnimatedSvg(
   // Build horizontal strip by concatenating frame buffers
   // Simple approach: render each frame and report them individually
   // A proper strip would require pixel-level composition
-  const frameWidth = frames.length > 0 ? (options.mode === 'isometric' ? ISO_WIDTH : MICRO_TILE) : 0;
-  const frameHeight = options.mode === 'isometric' ? ISO_HEIGHT : MICRO_TILE;
+  const frameWidth = frames.length > 0 ? (options.mode === 'isometric' ? ISO_WIDTH : (options.mode === 'isometric_z_pinned' ? NANO_WIDTH : MICRO_TILE)) : 0;
+  const frameHeight = options.mode === 'isometric' ? ISO_HEIGHT : (options.mode === 'isometric_z_pinned' ? NANO_HEIGHT : MICRO_TILE);
 
   // For the strip, we render a wider SVG containing all frames side by side
   const stripWidth = frameWidth * frameCount;
@@ -242,6 +416,22 @@ function buildStripSvg(
             <svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">
               ${innerContent}
             </svg>
+          </g>
+        </g>
+      </g>`;
+    } else if (mode === 'isometric_z_pinned') {
+      const anchorX = frameW / 2 - 64; 
+      const anchorY = frameH * 0.75;
+      frames += `
+      <g transform="translate(${x}, 0)">
+        <g transform="translate(${anchorX}, ${anchorY})">
+          <polygon points="0,0 64,32 128,0 64,-32" fill="rgba(0,0,0,0.05)" stroke="rgba(0,0,0,0.1)"/>
+          <g transform="matrix(1, 0.5, 0, 1, 0, 0)">
+            <g transform="translate(0, -${MICRO_TILE})">
+              <svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">
+                ${innerContent}
+              </svg>
+            </g>
           </g>
         </g>
       </g>`;

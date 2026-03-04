@@ -3,8 +3,8 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "rootDir": "..",
     "outDir": "dist",
-    "rootDir": ".",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -13,6 +13,10 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["index.ts", "svg-renderer-tool.ts", "proof-renderer.ts", "scene-registry.ts", "cli.ts", "renderer.test.ts"],
+  "include": [
+    "index.ts", "svg-renderer-tool.ts", "proof-renderer.ts",
+    "scene-registry.ts", "game-tile-renderer.ts", "cli.ts", "renderer.test.ts",
+    "../src/solver.ts", "../src/types.ts"
+  ],
   "exclude": ["node_modules", "dist", "test-assets", "smoke-test.ts", "server.ts"]
 }

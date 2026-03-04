@@ -1,21 +1,25 @@
-# AiTools — MCP SVG Renderer for Iso 2.0
+# AiTools — isoSvgRenderer MCP Server for Iso 2.0
 
-MCP server providing `render_svg_isometric` and `render_svg_isometric_strip` tools for rendering SVG markup to PNG with optional isometric diamond transform.
+MCP stdio server used for **all visual validation** in `experiment/isometric-2.0`.
+
+Current server capabilities: **7 tool calls** for static previews, nano z-pinned checks, assemblies, scene rendering, geometric proof overlays, variation sweeps, and sprite strips.
 
 ## Quick Start
 
 ```bash
 cd experiment/isometric-2.0/AiTools
 npm install
-npm run build           # Compile to dist/
-npm run dev             # Run via tsx (dev mode)
+npm run build
+npm run dev
+npm test
 ```
 
-The server runs via **stdio** (MCP protocol), not HTTP. VS Code discovers it automatically through `.vscode/mcp.json`.
+The server runs over **stdio** (MCP), not HTTP.
 
-## VS Code Integration
+## VS Code MCP wiring
 
-Already configured in `.vscode/mcp.json`:
+Configured in `.vscode/mcp.json`:
+
 ```jsonc
 "isoSvgRenderer": {
   "type": "stdio",
@@ -24,80 +28,136 @@ Already configured in `.vscode/mcp.json`:
 }
 ```
 
-Tools appear in the GameMan agent as:
-- `isoSvgRenderer/render_svg_isometric`
-- `isoSvgRenderer/render_svg_isometric_strip`
+## Validation Policy (Iso 2.0)
 
-## Tools
+For visual work in the Iso 2.0 branch, this toolchain is required before marking work complete:
+- verify changed asset geometry
+- verify in-context scene appearance
+- verify z/orientation correctness for nanos
 
-### `render_svg_isometric`
+Use the new repo instruction file:  
+`.github/instructions/isosvgrenderer.instructions.md`
 
-Render SVG markup to a PNG preview image.
+## Tool Index (7 calls)
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `svg` | string | ✅ | Full SVG markup (128×128 viewBox recommended) |
-| `mode` | `"flat"` \| `"isometric"` | | `flat` = 128×128, `isometric` = 256×128 diamond. Default: `flat` |
-| `width` | number | | Override output width |
-| `height` | number | | Override output height |
-| `background` | string | | CSS background color |
-| `writePngBase64` | boolean | | Include raw base64 in metadata |
+### 1) `render_svg_isometric`
+General-purpose static renderer.
 
-**Returns:** MCP image content block (visual preview) + JSON metadata `{width, height, mode, renderTimeMs, bytes}`.
+- Modes: `flat`, `isometric`, `isometric_z_pinned`
+- Best for quick single-asset checks
+- Supports lightweight loop via `response: "metadata"`
 
-### `render_svg_isometric_strip`
+Core params:
+- `svg` (required)
+- `mode?`
+- `width?`, `height?`
+- `background?`
+- `response?` = `image | metadata | both`
 
-Render animated/multi-frame SVG to a horizontal sprite strip.
+### 2) `render_nano_isometric`
+Z-pinned nano validator (standing/sunken/flat behavior).
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `svg` | string | ✅ | Full SVG markup |
-| `frameCount` | number | | Frames to extract (1–32). Default: 4 |
-| `frameDurationMs` | number | | Duration per frame in ms. Default: 250 |
-| `mode` | `"flat"` \| `"isometric"` | | Render mode. Default: `flat` |
+Core params:
+- `svg` (required)
+- `zMode?` = `positive | negative | flat`
+- `zOffset?`
+- `walkable?`, `blendEdges?`, `debug?`
+- `includePlayer?` = `[front|behind|left|right]` for occlusion checks
 
-**Returns:** MCP image content block (strip) + JSON metadata `{frameCount, frameWidth, frameHeight, frameDurationMs, mode}`.
+### 3) `render_nano_assembly`
+Composes multiple tiles/nanos into one isometric image for overlap/connectivity validation.
 
-## Isometric Transform
+Core params:
+- `svgChain` (required array of `{ svg, col, row, zMode?, zOffset?, walkable? }`)
+- `width?`, `height?`, `background?`, `debug?`
 
-In `isometric` mode, the SVG content is:
-1. Placed inside a 128×128 inner viewport
-2. Transformed with `matrix(1, 0.5, -1, 0.5, 128, 0)` — the same isometric projection as the game engine
-3. Diamond-clipped to a 256×128 isometric tile shape
+### 4) `render_svg_isometric_strip`
+Builds a horizontal strip preview for frame-based/animated asset iteration.
 
-This matches exactly how the Iso 2.0 renderer displays tiles in-game.
+Core params:
+- `svg` (required)
+- `frameCount?` (1..32)
+- `frameDurationMs?` (16..5000)
+- `mode?`
+- `response?` = `image | metadata | both`
 
-## CLI (Manual Testing)
+### 5) `render_geo_proof`
+Annotated geometric proof renderer for orientation/camera sanity checks.
+
+- Variants: `reference` (canonical labeled proof box), `overlay` (annotate your SVG)
+- Useful for TOP/FRONT/CAP face verification and Z-edge interpretation
+
+Core params:
+- `variant?`, `svg?`, `title?`
+- `width?`, `height?`, `background?`
+- `compassRose?`, `axisArrows?`, `faceLabels?`, `coordLabels?`, `boundOutline?`
+- `col?`, `row?`
+
+### 6) `render_variation_sweep`
+Renders parameter sweeps in a single labeled strip for faster tuning.
+
+Supported `param`:
+- `textureRotation`
+- `textureScale`
+- `zOffset`
+- `opacity`
+
+Core params:
+- `svg` (required)
+- `param` (required)
+- `values` (required, 1..8)
+- `background?`, `frameSize?`
+
+### 7) `render_iso_scene`
+Renders built-in or custom isometric scenes using game-aligned kind resolution.
+
+Built-in scenes include:
+- `wall-h-run`
+- `wall-v-run`
+- `fence-perimeter`
+- `river-crossing`
+- `tall-grass-patch`
+- `homestead`
+- `mixed-biomes`
+- `all-nanos`
+
+Core params:
+- `sceneName?`
+- `entries?` (custom scene)
+- `listScenes?` (returns scene list only)
+- `width?`, `height?`, `background?`, `debug?`
+
+## Recommended Usage Flow
+
+1. **Single asset pass**: `render_svg_isometric` or `render_nano_isometric`
+2. **Orientation pass**: `render_geo_proof`
+3. **Context pass**: `render_iso_scene` or `render_nano_assembly`
+4. **Animation pass** (if needed): `render_svg_isometric_strip`
+5. **Parameter tuning** (if needed): `render_variation_sweep`
+
+## Testing
 
 ```bash
-# Flat render
-npx tsx cli.ts --svg '<svg>...</svg>' --output tile.png
-
-# Isometric diamond render
-npx tsx cli.ts --file test-assets/grass-sample.svg --mode isometric --output grass-iso.png
-
-# Animated strip
-npx tsx cli.ts --file input.svg --animated --frames 8 --duration 100 --output strip.png
+npm test
 ```
 
-## Test Assets
-
-| File | Description |
-|------|-------------|
-| `grass-sample.svg` | Simple grass tile with dots and line detail |
-| `wall-straight-h.svg` | Horizontal wall section with mortar lines |
-| `river-straight-v.svg` | Vertical river with bank tiles and flow |
+Unit coverage is in `renderer.test.ts`; additional visual verification is done through MCP calls during asset iteration.
 
 ## Architecture
 
 ```
 AiTools/
-├── index.ts              ← MCP stdio server (entry point)
-├── svg-renderer-tool.ts  ← Core render logic (resvg-js)
-├── cli.ts                ← CLI for manual testing
+├── index.ts              # MCP server + tool registration (7 tools)
+├── svg-renderer-tool.ts  # core render modes (flat/iso/z-pinned/assembly)
+├── proof-renderer.ts     # geo-proof + variation sweep renderers
+├── scene-registry.ts     # named scene descriptors and kind resolution
+├── cli.ts                # local CLI helper
+├── renderer.test.ts      # unit tests
 ├── package.json
 ├── tsconfig.json
-├── dist/                 ← Compiled JS (npm run build)
-├── test-assets/          ← Sample SVG tiles
+├── dist/
+├── test-assets/
 └── README.md
 ```
+
+<!-- TODO: DOC - add copy/paste MCP payload snippets for each tool -->

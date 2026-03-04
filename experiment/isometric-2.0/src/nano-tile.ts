@@ -269,8 +269,9 @@ const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 
  *     sees the left arm extend toward them on the \ diagonal.
  *
  * @see solver.ts wallBounds() for the footprint layout that this must match.
+ * Exported so AiTools game-tile-renderer.ts can share the same classification.
  */
-function isVerticalWall(variant: FeatureVariant | undefined): boolean {
+export function isVerticalWall(variant: FeatureVariant | undefined): boolean {
   switch (variant) {
     case 'straight-v':
     case 'end-t':
@@ -299,8 +300,9 @@ function isVerticalWall(variant: FeatureVariant | undefined): boolean {
  * The secondary arm's terminus is currently not separately rendered (future work).
  *
  * @see Issue #211 — end-cap chaining fix derivation.
+ * Exported so AiTools game-tile-renderer.ts can share the same determination.
  */
-function shouldDrawEndCap(variant: FeatureVariant | undefined): boolean {
+export function shouldDrawEndCap(variant: FeatureVariant | undefined): boolean {
   switch (variant) {
     case 'straight-h': // both ends connect east+west — no exposed face
     case 'straight-v': // both ends connect north+south — no exposed face
