@@ -2,7 +2,7 @@
 
 MCP stdio server used for **all visual validation** in `experiment/isometric-2.0`.
 
-Current server capabilities: **7 tool calls** for static previews, nano z-pinned checks, assemblies, scene rendering, geometric proof overlays, variation sweeps, and sprite strips.
+Current server capabilities: **8 tool calls** for static previews, nano z-pinned checks, assemblies, scene rendering, geometric proof overlays, variation sweeps, sprite strips, and game-engine–generated tile renders.
 
 ## Quick Start
 
@@ -15,6 +15,8 @@ npm test
 ```
 
 The server runs over **stdio** (MCP), not HTTP.
+
+> **Design decision:** The spec originally described an Express HTTP server (`POST /render-svg`). The stdio MCP approach was chosen instead — it integrates directly with VS Code / Copilot Chat with no port management, is more secure, and streams responses natively. This is not a deficiency; it is intentionally superior for the development workflow.
 
 ## VS Code MCP wiring
 
@@ -38,7 +40,7 @@ For visual work in the Iso 2.0 branch, this toolchain is required before marking
 Use the new repo instruction file:  
 `.github/instructions/isosvgrenderer.instructions.md`
 
-## Tool Index (7 calls)
+## Tool Index (8 calls)
 
 ### 1) `render_svg_isometric`
 General-purpose static renderer.
@@ -109,6 +111,23 @@ Core params:
 - `background?`, `frameSize?`
 
 ### 7) `render_iso_scene`
+
+<!-- (existing content unchanged) -->
+
+<!-- Section below added when render_game_tile was introduced -->
+
+### 8) `render_game_tile`
+Renders any NanoTileKind using the **actual game engine SVG generators** from `solver.ts`.
+Produces isometric 3-face extruded box (walls), Z-pinned billboard (gates/bridges/fences), sunken flat (rivers), or flat overlay (tall-grass).
+
+Core params:
+- `kind` (required) — `stone-wall | fence | river | river-bank | tall-grass | gate | troll-bridge | bridge | cathedral-wall | homestead-wall`
+- `variant?` — feature variant (straight-h, end-r, cross, etc.)
+- `connections?` — overrides connectivity inference
+- `zOffset?` — height (positive kinds) or depth (negative)
+- `width?`, `height?`, `background?`, `worldCol?`, `worldRow?`
+
+**Key difference from render_svg_isometric:** uses the same geometry and SVG generators as the browser game, so rendering always matches what the player sees.
 Renders built-in or custom isometric scenes using game-aligned kind resolution.
 
 Built-in scenes include:
@@ -147,7 +166,8 @@ Unit coverage is in `renderer.test.ts`; additional visual verification is done t
 
 ```
 AiTools/
-├── index.ts              # MCP server + tool registration (7 tools)
+├── index.ts              # MCP server + tool registration (8 tools)
+├── game-tile-renderer.ts # game-engine bridge — imports solver.ts SVG generators directly
 ├── svg-renderer-tool.ts  # core render modes (flat/iso/z-pinned/assembly)
 ├── proof-renderer.ts     # geo-proof + variation sweep renderers
 ├── scene-registry.ts     # named scene descriptors and kind resolution
