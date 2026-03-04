@@ -851,6 +851,58 @@ function tallGrassZ(worldCol: number, worldRow: number): number {
   return 1 + (hash % 3);
 }
 
+// ─── Assembly Structure SVGs ─────────────────────────────────
+// Shared between solver (getVariantSvg) and assemblies.ts (NanoTile.svg).
+// TODO: DOC — all 128×128, viewBox 0 0 128 128, transparent-safe.
+
+/** Isometric farmhouse hut — front-left and right faces + red roof. */
+export function homesteadWallSvg(): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <polygon points="0,80 64,112 64,48 0,16"   fill="#b5651d"/>
+  <polygon points="64,112 128,80 128,16 64,48" fill="#8b4513"/>
+  <polygon points="0,16 64,48 128,16 64,-16"  fill="#c0392b"/>
+  <rect x="90" y="-8" width="12" height="20" fill="#7f8c8d"/>
+  <polygon points="20,72 44,84 44,60 20,48" fill="#3d2b1e"/>
+  <rect x="80" y="30" width="18" height="14" rx="2" fill="#acd4e8" opacity="0.8"/>
+</svg>`;
+}
+
+/** Cathedral stone wall column. variant='isolated'→spire, 'end-b'→ruined, default→full column. */
+export function cathedralWallSvg(variant?: FeatureVariant): string {
+  if (variant === 'isolated') {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <polygon points="64,0 90,80 38,80"    fill="#4a4a4a"/>
+  <rect x="30" y="80" width="68" height="48" fill="#6a6a6a"/>
+  <line x1="30" y1="100" x2="98" y2="100" stroke="#555" stroke-width="1"/>
+  <line x1="30" y1="118" x2="98" y2="118" stroke="#555" stroke-width="1"/>
+  <polygon points="64,0 90,80 64,60" fill="#5a5a5a" opacity="0.4"/>
+  <line x1="64" y1="4"  x2="64" y2="16" stroke="#999" stroke-width="2"/>
+  <line x1="58" y1="8"  x2="70" y2="8"  stroke="#999" stroke-width="2"/>
+</svg>`;
+  }
+  if (variant === 'end-b') {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64">
+  <rect x="0" y="0" width="128" height="64" fill="#6d6d6d"/>
+  <line x1="0"  y1="22" x2="128" y2="22" stroke="#4a4a4a" stroke-width="1.5"/>
+  <line x1="0"  y1="44" x2="128" y2="44" stroke="#4a4a4a" stroke-width="1.5"/>
+  <line x1="32" y1="0"  x2="32"  y2="64" stroke="#4a4a4a" stroke-width="1"/>
+  <line x1="80" y1="0"  x2="80"  y2="64" stroke="#4a4a4a" stroke-width="1"/>
+  <polygon points="0,0 15,4 30,1 50,6 70,0 90,5 110,2 128,0 128,10 0,10" fill="#5a5a5a"/>
+  <rect x="48" y="12" width="6" height="16" rx="3" fill="#1a1a1a"/>
+</svg>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64">
+  <rect x="0" y="0" width="128" height="64" fill="#7f7f7f"/>
+  <line x1="0"  y1="21" x2="128" y2="21" stroke="#555" stroke-width="1.5"/>
+  <line x1="0"  y1="43" x2="128" y2="43" stroke="#555" stroke-width="1.5"/>
+  <line x1="32" y1="0"  x2="32"  y2="64" stroke="#555" stroke-width="1"/>
+  <line x1="64" y1="0"  x2="64"  y2="64" stroke="#555" stroke-width="1"/>
+  <line x1="96" y1="0"  x2="96"  y2="64" stroke="#555" stroke-width="1"/>
+  <rect x="0"  y="0"  width="128" height="64" fill="rgba(0,0,0,0.08)" opacity="0.15"/>
+  <rect x="56" y="8"  width="6"   height="18" rx="3"  fill="#1a1a1a"/>
+</svg>`;
+}
+
 // ─── SVG Selection ───────────────────────────────────────────
 
 /**
@@ -874,6 +926,18 @@ export function getVariantSvg(
       return riverSvg(variant, connections);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
+    case 'gate':
+      return gateSvg(false); // closed gate for preview
+    case 'bridge':
+      return bridgeSvg();
+    case 'troll-bridge':
+      return trollBridgeSvg(false); // not unlocked for preview
+    case 'homestead-wall':
+      return homesteadWallSvg();
+    case 'cathedral-wall':
+      return cathedralWallSvg(variant);
+    case 'river-bank':
+      return riverSvg(variant, connections); // reuse river texture with bank blend
     default:
       return null;
   }
@@ -1130,7 +1194,7 @@ export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind
 // ─── Gate SVG Generator ───────────────────────────────────────
 
 /** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
-function gateSvg(unlocked: boolean): string {
+export function gateSvg(unlocked = false): string {
   const parts: string[] = [];
   parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
