@@ -348,10 +348,10 @@ function buildFlatSvg(
 
 // ─── Public API ───────────────────────────────────────────────
 
-/** Kinds that use 3-face extruded box rendering. */
-const EXTRUDED_KINDS = new Set<string>(['stone-wall', 'cathedral-wall', 'homestead-wall']);
-/** Kinds that use standing Z-pinned billboard rendering. */
-const BILLBOARD_KINDS = new Set<string>(['fence', 'gate', 'troll-bridge', 'bridge']);
+/** Kinds that use 3-face extruded box rendering (sideTextureSvg + topTextureSvg path). */
+const EXTRUDED_KINDS = new Set<string>(['stone-wall']);
+/** Kinds that use standing Z-pinned billboard rendering (drawPositiveNano path, flat SVG panel). */
+const BILLBOARD_KINDS = new Set<string>(['fence', 'gate', 'troll-bridge', 'bridge', 'cathedral-wall', 'homestead-wall']);
 /** Kinds that use sunken flat iso rendering. */
 const NEGATIVE_KINDS = new Set<string>(['river', 'river-bank']);
 /** Kinds that use flat semi-transparent overlay rendering. */
@@ -447,10 +447,11 @@ export function renderGameTile(
 // ─── Helpers ──────────────────────────────────────────────────
 
 function defaultZOffset(kind: string): number {
-  if (EXTRUDED_KINDS.has(kind)) return 4;
-  if (kind === 'fence' || kind === 'gate') return 2;
-  if (NEGATIVE_KINDS.has(kind)) return 2;
-  if (kind === 'tall-grass') return 2;
+  if (kind === 'stone-wall')                                 return 4; // extruded box
+  if (kind === 'cathedral-wall' || kind === 'homestead-wall') return 4; // tall billboard structures
+  if (kind === 'troll-bridge' || kind === 'bridge')          return 3; // bridge height over water
+  if (kind === 'fence' || kind === 'gate')                   return 2;
+  if (NEGATIVE_KINDS.has(kind))                              return 2;
   return 2;
 }
 

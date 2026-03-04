@@ -855,15 +855,32 @@ function tallGrassZ(worldCol: number, worldRow: number): number {
 // Shared between solver (getVariantSvg) and assemblies.ts (NanoTile.svg).
 // TODO: DOC — all 128×128, viewBox 0 0 128 128, transparent-safe.
 
-/** Isometric farmhouse hut — front-left and right faces + red roof. */
+/**
+ * Homestead wall — flat front-face panel for z-pinned billboard rendering.
+ * Brown plank wall with red roof trim band, centered window, bottom door.
+ * Designed for drawPositiveNano() z-pinned shear (128×128 flat panel).
+ */
 export function homesteadWallSvg(): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <polygon points="0,80 64,112 64,48 0,16"   fill="#b5651d"/>
-  <polygon points="64,112 128,80 128,16 64,48" fill="#8b4513"/>
-  <polygon points="0,16 64,48 128,16 64,-16"  fill="#c0392b"/>
-  <rect x="90" y="-8" width="12" height="20" fill="#7f8c8d"/>
-  <polygon points="20,72 44,84 44,60 20,48" fill="#3d2b1e"/>
-  <rect x="80" y="30" width="18" height="14" rx="2" fill="#acd4e8" opacity="0.8"/>
+  <rect width="128" height="128" fill="#8B5E3C"/>
+  <line x1="0" y1="20" x2="128" y2="20" stroke="#6a4028" stroke-width="1.5"/>
+  <line x1="0" y1="40" x2="128" y2="40" stroke="#6a4028" stroke-width="1.5"/>
+  <line x1="0" y1="60" x2="128" y2="60" stroke="#6a4028" stroke-width="1.5"/>
+  <line x1="0" y1="80" x2="128" y2="80" stroke="#6a4028" stroke-width="1.5"/>
+  <line x1="0" y1="100" x2="128" y2="100" stroke="#6a4028" stroke-width="1.5"/>
+  <line x1="0" y1="21" x2="128" y2="21" stroke="#a06a40" stroke-width="1" opacity="0.4"/>
+  <line x1="0" y1="41" x2="128" y2="41" stroke="#a06a40" stroke-width="1" opacity="0.4"/>
+  <line x1="0" y1="61" x2="128" y2="61" stroke="#a06a40" stroke-width="1" opacity="0.4"/>
+  <rect x="0" y="0" width="128" height="12" fill="#c0392b"/>
+  <line x1="0" y1="12" x2="128" y2="12" stroke="#8a2020" stroke-width="1.5"/>
+  <rect x="44" y="42" width="40" height="36" rx="2" fill="#1a3a5a"/>
+  <rect x="44" y="42" width="40" height="36" rx="2" fill="none" stroke="#5a3a1a" stroke-width="3"/>
+  <line x1="44" y1="60" x2="84" y2="60" stroke="#5a3a1a" stroke-width="2"/>
+  <line x1="64" y1="42" x2="64" y2="78" stroke="#5a3a1a" stroke-width="2"/>
+  <rect x="48" y="46" width="14" height="12" fill="#acd4e8" opacity="0.4"/>
+  <rect x="50" y="90" width="28" height="38" rx="2" fill="#3d2010"/>
+  <rect x="50" y="90" width="28" height="38" rx="2" fill="none" stroke="#5a2a10" stroke-width="2"/>
+  <circle cx="74" cy="109" r="2.5" fill="#c09030"/>
 </svg>`;
 }
 
@@ -1241,74 +1258,86 @@ export function gateSvg(unlocked = false): string {
 
 // ─── Bridge SVG Generator ─────────────────────────────────────
 
-/** Free bridge — wooden planks over water. No lock. */
+/** Free bridge — stone arch supports, wooden deck, rope railing, water below.
+ * Side-view panel for z-pinned billboard rendering (drawPositiveNano). */
 function bridgeSvg(): string {
   const parts: string[] = [];
-  // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
-  // Water ripples
-  parts.push(`<g opacity="0.15">`);
-  for (let y = 40; y < 96; y += 16) {
-    parts.push(`<path d="M10 ${y} Q36 ${y-4} 64 ${y} Q92 ${y+4} 118 ${y}" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  }
-  parts.push(`</g>`);
-  // Bridge planks (horizontal boards)
-  const plankColor = ['#8B6914', '#9a7818', '#7a5910'];
-  for (let i = 0; i < 5; i++) {
-    const py = 38 + i * 11;
-    parts.push(`<rect x="16" y="${py}" width="96" height="8" rx="1" fill="${plankColor[i % 3]}" />`);
-    parts.push(`<rect x="16" y="${py}" width="96" height="2" fill="#b08828" opacity="0.25" />`);
-    // Nail dots
-    parts.push(`<circle cx="22" cy="${py + 4}" r="1.5" fill="#5a4010" opacity="0.6" />`);
-    parts.push(`<circle cx="106" cy="${py + 4}" r="1.5" fill="#5a4010" opacity="0.6" />`);
-  }
-  // Side rails
-  parts.push(`<rect x="14" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
-  parts.push(`<rect x="108" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
+  // Water at base
+  parts.push(`<rect x="0" y="88" width="128" height="40" fill="#1a5588"/>`);
+  parts.push(`<rect x="0" y="88" width="128" height="12" fill="#0d3a6a"/>`);
+  parts.push(`<path d="M8 94 Q40 90 72 94 Q104 98 120 94" stroke="rgba(180,220,255,0.6)" stroke-width="1" fill="none"/>`);
+  // Stone arch piers
+  parts.push(`<rect x="0" y="60" width="20" height="68" fill="#7a7060"/>`);
+  parts.push(`<rect x="108" y="60" width="20" height="68" fill="#6a6050"/>`);
+  parts.push(`<ellipse cx="10" cy="105" rx="9" ry="14" fill="#1a5588" opacity="0.6"/>`);
+  parts.push(`<ellipse cx="118" cy="105" rx="9" ry="14" fill="#1a5588" opacity="0.6"/>`);
+  parts.push(`<line x1="0" y1="72" x2="20" y2="72" stroke="#5a5040" stroke-width="1"/>`);
+  parts.push(`<line x1="0" y1="82" x2="20" y2="82" stroke="#5a5040" stroke-width="1"/>`);
+  parts.push(`<line x1="108" y1="72" x2="128" y2="72" stroke="#5a5040" stroke-width="1"/>`);
+  parts.push(`<line x1="108" y1="82" x2="128" y2="82" stroke="#5a5040" stroke-width="1"/>`);
+  // Wooden deck planks
+  parts.push(`<rect x="18" y="60" width="92" height="8" fill="#8B6914"/>`);
+  parts.push(`<rect x="18" y="68" width="92" height="6" fill="#7a5810"/>`);
+  parts.push(`<rect x="18" y="74" width="92" height="6" fill="#9a7020"/>`);
+  parts.push(`<rect x="18" y="80" width="92" height="8" fill="#8B6914"/>`);
+  parts.push(`<line x1="18" y1="60" x2="110" y2="60" stroke="#b08828" stroke-width="1" opacity="0.4"/>`);
+  parts.push(`<line x1="18" y1="68" x2="110" y2="68" stroke="#b08828" stroke-width="1" opacity="0.3"/>`);
+  // Rope railing
+  parts.push(`<path d="M18 58 Q50 52 64 55 Q78 52 110 58" stroke="#9a7850" stroke-width="2.5" fill="none"/>`);
+  parts.push(`<line x1="28" y1="55" x2="28" y2="62" stroke="#7a5830" stroke-width="1.5"/>`);
+  parts.push(`<line x1="50" y1="53" x2="50" y2="61" stroke="#7a5830" stroke-width="1.5"/>`);
+  parts.push(`<line x1="78" y1="53" x2="78" y2="61" stroke="#7a5830" stroke-width="1.5"/>`);
+  parts.push(`<line x1="100" y1="55" x2="100" y2="62" stroke="#7a5830" stroke-width="1.5"/>`);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
 
-/** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
+/** Troll bridge — rough stone piers, gapped planks, chain barrier, toll sign.
+ * Side-view panel for z-pinned billboard rendering (drawPositiveNano).
+ * Locked unless condition resolved. */
 function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
-  // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
-  // Water ripples
-  parts.push(`<g opacity="0.15">`);
-  parts.push(`<path d="M8 50 Q34 46 64 50 Q94 54 120 50" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  parts.push(`<path d="M8 70 Q34 66 64 70 Q94 74 120 70" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  parts.push(`</g>`);
-  // Rough planks — more variation, gaps
-  const roughColors = ['#6a4a10', '#8B6014', '#5a3a08', '#7a5518'];
+  // Water at base
+  parts.push(`<rect x="0" y="88" width="128" height="40" fill="#1a5588"/>`);
+  parts.push(`<rect x="0" y="88" width="128" height="10" fill="#0d3a6a"/>`);
+  parts.push(`<path d="M8 92 Q40 88 72 92 Q104 96 120 92" stroke="rgba(180,220,255,0.5)" stroke-width="1" fill="none"/>`);
+  // Rough stone piers
+  parts.push(`<rect x="0" y="52" width="24" height="76" fill="#6a6050"/>`);
+  parts.push(`<rect x="104" y="52" width="24" height="76" fill="#5a5040"/>`);
+  parts.push(`<line x1="0" y1="65" x2="24" y2="65" stroke="#4a4030" stroke-width="1"/>`);
+  parts.push(`<line x1="0" y1="78" x2="24" y2="78" stroke="#4a4030" stroke-width="1"/>`);
+  parts.push(`<line x1="0" y1="91" x2="24" y2="91" stroke="#4a4030" stroke-width="1"/>`);
+  parts.push(`<line x1="104" y1="65" x2="128" y2="65" stroke="#4a4030" stroke-width="1"/>`);
+  parts.push(`<line x1="104" y1="78" x2="128" y2="78" stroke="#4a4030" stroke-width="1"/>`);
+  parts.push(`<line x1="104" y1="91" x2="128" y2="91" stroke="#4a4030" stroke-width="1"/>`);
+  // Rough planks with gaps
+  const roughColors = ['#6a4a10','#8B6014','#5a3a08','#7a5518','#6a4a10'];
   for (let i = 0; i < 5; i++) {
-    const py = 38 + i * 11;
-    const col = roughColors[i % 4];
-    parts.push(`<rect x="18" y="${py}" width="94" height="7" rx="0.5" fill="${col}" />`);
+    const py = 58 + i * 7;
+    parts.push(`<rect x="22" y="${py}" width="84" height="5" rx="0.5" fill="${roughColors[i]}"/>`);
     if (i === 1 || i === 3) {
-      parts.push(`<rect x="55" y="${py}" width="4" height="7" fill="#2a1a04" opacity="0.5" />`); // gap/crack
+      parts.push(`<rect x="55" y="${py}" width="5" height="5" fill="#2a1a04" opacity="0.6"/>`);
     }
   }
-  // Posts
-  parts.push(`<rect x="14" y="32" width="7" height="64" rx="1" fill="#5a3a08" />`);
-  parts.push(`<rect x="107" y="32" width="7" height="64" rx="1" fill="#5a3a08" />`);
-
-  // Sign
-  if (!unlocked) {
-    parts.push(`<rect x="44" y="14" width="40" height="24" rx="2" fill="#8B4513" />`);
-    parts.push(`<rect x="44" y="14" width="40" height="24" rx="2" fill="none" stroke="#6a3010" stroke-width="1.5" />`);
-    parts.push(`<text x="64" y="23" text-anchor="middle" font-size="6" font-family="monospace" fill="#ffd700">TROLL</text>`);
-    parts.push(`<text x="64" y="31" text-anchor="middle" font-size="5" font-family="monospace" fill="#ffa500">TOLL: QUIZ</text>`);
-    // Chain
-    parts.push(`<line x1="28" y1="38" x2="44" y2="26" stroke="#888" stroke-width="2" />`);
-    parts.push(`<line x1="84" y1="26" x2="100" y2="38" stroke="#888" stroke-width="2" />`);
+  if (unlocked) {
+    // No barrier — text says open
+    parts.push(`<text x="64" y="42" text-anchor="middle" font-size="10" font-family="monospace" fill="#4aff4a">OPEN</text>`);
   } else {
-    parts.push(`<text x="64" y="25" text-anchor="middle" font-size="9" font-family="monospace" fill="#4aff4a">OPEN</text>`);
+    // Chain barrier
+    parts.push(`<path d="M22 38 Q64 44 106 38" stroke="#888888" stroke-width="3" fill="none"/>`);
+    parts.push(`<path d="M22 44 Q64 50 106 44" stroke="#777777" stroke-width="2" fill="none"/>`);
+    parts.push(`<circle cx="40" cy="41" r="3" fill="#999" stroke="#666" stroke-width="1"/>`);
+    parts.push(`<circle cx="64" cy="47" r="3" fill="#999" stroke="#666" stroke-width="1"/>`);
+    parts.push(`<circle cx="88" cy="41" r="3" fill="#999" stroke="#666" stroke-width="1"/>`);
+    // Sign
+    parts.push(`<rect x="46" y="14" width="36" height="28" rx="2" fill="#8B4513"/>`);
+    parts.push(`<rect x="46" y="14" width="36" height="28" rx="2" fill="none" stroke="#6a3010" stroke-width="1.5"/>`);
+    parts.push(`<text x="64" y="25" text-anchor="middle" font-size="7" font-family="monospace" font-weight="bold" fill="#ffd700">TROLL</text>`);
+    parts.push(`<text x="64" y="35" text-anchor="middle" font-size="5" font-family="monospace" fill="#ffa500">TOLL: QUIZ</text>`);
+    parts.push(`<line x1="50" y1="14" x2="46" y2="38" stroke="#888" stroke-width="1.5"/>`);
+    parts.push(`<line x1="78" y1="14" x2="82" y2="38" stroke="#888" stroke-width="1.5"/>`);
   }
-
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
