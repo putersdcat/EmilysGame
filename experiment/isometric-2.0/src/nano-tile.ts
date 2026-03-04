@@ -286,6 +286,33 @@ function isVerticalWall(variant: FeatureVariant | undefined): boolean {
 }
 
 /**
+ * Returns true when the narrow end-cap face should be rendered for this variant.
+ *
+ * Mid-run tiles (straight-h, straight-v) and 4-way crossing tiles (cross)
+ * connect on BOTH ends of their primary axis — no exposed terminus face visible.
+ * Drawing the cap on these creates disconnected-post artifacts in long runs.
+ *
+ * All other variants (end-*, corner-*, tee-*, isolated, undefined/fallback) have
+ * at least one exposed end on the primary axis and need the cap rendered.
+ *
+ * For corner-* and tee-* the cap represents the terminus of the primary arm arm.
+ * The secondary arm's terminus is currently not separately rendered (future work).
+ *
+ * @see Issue #211 — end-cap chaining fix derivation.
+ */
+function shouldDrawEndCap(variant: FeatureVariant | undefined): boolean {
+  switch (variant) {
+    case 'straight-h': // both ends connect east+west — no exposed face
+    case 'straight-v': // both ends connect north+south — no exposed face
+    case 'cross':      // 4-way: all arms connect to neighbors — no exposed face
+      return false;
+    default:
+      // end-r, end-l, end-t, end-b, isolated, corner-*, tee-*, undefined(fallback)
+      return true;
+  }
+}
+
+/**
  * Draw a nano with 3-face extrusion: front face + end cap + top cap.
  * Creates a proper isometric 3D box for thick structural nanos (stone walls).
  *
@@ -390,7 +417,9 @@ export function drawExtrudedNano(
   // ── 1. End cap (drawn first — further from camera) ─────────────────────────────
   // Shadow face: narrower (WALL_THICKNESS=48px), darkened.
   // Uses the OPPOSITE matrix sign from the front face.
-  if (nano.sideTextureSvg) {
+  // Only rendered when the variant has an exposed terminus (shouldDrawEndCap).
+  // straight-h, straight-v, cross: both ends connect → skip cap (no exposed face).
+  if (shouldDrawEndCap(nano.variant) && nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
       ctx.save();
