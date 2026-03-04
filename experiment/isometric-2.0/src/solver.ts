@@ -235,6 +235,94 @@ function capStones(x: number, y: number, w: number, seed: number, capH = 6): str
   return caps.join('\n    ');
 }
 
+// ─── Vertical block generation (for vertical wall tops) ─────
+// Standard stoneBlocks/capStones iterate horizontal rows (y→x).
+// Under iso transform, horizontal lines (y=const) → \ diagonals.
+// Vertical walls (/ on screen) need brick courses running along /.
+// Vertical lines (x=const) → / diagonals under iso transform.
+// These V variants iterate vertical columns (x→y) so mortar lines
+// run parallel to the wall's / direction on screen.
+
+/**
+ * Generate stone blocks with VERTICAL mortar courses (columns instead of rows).
+ * Used for top-view SVGs of vertical wall arms (N/S arms) so brick courses
+ * align with the wall's / screen direction.
+ */
+function stoneBlocksV(x: number, y: number, w: number, h: number, seed: number, baseColW = 12): string {
+  const blocks: string[] = [];
+  const gap = 2;
+  const colW = baseColW;
+  let col = 0;
+
+  for (let cx = x; cx < x + w - 2; cx += colW + gap) {
+    const remainW = Math.min(colW, x + w - cx - gap);
+    if (remainW < 4) break;
+    // Stagger every other column
+    const offset = (col % 2 === 0) ? 0 : 14;
+    let by = y + offset;
+    let stoneIdx = 0;
+
+    while (by < y + h - 2) {
+      const hash = ((seed * 7919 + col * 6581 + stoneIdx * 3571) >>> 0);
+      const bh = 20 + (hash % 18);
+      const actualH = Math.min(bh, y + h - by - gap);
+      if (actualH < 8) break;
+
+      const base = 145 + (hash >> 8) % 30;
+      const r = base + ((hash >> 12) % 10) - 5;
+      const g = base + ((hash >> 16) % 8) - 4;
+      const b = base + ((hash >> 20) % 12) - 2;
+
+      blocks.push(
+        `<rect x="${cx}" y="${by}" width="${remainW}" height="${actualH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
+      );
+      // Left highlight
+      blocks.push(
+        `<rect x="${cx}" y="${by}" width="${Math.min(3, remainW)}" height="${actualH}" rx="1" fill="rgba(255,255,255,0.15)" />`
+      );
+      // Right shadow
+      blocks.push(
+        `<rect x="${cx + remainW - 2}" y="${by}" width="2" height="${actualH}" rx="0.5" fill="rgba(0,0,0,0.08)" />`
+      );
+      // Occasional horizontal crack
+      if ((hash >> 24) % 5 === 0 && actualH > 14) {
+        const ly = by + 4 + (hash % (actualH - 8));
+        blocks.push(
+          `<line x1="${cx + 2}" y1="${ly}" x2="${cx + remainW - 2}" y2="${ly + ((hash >> 4) % 5) - 2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
+        );
+      }
+
+      by += actualH + gap;
+      stoneIdx++;
+    }
+    col++;
+  }
+  return blocks.join('\n    ');
+}
+
+/**
+ * Generate capstone column strip (vertical cap edge).
+ * Matches capStones() style but runs vertically along y.
+ */
+function capStonesV(x: number, y: number, h: number, seed: number, capW = 6): string {
+  const caps: string[] = [];
+  let by = y;
+  let idx = 0;
+  while (by < y + h - 2) {
+    const hash = ((seed * 4271 + idx * 9137) >>> 0);
+    const bh = 16 + (hash % 14);
+    const actualH = Math.min(bh, y + h - by - 2);
+    if (actualH < 6) break;
+    const grey = 150 + (hash >> 8) % 20;
+    caps.push(
+      `<rect x="${x}" y="${by}" width="${capW}" height="${actualH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
+    );
+    by += actualH + 2;
+    idx++;
+  }
+  return caps.join('\n    ');
+}
+
 /** Get wall footprint bounds based on variant and connection direction. */
 function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48; // wall thickness
@@ -306,14 +394,24 @@ function stoneWallSvg(variant: FeatureVariant): string {
  * Shows the wall footprint from above for the extruded top cap.
  * Uses the variant-based wall bounds to determine the footprint shape.
  *
- * Uses the SAME stoneBlocks() function as the side faces so the brick
- * texture is consistent across all three visible faces of the wall box.
+ * Uses stoneBlocks/capStones for horizontal arms (brick courses → \ on screen)
+ * and stoneBlocksV/capStonesV for vertical arms (brick courses → / on screen).
+ * This ensures the top face brick direction matches the side face brick direction
+ * for both wall orientations.
+ *
  * Each footprint rect gets its own clip region + block fill + border.
  */
 function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
   const parts: string[] = [];
   const seed = variant.charCodeAt(0) * 53 + 7;
+  const off = 40;
+  const W = 48;
+
+  // Determine if the variant has any vertical arm (top/bottom).
+  // Used to orient the central core block for primarily-vertical variants.
+  const hasVArm = variant !== 'straight-h' && variant !== 'end-r'
+               && variant !== 'end-l' && variant !== 'isolated';
 
   for (const r of rects) {
     const id = `wp${r.x}_${r.y}`;
@@ -321,12 +419,26 @@ function stoneWallTopSvg(variant: FeatureVariant): string {
     parts.push(
       `<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`
     );
-    // Stone blocks — smaller rowH (5px) to match side texture's perceived scale.
+
+    // Determine brick direction for THIS rect:
+    //   N/S arms (y < off or y >= off+W) → vertical bricks (/ on screen)
+    //   W/E arms (x < off or x >= off+W) → horizontal bricks (\ on screen)
+    //   Center core: follow overall variant direction
+    const isNSArm = r.y < off || r.y >= off + W;
+    const isCenter = r.x === off && r.y === off;
+    const useVertical = isNSArm || (isCenter && hasVArm);
+
+    // Stone block row/col size: 5px to match side texture's perceived scale.
     // Side texture draws 128×128 viewBox into 128×48 dest → 2.67× vertical squash.
-    // Side brick rowH=12 appears as ~4.5px. Top rowH=5 under iso ≈ 5.6px. ≈match.
-    parts.push(`<g clip-path="url(#${id})">`);  
-    parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
-    parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
+    // Side brick rowH=12 appears as ~4.5px. Top 5px under iso ≈ 5.6px. ≈match.
+    parts.push(`<g clip-path="url(#${id})">`);
+    if (useVertical) {
+      parts.push(stoneBlocksV(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
+      parts.push(capStonesV(r.x, r.y, r.h, seed + r.x * 3, 2.5));
+    } else {
+      parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
+      parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
+    }
     parts.push(`</g>`);
     // Mortar border for definition
     parts.push(
