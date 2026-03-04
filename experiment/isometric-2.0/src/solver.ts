@@ -9,27 +9,38 @@
 import {
   type MicroTile,
   type WorldUnitChunk,
-  type TileKind,
+  type NanoTileKind,
+  type NanoTile,
   type FeatureConnections,
   type FeatureVariant,
   type EdgeMasks,
+  type MacroAssembly,
   CHUNK_TILES,
 } from './types';
 
 // ─── Feature Configuration ───────────────────────────────────
 
-/** Tile kinds that participate in same-kind connection solving. */
-const CONNECTABLE_KINDS: ReadonlySet<TileKind> = new Set([
+/** Nano tile kinds that participate in same-kind connection solving. */
+const CONNECTABLE_KINDS: ReadonlySet<NanoTileKind> = new Set([
   'stone-wall',
-  'wooden-fence',
+  'fence',
   'river',
 ]);
 
-/** Check if two kinds connect to each other. */
-function canConnect(source: TileKind, neighbor: TileKind): boolean {
-  // Rivers also connect to water (flow into lakes/ocean)
-  if (source === 'river' && neighbor === 'water') return true;
-  return source === neighbor;
+/** Extract the primary nano tile kind from a micro tile (first nano in stack). */
+function getNanoKind(tile: MicroTile): NanoTileKind | null {
+  return tile.nanos?.[0]?.kind ?? null;
+}
+
+/** Check if a source nano kind connects to a neighboring tile. */
+function canConnect(source: NanoTileKind, neighbor: MicroTile | null): boolean {
+  if (!neighbor) return false;
+  const neighborNano = getNanoKind(neighbor);
+  // Same nano kind connects
+  if (neighborNano !== null && source === neighborNano) return true;
+  // River connects to water biome tiles
+  if (source === 'river' && neighbor.kind === 'water') return true;
+  return false;
 }
 
 // ─── Neighbor Lookup ─────────────────────────────────────────
@@ -79,13 +90,13 @@ function getNeighbors(
 
 // ─── Connection Resolution ───────────────────────────────────
 
-/** Determine connection flags for a connectable tile. */
-function resolveConnections(kind: TileKind, neighbors: Neighbors): FeatureConnections {
+/** Determine connection flags for a connectable nano tile. */
+function resolveConnections(kind: NanoTileKind, neighbors: Neighbors): FeatureConnections {
   return {
-    top: neighbors.top !== null && canConnect(kind, neighbors.top.kind),
-    right: neighbors.right !== null && canConnect(kind, neighbors.right.kind),
-    bottom: neighbors.bottom !== null && canConnect(kind, neighbors.bottom.kind),
-    left: neighbors.left !== null && canConnect(kind, neighbors.left.kind),
+    top: canConnect(kind, neighbors.top),
+    right: canConnect(kind, neighbors.right),
+    bottom: canConnect(kind, neighbors.bottom),
+    left: canConnect(kind, neighbors.left),
   };
 }
 
@@ -142,10 +153,10 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
  * Generate individual stone block SVGs for a rectangular region.
  * Produces staggered rows of stones with mortar gaps, color variation, and cracks.
  */
-function stoneBlocks(x: number, y: number, w: number, h: number, seed: number): string {
+function stoneBlocks(x: number, y: number, w: number, h: number, seed: number, baseRowH = 12): string {
   const blocks: string[] = [];
   const gap = 2; // mortar gap
-  const rowH = 12;
+  const rowH = baseRowH;
   let row = 0;
 
   for (let ry = y; ry < y + h - 2; ry += rowH + gap) {
@@ -163,7 +174,7 @@ function stoneBlocks(x: number, y: number, w: number, h: number, seed: number): 
       if (actualW < 8) break;
 
       // Color variation: base grey with slight warm/cool shift
-      const base = 88 + (hash >> 8) % 30;
+      const base = 145 + (hash >> 8) % 30;
       const r = base + ((hash >> 12) % 10) - 5;
       const g = base + ((hash >> 16) % 8) - 4;
       const b = base + ((hash >> 20) % 12) - 2;
@@ -174,12 +185,12 @@ function stoneBlocks(x: number, y: number, w: number, h: number, seed: number): 
 
       // Top highlight
       blocks.push(
-        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${Math.min(3, remainH)}" rx="1" fill="rgba(255,255,255,0.08)" />`
+        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${Math.min(3, remainH)}" rx="1" fill="rgba(255,255,255,0.15)" />`
       );
 
       // Bottom shadow
       blocks.push(
-        `<rect x="${bx}" y="${ry + remainH - 2}" width="${actualW}" height="2" rx="0.5" fill="rgba(0,0,0,0.12)" />`
+        `<rect x="${bx}" y="${ry + remainH - 2}" width="${actualW}" height="2" rx="0.5" fill="rgba(0,0,0,0.08)" />`
       );
 
       // Occasional crack
@@ -204,9 +215,9 @@ function stoneBlocks(x: number, y: number, w: number, h: number, seed: number): 
 /**
  * Generate capstone row (slightly different colored stones on top of wall).
  */
-function capStones(x: number, y: number, w: number, seed: number): string {
+function capStones(x: number, y: number, w: number, seed: number, capH = 6): string {
   const caps: string[] = [];
-  const capH = 6;
+  // capH default 6 for side texture; pass ~2.5 for top texture to match scale.
   let bx = x;
   let idx = 0;
   while (bx < x + w - 2) {
@@ -214,7 +225,7 @@ function capStones(x: number, y: number, w: number, seed: number): string {
     const bw = 16 + (hash % 14);
     const actualW = Math.min(bw, x + w - bx - 2);
     if (actualW < 6) break;
-    const grey = 105 + (hash >> 8) % 20;
+    const grey = 150 + (hash >> 8) % 20;
     caps.push(
       `<rect x="${bx}" y="${y}" width="${actualW}" height="${capH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
     );
@@ -264,77 +275,64 @@ function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,
   return { rects };
 }
 
-/** Generate an SVG for a stone-wall tile variant. */
+/**
+ * Generate a SIDE-VIEW SVG for a stone wall tile (transparent background).
+ * This is the front face of the wall as seen through Z-pinned shear transform.
+ * Used as both `svg` (fallback) and `sideTextureSvg` for extruded walls.
+ *
+ * The variant param is used to seed pseudo-random stone block variation
+ * so adjacent tiles don't look identical.
+ */
 function stoneWallSvg(variant: FeatureVariant): string {
+  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
+  const parts: string[] = [];
+
+  // Stone blocks fill the entire 128×128 — will be scaled to (128 × drawH) by renderer
+  parts.push(stoneBlocks(0, 0, 128, 128, seed));
+
+  // Cap stones along top edge
+  parts.push(capStones(0, 0, 128, seed + 999));
+
+  // Subtle mortar overlay
+  parts.push(`<rect x="0" y="0" width="128" height="128" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.5" />`);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+/**
+ * Generate a TOP-VIEW SVG for a stone wall cap (transparent background).
+ * Shows the wall footprint from above for the extruded top cap.
+ * Uses the variant-based wall bounds to determine the footprint shape.
+ *
+ * Uses the SAME stoneBlocks() function as the side faces so the brick
+ * texture is consistent across all three visible faces of the wall box.
+ * Each footprint rect gets its own clip region + block fill + border.
+ */
+function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
   const parts: string[] = [];
-  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
+  const seed = variant.charCodeAt(0) * 53 + 7;
 
-  // Grass background
-  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
-  // Subtle grass patches under the wall
-  parts.push(`<ellipse cx="30" cy="100" rx="18" ry="12" fill="#458550" opacity="0.4" />`);
-  parts.push(`<ellipse cx="100" cy="30" rx="16" ry="10" fill="#2d6838" opacity="0.3" />`);
-
-  // Wall shadow (offset slightly)
   for (const r of rects) {
+    const id = `wp${r.x}_${r.y}`;
+    // Clip to this wall footprint rectangle
     parts.push(
-      `<rect x="${r.x + 3}" y="${r.y + 3}" width="${r.w}" height="${r.h}" fill="rgba(0,0,0,0.2)" rx="1" />`
+      `<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`
     );
-  }
-
-  // Stone body — clip to wall footprint then draw stones
-  const clipId = `wc-${variant.replace(/[^a-z]/g, '')}`;
-  let clipRects = '';
-  for (const r of rects) {
-    clipRects += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" />`;
-  }
-  parts.push(`<defs><clipPath id="${clipId}">${clipRects}</clipPath></defs>`);
-
-  // Wall base fill
-  for (const r of rects) {
-    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="#6a6a72" rx="1" />`);
-  }
-
-  // Stone blocks (clipped to wall shape)
-  parts.push(`<g clip-path="url(#${clipId})">`);
-  // Draw stones into the bounding box of all rects
-  const minX = Math.min(...rects.map(r => r.x));
-  const minY = Math.min(...rects.map(r => r.y));
-  const maxX = Math.max(...rects.map(r => r.x + r.w));
-  const maxY = Math.max(...rects.map(r => r.y + r.h));
-  parts.push(stoneBlocks(minX, minY, maxX - minX, maxY - minY, seed));
-
-  // Cap stones along top edges
-  for (const r of rects) {
-    parts.push(capStones(r.x, r.y, r.w, seed + r.x * 17 + r.y * 31));
-  }
-  parts.push(`</g>`);
-
-  // Wall border/outline
-  for (const r of rects) {
+    // Stone blocks — smaller rowH (5px) to match side texture's perceived scale.
+    // Side texture draws 128×128 viewBox into 128×48 dest → 2.67× vertical squash.
+    // Side brick rowH=12 appears as ~4.5px. Top rowH=5 under iso ≈ 5.6px. ≈match.
+    parts.push(`<g clip-path="url(#${id})">`);  
+    parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
+    parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
+    parts.push(`</g>`);
+    // Mortar border for definition
     parts.push(
-      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1" rx="1" />`
+      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="0.8" rx="1" />`
     );
   }
-
-  // Small vegetation at wall base
-  const grassSeeds = [
-    { x: 8, y: 118 }, { x: 35, y: 122 }, { x: 90, y: 120 }, { x: 115, y: 116 },
-    { x: 60, y: 124 }, { x: 20, y: 6 }, { x: 75, y: 4 }, { x: 110, y: 8 },
-  ];
-  parts.push(`<g stroke="#4a8a54" stroke-width="1.2" stroke-linecap="round" opacity="0.5">`);
-  for (const gs of grassSeeds) {
-    // Only draw grass if it's NOT inside the wall footprint
-    const insideWall = rects.some(r =>
-      gs.x >= r.x && gs.x <= r.x + r.w && gs.y >= r.y && gs.y <= r.y + r.h
-    );
-    if (!insideWall) {
-      parts.push(`<line x1="${gs.x}" y1="${gs.y}" x2="${gs.x - 2}" y2="${gs.y - 6}" />`);
-      parts.push(`<line x1="${gs.x + 4}" y1="${gs.y}" x2="${gs.x + 6}" y2="${gs.y - 5}" />`);
-    }
-  }
-  parts.push(`</g>`);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
@@ -574,111 +572,121 @@ function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
   </svg>`;
 }
 
-/** Generate an SVG for a wooden fence tile variant. */
-function woodenFenceSvg(variant: FeatureVariant): string {
+/**
+ * Generate a SIDE-VIEW SVG for a wooden fence tile (transparent background).
+ * Shows the fence from the front: posts rising from bottom, rails connecting them.
+ * Z-pinned shear will make it "stand up" along the iso left axis.
+ *
+ * Variant determines post layout:
+ * - straight/cross/tee: Full-width fence with evenly-spaced posts + rails
+ * - end-*: Half-width fence ending at a post
+ * - isolated: Single prominent post (corner or terminal)
+ * - diagonal/vertex: Handled by early-return above (not reached here)
+ */
+export function woodenFenceSvg(variant: FeatureVariant): string {
   const parts: string[] = [];
 
-  // Grass background
-  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
-  parts.push(`<ellipse cx="35" cy="95" rx="22" ry="14" fill="#458550" opacity="0.4" />`);
-  parts.push(`<ellipse cx="95" cy="35" rx="18" ry="12" fill="#2d6838" opacity="0.35" />`);
+  // Side-view fence — NO grass background (transparent)
+  // 128×128 SVG: x=0..128 is width along iso axis, y=0..128 is height
+  // y=128 is ground level, y=0 is top
 
-  // Fence dimensions
-  const railW = 6;   // rail thickness
-  const postW = 10;  // post width
-  const postH = 48;  // post height (appears as full post in flat space)
-  const mid = 64;    // center
+  const postW = 10;   // post width
+  const railH = 7;    // rail thickness
+  const capRy = 3;    // cap ellipse ry
 
-  // Helper to draw a fence post
-  function post(x: number, y: number): string {
-    const px = x - postW / 2;
-    const py = y - postH;
+  // Helper: post at centre-x, rising from base y=128 to topY
+  function sidePost(cx: number, topY: number): string {
+    const px = cx - postW / 2;
+    const h = 128 - topY;
     return [
       // Post shadow
-      `<rect x="${px + 2}" y="${py + 4}" width="${postW}" height="${postH}" rx="1" fill="rgba(0,0,0,0.15)" />`,
-      // Post body (wood grain)
-      `<rect x="${px}" y="${py}" width="${postW}" height="${postH}" rx="1.5" fill="#8B6914" />`,
-      // Lighter strip (grain)
-      `<rect x="${px + 2}" y="${py}" width="3" height="${postH}" fill="#a07820" opacity="0.4" />`,
-      // Dark edge
-      `<rect x="${px + postW - 2}" y="${py}" width="2" height="${postH}" fill="#6a5010" opacity="0.3" />`,
-      // Top cap (rounded)
-      `<ellipse cx="${x}" cy="${py}" rx="${postW / 2}" ry="3" fill="#9a7018" />`,
-      `<ellipse cx="${x}" cy="${py}" rx="${postW / 2 - 1}" ry="2" fill="#b08828" opacity="0.5" />`,
+      `<rect x="${px + 2}" y="${topY + 3}" width="${postW}" height="${h}" rx="1.5" fill="rgba(0,0,0,0.15)" />`,
+      // Post body
+      `<rect x="${px}" y="${topY}" width="${postW}" height="${h}" rx="2" fill="#8B6914" />`,
+      // Lighter grain strip
+      `<rect x="${px + 2}" y="${topY}" width="3" height="${h}" fill="#a07820" opacity="0.4" />`,
+      // Dark right edge
+      `<rect x="${px + postW - 2}" y="${topY}" width="2" height="${h}" fill="#6a5010" opacity="0.3" />`,
+      // Rounded top cap
+      `<ellipse cx="${cx}" cy="${topY}" rx="${postW / 2}" ry="${capRy}" fill="#9a7018" />`,
+      `<ellipse cx="${cx}" cy="${topY}" rx="${postW / 2 - 1}" ry="${capRy - 1}" fill="#b08828" opacity="0.5" />`,
     ].join('\n    ');
   }
 
-  // Helper to draw horizontal rails
-  function hRails(x1: number, x2: number, cy: number): string {
-    const topY = cy - 18;
-    const botY = cy + 2;
+  // Helper: horizontal rail from x1 to x2 at vertical position y
+  function sideRail(x1: number, x2: number, y: number, lighter: boolean): string {
+    const fill = lighter ? '#9a7018' : '#8B6914';
+    const high = lighter ? '#b08828' : '#a07820';
     return [
-      // Rail shadows
-      `<rect x="${x1}" y="${topY + 2}" width="${x2 - x1}" height="${railW}" rx="1" fill="rgba(0,0,0,0.12)" />`,
-      `<rect x="${x1}" y="${botY + 2}" width="${x2 - x1}" height="${railW}" rx="1" fill="rgba(0,0,0,0.12)" />`,
-      // Top rail
-      `<rect x="${x1}" y="${topY}" width="${x2 - x1}" height="${railW}" rx="1" fill="#9a7018" />`,
-      `<rect x="${x1}" y="${topY}" width="${x2 - x1}" height="2" fill="#b08828" opacity="0.3" />`,
-      // Bottom rail
-      `<rect x="${x1}" y="${botY}" width="${x2 - x1}" height="${railW}" rx="1" fill="#8B6914" />`,
-      `<rect x="${x1}" y="${botY}" width="${x2 - x1}" height="2" fill="#a07820" opacity="0.3" />`,
+      // Rail shadow
+      `<rect x="${x1}" y="${y + 2}" width="${x2 - x1}" height="${railH}" rx="1.5" fill="rgba(0,0,0,0.12)" />`,
+      // Rail body
+      `<rect x="${x1}" y="${y}" width="${x2 - x1}" height="${railH}" rx="1.5" fill="${fill}" />`,
+      // Top highlight
+      `<rect x="${x1}" y="${y}" width="${x2 - x1}" height="2" rx="1" fill="${high}" opacity="0.3" />`,
     ].join('\n    ');
   }
 
-  // Helper to draw vertical rails
-  function vRails(y1: number, y2: number, cx: number): string {
-    const leftX = cx - 18;
-    const rightX = cx + 2;
-    return [
-      `<rect x="${leftX + 2}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="rgba(0,0,0,0.12)" />`,
-      `<rect x="${rightX + 2}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="rgba(0,0,0,0.12)" />`,
-      `<rect x="${leftX}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="#9a7018" />`,
-      `<rect x="${leftX}" y="${y1}" width="2" height="${y2 - y1}" fill="#b08828" opacity="0.3" />`,
-      `<rect x="${rightX}" y="${y1}" width="${railW}" height="${y2 - y1}" rx="1" fill="#8B6914" />`,
-      `<rect x="${rightX}" y="${y1}" width="2" height="${y2 - y1}" fill="#a07820" opacity="0.3" />`,
-    ].join('\n    ');
-  }
+  // Post top Y and rail positions (relative to 128-high canvas, ground at y=128)
+  const postTopY = 10;          // posts extend from y=10 to y=128
+  const topRailY = 30;          // upper rail
+  const botRailY = 80;          // lower rail
 
-  const arms = { top: false, right: false, bottom: false, left: false };
+  // Determine arm presence (same logic as original)
+  const arms = { left: false, right: false };
+
   switch (variant) {
-    case 'straight-h': arms.left = arms.right = true; break;
-    case 'straight-v': arms.top = arms.bottom = true; break;
-    case 'corner-tr': arms.top = arms.right = true; break;
-    case 'corner-tl': arms.top = arms.left = true; break;
-    case 'corner-br': arms.bottom = arms.right = true; break;
-    case 'corner-bl': arms.bottom = arms.left = true; break;
-    case 'cross': arms.top = arms.right = arms.bottom = arms.left = true; break;
-    case 'tee-t': arms.left = arms.right = arms.bottom = true; break;
-    case 'tee-b': arms.left = arms.right = arms.top = true; break;
-    case 'tee-r': arms.top = arms.bottom = arms.left = true; break;
-    case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
-    case 'end-t': arms.bottom = true; break;
-    case 'end-b': arms.top = true; break;
-    case 'end-r': arms.left = true; break;
-    case 'end-l': arms.right = true; break;
-    default: break; // isolated
+    case 'straight-h': case 'cross': case 'tee-t': case 'tee-b':
+      arms.left = arms.right = true; break;
+    case 'straight-v':
+      arms.left = arms.right = true; break; // show full fence face for vertical too
+    case 'corner-tr': case 'end-r': case 'tee-l':
+      arms.right = true; break;
+    case 'corner-tl': case 'end-l': case 'tee-r':
+      arms.left = true; break;
+    case 'corner-br':
+      arms.right = true; break;
+    case 'corner-bl':
+      arms.left = true; break;
+    case 'end-t': case 'end-b':
+      arms.left = arms.right = true; break; // terminal, show rail section
+    case 'isolated':
+      break; // just a post
+    default:
+      arms.left = arms.right = true; break;
   }
 
-  // Draw rails first (behind posts)
-  if (arms.left) parts.push(hRails(0, mid, mid));
-  if (arms.right) parts.push(hRails(mid, 128, mid));
-  if (arms.top) parts.push(vRails(0, mid, mid));
-  if (arms.bottom) parts.push(vRails(mid, 128, mid));
+  // Draw rails behind posts
+  if (arms.left && arms.right) {
+    // Full-width rails: 0 → 128
+    parts.push(sideRail(0, 128, topRailY, true));
+    parts.push(sideRail(0, 128, botRailY, false));
+  } else if (arms.right) {
+    // Right half: center → right edge
+    parts.push(sideRail(64, 128, topRailY, true));
+    parts.push(sideRail(64, 128, botRailY, false));
+  } else if (arms.left) {
+    // Left half: left edge → center
+    parts.push(sideRail(0, 64, topRailY, true));
+    parts.push(sideRail(0, 64, botRailY, false));
+  }
 
-  // Corner post always
-  parts.push(post(mid, mid + postH / 2));
-
-  // End posts on arms
-  if (arms.left) parts.push(post(postW / 2, mid + postH / 2));
-  if (arms.right) parts.push(post(128 - postW / 2, mid + postH / 2));
-  if (arms.top) parts.push(post(mid, postH / 2 + 4));
-  if (arms.bottom) parts.push(post(mid, 128 - 4));
-
-  // Small grass tufts at base of posts
-  parts.push(`<g stroke="#4a8a54" stroke-width="1" stroke-linecap="round" opacity="0.4">`);
-  parts.push(`<line x1="${mid - 8}" y1="${mid + postH / 2 + 2}" x2="${mid - 11}" y2="${mid + postH / 2 - 4}" />`);
-  parts.push(`<line x1="${mid + 8}" y1="${mid + postH / 2 + 1}" x2="${mid + 11}" y2="${mid + postH / 2 - 3}" />`);
-  parts.push(`</g>`);
+  // Draw posts
+  if (arms.left && arms.right) {
+    // Three-post full-width: left, center, right
+    parts.push(sidePost(6, postTopY));
+    parts.push(sidePost(64, postTopY));
+    parts.push(sidePost(122, postTopY));
+  } else if (arms.right) {
+    parts.push(sidePost(64, postTopY));
+    parts.push(sidePost(122, postTopY));
+  } else if (arms.left) {
+    parts.push(sidePost(6, postTopY));
+    parts.push(sidePost(64, postTopY));
+  } else {
+    // Isolated: single prominent centre post
+    parts.push(sidePost(64, postTopY));
+  }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
@@ -696,25 +704,26 @@ function tallGrassZ(worldCol: number, worldRow: number): number {
 // ─── SVG Selection ───────────────────────────────────────────
 
 /**
- * Get the appropriate variant SVG for a solved tile.
+ * Get the appropriate variant SVG for a solved nano tile.
  * Returns null if no variant SVG is needed (tile uses standard asset).
  */
 export function getVariantSvg(
-  tile: MicroTile,
+  nanoKind: NanoTileKind,
+  variant: FeatureVariant,
+  connections: FeatureConnections,
+  zOffset: number,
   worldCol: number,
   worldRow: number,
 ): string | null {
-  if (!tile.variant || !tile.connections) return null;
-
-  switch (tile.kind) {
+  switch (nanoKind) {
     case 'stone-wall':
-      return stoneWallSvg(tile.variant);
-    case 'wooden-fence':
-      return woodenFenceSvg(tile.variant);
+      return stoneWallSvg(variant);
+    case 'fence':
+      return woodenFenceSvg(variant);
     case 'river':
-      return riverSvg(tile.variant, tile.connections);
+      return riverSvg(variant, connections);
     case 'tall-grass':
-      return tallGrassSvg(tile.z, worldCol, worldRow);
+      return tallGrassSvg(zOffset, worldCol, worldRow);
     default:
       return null;
   }
@@ -824,42 +833,76 @@ export function solveChunkFeatures(
       const tile = chunk.tiles[row * CHUNK_TILES + col];
       const worldCol = chunk.cx * CHUNK_TILES + col;
       const worldRow = chunk.cy * CHUNK_TILES + row;
+      const nanoKind = getNanoKind(tile);
 
-      // Solve connections for connectable features
-      if (CONNECTABLE_KINDS.has(tile.kind)) {
+      // Diagonal fence tiles carry a pre-set variant — skip connection solving, just apply SVG
+      if (nanoKind === 'fence') {
+        const nano = tile.nanos![0]!;
+        const v = nano.variant;
+        if (v === 'diagonal-left' || v === 'diagonal-right' || v === 'vertex') {
+          const updatedNano: NanoTile = { ...nano, svg: woodenFenceSvg(v) };
+          newTiles.push({ ...tile, edgeMasks: GRASS_BLEND_MASKS, nanos: [updatedNano] });
+          changed = true;
+          continue;
+        }
+      }
+
+      // Solve connections for connectable nano features
+      if (nanoKind && CONNECTABLE_KINDS.has(nanoKind)) {
+        const nano = tile.nanos![0]!;
         const neighbors = getNeighbors(chunk, col, row, lookup);
-        const connections = resolveConnections(tile.kind, neighbors);
+        const connections = resolveConnections(nanoKind, neighbors);
         const variant = selectVariant(connections);
         const variantSvg = getVariantSvg(
-          { ...tile, connections, variant },
+          nanoKind,
+          variant,
+          connections,
+          nano.zOffset,
           worldCol,
           worldRow,
         );
 
-        const edgeMasks = tile.kind === 'river' ? RIVER_EDGE_MASKS
-          : tile.kind === 'wooden-fence' ? GRASS_BLEND_MASKS
+        const edgeMasks = nanoKind === 'river' ? RIVER_EDGE_MASKS
+          : nanoKind === 'fence' ? GRASS_BLEND_MASKS
           : WALL_EDGE_MASKS;
+
+        const updatedNano: NanoTile = {
+          ...nano,
+          connections,
+          variant,
+          svg: variantSvg ?? nano.svg,
+          // For extruded nanos (stone walls), set side+top textures properly
+          ...(nanoKind === 'stone-wall' && variantSvg ? {
+            sideTextureSvg: variantSvg,
+            topTextureSvg: stoneWallTopSvg(variant),
+          } : {}),
+        };
 
         newTiles.push({
           ...tile,
-          connections,
-          variant,
           edgeMasks,
-          svg: variantSvg ?? tile.svg,
+          nanos: [updatedNano],
         });
         changed = true;
         continue;
       }
 
       // Solve tall grass height variation
-      if (tile.kind === 'tall-grass') {
+      if (nanoKind === 'tall-grass') {
+        const nano = tile.nanos![0]!;
         const z = tallGrassZ(worldCol, worldRow);
         const svg = tallGrassSvg(z, worldCol, worldRow);
+
+        const updatedNano: NanoTile = {
+          ...nano,
+          zOffset: z,
+          svg,
+        };
+
         newTiles.push({
           ...tile,
-          z,
-          svg,
           edgeMasks: GRASS_BLEND_MASKS,
+          nanos: [updatedNano],
         });
         changed = true;
         continue;
@@ -869,24 +912,567 @@ export function solveChunkFeatures(
     }
   }
 
-  if (!changed) return chunk;
+  if (!changed) {
+    // Still compute walkable map if not done yet
+    if (chunk.walkableMap.length === 0) {
+      return { ...chunk, walkableMap: buildWalkableMap(chunk) };
+    }
+    return chunk;
+  }
+
+  // ─── Gate & Bridge Placement Passes ───────────────────────────
+  const { tiles: gatedTiles, newConditions: gateConditions } =
+    placeGatesInFenceRuns(newTiles as MicroTile[], chunk.cx, chunk.cy);
+
+  const { tiles: bridgedTiles, newConditions: bridgeConditions } =
+    placeRiverCrossings(gatedTiles as MicroTile[], chunk.cx, chunk.cy);
+
+  // Merge new conditions into the existing map (mutates chunk.activeConditions in place)
+  for (const [id, state] of gateConditions) chunk.activeConditions.set(id, state);
+  for (const [id, state] of bridgeConditions) chunk.activeConditions.set(id, state);
+
+  // Build walkable map with merged conditions (temp object for computation only)
+  const tempForWalkable = { ...chunk, tiles: bridgedTiles, activeConditions: chunk.activeConditions } as WorldUnitChunk;
+  const wm = buildWalkableMap(tempForWalkable);
 
   return {
     ...chunk,
-    tiles: newTiles,
+    tiles: bridgedTiles,
     dirty: true,
+    walkableMap: wm,
+    // activeConditions already mutated above — same Map reference carried via spread
   };
 }
 
+
 /**
  * Generate raw feature tiles for a world position.
- * Returns the TileKind override if a feature should be placed here, or null.
+ * Returns the NanoTileKind override if a feature should be placed here, or null.
  * This is called during chunk generation to lay down features before solving.
  */
-export function getFeatureKind(worldCol: number, worldRow: number): TileKind | null {
+/**
+ * Returns the pre-set FeatureVariant for a diagonal fence demo tile, or null.
+ * Diagonal fence tiles bypass orthogonal connection solving.
+ */
+export function getDiagonalFenceVariant(worldCol: number, worldRow: number): FeatureVariant | null {
+  // Diagonal-right run (\ direction SW to NE): vertex → diag-r → diag-r → vertex
+  if (worldCol === 17 && worldRow === 1) return 'vertex';
+  if (worldCol === 18 && worldRow === 2) return 'diagonal-right';
+  if (worldCol === 19 && worldRow === 3) return 'diagonal-right';
+  if (worldCol === 20 && worldRow === 4) return 'vertex';
+  // Diagonal-left run (/ direction SE to NW): vertex → diag-l → diag-l → vertex
+  if (worldCol === 25 && worldRow === 1) return 'vertex';
+  if (worldCol === 24 && worldRow === 2) return 'diagonal-left';
+  if (worldCol === 23 && worldRow === 3) return 'diagonal-left';
+  if (worldCol === 22 && worldRow === 4) return 'vertex';
+  return null;
+}
+
+export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind | null {
   if (isWallPosition(worldCol, worldRow)) return 'stone-wall';
-  if (isFencePosition(worldCol, worldRow)) return 'wooden-fence';
+  if (isFencePosition(worldCol, worldRow)) return 'fence';
+  if (getDiagonalFenceVariant(worldCol, worldRow)) return 'fence'; // diagonal demo fences
   if (isRiverPosition(worldCol, worldRow)) return 'river';
   if (isTallGrassPosition(worldCol, worldRow)) return 'tall-grass';
   return null;
 }
+
+// ─── Gate SVG Generator ───────────────────────────────────────
+
+/** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
+function gateSvg(unlocked: boolean): string {
+  const parts: string[] = [];
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
+
+  const postH = 48;
+  const mid = 64;
+  const railW = 6;
+
+  // Left post
+  parts.push(`<rect x="4" y="${mid - postH}" width="10" height="${postH}" rx="1.5" fill="#8B6914" />`);
+  parts.push(`<rect x="6" y="${mid - postH}" width="3" height="${postH}" fill="#a07820" opacity="0.4" />`);
+  parts.push(`<ellipse cx="9" cy="${mid - postH}" rx="5" ry="3" fill="#9a7018" />`);
+
+  // Right post
+  parts.push(`<rect x="114" y="${mid - postH}" width="10" height="${postH}" rx="1.5" fill="#8B6914" />`);
+  parts.push(`<rect x="116" y="${mid - postH}" width="3" height="${postH}" fill="#a07820" opacity="0.4" />`);
+  parts.push(`<ellipse cx="119" cy="${mid - postH}" rx="5" ry="3" fill="#9a7018" />`);
+
+  if (unlocked) {
+    // Gate swung open: gate panels angle away, showing opening
+    parts.push(`<rect x="4" y="${mid - railW - 18}" width="${railW}" height="44" rx="1" fill="#9a7018" transform="rotate(-30, 9, ${mid - railW})" />`);
+    parts.push(`<rect x="114" y="${mid - railW - 18}" width="${railW}" height="44" rx="1" fill="#9a7018" transform="rotate(30, 119, ${mid - railW})" />`);
+    parts.push(`<text x="64" y="${mid - 4}" text-anchor="middle" font-size="14" fill="#4a8a54" font-family="monospace">[ open ]</text>`);
+  } else {
+    // Gate closed: two rails connecting posts
+    const topY = mid - 18;
+    const botY = mid + 2;
+    // Top rail
+    parts.push(`<rect x="14" y="${topY}" width="100" height="${railW}" rx="1" fill="#9a7018" />`);
+    parts.push(`<rect x="14" y="${topY}" width="100" height="2" fill="#b08828" opacity="0.3" />`);
+    // Bottom rail
+    parts.push(`<rect x="14" y="${botY}" width="100" height="${railW}" rx="1" fill="#8B6914" />`);
+    // Center picket cross-bar
+    parts.push(`<rect x="61" y="${topY - 4}" width="${railW}" height="26" rx="1" fill="#a07820" />`);
+    // Lock icon
+    parts.push(`<rect x="58" y="${topY + 6}" width="12" height="9" rx="2" fill="#c0a020" />`);
+    parts.push(`<path d="M61 ${topY + 6} Q61 ${topY + 2} 64 ${topY + 2} Q67 ${topY + 2} 67 ${topY + 6}" fill="none" stroke="#c0a020" stroke-width="2" />`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+// ─── Bridge SVG Generator ─────────────────────────────────────
+
+/** Free bridge — wooden planks over water. No lock. */
+function bridgeSvg(): string {
+  const parts: string[] = [];
+  // River base
+  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
+  // Water ripples
+  parts.push(`<g opacity="0.15">`);
+  for (let y = 40; y < 96; y += 16) {
+    parts.push(`<path d="M10 ${y} Q36 ${y-4} 64 ${y} Q92 ${y+4} 118 ${y}" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
+  }
+  parts.push(`</g>`);
+  // Bridge planks (horizontal boards)
+  const plankColor = ['#8B6914', '#9a7818', '#7a5910'];
+  for (let i = 0; i < 5; i++) {
+    const py = 38 + i * 11;
+    parts.push(`<rect x="16" y="${py}" width="96" height="8" rx="1" fill="${plankColor[i % 3]}" />`);
+    parts.push(`<rect x="16" y="${py}" width="96" height="2" fill="#b08828" opacity="0.25" />`);
+    // Nail dots
+    parts.push(`<circle cx="22" cy="${py + 4}" r="1.5" fill="#5a4010" opacity="0.6" />`);
+    parts.push(`<circle cx="106" cy="${py + 4}" r="1.5" fill="#5a4010" opacity="0.6" />`);
+  }
+  // Side rails
+  parts.push(`<rect x="14" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
+  parts.push(`<rect x="108" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+/** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
+function trollBridgeSvg(unlocked: boolean): string {
+  const parts: string[] = [];
+  // River base
+  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
+  // Water ripples
+  parts.push(`<g opacity="0.15">`);
+  parts.push(`<path d="M8 50 Q34 46 64 50 Q94 54 120 50" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
+  parts.push(`<path d="M8 70 Q34 66 64 70 Q94 74 120 70" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
+  parts.push(`</g>`);
+  // Rough planks — more variation, gaps
+  const roughColors = ['#6a4a10', '#8B6014', '#5a3a08', '#7a5518'];
+  for (let i = 0; i < 5; i++) {
+    const py = 38 + i * 11;
+    const col = roughColors[i % 4];
+    parts.push(`<rect x="18" y="${py}" width="94" height="7" rx="0.5" fill="${col}" />`);
+    if (i === 1 || i === 3) {
+      parts.push(`<rect x="55" y="${py}" width="4" height="7" fill="#2a1a04" opacity="0.5" />`); // gap/crack
+    }
+  }
+  // Posts
+  parts.push(`<rect x="14" y="32" width="7" height="64" rx="1" fill="#5a3a08" />`);
+  parts.push(`<rect x="107" y="32" width="7" height="64" rx="1" fill="#5a3a08" />`);
+
+  // Sign
+  if (!unlocked) {
+    parts.push(`<rect x="44" y="14" width="40" height="24" rx="2" fill="#8B4513" />`);
+    parts.push(`<rect x="44" y="14" width="40" height="24" rx="2" fill="none" stroke="#6a3010" stroke-width="1.5" />`);
+    parts.push(`<text x="64" y="23" text-anchor="middle" font-size="6" font-family="monospace" fill="#ffd700">TROLL</text>`);
+    parts.push(`<text x="64" y="31" text-anchor="middle" font-size="5" font-family="monospace" fill="#ffa500">TOLL: QUIZ</text>`);
+    // Chain
+    parts.push(`<line x1="28" y1="38" x2="44" y2="26" stroke="#888" stroke-width="2" />`);
+    parts.push(`<line x1="84" y1="26" x2="100" y2="38" stroke="#888" stroke-width="2" />`);
+  } else {
+    parts.push(`<text x="64" y="25" text-anchor="middle" font-size="9" font-family="monospace" fill="#4aff4a">OPEN</text>`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
+// ─── Gate Placement Pass ──────────────────────────────────────
+
+/**
+ * After connection solving, scan fence tiles and insert one gate per
+ * continuous straight run. The gate position is entropy-seeded by (cx, cy).
+ * Returns modified tile array and any new conditionIds to register.
+ */
+function placeGatesInFenceRuns(
+  tiles: MicroTile[],
+  cx: number,
+  cy: number,
+): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
+  const newConditions = new Map<string, 'locked' | 'unlocked'>();
+  const result = [...tiles];
+  const N = CHUNK_TILES;
+
+  // Scan horizontal runs (straight-h fence)
+  for (let row = 0; row < N; row++) {
+    const runIndices: number[] = [];
+    for (let col = 0; col < N; col++) {
+      const idx = row * N + col;
+      const tile = result[idx];
+      const nano = tile.nanos?.[0];
+      if (nano?.kind === 'fence' && nano.variant === 'straight-h') {
+        runIndices.push(idx);
+      } else {
+        if (runIndices.length >= 3) {
+          const seed = ((cx * 131 + cy * 97 + row * 7) >>> 0);
+          const gatePos = runIndices[seed % runIndices.length];
+          const gt = result[gatePos];
+          const wc = (cx * N) + (gatePos % N);
+          const wr = (cy * N) + Math.floor(gatePos / N);
+          const conditionId = `quiz:gate-${wc}-${wr}`;
+          newConditions.set(conditionId, 'locked');
+          const gateNano: NanoTile = {
+            ...gt.nanos![0],
+            kind: 'gate',
+            svg: gateSvg(false),
+            walkable: { type: 'conditional', conditionId },
+          };
+          result[gatePos] = { ...gt, nanos: [gateNano] };
+        }
+        runIndices.length = 0;
+      }
+    }
+    // End of row
+    if (runIndices.length >= 3) {
+      const seed = ((cx * 131 + cy * 97 + row * 7) >>> 0);
+      const gatePos = runIndices[seed % runIndices.length];
+      const gt = result[gatePos];
+      const wc = (cx * N) + (gatePos % N);
+      const wr = (cy * N) + Math.floor(gatePos / N);
+      const conditionId = `quiz:gate-${wc}-${wr}`;
+      newConditions.set(conditionId, 'locked');
+      const gateNano: NanoTile = {
+        ...gt.nanos![0],
+        kind: 'gate',
+        svg: gateSvg(false),
+        walkable: { type: 'conditional', conditionId },
+      };
+      result[gatePos] = { ...gt, nanos: [gateNano] };
+    }
+  }
+
+  // Scan vertical runs (straight-v fence)
+  for (let col = 0; col < N; col++) {
+    const runIndices: number[] = [];
+    for (let row = 0; row < N; row++) {
+      const idx = row * N + col;
+      const tile = result[idx];
+      const nano = tile.nanos?.[0];
+      if (nano?.kind === 'fence' && nano.variant === 'straight-v') {
+        runIndices.push(idx);
+      } else {
+        if (runIndices.length >= 3) {
+          const seed = ((cx * 97 + cy * 131 + col * 11) >>> 0);
+          const gatePos = runIndices[seed % runIndices.length];
+          const gt = result[gatePos];
+          const wc = (cx * N) + (gatePos % N);
+          const wr = (cy * N) + Math.floor(gatePos / N);
+          const conditionId = `quiz:gate-${wc}-${wr}`;
+          newConditions.set(conditionId, 'locked');
+          const gateNano: NanoTile = {
+            ...gt.nanos![0],
+            kind: 'gate',
+            svg: gateSvg(false),
+            walkable: { type: 'conditional', conditionId },
+          };
+          result[gatePos] = { ...gt, nanos: [gateNano] };
+        }
+        runIndices.length = 0;
+      }
+    }
+    if (runIndices.length >= 3) {
+      const seed = ((cx * 97 + cy * 131 + col * 11) >>> 0);
+      const gatePos = runIndices[seed % runIndices.length];
+      const gt = result[gatePos];
+      const wc = (cx * N) + (gatePos % N);
+      const wr = (cy * N) + Math.floor(gatePos / N);
+      const conditionId = `quiz:gate-${wc}-${wr}`;
+      newConditions.set(conditionId, 'locked');
+      const gateNano: NanoTile = {
+        ...gt.nanos![0],
+        kind: 'gate',
+        svg: gateSvg(false),
+        walkable: { type: 'conditional', conditionId },
+      };
+      result[gatePos] = { ...gt, nanos: [gateNano] };
+    }
+  }
+
+  return { tiles: result, newConditions };
+}
+
+// ─── River Crossing Pass ──────────────────────────────────────
+
+/**
+ * After connection solving, find river tiles that form crossings
+ * (connected on left+right OR top+bottom, with open banks on the crossing axis).
+ * Place bridge or troll-bridge nanos on crossing tiles.
+ * Uses entropy from (cx, cy) to choose bridge type.
+ */
+function placeRiverCrossings(
+  tiles: MicroTile[],
+  cx: number,
+  cy: number,
+): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
+  const newConditions = new Map<string, 'locked' | 'unlocked'>();
+  const result = [...tiles];
+  const N = CHUNK_TILES;
+  const entropy = ((cx * 31 + cy * 17) >>> 0);
+
+  for (let row = 0; row < N; row++) {
+    for (let col = 0; col < N; col++) {
+      const idx = row * N + col;
+      const tile = result[idx];
+      const nano = tile.nanos?.[0];
+      if (!nano || nano.kind !== 'river') continue;
+
+      // Find horizontal crossing: river running left-right (straight-h), flanked by non-river above/below
+      const conn = nano.connections;
+      if (!conn) continue;
+      const isHorizontalRun = (conn.left || conn.right) && !(conn.top || conn.bottom);
+      const isVerticalRun   = (conn.top || conn.bottom) && !(conn.left || conn.right);
+
+      // Only flat-crossing tiles (a river run bridged perpendicular)
+      if (!isHorizontalRun && !isVerticalRun) continue;
+
+      // Check if it's a "crossing" — tile above or below (horizontal) is non-river
+      // For a bridge, we need accessibility from both sides
+      // Simple heuristic: place bridge every 5th tile along the crossing axis
+      const straightIdx = isHorizontalRun ? col : row;
+      if (straightIdx % 5 !== 2) continue; // bridge every 5 tiles, offset by 2
+
+      const worldCol = cx * N + col;
+      const worldRow = cy * N + row;
+
+      // Entropy: 1/3 chance of troll bridge, 2/3 free bridge
+      const isTroll = (entropy + col * 7 + row * 13) % 3 === 0;
+
+      if (isTroll) {
+        const conditionId = `quiz:bridge-${worldCol}-${worldRow}`;
+        newConditions.set(conditionId, 'locked');
+        const bridgeNano: NanoTile = {
+          kind: 'troll-bridge',
+          zOffset: 0,
+          zMode: 'flat',
+          svg: trollBridgeSvg(false),
+          walkable: { type: 'conditional', conditionId },
+          blendEdges: false,
+        };
+        result[idx] = { ...tile, nanos: [...tile.nanos!, bridgeNano] };
+      } else {
+        const bridgeNano: NanoTile = {
+          kind: 'bridge',
+          zOffset: 0,
+          zMode: 'flat',
+          svg: bridgeSvg(),
+          walkable: { type: 'always' },
+          blendEdges: false,
+        };
+        result[idx] = { ...tile, nanos: [...tile.nanos!, bridgeNano] };
+      }
+    }
+  }
+
+  return { tiles: result, newConditions };
+}
+
+// ─── Walkable Map ─────────────────────────────────────────────
+
+/**
+ * Build a boolean walkable map for the chunk.
+ * true = passable, false = blocked.
+ *
+ * Rules (in priority order):
+ *   1. Base tile = walkable
+ *   2. ANY nano with type:'never' blocks (most restrictive rule)
+ *   3. UNLESS any nano with type:'always' overrides (bridge wins over river)
+ *   4. type:'conditional' blocks if condition is 'locked', passable if 'unlocked'
+ */
+export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
+  const N = CHUNK_TILES;
+  const map: boolean[] = new Array(N * N).fill(true);
+
+  for (let i = 0; i < N * N; i++) {
+    const tile = chunk.tiles[i];
+    if (!tile.nanos || tile.nanos.length === 0) continue;
+
+    let hasNeverBlock = false;
+    let hasAlwaysPass = false;
+    let hasConditionalUnlocked = false;
+    let hasConditionalLocked = false;
+
+    for (const nano of tile.nanos) {
+      switch (nano.walkable.type) {
+        case 'never':
+          hasNeverBlock = true;
+          break;
+        case 'always':
+          hasAlwaysPass = true; // bridge overrides river never-walkable
+          break;
+        case 'conditional': {
+          const state = chunk.activeConditions.get(nano.walkable.conditionId);
+          if (state === 'unlocked') hasConditionalUnlocked = true;
+          else hasConditionalLocked = true; // locked gate/troll-bridge
+          break;
+        }
+      }
+    }
+
+    // Priority order: locked conditional > unlocked conditional > always > never > passable
+    if (hasConditionalLocked) {
+      map[i] = false; // locked gate/troll-bridge always blocks, even over bridge
+    } else if (hasConditionalUnlocked || hasAlwaysPass) {
+      map[i] = true;  // unlocked or always-passable bridge overrides river
+    } else if (hasNeverBlock) {
+      map[i] = false; // wall/fence/river without bridge
+    }
+    // else: stays true (plain passable tile)
+  }
+
+  return map;
+}
+
+// ─── BFS Traversability ───────────────────────────────────────
+
+/**
+ * BFS from every traversable tile on the N-edge.
+ * Checks if at least one S-edge tile is reachable.
+ * Returns false if any chunk edge is entirely blocked (trap detected).
+ *
+ * Uses locked walkable map (worst-case; conditional nanos = blocked).
+ */
+export function validateChunkTraversability(chunk: WorldUnitChunk): boolean {
+  const N = CHUNK_TILES;
+  const walkable = chunk.walkableMap.length === N * N
+    ? chunk.walkableMap
+    : buildWalkableMap(chunk);
+
+  const visited = new Uint8Array(N * N);
+  const queue: number[] = [];
+
+  // Seed BFS from all N-edge (row=0) walkable tiles
+  for (let col = 0; col < N; col++) {
+    const idx = col;
+    if (walkable[idx] && !visited[idx]) {
+      visited[idx] = 1;
+      queue.push(idx);
+    }
+  }
+
+  let head = 0;
+  while (head < queue.length) {
+    const cur = queue[head++];
+    const r = Math.floor(cur / N);
+    const c = cur % N;
+    for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as [number, number][]) {
+      const nr = r + dr;
+      const nc = c + dc;
+      if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+      const ni = nr * N + nc;
+      if (!visited[ni] && walkable[ni]) {
+        visited[ni] = 1;
+        queue.push(ni);
+      }
+    }
+  }
+
+  // Check if any S-edge (row=N-1) tile was reached
+  for (let col = 0; col < N; col++) {
+    if (visited[(N - 1) * N + col]) return true;
+  }
+
+  // Also check W and E edges for any reachability
+  for (let row = 0; row < N; row++) {
+    if (visited[row * N] || visited[row * N + N - 1]) return true;
+  }
+
+  return false;
+}
+
+// ─── Condition Resolution ─────────────────────────────────────
+
+/**
+ * Unlock a condition on a chunk (gate/bridge quiz answer).
+ * Updates the gate/bridge SVG to show open state, marks chunk dirty.
+ */
+export function resolveCondition(chunk: WorldUnitChunk, conditionId: string): void {
+  if (!chunk.activeConditions.has(conditionId)) return;
+  chunk.activeConditions.set(conditionId, 'unlocked');
+  chunk.dirty = true;
+
+  // The visual update (open SVG swap) happens via chunk re-bake in the render loop.
+  // For the walkable map, rebuild it immediately so movement unblocks right away.
+  const newMap = buildWalkableMap(chunk);
+  chunk.walkableMap.length = 0;
+  chunk.walkableMap.push(...newMap);
+}
+
+/**
+ * Unlock all conditions in a chunk (debug shortcut: U key).
+ */
+export function resolveAllConditions(chunk: WorldUnitChunk): void {
+  for (const key of chunk.activeConditions.keys()) {
+    chunk.activeConditions.set(key, 'unlocked');
+  }
+  chunk.dirty = true;
+  const newMap = buildWalkableMap(chunk);
+  chunk.walkableMap.length = 0;
+  chunk.walkableMap.push(...newMap);
+}
+
+// ─── Macro Assembly Placement ─────────────────────────────────
+
+/**
+ * Place a MacroAssembly's nanos into the tiles of a single chunk.
+ * Tiles outside this chunk's bounds are silently skipped (multi-chunk assemblies
+ * apply partially per chunk — call for every generated chunk).
+ * Merges nanos into existing tile nanos, sorted neg→flat→pos by zMode.
+ * TODO: DOC — assembly placement pipeline, multi-chunk spanning
+ */
+export function placeAssembly(
+  assembly: MacroAssembly,
+  originCol: number,
+  originRow: number,
+  chunk: WorldUnitChunk,
+): void {
+  const chunkOriginCol = chunk.cx * CHUNK_TILES;
+  const chunkOriginRow = chunk.cy * CHUNK_TILES;
+
+  const zOrder: Record<string, number> = { 'negative': 0, 'flat': 1, 'positive': 2 };
+
+  for (const placement of assembly.placements) {
+    const worldCol = originCol + placement.col;
+    const worldRow = originRow + placement.row;
+
+    const localCol = worldCol - chunkOriginCol;
+    const localRow = worldRow - chunkOriginRow;
+    if (localCol < 0 || localCol >= CHUNK_TILES || localRow < 0 || localRow >= CHUNK_TILES) {
+      // TODO: multi-chunk spanning tracked — tile belongs to a different chunk
+      continue;
+    }
+
+    const idx = localRow * CHUNK_TILES + localCol;
+    const tile = chunk.tiles[idx];
+    const existing: readonly NanoTile[] = tile.nanos ?? [];
+    const merged: NanoTile[] = [...existing, ...placement.nanos];
+    merged.sort((a, b) => (zOrder[a.zMode] ?? 1) - (zOrder[b.zMode] ?? 1));
+
+    (chunk.tiles as MicroTile[])[idx] = { ...tile, nanos: merged };
+  }
+
+  chunk.dirty = true;
+}
+
