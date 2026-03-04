@@ -13,6 +13,6 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["index.ts", "svg-renderer-tool.ts", "cli.ts"],
-  "exclude": ["node_modules", "dist", "test-assets", "server.ts"]
+  "include": ["index.ts", "svg-renderer-tool.ts", "proof-renderer.ts", "scene-registry.ts", "cli.ts", "renderer.test.ts"],
+  "exclude": ["node_modules", "dist", "test-assets", "smoke-test.ts", "server.ts"]
 }
