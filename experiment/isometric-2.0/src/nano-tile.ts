@@ -18,6 +18,7 @@ import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
   MICRO_TILE_SIZE,
+  type FeatureVariant,
   type NanoTile,
   type NanoStack,
   type SunState,
@@ -255,71 +256,70 @@ const WALL_THICKNESS = 48;                                    // solver.ts W
 const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 40
 
 /**
+ * Determine if a wall variant's PRIMARY run direction is vertical ("/" on screen).
+ * Returns true for variants where the wall strip is at x=40..88 (vertical),
+ * false for variants where the strip is at y=40..88 (horizontal, "\" on screen).
+ *
+ * Mixed variants (corners, tees, cross) have arms in both directions.
+ * For extrusion, we use the front face along the LONGER visible run.
+ * Corners: the "V" faces camera → pick orientation that shows the most surface.
+ *   - corner-tr, corner-br: front face runs along y (vertical primary) — player
+ *     sees the right arm extend toward them on the / diagonal.
+ *   - corner-tl, corner-bl: front face runs along x (horizontal primary) — player
+ *     sees the left arm extend toward them on the \ diagonal.
+ *
+ * @see solver.ts wallBounds() for the footprint layout that this must match.
+ */
+function isVerticalWall(variant: FeatureVariant | undefined): boolean {
+  switch (variant) {
+    case 'straight-v':
+    case 'end-t':
+    case 'end-b':
+    case 'corner-tr':
+    case 'corner-br':
+    case 'tee-r':       // top+bottom+left arms → primary run is vertical
+    case 'tee-l':       // top+bottom+right arms → primary run is vertical
+      return true;
+    default:
+      return false;     // straight-h, end-r, end-l, corner-tl, corner-bl, tee-t, tee-b, cross, isolated
+  }
+}
+
+/**
  * Draw a nano with 3-face extrusion: front face + end cap + top cap.
  * Creates a proper isometric 3D box for thick structural nanos (stone walls).
  *
- * ═══ ISOMETRIC BOX GEOMETRY (v2 — 180° fix) ═══
+ * ═══ DUAL-ORIENTATION ISOMETRIC BOX GEOMETRY (v3) ═══
  *
  * Camera views from south-east (screen bottom) looking north-west (screen top).
- * Visible faces of the wall box face TOWARD the camera:
+ * Two orientations supported, determined by isVerticalWall(nano.variant):
  *
- *   1. FRONT FACE (main lit surface):
- *      At y=88 in tile-local (the NEAR edge of the wall strip, faces +y).
- *      Anchored at tile(0, 88) — far-left corner (away from camera).
- *      matrix(1, 0.5, 0, 1) draws right-and-down along +x iso axis to Z-edge.
- *      Width = MICRO_TILE_SIZE (128px — full wall length).
+ * ┌───────────────────────────────────┬───────────────────────────────────┐
+ * │ HORIZONTAL (\\ on screen)         │ VERTICAL (/ on screen)            │
+ * │ Wall strip y=40..88              │ Wall strip x=40..88              │
+ * │                                  │                                  │
+ * │ Z-edge: tile(128, 88)            │ Z-edge: tile(88, 128)            │
+ * │ screen (sX+168, sY+108)          │ screen (sX+88, sY+108)           │
+ * │                                  │                                  │
+ * │ Front: anchor(0, 88)             │ Front: anchor(88, 0)             │
+ * │   matrix(1, 0.5, 0, 1)          │   matrix(-1, 0.5, 0, 1)         │
+ * │   width=128, draws RIGHT+DOWN    │   width=128, draws LEFT+DOWN     │
+ * │                                  │                                  │
+ * │ Cap: anchor(128, 40)             │ Cap: anchor(40, 128)             │
+ * │   matrix(-1, 0.5, 0, 1)         │   matrix(1, 0.5, 0, 1)          │
+ * │   width=48, draws LEFT+DOWN      │   width=48, draws RIGHT+DOWN     │
+ * │                                  │                                  │
+ * │ Top: std iso at elevation        │ Top: std iso at elevation        │
+ * └───────────────────────────────────┴───────────────────────────────────┘
  *
- *   2. END CAP (shadow/depth face):
- *      At x=128 in tile-local (the RIGHT edge of the wall strip, faces +x).
- *      Anchored at tile(128, 40) — far-right corner (away from camera).
- *      matrix(-1, 0.5, 0, 1) draws left-and-down along +y iso axis to Z-edge.
- *      Width = WALL_THICKNESS (48px — wall cross-section depth).
+ * Key insight: front and cap SWAP their matrix signs between orientations.
+ * Both cases: V-shape opens away from camera, solid faces toward player. ✓
  *
- *   3. TOP CAP (flat iso at elevation):
- *      Standard iso transform: matrix(1, 0.5, -1, 0.5) at elevated Y.
- *      topTextureSvg fills only the wall strip (y=40..88); rest transparent.
+ * Draw order: end cap (further) → front (closer) → top cap (highest).
  *
- * ═══ Z-EDGE (SHARED VERTICAL CORNER) ═══
- *
- * Both faces converge at the Z-edge: nearest corner to camera.
- *
- *   Tile-local: (128, 88) = (MICRO_TILE_SIZE, WALL_OFFSET + WALL_THICKNESS)
- *   Iso offset from top vertex: (128−88, 64+44) = (40, 108)
- *   Screen: (screenX + 168, screenY + 108)
- *
- * ═══ FACE ANCHORS (straight-h, drawH = D) ═══
- *
- *   Front face anchor: tile(0, 88)
- *     iso offset = (−88, 44) → screen (screenX+40, screenY+44)
- *     Bottom: (sX+40, sY+44) → (sX+168, sY+108) = Z-edge ✓
- *     Top:    (sX+40, sY+44−D) → (sX+168, sY+108−D)       ✓
- *
- *   End cap anchor: tile(128, 40)
- *     iso offset = (88, 84) → screen (screenX+216, screenY+84)
- *     Bottom: (sX+216, sY+84) → (sX+168, sY+108) = Z-edge ✓
- *     Top:    (sX+216, sY+84−D) → (sX+168, sY+108−D)      ✓
- *
- * ═══ SCREEN LAYOUT ═══
- *
- *           Top vtx (cx, screenY)
- *                ◇
- *              ╱   ╲
- *           ╱ top cap╲
- *         ╱  ═══════  ╲
- *       ◇───║front ║───◇ Right vtx
- *  Left  ╲  ║face  ║cap║
- *  vtx    ╲ ║(lit) ║(sh)║
- *          ╲║      ║   ║
- *           ╲══════╬═══╝
- *                ◇ Z-edge (nearest to camera)
- *              Bottom vtx
- *
- * Draw order: end cap (further) → front (closer) → top cap.
- * The V-shape of the two side faces opens AWAY from camera (upward),
- * showing solid exterior surfaces to the player. ✓
- *
- * @see solver.ts wallBounds() for wall footprint geometry
- * @see GitHub Issue #211 for derivation and fix history
+ * @see isVerticalWall() for variant→orientation classification.
+ * @see solver.ts wallBounds() for wall footprint geometry.
+ * @see GitHub Issue #211 for derivation, geometric proofs, and fix history.
  */
 export function drawExtrudedNano(
   ctx: CanvasRenderingContext2D,
@@ -335,33 +335,67 @@ export function drawExtrudedNano(
 
   const drawH = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
   let loaded = true;
+  const vertical = isVerticalWall(nano.variant);
 
-  // ─── Face Anchors (v2 — 180° fix) ───
-  // Each face anchored at its FAR corner (away from camera), draws TOWARD
-  // the Z-edge at tile(128, 88) → screen (screenX+168, screenY+108).
-  // This makes solid exterior face the camera (V opens upward/away). ✓
+  // ─── Orientation-dependent geometry (v3 — dual-diagonal) ───
+  //
+  // A wall tile has two possible orientations:
+  //
+  //   HORIZONTAL (\  on screen): wall strip y=40..88, runs along x.
+  //     Z-edge tile(128, 88) → screen (sX+168, sY+108)
+  //     Front face: anchor tile(0, 88), matrix(1, 0.5, 0, 1), width=128
+  //     End cap:    anchor tile(128, 40), matrix(-1, 0.5, 0, 1), width=48
+  //
+  //   VERTICAL   (/  on screen): wall strip x=40..88, runs along y.
+  //     Z-edge tile(88, 128) → screen (sX+88, sY+108)
+  //     Front face: anchor tile(88, 0), matrix(-1, 0.5, 0, 1), width=128
+  //     End cap:    anchor tile(40, 128), matrix(1, 0.5, 0, 1), width=48
+  //
+  // Key insight: front and cap SWAP their matrices between orientations.
+  // front(H)=matrix(1,0.5) ↔ cap(V)=matrix(1,0.5)
+  // cap(H)=matrix(-1,0.5)  ↔ front(V)=matrix(-1,0.5)
+  //
+  // Both orientations: V-shape opens away from camera, solid faces player. ✓
+  // @see side-by-side geometric proof in GitHub Issue #211.
 
-  // Front face far corner: tile(0, WALL_OFFSET + WALL_THICKNESS)
-  //   iso offset = (−(WALL_OFFSET+WALL_THICKNESS), (WALL_OFFSET+WALL_THICKNESS)/2)
-  const frontFaceY = WALL_OFFSET + WALL_THICKNESS;              // 88
-  const frontX = screenX + HALF_W - frontFaceY;                 // screenX + 40
-  const frontY = screenY + frontFaceY / 2;                      // screenY + 44
+  const NE = WALL_OFFSET + WALL_THICKNESS;  // near edge offset = 88
 
-  // End cap far corner: tile(MICRO_TILE_SIZE, WALL_OFFSET)
-  //   iso offset = (MICRO_TILE_SIZE − WALL_OFFSET, MICRO_TILE_SIZE/2 + WALL_OFFSET/2)
-  const capX = screenX + HALF_W + MICRO_TILE_SIZE - WALL_OFFSET; // screenX + 216
-  const capY = screenY + (MICRO_TILE_SIZE + WALL_OFFSET) / 2;    // screenY + 84
+  // Compute per-orientation anchors
+  let frontX: number, frontY: number;
+  let capX: number, capY: number;
+  let frontMat: 1 | -1; // sign of matrix a-component for front face
 
-  // ── 1. End cap: LEFT iso axis, shadow side  ────────────────────────────────────
-  // Drawn first (further from camera). Anchored at tile(128,40), draws
-  // left-and-down via matrix(-1, 0.5, 0, 1) toward Z-edge at tile(128,88).
-  // Width = WALL_THICKNESS (48px — wall cross-section depth).
+  if (vertical) {
+    // Front face far corner: tile(NE, 0) = tile(88, 0)
+    //   iso offset = (88, 44) → screen (sX+216, sY+44)
+    frontX = screenX + HALF_W + NE;                               // sX + 216
+    frontY = screenY + NE / 2;                                    // sY + 44
+    // End cap far corner: tile(WALL_OFFSET, 128) = tile(40, 128)
+    //   iso offset = (-88, 84) → screen (sX+40, sY+84)
+    capX = screenX + HALF_W + WALL_OFFSET - MICRO_TILE_SIZE;      // sX + 40
+    capY = screenY + (WALL_OFFSET + MICRO_TILE_SIZE) / 2;         // sY + 84
+    frontMat = -1;  // front draws LEFT+DOWN (/ direction)
+  } else {
+    // Front face far corner: tile(0, NE) = tile(0, 88)
+    //   iso offset = (-88, 44) → screen (sX+40, sY+44)
+    frontX = screenX + HALF_W - NE;                               // sX + 40
+    frontY = screenY + NE / 2;                                    // sY + 44
+    // End cap far corner: tile(128, WALL_OFFSET) = tile(128, 40)
+    //   iso offset = (88, 84) → screen (sX+216, sY+84)
+    capX = screenX + HALF_W + MICRO_TILE_SIZE - WALL_OFFSET;      // sX + 216
+    capY = screenY + (MICRO_TILE_SIZE + WALL_OFFSET) / 2;         // sY + 84
+    frontMat = 1;   // front draws RIGHT+DOWN (\ direction)
+  }
+
+  // ── 1. End cap (drawn first — further from camera) ─────────────────────────────
+  // Shadow face: narrower (WALL_THICKNESS=48px), darkened.
+  // Uses the OPPOSITE matrix sign from the front face.
   if (nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
       ctx.save();
       ctx.translate(capX, capY);
-      ctx.transform(-1, 0.5, 0, 1, 0, 0);
+      ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);  // opposite of front
       ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
       // Darken — end cap receives less direct sunlight
       ctx.fillStyle = 'rgba(0,0,0,0.22)';
@@ -372,17 +406,14 @@ export function drawExtrudedNano(
     }
   }
 
-  // ── 2. Front face: RIGHT iso axis, lit main surface  ───────────────────────────
-  // Drawn second (closer to camera — the main visible wall surface).
-  // Anchored at tile(0,88), draws right-and-down via matrix(1, 0.5, 0, 1)
-  // toward Z-edge at tile(128,88). Full tile length along wall run.
-  // Width = MICRO_TILE_SIZE (128px).
+  // ── 2. Front face (drawn second — closer to camera) ────────────────────────────
+  // Lit main surface: full tile length (MICRO_TILE_SIZE=128px).
   if (nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
       ctx.save();
       ctx.translate(frontX, frontY);
-      ctx.transform(1, 0.5, 0, 1, 0, 0);
+      ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
       ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
       ctx.restore();
     } else {
