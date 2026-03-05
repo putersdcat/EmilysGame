@@ -367,22 +367,57 @@ function wrapIsometricAssembly(
   options: RenderOptions,
 ): string {
   // originX/Y = where tile(0,0) TOP VERTEX lands on canvas.
-  // 40% / 25% gives visible room for most scenes growing right+down.
-  const originX = Math.round(width  * 0.4);
-  const originY = Math.round(height * 0.25);
   const debug   = options.debug   ?? false;
   const players = options.players ?? [];
 
-  // ── Painter's sort: depth = col+row, tiles before players at same depth ──
-  type RenderItem =
-    | { type: 'tile';   item: AssemblyChainItem;                                   depth: number }
-    | { type: 'player'; col: number; row: number; label?: string;                  depth: number };
+  // ── Scene-bounds-aware origin – centres the tile grid in the canvas ──────
+  // For tile at (col,row): sx=(col-row)*HALF_W, sy=(col+row)*HALF_H
+  const allCols = [...chain.map(i => i.col), ...players.map(p => p.col)];
+  const allRows = [...chain.map(i => i.row), ...players.map(p => p.row)];
+  const minCol = allCols.length ? Math.min(...allCols) : 0;
+  const maxCol = allCols.length ? Math.max(...allCols) : 0;
+  const minRow = allRows.length ? Math.min(...allRows) : 0;
+  const maxRow = allRows.length ? Math.max(...allRows) : 0;
 
-  const allItems: RenderItem[] = [
-    ...chain.map(  it => ({ type: 'tile'   as const, item: it,    depth: it.col + it.row })),
-    ...players.map(p  => ({ type: 'player' as const, col: p.col, row: p.row, label: p.label, depth: p.col + p.row })),
-  ];
-  allItems.sort((a, b) => a.depth - b.depth || (a.type === 'tile' ? -1 : 1));
+  // Horizontal: scene spans (minCol-maxRow)*HALF_W … (maxCol-minRow)*HALF_W + ISO_TILE_WIDTH
+  const sxMid = ((minCol - maxRow) + (maxCol - minRow + 2)) * HALF_W / 2; // midpoint
+  // Vertical: scene spans (minCol+minRow)*HALF_H … (maxCol+maxRow)*HALF_H + ISO_TILE_HEIGHT
+  const syMid = ((minCol + minRow) + (maxCol + maxRow + 2)) * HALF_H / 2; // midpoint
+  // Walls rise MICRO_TILE above the ground – shift origin down half that to give head room
+  const nanoHeadroom = MICRO_TILE / 2; // = 64 typical; keeps tops of z=4 walls in frame
+  const originX = Math.round(width  / 2 - sxMid + HALF_W);
+  const originY = Math.round(height / 2 - syMid + HALF_H + nanoHeadroom);
+
+  // ── Two-pass render (mirrors the game engine) ─────────────────────────────
+  // Pass 1: All ground tiles (flat / negative zMode) sorted back-to-front.
+  // Pass 2: All positive nano overlays (walls, fences…) sorted back-to-front.
+  // Pass 3: All player sprites sorted back-to-front.
+  //
+  // Separating passes ensures wall billboards always draw ON TOP of the ground
+  // layer even when a stone-wall and a grass tile occupy the SAME (col, row).
+  type RenderItem =
+    | { type: 'tile';   item: AssemblyChainItem; depth: number }
+    | { type: 'player'; col: number; row: number; label?: string; depth: number };
+
+  const mkDepth = (col: number, row: number) => col + row;
+
+  const groundItems:  RenderItem[] = chain
+    .filter(it => (it.zMode ?? 'positive') !== 'positive')
+    .map(it => ({ type: 'tile' as const, item: it, depth: mkDepth(it.col, it.row) }));
+
+  const nanoItems: RenderItem[] = chain
+    .filter(it => (it.zMode ?? 'positive') === 'positive')
+    .map(it => ({ type: 'tile' as const, item: it, depth: mkDepth(it.col, it.row) }));
+
+  const playerItems: RenderItem[] = players
+    .map(p => ({ type: 'player' as const, col: p.col, row: p.row, label: p.label, depth: mkDepth(p.col, p.row) }));
+
+  const depthSort = (a: RenderItem, b: RenderItem) => a.depth - b.depth;
+  groundItems.sort(depthSort);
+  nanoItems.sort(depthSort);
+  playerItems.sort(depthSort);
+
+  const allItems: RenderItem[] = [...groundItems, ...nanoItems, ...playerItems];
 
   let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
 
@@ -405,7 +440,9 @@ function wrapIsometricAssembly(
     const drawX = (item.col - item.row) * HALF_W + originX - HALF_W;   // (col-row)*128 + oX - 128
     const drawY = (item.col + item.row) * HALF_H + originY - HALF_H;   // (col+row)*64  + oY - 64
 
-    const innerContent = stripSvgWrapper(item.svg);
+    // Scope all id= / url(#) references to avoid clipPath collisions between tiles.
+    const tilePrefix = `t${item.col}_${item.row}_`;
+    const innerContent = scopeSvgIds(stripSvgWrapper(item.svg), tilePrefix);
     const zMode    = item.zMode    ?? 'positive';
     const zOffset  = item.zOffset  ?? 0;
     const walkable = item.walkable !== false;
@@ -503,6 +540,33 @@ function stripSvgWrapper(svg: string): string {
   // Remove closing </svg> tag
   content = content.replace(/<\/svg>\s*$/i, '');
   return content.trim();
+}
+
+/**
+ * Scope all SVG id= attributes and url(#...) / href="#..." references so that
+ * multiple copies of the same SVG source in one document don't share IDs.
+ *
+ * This is REQUIRED when compositing multiple tiles into a single SVG — if two
+ * stone-wall tiles both define clipPath id="wall-clip", resvg silently ignores
+ * the second one and both tiles reference the first tile's clip region.
+ *
+ * @param content  Inner SVG markup (outer <svg> already stripped).
+ * @param prefix   Unique prefix per tile, e.g. "t3_2_" for col=3,row=2.
+ */
+function scopeSvgIds(content: string, prefix: string): string {
+  // Collect all id values first so we can replace references safely
+  const ids: string[] = [];
+  content = content.replace(/\bid="([^"]+)"/g, (_, id) => {
+    ids.push(id);
+    return `id="${prefix}${id}"`;
+  });
+  // Replace url(#id) fill/stroke/clip references
+  for (const id of ids) {
+    content = content.replaceAll(`url(#${id})`, `url(#${prefix}${id})`);
+    content = content.replaceAll(`href="#${id}"`,  `href="#${prefix}${id}"`);
+    content = content.replaceAll(`xlink:href="#${id}"`, `xlink:href="#${prefix}${id}"`);
+  }
+  return content;
 }
 
 // ─── Animated SVG Support ────────────────────────────────────
