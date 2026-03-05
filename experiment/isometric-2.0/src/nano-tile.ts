@@ -437,6 +437,50 @@ export function drawExtrudedNano(
     }
   }
 
+  // ── 2b. Secondary arm face for corner variants ──────────────────────────────────
+  // Corners have L-shaped footprints (two perpendicular arms). The primary face
+  // covers one arm direction; the other arm's camera-facing surface is blank.
+  // Derived geometry (tile-local → iso screen):
+  //   corner-br/tr (V primary): right arm south face → H mat at tile(88,88)
+  //   corner-bl     (H primary): bottom arm west face → V mat at tile(88,88) offset y=88
+  //   corner-tl     (H primary): top arm west face   → V mat at tile(88,0) = std V anchor
+  // In all cases width = WALL_OFFSET (40px = arm half-width).
+  if (nano.sideTextureSvg && (
+    nano.variant === 'corner-br' || nano.variant === 'corner-tr' ||
+    nano.variant === 'corner-bl' || nano.variant === 'corner-tl'
+  )) {
+    const sideImg = loadSvgImage(nano.sideTextureSvg);
+    if (sideImg) {
+      let secX: number, secY: number, secMat: 1 | -1;
+      if (nano.variant === 'corner-br' || nano.variant === 'corner-tr') {
+        // Right arm south face: tile(88,88) → (sX+HALF_W, sY+NE)
+        secX = screenX + HALF_W;   // sX+128
+        secY = screenY + NE;       // sY+88
+        secMat = 1;                // H direction (draws \)
+      } else if (nano.variant === 'corner-bl') {
+        // Bottom arm west face: V at offset y=88 → same screen anchor (sX+128, sY+88)
+        secX = screenX + HALF_W;   // sX+128
+        secY = screenY + NE;       // sY+88
+        secMat = -1;               // V direction (draws /)
+      } else {
+        // corner-tl: top arm west face, standard V anchor tile(88,0)
+        secX = screenX + HALF_W + NE;  // sX+216
+        secY = screenY + NE / 2;       // sY+44
+        secMat = -1;                   // V direction (draws /)
+      }
+      ctx.save();
+      ctx.translate(secX, secY);
+      ctx.transform(secMat, 0.5, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, 0, -drawH, WALL_OFFSET, drawH);
+      // Slightly darker — secondary arm is at an angle to primary face
+      ctx.fillStyle = 'rgba(0,0,0,0.12)';
+      ctx.fillRect(0, -drawH, WALL_OFFSET, drawH);
+      ctx.restore();
+    } else {
+      loaded = false;
+    }
+  }
+
   // ── 2. Front face (drawn second — closer to camera) ────────────────────────────
   // Lit main surface: full tile length (MICRO_TILE_SIZE=128px).
   if (nano.sideTextureSvg) {
