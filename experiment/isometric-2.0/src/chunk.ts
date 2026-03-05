@@ -13,7 +13,12 @@ import {
   worldToIso,
   type MicroTile,
   type WorldUnitChunk,
+  type NanoTile,
+  type NanoTileKind,
+  type NanoZMode,
+  type WalkableRule,
   type TileKind,
+  type FeatureVariant,
   MAX_Z_HEIGHT,
 } from './types';
 import {
@@ -28,7 +33,9 @@ import {
   drawDefaultShadow,
   drawRimLighting,
 } from './renderer';
-import { getFeatureKind } from './solver';
+import { getFeatureKind, getDiagonalFenceVariant, placeAssembly } from './solver';
+import { drawNanoStack, drawNanoShadow, NANO_Z_SCALE } from './nano-tile';
+import { loadAssembly } from './assemblies';
 import type { SunState } from './types';
 
 // ─── Chunk Bounding Box Constants ────────────────────────────
@@ -42,25 +49,49 @@ const PAD_TOP = MAX_Z_PX + ISO_TILE_HEIGHT;
 /** Chunk canvas width: iso footprint of CHUNK_TILES columns + CHUNK_TILES rows. */
 export const CHUNK_CANVAS_W = CHUNK_TILES * ISO_TILE_WIDTH;
 
-/** Chunk canvas height: iso footprint + Z headroom. */
+/**
+ * Chunk canvas height: iso footprint + Z headroom.
+ * NOTE: bakeChunk may produce a taller canvas for structure chunks with tall nanos.
+ * This constant is used only by getChunkDrawPos for screen-position math.
+ */
 export const CHUNK_CANVAS_H = (CHUNK_TILES + 1) * ISO_TILE_HEIGHT + PAD_TOP;
 
 /** Horizontal origin offset to center the iso grid in the canvas. */
 const ORIGIN_X = CHUNK_TILES * (ISO_TILE_WIDTH / 2);
 
+// ─── Dynamic Canvas Headroom ────────────────────────────────
+
+/**
+ * Compute needed PAD_TOP for this chunk, accommodating tall structure nanos.
+ * For normal chunks this equals the constant PAD_TOP.
+ * For chunks with cathedral spires (zOffset=26) it grows proportionally.
+ */
+function computePadTop(chunk: WorldUnitChunk): number {
+  let maxNanoH = 0;
+  for (const tile of chunk.tiles) {
+    if (!tile.nanos) continue;
+    for (const nano of tile.nanos) {
+      if (nano.zMode === 'positive') {
+        const h = nano.zOffset * NANO_Z_SCALE;
+        if (h > maxNanoH) maxNanoH = h;
+      }
+    }
+  }
+  // Base headroom = MAX_Z_PX (terrain Z) + ISO_TILE_HEIGHT.
+  // Extra headroom needed when nanos exceed the default max terrain Z.
+  const extra = Math.max(0, maxNanoH - MAX_Z_PX);
+  return MAX_Z_PX + ISO_TILE_HEIGHT + extra;
+}
+
 // ─── Color Map for Edge Blending ─────────────────────────────
 
 const KIND_COLORS: Record<TileKind, string> = {
-  'grass':        '#3a7d44',
-  'dirt':         '#8B6914',
-  'rock':         '#808080',
-  'water':        '#2266aa',
-  'sand':         '#c2b280',
-  'stone-wall':   '#5a5a5a',
-  'wooden-fence': '#8B6914',
-  'river':        '#1a5588',
-  'river-bank':   '#7a6a30',
-  'tall-grass':   '#2a7a2a',
+  'grass':     '#3a7d44',
+  'dirt':      '#8B6914',
+  'rock':      '#808080',
+  'water':     '#2266aa',
+  'sand':      '#c2b280',
+  'dry-grass': '#7a9a3a',
 };
 
 // ─── Chunk Baking ────────────────────────────────────────────
@@ -75,10 +106,12 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
   if (!chunk.cachedCanvas) {
     chunk.cachedCanvas = document.createElement('canvas');
   }
+  const padTop = computePadTop(chunk);
+  const canvasH = (CHUNK_TILES + 1) * ISO_TILE_HEIGHT + padTop;
   chunk.cachedCanvas.width = CHUNK_CANVAS_W;
-  chunk.cachedCanvas.height = CHUNK_CANVAS_H;
+  chunk.cachedCanvas.height = canvasH;
   const ctx = chunk.cachedCanvas.getContext('2d')!;
-  ctx.clearRect(0, 0, CHUNK_CANVAS_W, CHUNK_CANVAS_H);
+  ctx.clearRect(0, 0, CHUNK_CANVAS_W, canvasH);
 
   let allLoaded = true;
 
@@ -87,15 +120,24 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
     for (let row = 0; row < CHUNK_TILES; row++) {
       for (let col = 0; col < CHUNK_TILES; col++) {
         const tile = chunk.tiles[row * CHUNK_TILES + col];
-        if (tile.z <= 0) continue; // No shadow for ground-level
         const { sx, sy } = worldToIso(col, row, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
         const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
-        const drawY = sy + PAD_TOP - ISO_TILE_HEIGHT / 2;
+        const drawY = sy + padTop - ISO_TILE_HEIGHT / 2;
 
-        if (tile.shadowPath) {
-          drawTileShadow(ctx, drawX, drawY, tile.shadowPath, tile.z, sun);
-        } else {
-          drawDefaultShadow(ctx, drawX, drawY, tile.z, sun);
+        // Base tile shadow
+        if (tile.z > 0) {
+          if (tile.shadowPath) {
+            drawTileShadow(ctx, drawX, drawY, tile.shadowPath, tile.z, sun);
+          } else {
+            drawDefaultShadow(ctx, drawX, drawY, tile.z, sun);
+          }
+        }
+
+        // Nano tile shadows
+        if (tile.nanos) {
+          for (const nano of tile.nanos) {
+            drawNanoShadow(ctx, nano, drawX, drawY, sun);
+          }
         }
       }
     }
@@ -114,11 +156,15 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
       // Position: offset by ORIGIN_X for centering, PAD_TOP for Z headroom
       // The rendered tile canvas has height = ISO_TILE_HEIGHT + zPx,
       // so we draw it so the top-face diamond top aligns with the grid position.
-      ctx.drawImage(
-        rendered,
-        sx + ORIGIN_X - ISO_TILE_WIDTH / 2,
-        sy + PAD_TOP - ISO_TILE_HEIGHT / 2 - zPx,
-      );
+      const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
+      const drawY = sy + padTop - ISO_TILE_HEIGHT / 2 - zPx;
+      ctx.drawImage(rendered, drawX, drawY);
+
+      // Draw nano overlays for this tile (negative → flat → positive order)
+      if (tile.nanos && tile.nanos.length > 0) {
+        const nanoResult = drawNanoStack(ctx, tile.nanos, drawX, drawY, sun);
+        if (!nanoResult.allImagesLoaded) allLoaded = false;
+      }
     }
   }
 
@@ -128,7 +174,7 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
       const tile = chunk.tiles[row * CHUNK_TILES + col];
       const { sx, sy } = worldToIso(col, row, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
       const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
-      const drawY = sy + PAD_TOP - ISO_TILE_HEIGHT / 2 - tile.z * Z_PX_PER_LEVEL;
+      const drawY = sy + padTop - ISO_TILE_HEIGHT / 2 - tile.z * Z_PX_PER_LEVEL;
 
       // Check each neighbor and blend if different kind
       // Top neighbor (row-1)
@@ -179,12 +225,76 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
 // ─── Demo Chunk Generation ───────────────────────────────────
 // 2.0 Experiment: Procedural placeholder chunks for visual testing.
 
+/** Simple value noise: smooth hash-based continuous noise. */
+function valueNoise(x: number, y: number, seed: number): number {
+  const ix = Math.floor(x);
+  const iy = Math.floor(y);
+  const fx = x - ix;
+  const fy = y - iy;
+
+  // Smooth interpolation (fade)
+  const ux = fx * fx * (3 - 2 * fx);
+  const uy = fy * fy * (3 - 2 * fy);
+
+  // Corner values
+  function h(cx: number, cy: number): number {
+    const n = ((cx * 73856093) ^ (cy * 19349663) ^ (seed * 83492791)) >>> 0;
+    return (n & 0xffff) / 0xffff;
+  }
+  const a = h(ix, iy);
+  const b = h(ix + 1, iy);
+  const c = h(ix, iy + 1);
+  const d = h(ix + 1, iy + 1);
+
+  return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+}
+
+/** Multi-octave fractal noise for terrain variety. */
+function fbm(x: number, y: number, seed: number, octaves = 4): number {
+  let val = 0;
+  let amp = 0.5;
+  let freq = 1.0;
+  for (let i = 0; i < octaves; i++) {
+    val += valueNoise(x * freq, y * freq, seed + i * 997) * amp;
+    amp *= 0.5;
+    freq *= 2.0;
+  }
+  return val;
+}
+
+/**
+ * Determine the base terrain kind for a world position.
+ * Uses multi-layered noise for coherent biome regions.
+ * Predominantly grass with clustered biomes — not random scatter.
+ */
+function getBaseKind(worldCol: number, worldRow: number): TileKind {
+  // Moisture map — determines dry vs wet areas
+  const moisture = fbm(worldCol * 0.08, worldRow * 0.08, 42, 4);
+  // Elevation map — determines height
+  const elevation = fbm(worldCol * 0.06, worldRow * 0.06, 137, 4);
+  // Temperature — W/E variation
+  const temp = fbm(worldCol * 0.05, worldRow * 0.05, 251, 3);
+
+  // High elevation → rock
+  if (elevation > 0.72) return 'rock';
+  // Low elevation + high moisture → water
+  if (elevation < 0.32 && moisture > 0.55) return 'water';
+  // Low elevation + medium moisture → sand (beach/shore)
+  if (elevation < 0.38 && moisture > 0.4) return 'sand';
+  // Dry areas → dirt/sand
+  if (moisture < 0.3 && temp > 0.6) return 'dirt';
+  if (moisture < 0.28) return 'sand';
+  // Everything else → grass (the majority)
+  return 'grass';
+}
+
 const DEMO_COLORS: Record<string, string> = {
-  grass:  '#3a7d44',
-  dirt:   '#8B6914',
-  rock:   '#808080',
-  water:  '#2266aa',
-  sand:   '#c2b280',
+  grass:       '#3a7d44',
+  dirt:        '#8B6914',
+  rock:        '#808080',
+  water:       '#2266aa',
+  sand:        '#c2b280',
+  'dry-grass': '#7a9a3a',
 };
 
 /** Create a simple colored SVG tile for demo purposes. */
@@ -217,14 +327,106 @@ const BLEND_EDGE_MASKS = {
   left:   { samples: [0.8, 0.7, 0.5, 0.3, 0.3, 0.5, 0.7, 0.8] },
 };
 
+/** Nano-specific color palette for demo SVGs (distinct from biome colors). */
+const NANO_DEMO_COLORS: Record<string, string> = {
+  'fence':           '#8B5A2B',
+  'stone-wall':      '#6a6a6a',
+  'river':           '#2255aa',
+  'river-bank':      '#5a4a1a',
+  'tall-grass':      '#2a6a2a',
+  'bridge':          '#7a5a30',
+  'gate':            '#aa8844',
+  'troll-bridge':    '#5a4a30',
+  'cathedral-wall':  '#555555',
+  'homestead-wall':  '#8a6a3a',
+};
+
+/** Create a demo SVG for nano tiles with appropriate feature colors. */
+function makeNanoDemoSvg(kind: NanoTileKind, col: number, row: number): string {
+  const base = NANO_DEMO_COLORS[kind] ?? '#555';
+  const r = ((col * 7 + row * 13) & 0xff);
+  const g = ((col * 11 + row * 3) & 0xff);
+  const rr = (parseInt(base.slice(1, 3), 16) + (r % 12) - 6) & 0xff;
+  const gg = (parseInt(base.slice(3, 5), 16) + (g % 12) - 6) & 0xff;
+  const bb = parseInt(base.slice(5, 7), 16);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="rgb(${rr},${gg},${bb})" />
+    <text x="64" y="64" text-anchor="middle" dy=".35em" font-size="8" fill="rgba(255,255,255,0.5)">${kind}</text>
+  </svg>`;
+}
+
+/** Create a demo side-texture SVG for extrusion rendering. */
+function makeNanoSideSvg(baseColor: string, col: number, row: number): string {
+  const rr = (parseInt(baseColor.slice(1, 3), 16) - 15) & 0xff;
+  const gg = (parseInt(baseColor.slice(3, 5), 16) - 15) & 0xff;
+  const bb = (parseInt(baseColor.slice(5, 7), 16) - 10) & 0xff;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="rgb(${rr},${gg},${bb})" />
+    <line x1="0" y1="32" x2="128" y2="32" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="0" y1="64" x2="128" y2="64" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="0" y1="96" x2="128" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <text x="64" y="64" text-anchor="middle" dy=".35em" font-size="7" fill="rgba(255,255,255,0.3)">${col},${row}</text>
+  </svg>`;
+}
+
+/** Create a demo top-cap SVG for extrusion rendering. */
+function makeNanoTopSvg(baseColor: string, _col: number, _row: number): string {
+  const rr = (parseInt(baseColor.slice(1, 3), 16) + 20) & 0xff;
+  const gg = (parseInt(baseColor.slice(3, 5), 16) + 20) & 0xff;
+  const bb = (parseInt(baseColor.slice(5, 7), 16) + 15) & 0xff;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <rect width="128" height="128" fill="rgb(${rr},${gg},${bb})" />
+  </svg>`;
+}
+
+/** Create a stub NanoTile for a feature kind with demo visuals. */
+function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number, presetVariant?: FeatureVariant): NanoTile {
+    const zOffset = kind === 'stone-wall' ? 4 : kind === 'fence' ? 2 : kind === 'river' ? -2 : 0;
+  const zMode: NanoZMode = kind === 'river' ? 'negative' : kind === 'tall-grass' ? 'flat' : 'positive';
+  const walkable: WalkableRule = (kind === 'stone-wall' || kind === 'fence')
+    ? { type: 'never' }
+    : { type: 'always' };
+
+  const base: NanoTile = {
+    kind,
+    zOffset,
+    zMode,
+    svg: makeNanoDemoSvg(kind, worldCol, worldRow),
+    walkable,
+    blendEdges: kind === 'river' || kind === 'tall-grass',
+    variant: presetVariant ?? 'isolated',
+  };
+
+  // Add extrusion textures for stone walls (side + top cap demo)
+  if (kind === 'stone-wall') {
+    return {
+      ...base,
+      sideTextureSvg: makeNanoSideSvg('#6a6a6a', worldCol, worldRow),
+      topTextureSvg: makeNanoTopSvg('#7a7a7a', worldCol, worldRow),
+    };
+  }
+
+  return base;
+}
+
+/**
+ * Z-heights for base biome terrain tiles.
+ * Structural feature Z now lives in NanoTile.zOffset.
+ */
+function getTerrainZ(kind: TileKind): number {
+  switch (kind) {
+    case 'rock':  return 1;
+    default:      return 0;
+  }
+}
+
 /**
  * Generate a demo chunk at the given chunk coords.
  * Uses loaded tile assets when available, falls back to inline demo SVGs.
- * Includes continuous feature placement (walls, rivers, tall grass) for solver.
+ * Uses coherent noise-based biome generation for natural-looking terrain.
  */
 export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
   const tiles: MicroTile[] = [];
-  const baseKinds: TileKind[] = ['grass', 'grass', 'grass', 'dirt', 'rock', 'water', 'sand'];
   const useAssets = hasLoadedAssets();
 
   for (let row = 0; row < CHUNK_TILES; row++) {
@@ -232,59 +434,69 @@ export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
       const worldCol = cx * CHUNK_TILES + col;
       const worldRow = cy * CHUNK_TILES + row;
 
-      // Check for feature override first
+      // Check for feature override first (walls, fences, rivers, tall grass)
       const featureKind = getFeatureKind(worldCol, worldRow);
 
-      // Deterministic hash for biome selection
-      const hash = ((worldCol * 73856093) ^ (worldRow * 19349663)) >>> 0;
-
       if (featureKind) {
-        // Feature tiles: create with appropriate defaults
-        // (solver will resolve connections and variant SVGs later)
-        let z = 1;
-        if (featureKind === 'stone-wall') z = 5;
-        if (featureKind === 'wooden-fence') z = 3;
-        if (featureKind === 'river') z = 0;
-        if (featureKind === 'tall-grass') z = 1;
-
+        const presetVariant = featureKind === 'fence'
+          ? (getDiagonalFenceVariant(worldCol, worldRow) ?? undefined) : undefined;
+        const baseKind = getBaseKind(worldCol, worldRow);
         tiles.push({
-          kind: featureKind,
-          z,
-          svg: makeDemoSvg(featureKind === 'stone-wall' ? 'rock' :
-               featureKind === 'river' ? 'water' : 'grass', worldCol, worldRow),
+          kind: baseKind,
+          z: getTerrainZ(baseKind),
+          svg: makeDemoSvg(baseKind, worldCol, worldRow),
           edgeMasks: DEFAULT_EDGE_MASKS,
+          nanos: [makeFeatureNano(featureKind, worldCol, worldRow, presetVariant)],
         });
         continue;
       }
 
-      const kindIdx = hash % baseKinds.length;
-      const kind = baseKinds[kindIdx];
+      // Use coherent noise biome selection
+      const kind = getBaseKind(worldCol, worldRow);
 
       // Try to use a loaded asset first
       if (useAssets) {
+        const hash = ((worldCol * 73856093) ^ (worldRow * 19349663)) >>> 0;
         const assetTile = pickTileForKind(kind, (hash >> 4) >>> 0);
         if (assetTile) {
-          tiles.push(assetTile);
+          // Override z to keep terrain flat
+          tiles.push({ ...assetTile, z: getTerrainZ(kind) });
           continue;
         }
       }
 
       // Fallback: inline demo SVG
-      let z = 1;
-      if (kind === 'water' || kind === 'sand') z = 0;
-      if (kind === 'rock') z = 2 + (hash >> 8) % 4;
-
       const edgeMasks = kind === 'grass' ? DEFAULT_EDGE_MASKS : BLEND_EDGE_MASKS;
 
       tiles.push({
         kind,
-        z,
+        z: getTerrainZ(kind),
         svg: makeDemoSvg(kind, worldCol, worldRow),
         edgeMasks,
       });
     }
   }
-  return { cx, cy, tiles, cachedCanvas: null, dirty: true };
+
+  const chunk: WorldUnitChunk = {
+    cx, cy, tiles,
+    cachedCanvas: null,
+    dirty: true,
+    activeConditions: new Map<string, 'locked' | 'unlocked'>(),
+    walkableMap: [],
+  };
+
+  // ─── Assembly Placement ───────────────────────────────
+  // Homestead at world (30, 1): 5×5 footprint → chunks cx=6,cy=0 and cx=6,cy=1.
+  // Cathedral at world (37, 1): 3×5 footprint → chunks cx=7,cy=0 and cx=7,cy=1.
+  // placeAssembly skips tiles not in this chunk automatically.
+
+  const homestead = loadAssembly('homestead-small');
+  if (homestead) placeAssembly(homestead, 30, 1, chunk);
+
+  const cathedral = loadAssembly('ruined-cathedral');
+  if (cathedral) placeAssembly(cathedral, 37, 1, chunk);
+
+  return chunk;
 }
 
 // ─── Chunk Screen Position ───────────────────────────────────

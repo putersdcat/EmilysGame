@@ -230,102 +230,136 @@ export function drawRimLighting(
 
 // ─── Parallax Layer Factories ────────────────────────────────
 
-/** Create sky gradient background layer (stationary). */
+/** Create sky gradient background layer (stationary). Bright daytime colors. */
 export function createSkyLayer(): ParallaxLayer {
   return {
     depth: 0,
     render(ctx, _offsetX, _offsetY, w, h) {
       const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, '#0a0a2e');   // Dark sky top
-      grad.addColorStop(0.3, '#1a1a4e'); // Deep blue
-      grad.addColorStop(0.6, '#2a3a5e'); // Medium blue
-      grad.addColorStop(1, '#3a4a6a');   // Lighter horizon
+      grad.addColorStop(0, '#4a9fd5');    // Rich blue sky
+      grad.addColorStop(0.35, '#74bce8'); // Mid blue
+      grad.addColorStop(0.65, '#a8d8f0'); // Pale blue near horizon
+      grad.addColorStop(0.85, '#d4ecf7'); // Very pale at horizon
+      grad.addColorStop(1, '#e8f4e8');    // Slight green tint where ground meets sky
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
     },
   };
 }
 
-/** Create distant mountain silhouette layer. */
+/** Create distant mountain silhouette layer — warm purple/blue tones. */
 export function createMountainLayer(): ParallaxLayer {
   return {
     depth: 0.15,
     render(ctx, offsetX, _offsetY, w, h) {
-      const baseY = h * 0.55;
+      const baseY = h * 0.52;
       ctx.save();
-      ctx.fillStyle = '#1a2a3a';
 
+      // Far mountain range — blue/purple haze
+      ctx.fillStyle = '#6a88a8';
       ctx.beginPath();
       ctx.moveTo(0, h);
-
-      // Procedural mountain ridge
-      const peaks = 8;
-      const segW = (w + 200) / peaks;
+      const peaks = 10;
+      const segW = (w + 300) / peaks;
       for (let i = 0; i <= peaks; i++) {
-        const x = i * segW + offsetX * 0.15;
-        const xMod = ((x % (w + 200)) + (w + 200)) % (w + 200) - 100;
-        const peakH = 60 + Math.sin(i * 1.7 + 0.5) * 40 + Math.cos(i * 0.8) * 25;
+        const x = i * segW + offsetX * 0.12;
+        const xMod = ((x % (w + 300)) + (w + 300)) % (w + 300) - 150;
+        const peakH = 80 + Math.sin(i * 1.7 + 0.5) * 50 + Math.cos(i * 0.8) * 30;
         ctx.lineTo(xMod, baseY - peakH);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
+
+      // Second ridge closer — more green/blue
+      ctx.fillStyle = '#5a7e60';
+      ctx.beginPath();
+      ctx.moveTo(0, h);
+      for (let i = 0; i <= peaks; i++) {
+        const x = i * segW * 0.9 + offsetX * 0.13 + 50;
+        const xMod = ((x % (w + 300)) + (w + 300)) % (w + 300) - 150;
+        const peakH = 45 + Math.sin(i * 2.0 + 1.2) * 25 + Math.cos(i * 1.1) * 18;
+        ctx.lineTo(xMod, baseY - peakH + 20);
+      }
+      ctx.lineTo(w, h);
+      ctx.closePath();
+      ctx.fill();
+
       ctx.restore();
     },
   };
 }
 
-/** Create closer hill silhouette layer. */
+/** Create closer hill silhouette layer — rich green. */
 export function createHillLayer(): ParallaxLayer {
   return {
     depth: 0.3,
     render(ctx, offsetX, _offsetY, w, h) {
-      const baseY = h * 0.65;
+      const baseY = h * 0.62;
       ctx.save();
-      ctx.fillStyle = '#1e2e3e';
 
+      // Near hills — deep green
+      ctx.fillStyle = '#3d7c3a';
       ctx.beginPath();
       ctx.moveTo(0, h);
-
-      const hills = 12;
-      const segW = (w + 300) / hills;
+      const hills = 14;
+      const segW = (w + 400) / hills;
       for (let i = 0; i <= hills; i++) {
-        const x = i * segW + offsetX * 0.3;
-        const xMod = ((x % (w + 300)) + (w + 300)) % (w + 300) - 150;
-        const hillH = 30 + Math.sin(i * 2.1 + 1.2) * 20 + Math.cos(i * 1.3) * 15;
+        const x = i * segW + offsetX * 0.28;
+        const xMod = ((x % (w + 400)) + (w + 400)) % (w + 400) - 200;
+        const hillH = 35 + Math.sin(i * 2.1 + 1.2) * 22 + Math.cos(i * 1.3 + 0.5) * 14;
         ctx.lineTo(xMod, baseY - hillH);
       }
       ctx.lineTo(w, h);
       ctx.closePath();
       ctx.fill();
+
       ctx.restore();
     },
   };
 }
 
-/** Create cloud overlay layer. */
+/** Create cloud overlay layer — puffy white clouds. */
 export function createCloudLayer(): ParallaxLayer {
   return {
     depth: 0.5,
-    render(ctx, offsetX, offsetY, w, h) {
+    render(ctx, offsetX, _offsetY, w, h) {
       ctx.save();
-      ctx.globalAlpha = 0.08;
-      ctx.fillStyle = '#ffffff';
 
-      // Drifting cloud blobs
+      // Puffy white clouds
       const clouds = [
-        { bx: 100, by: 80, rx: 80, ry: 25 },
-        { bx: 400, by: 120, rx: 100, ry: 30 },
-        { bx: 700, by: 60, rx: 70, ry: 20 },
-        { bx: 250, by: 200, rx: 90, ry: 28 },
-        { bx: 550, by: 150, rx: 75, ry: 22 },
+        { bx: 80,  by: 55, rx: 90, ry: 28, clusters: 3 },
+        { bx: 380, by: 80, rx: 110, ry: 32, clusters: 4 },
+        { bx: 650, by: 45, rx: 75, ry: 24, clusters: 3 },
+        { bx: 220, by: 120, rx: 85, ry: 26, clusters: 3 },
+        { bx: 520, by: 100, rx: 95, ry: 30, clusters: 4 },
+        { bx: 900, by: 70, rx: 80, ry: 25, clusters: 3 },
       ];
 
       for (const c of clouds) {
-        const cx = ((c.bx + offsetX * 0.5) % (w + 200)) - 100;
-        const cy = ((c.by + offsetY * 0.2) % (h * 0.5));
+        const cx = ((c.bx + offsetX * 0.48) % (w + 400) + (w + 400)) % (w + 400) - 200;
+        const cy = c.by;
+        if (cy > h * 0.55) continue; // Only in upper sky portion
+
+        // Cloud shadow first
+        ctx.fillStyle = 'rgba(180, 200, 220, 0.12)';
         ctx.beginPath();
-        ctx.ellipse(cx, cy, c.rx, c.ry, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + 8, cy + 12, c.rx * 0.9, c.ry * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Main cloud body — multiple overlapping ellipses
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.82)';
+        for (let ci = 0; ci < c.clusters; ci++) {
+          const ox = (ci - c.clusters / 2) * (c.rx * 0.5);
+          const oy = ci % 2 === 0 ? 0 : -c.ry * 0.3;
+          ctx.beginPath();
+          ctx.ellipse(cx + ox, cy + oy, c.rx * (0.6 + ci * 0.1), c.ry * (0.8 + ci * 0.05), 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // Top highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.ellipse(cx - c.rx * 0.1, cy - c.ry * 0.2, c.rx * 0.5, c.ry * 0.4, -0.2, 0, Math.PI * 2);
         ctx.fill();
       }
 

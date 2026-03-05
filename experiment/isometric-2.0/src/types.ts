@@ -82,18 +82,33 @@ export type FeatureVariant =
   | 'diagonal-right' // Diagonal piece (top-left to bottom-right)
   | 'vertex';        // Vertex/corner post
 
-/** Terrain / feature type identifiers. */
-export type TileKind =
+/** Base biome terrain identifiers (pure landscape, no features). */
+export type BiomeKind =
   | 'grass'
   | 'dirt'
   | 'rock'
   | 'water'
   | 'sand'
+  | 'dry-grass';
+
+/**
+ * TileKind: Equivalent to BiomeKind after the nano-tile migration.
+ * Feature types ('stone-wall', 'fence', etc.) now live in NanoTileKind.
+ */
+export type TileKind = BiomeKind;
+
+/** Feature / overlay kinds for nano tiles (sit on top of base biome). */
+export type NanoTileKind =
+  | 'fence'
   | 'stone-wall'
-  | 'wooden-fence'
   | 'river'
   | 'river-bank'
-  | 'tall-grass';
+  | 'bridge'
+  | 'tall-grass'
+  | 'gate'
+  | 'troll-bridge'
+  | 'cathedral-wall'
+  | 'homestead-wall';
 
 /**
  * MicroTile: The fundamental rendering unit.
@@ -130,6 +145,82 @@ export interface MicroTile {
 
   /** For continuous features: selected variant piece. */
   readonly variant?: FeatureVariant;
+
+  /** Nano-tile augmentation overlays (max 3, sorted neg-Z first). */
+  readonly nanos?: NanoStack;
+}
+
+// ─── Nano Tile Types ─────────────────────────────────────────
+
+/** Z-extrusion direction for nano tile rendering. */
+export type NanoZMode = 'positive' | 'negative' | 'flat';
+
+/** Walkability rule: always passable, never passable, or quiz/key gated. */
+export type WalkableRule =
+  | { readonly type: 'always' }
+  | { readonly type: 'never' }
+  | { readonly type: 'conditional'; readonly conditionId: string };
+
+/**
+ * NanoTile: Modular overlay on a base biome MicroTile.
+ * Enables continuous features, height simulation, and dynamic elements
+ * without altering the base biome layer.
+ */
+export interface NanoTile {
+  readonly kind: NanoTileKind;
+  /** Positive = upright barrier (fence); negative = carve-out (river). */
+  readonly zOffset: number;
+  readonly zMode: NanoZMode;
+  /** SVG source: 128×32 for thin (fence), 128×128 for tall (spire). */
+  readonly svg: string;
+  readonly walkable: WalkableRule;
+  /** Alpha gradient at base/top edge for blending into biome. */
+  readonly blendEdges: boolean;
+  /** Optional horizontal cap SVG for extrusion top face. */
+  readonly topTextureSvg?: string;
+  /** Optional vertical fill SVG for extrusion side face. */
+  readonly sideTextureSvg?: string;
+  /** Feature variants this SVG covers (for solver). */
+  readonly variants?: readonly FeatureVariant[];
+  /** SVG path data for shadow silhouette. */
+  readonly shadowPath?: string;
+  /** Solver-resolved connection flags. */
+  readonly connections?: FeatureConnections;
+  /** Solver-resolved variant piece. */
+  readonly variant?: FeatureVariant;
+}
+
+/**
+ * NanoStack: Ordered stack of nano tiles on a single micro tile.
+ * Max 3 nanos: sorted negative-Z first, then flat, then positive.
+ * Renderer enforces draw order.
+ */
+export type NanoStack = readonly NanoTile[];
+
+// ─── Player State ────────────────────────────────────────────
+
+/** Cardinal facing direction for player sprite selection. */
+export type FacingDirection = 'n' | 's' | 'e' | 'w';
+
+/** Player walk animation frame index. */
+export type AnimFrame = 0 | 1 | 2;
+
+/**
+ * PlayerState: Mutable player position, facing, animation, and nano interaction.
+ * worldCol/worldRow are fractional for sub-tile movement.
+ * sinkDepthPx is set by the nano system when standing on negative-Z tiles (rivers, trenches).
+ */
+export interface PlayerState {
+  worldCol: number;
+  worldRow: number;
+  facing: FacingDirection;
+  animFrame: AnimFrame;
+  /** Pixel offset from negative-Z nanos — player sprite shifts down. */
+  sinkDepthPx: number;
+  /** Pixel offset from base tile Z elevation — player sprite shifts up. */
+  tileZPx: number;
+  /** True when WASD is active this frame. Drives walk animation. */
+  moving: boolean;
 }
 
 // ─── Chunk ───────────────────────────────────────────────────
@@ -157,6 +248,21 @@ export interface WorldUnitChunk {
 
   /** True when cached canvas needs re-bake (e.g., tile changed). */
   dirty: boolean;
+
+  /**
+   * Active conditions on this chunk (troll-bridge quiz answers, gate unlocks).
+   * Key: conditionId string (e.g., 'quiz:gate-20-4').
+   * Value: 'locked' | 'unlocked'.
+   * Mutated by resolveCondition() — NOT readonly.
+   */
+  activeConditions: Map<string, 'locked' | 'unlocked'>;
+
+  /**
+   * Cached walkable map for fast collision queries.
+   * CHUNK_TILES * CHUNK_TILES boolean flags (row-major).
+   * Recomputed by buildWalkableMap() after each solver pass.
+   */
+  walkableMap: boolean[];
 }
 
 // ─── Camera ──────────────────────────────────────────────────
@@ -249,6 +355,43 @@ export interface TileAssetMeta {
   };
   /** Feature variant. */
   readonly variant?: FeatureVariant;
+}
+
+/** Metadata JSON format for a nano tile asset. */
+export interface NanoAssetMeta {
+  readonly kind: NanoTileKind;
+  readonly zOffset: number;
+  readonly zMode: NanoZMode;
+  readonly walkable: WalkableRule;
+  readonly blendEdges: boolean;
+  readonly topTexturePath?: string;
+  readonly sideTexturePath?: string;
+  readonly variants?: readonly FeatureVariant[];
+  readonly shadowPath?: string;
+}
+
+// ─── Macro Assemblies (multi-tile structures) ────────────────
+
+/** Single tile placement within a macro assembly. */
+export interface AssemblyTilePlacement {
+  /** Column offset relative to assembly origin. */
+  readonly col: number;
+  /** Row offset relative to assembly origin. */
+  readonly row: number;
+  /** Nano stack for this tile position. */
+  readonly nanos: NanoStack;
+}
+
+/** Multi-tile / multi-chunk structure descriptor (homestead, cathedral, etc.). */
+export interface MacroAssembly {
+  /** Unique assembly identifier (e.g., 'homestead-small', 'cathedral'). */
+  readonly id: string;
+  /** Width in tiles. */
+  readonly widthTiles: number;
+  /** Height in tiles. */
+  readonly heightTiles: number;
+  /** Tile placements relative to assembly origin. */
+  readonly placements: readonly AssemblyTilePlacement[];
 }
 
 // ─── World Coordinate Helpers ────────────────────────────────

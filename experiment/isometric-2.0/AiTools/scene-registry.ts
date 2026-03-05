@@ -26,6 +26,12 @@ import type { AssemblyChainItem } from './svg-renderer-tool.js';
 // Import game engine SVG generators directly — no more duplicated color maps
 import { getVariantSvg, woodenFenceSvg } from '../src/solver.js';
 import type { FeatureVariant, FeatureConnections } from '../src/types.js';
+// Import extruded face builder for proper 3-face geometry on stone-wall tiles
+import { buildExtrudedFaceMarkup } from './game-tile-renderer.js';
+
+/** Nano kinds that use 3-face extruded box rendering via buildExtrudedFaceMarkup(). */
+const EXTRUDED_NANO_KINDS = new Set<NanoKind>(['stone-wall']);
+// TODO: cathedral-wall, homestead-wall once top-face SVGs are available for those kinds
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -198,6 +204,20 @@ export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
   return descriptor.entries.map((entry) => {
     const { kind, col, row, variant } = entry;
     if (isNanoKind(kind)) {
+      // Extruded kinds (stone-wall): use proper 3-face markup, not a flat z-pinned texture.
+      if (EXTRUDED_NANO_KINDS.has(kind)) {
+        return {
+          // connections omitted → buildExtrudedFaceMarkup infers from variant internally
+          svg:        buildExtrudedFaceMarkup(kind, variant ?? 'straight-h', Math.abs(NANO_Z[kind])),
+          col,
+          row,
+          variant:    variant as string | undefined,
+          zMode:      'positive' as const,
+          zOffset:    NANO_Z[kind],
+          walkable:   NANO_WALKABLE[kind],
+          renderMode: 'extruded' as const,
+        };
+      }
       return {
         svg:     makeNanoSvg(kind, variant, col, row),
         col,

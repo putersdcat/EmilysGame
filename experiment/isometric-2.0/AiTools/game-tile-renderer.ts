@@ -193,26 +193,92 @@ function buildExtrudedSvg(
     ? ''
     : `<rect width="${canvasW}" height="${canvasH}" fill="${background}"/>`;
 
-  // Darken overlay for cap face (less direct sunlight — mirrors fillStyle rgba(0,0,0,0.22))
-  const capDarken = hasCap
-    ? `<rect x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" fill="rgba(0,0,0,0.22)" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})"/>`
-    : '';
+  const faces = buildExtrudedFacesAt(sideSvg, topSvg, variant, zOffset, sX, sY);
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${canvasW}" height="${canvasH}" viewBox="0 0 ${canvasW} ${canvasH}">
   ${bgRect}
   <!-- ground diamond reference -->
   <polygon points="${dl} ${dt} ${dr} ${db}" fill="rgba(60,80,60,0.18)" stroke="rgba(255,255,255,0.12)" stroke-width="1"/>
-
-  <!-- CAP face (draws first — further from camera) -->
-  ${hasCap ? `<image href="${sideHref}" x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})" preserveAspectRatio="none"/>` : '<!-- CAP skipped: mid-run variant -->'}
-  ${capDarken}
-
-  <!-- FRONT face (draws second — closer to camera) -->
-  <image href="${sideHref}" x="0" y="-${drawH}" width="${MICRO_TILE_SIZE}" height="${drawH}" transform="matrix(${frontMat},0.5,0,1,${frontX},${frontY})" preserveAspectRatio="none"/>
-
-  <!-- TOP cap (draws last — highest, always visible) -->
-  <image href="${topHref}" x="0" y="0" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" transform="matrix(1,0.5,-1,0.5,${cx},${elevatedY})" preserveAspectRatio="none"/>
+  ${faces}
 </svg>`;
+}
+
+/**
+ * Internal: build just the 3 face <image>/<rect> elements for an extruded nano.
+ * No outer SVG, no background rect, no reference polygon.
+ * Coordinates are relative to anchor (sX, sY) = tile bounding-box top-left.
+ */
+function buildExtrudedFacesAt(
+  sideSvg: string,
+  topSvg:  string,
+  variant:  FeatureVariant,
+  zOffset:  number,
+  sX: number,
+  sY: number,
+): string {
+  const drawH    = Math.max(zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
+  const sideHref = svgToDataUri(sideSvg);
+  const topHref  = svgToDataUri(topSvg);
+  const NE = WALL_OFFSET + WALL_THICKNESS; // 88
+
+  const vertical = isVerticalWall(variant);
+  const hasCap   = shouldDrawEndCap(variant);
+
+  let frontX: number, frontY: number, capX: number, capY: number, frontMat: 1 | -1;
+  if (vertical) {
+    frontX   = sX + HALF_W + NE;
+    frontY   = sY + NE / 2;
+    capX     = sX + HALF_W + WALL_OFFSET - MICRO_TILE_SIZE;
+    capY     = sY + (WALL_OFFSET + MICRO_TILE_SIZE) / 2;
+    frontMat = -1;
+  } else {
+    frontX   = sX + HALF_W - NE;
+    frontY   = sY + NE / 2;
+    capX     = sX + HALF_W + MICRO_TILE_SIZE - WALL_OFFSET;
+    capY     = sY + (MICRO_TILE_SIZE + WALL_OFFSET) / 2;
+    frontMat = 1;
+  }
+
+  const cx        = sX + HALF_W;
+  const elevatedY = sY - drawH;
+
+  const capImg    = hasCap
+    ? `<image href="${sideHref}" x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})" preserveAspectRatio="none"/>\n  `
+    : '';
+  const capDarken = hasCap
+    ? `<rect x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" fill="rgba(0,0,0,0.22)" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})"/>\n  `
+    : '';
+
+  return `${capImg}${capDarken}<image href="${sideHref}" x="0" y="-${drawH}" width="${MICRO_TILE_SIZE}" height="${drawH}" transform="matrix(${frontMat},0.5,0,1,${frontX},${frontY})" preserveAspectRatio="none"/>\n  <image href="${topHref}" x="0" y="0" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" transform="matrix(1,0.5,-1,0.5,${cx},${elevatedY})" preserveAspectRatio="none"/>`;
+}
+
+/**
+ * Build the 3-face extruded face markup for use in scene assembly compositing.
+ *
+ * Returns ONLY the <image>/<rect> face elements — no outer <svg>, background, or
+ * reference polygon. Coordinates are tile-local: tile bounding-box top-left = (0, 0).
+ *
+ * Designed for embedding inside a <g transform="translate(drawX, drawY)"> group in
+ * wrapIsometricAssembly. The parent assembly SVG must not clip negativeY (walls
+ * extend above y=0). Mark the AssemblyChainItem with renderMode: 'extruded' so the
+ * assembly renderer knows to skip the z-pin transform and embed markup directly.
+ *
+ * @param kind      - NanoTileKind (stone-wall). cathedral-wall/homestead-wall: TODO
+ * @param variant   - Feature variant. Default: 'straight-h'
+ * @param zOffset   - Z height (used with NANO_Z_SCALE). Default: 4
+ * @param connections - Optional explicit connections (inferred from variant if omitted)
+ */
+export function buildExtrudedFaceMarkup(
+  kind: NanoTileKind | string,
+  variant: FeatureVariant = 'straight-h',
+  zOffset: number = 4,
+  connections?: FeatureConnections,
+): string {
+  const conn = connections ?? inferConnections(variant);
+  const sideSvg = getVariantSvg(kind as NanoTileKind, variant, conn, zOffset, 0, 0) ?? '';
+  const topSvg  = stoneWallTopSvg(variant);
+  // sX=0, sY=0 → tile bounding-box top-left is the coordinate origin
+  return buildExtrudedFacesAt(sideSvg, topSvg, variant, zOffset, 0, 0);
 }
 
 // ─── Billboard SVG (fence, gate, troll-bridge) ────────────────

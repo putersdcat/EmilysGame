@@ -81,6 +81,12 @@ export interface AssemblyChainItem {
   zMode?: NanoZMode;
   zOffset?: number;
   walkable?: boolean;
+  /**
+   * 'extruded' — svg contains raw 3-face markup (no outer <svg>) with coords relative to
+   * tile bounding-box top-left (0,0). Rendered by dumping markup directly into the outer
+   * translate group; no z-pin transform applied. Used for stone-wall / cathedral-wall.
+   */
+  renderMode?: 'extruded';
 }
 
 /** A player sprite placed at a world tile coordinate for walkability boundary validation. */
@@ -440,9 +446,13 @@ function wrapIsometricAssembly(
     const drawX = (item.col - item.row) * HALF_W + originX - HALF_W;   // (col-row)*128 + oX - 128
     const drawY = (item.col + item.row) * HALF_H + originY - HALF_H;   // (col+row)*64  + oY - 64
 
-    // Scope all id= / url(#) references to avoid clipPath collisions between tiles.
+    // Extruded tiles: raw <image> face markup — no outer SVG tag, no id= attributes.
+    // Skip stripSvgWrapper + scopeSvgIds (would corrupt base64 data URIs in href attrs).
+    // All other tiles: strip outer SVG and scope ids to prevent clipPath collisions.
     const tilePrefix = `t${item.col}_${item.row}_`;
-    const innerContent = scopeSvgIds(stripSvgWrapper(item.svg), tilePrefix);
+    const innerContent = item.renderMode === 'extruded'
+      ? item.svg
+      : scopeSvgIds(stripSvgWrapper(item.svg), tilePrefix);
     const zMode    = item.zMode    ?? 'positive';
     const zOffset  = item.zOffset  ?? 0;
     const walkable = item.walkable !== false;
