@@ -7,6 +7,10 @@
 
 import { Resvg } from '@resvg/resvg-js';
 
+// Game engine geometry — pure constants, no Canvas deps
+import { ISO_TILE_WIDTH, ISO_TILE_HEIGHT, MICRO_TILE_SIZE } from '../src/types.js';
+import { HALF_W, HALF_H, NANO_Z_SCALE, Z_PX_PER_LEVEL, MIN_NANO_HEIGHT } from './iso-geometry.js';
+
 // ─── Types ───────────────────────────────────────────────────
 
 /** Render mode: 'flat' = standard, 'isometric' = diamond transform, 'isometric_z_pinned' = upright standing, 'isometric_assembly' = multi-tile composite. */
@@ -19,9 +23,19 @@ export interface AssemblyChainItem {
   svg: string;
   col: number;
   row: number;
+  /** Tile variant string e.g. 'straight-h', 'corner-tr'. Passed through from scene entries. */
+  variant?: string;
   zMode?: NanoZMode;
   zOffset?: number;
   walkable?: boolean;
+}
+
+/** A player sprite placed at a world tile coordinate for walkability boundary validation. */
+export interface PlayerWorldPos {
+  col: number;
+  row: number;
+  /** Optional label drawn above the sprite. */
+  label?: string;
 }
 
 /** Options for renderSvg. */
@@ -50,6 +64,8 @@ export interface RenderOptions {
   currentPlayerPos?: PlayerOcclusionPos;
   /** Multi-tile chain payload for assembly render mode. */
   assemblyChain?: AssemblyChainItem[];
+  /** Player sprites placed at world positions for walkability boundary validation. */
+  players?: PlayerWorldPos[];
 }
 
 /** Result from renderSvg. */
@@ -89,15 +105,17 @@ export interface AnimatedRenderResult {
 }
 
 // ─── Constants ───────────────────────────────────────────────
+// ISO_TILE_WIDTH=256, ISO_TILE_HEIGHT=128, MICRO_TILE_SIZE=128 come from game src/types.ts
+// HALF_W=128, HALF_H=64, NANO_Z_SCALE=12, Z_PX_PER_LEVEL=4 from iso-geometry.ts
 
-/** Default isometric tile dimensions. */
-const ISO_WIDTH = 256;
-const ISO_HEIGHT = 128;
-const MICRO_TILE = 128;
+/** Aliases matching old usage — backed by game engine constants. */
+const ISO_WIDTH  = ISO_TILE_WIDTH;   // 256
+const ISO_HEIGHT = ISO_TILE_HEIGHT;  // 128
+const MICRO_TILE = MICRO_TILE_SIZE;  // 128
 
-// For Z-pinned nanos, we often want more height so they can stand tall above the tile bounds
-const NANO_WIDTH = 256;
-const NANO_HEIGHT = 256;
+// Nano preview canvas (taller to accommodate z-height): keep internal, not from game
+const NANO_WIDTH  = 320;  // wider to fit skewed silhouette
+const NANO_HEIGHT = 320;  // taller to show Z height
 
 // ─── Core Render ─────────────────────────────────────────────
 
@@ -267,11 +285,32 @@ function wrapIsometricAssembly(
   const originX = width / 2;
   const originY = height / 4;
   const debug = options.debug ?? false;
+  const players = options.players ?? [];
+
+  // Painter's algorithm: sort tiles and players together by (row + col).
+  // Tiles at same depth sort before players (player stands in front of tile at same depth).
+  type RenderItem =
+    | { type: 'tile'; item: AssemblyChainItem; sortKey: number }
+    | { type: 'player'; col: number; row: number; label?: string; sortKey: number };
+
+  const allItems: RenderItem[] = [
+    ...chain.map(item => ({ type: 'tile' as const, item, sortKey: item.row + item.col })),
+    ...players.map(p => ({ type: 'player' as const, col: p.col, row: p.row, label: p.label, sortKey: p.row + p.col })),
+  ];
+  allItems.sort((a, b) => a.sortKey - b.sortKey || (a.type === 'tile' ? -1 : 1));
 
   let output = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
-  const sortedChain = [...chain].sort((a, b) => (a.row - b.row) || (a.col - b.col));
 
-  for (const item of sortedChain) {
+  for (const ri of allItems) {
+    if (ri.type === 'player') {
+      // Player feet at front vertex of their tile
+      const px = originX + (ri.col - ri.row) * 64;
+      const py = originY + (ri.col + ri.row) * 32 + 32;
+      output += renderAssemblyPlayer(px, py, ri.label);
+      continue;
+    }
+
+    const item = ri.item;
     const isoX = originX + (item.col - item.row) * (MICRO_TILE / 2) - 64;
     const isoY = originY + (item.col + item.row) * (MICRO_TILE / 4);
 
@@ -308,6 +347,30 @@ function wrapIsometricAssembly(
 
   output += '</svg>';
   return output;
+}
+
+/**
+ * Render a player sprite at absolute screen coordinates in a scene assembly.
+ * CALL SITE: feet (bottom-vertex of the player's tile) at (cx, cy).
+ * The sprite rises UPWARD from (cx, cy) so the ground shadow sits on the tile floor.
+ */
+function renderAssemblyPlayer(cx: number, cy: number, label?: string): string {
+  let out = `<g>`;
+  // Ground shadow ellipse
+  out += `<ellipse cx="${cx}" cy="${cy}" rx="14" ry="7" fill="rgba(0,0,0,0.35)"/>`;
+  // Body (torso)
+  out += `<rect x="${cx - 10}" y="${cy - 44}" width="20" height="34" rx="5" fill="rgba(60,100,210,0.9)" stroke="white" stroke-width="1.5"/>`;
+  // Head
+  out += `<circle cx="${cx}" cy="${cy - 56}" r="12" fill="rgba(60,100,210,0.9)" stroke="white" stroke-width="1.5"/>`;
+  // Eyes
+  out += `<circle cx="${cx - 4}" cy="${cy - 57}" r="2" fill="white"/>`;
+  out += `<circle cx="${cx + 4}" cy="${cy - 57}" r="2" fill="white"/>`;
+  if (label) {
+    out += `<rect x="${cx - label.length * 3.5 - 4}" y="${cy - 80}" width="${label.length * 7 + 8}" height="14" rx="3" fill="rgba(0,0,0,0.7)"/>`;
+    out += `<text x="${cx}" y="${cy - 70}" text-anchor="middle" font-size="9" font-family="monospace" fill="#fff">${label}</text>`;
+  }
+  out += `</g>`;
+  return out;
 }
 
 function renderPlayerSilhouette(cx: number, cy: number): string {

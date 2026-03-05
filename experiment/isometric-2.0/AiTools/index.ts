@@ -5,6 +5,8 @@
  * TODO: DOC — tool schema auto-published via MCP protocol
  */
 
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
@@ -509,10 +511,11 @@ server.registerTool(
 // ─── Tool: render_iso_scene ───────────────────────────────────
 
 const SCENE_ENTRY_SCHEMA = z.object({
-  kind: z.string().describe('TileKind (grass/dirt/rock/water/sand/dry-grass) or NanoKind slug.'),
-  col:  z.number().int(),
-  row:  z.number().int(),
-  label: z.string().optional(),
+  kind:    z.string().describe('TileKind (grass/dirt/rock/water/sand/dry-grass) or NanoKind slug.'),
+  col:     z.number().int(),
+  row:     z.number().int(),
+  variant: z.string().optional().describe('Feature variant: straight-h, straight-v, cross, corner-tr, corner-tl, corner-br, corner-bl, tee-t, tee-r, tee-b, tee-l, end-r, end-l, end-t, end-b, isolated.'),
+  label:   z.string().optional(),
 });
 
 server.registerTool(
@@ -543,10 +546,20 @@ server.registerTool(
       width:  z.number().int().min(200).max(4096).optional().describe('Canvas width. Default from scene or 1024.'),
       height: z.number().int().min(150).max(4096).optional().describe('Canvas height. Default from scene or 512.'),
       background: z.string().optional().describe('Background color. Default: "#0d1117".'),
-      debug: z.boolean().optional().describe('Show walkable overlays and tile bounds.'),
+      debug:  z.boolean().optional().describe('Show walkable overlays and tile bounds.'),
+      players: z
+        .array(z.object({
+          col:   z.number().describe('World tile column (fractional ok for boundary positions).'),
+          row:   z.number().describe('World tile row (fractional ok for boundary positions).'),
+          label: z.string().optional().describe('Label drawn above the sprite.'),
+        }))
+        .optional()
+        .describe('Player sprites at world grid coords for walkability boundary validation.'),
+      outputPath: z.string().optional().describe('Absolute or workspace-relative path to write the PNG file to disk (e.g. \'experiment/isometric-2.0/ProgressEvaluations/my-scene.png\').'),
+
     },
   },
-  async ({ sceneName, entries, listScenes: doList, width, height, background, debug }) => {
+  async ({ sceneName, entries, listScenes: doList, width, height, background, debug, players, outputPath }) => {
     try {
       // List-only mode
       if (doList) {
@@ -581,15 +594,27 @@ server.registerTool(
         background,
         debug,
         assemblyChain: chain,
+        players,
       });
+
+      // Write PNG to disk if outputPath requested
+      if (outputPath) {
+        const absPath = outputPath.startsWith('/') || /^[A-Za-z]:[/\\]/.test(outputPath)
+          ? outputPath
+          : `${process.cwd()}/${outputPath}`;
+        mkdirSync(dirname(absPath), { recursive: true });
+        writeFileSync(absPath, result.png);
+      }
 
       const meta: Record<string, unknown> = {
         scene: sceneName ?? 'custom',
         tileCount: chain.length,
+        playerCount: players?.length ?? 0,
         width: result.width,
         height: result.height,
         renderTimeMs: result.renderTimeMs,
         bytes: result.png.length,
+        savedTo: outputPath ?? null,
       };
       return {
         content: [

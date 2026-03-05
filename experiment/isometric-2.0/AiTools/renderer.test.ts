@@ -107,11 +107,11 @@ describe('renderSvg — isometric mode', () => {
 // ─── isometric_z_pinned mode ─────────────────────────────────
 
 describe('renderSvg — isometric_z_pinned mode', () => {
-  it('produces 256×256 output by default (tall nano canvas)', () => {
+  it('produces 320×320 output by default (tall nano canvas)', () => {
     const r = renderSvg(MINIMAL_SVG, { mode: 'isometric_z_pinned' });
     assert.equal(r.mode, 'isometric_z_pinned');
-    assert.equal(r.width, 256);
-    assert.equal(r.height, 256);
+    assert.equal(r.width,  320);
+    assert.equal(r.height, 320);
     assert.ok(r.png.byteLength > 100);
   });
 

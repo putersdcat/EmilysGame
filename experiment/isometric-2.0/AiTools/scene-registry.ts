@@ -199,19 +199,20 @@ export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
     const { kind, col, row, variant } = entry;
     if (isNanoKind(kind)) {
       return {
-        svg: makeNanoSvg(kind, variant, col, row),
+        svg:     makeNanoSvg(kind, variant, col, row),
         col,
         row,
-        zMode: NANO_Z_MODE[kind],
+        variant: variant as string | undefined,
+        zMode:   NANO_Z_MODE[kind],
         zOffset: NANO_Z[kind],
         walkable: NANO_WALKABLE[kind],
       };
     } else {
       return {
-        svg: makeTileSvg(kind as TileKind, col, row),
+        svg:     makeTileSvg(kind as TileKind, col, row),
         col,
         row,
-        zMode: 'flat' as const,
+        zMode:   'flat' as const,
         zOffset: 0,
         walkable: true,
       };
