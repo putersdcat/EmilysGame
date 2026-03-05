@@ -19,6 +19,20 @@ import {
 const _svgImageCache = new Map<string, HTMLImageElement>();
 
 /**
+ * Inject a pre-loaded image into the SVG cache.
+ * Used by the Node.js canvas renderer (AiTools/canvas-renderer.ts) which
+ * pre-loads all SVG textures via @napi-rs/canvas loadImage() before calling
+ * the engine draw functions. Without this, loadSvgImage() returns null
+ * (async browser path) and draw calls silently skip all images.
+ *
+ * @param svg - The exact SVG string used as the cache key
+ * @param img - Pre-loaded image compatible with ctx.drawImage()
+ */
+export function injectSvgImage(svg: string, img: HTMLImageElement): void {
+  _svgImageCache.set(svg, img);
+}
+
+/**
  * Load an SVG string into an HTMLImageElement (cached, async).
  * Returns the image if loaded, null if still pending.
  */
@@ -66,8 +80,8 @@ export function getRenderedTile(tile: MicroTile): HTMLCanvasElement | null {
 
 // ─── Rendering Constants ─────────────────────────────────────
 
-/** Pixels per Z-level of elevation. */
-export const Z_PX_PER_LEVEL = 6;
+/** Pixels per Z-level of elevation. Larger = more visible height. */
+export const Z_PX_PER_LEVEL = 4;
 
 /** Half-tile dimensions for iso math. */
 const HALF_W = ISO_TILE_WIDTH / 2;  // 128
@@ -201,12 +215,24 @@ export function applyEdgeBlend(
 ): void {
   const hw = HALF_W;
   const hh = HALF_H;
-  const blendDepth = 16; // pixels of blend gradient
+  const blendDepth = 10; // pixels of blend gradient (reduced for subtlety)
 
   blendCtx.save();
 
   // Clip to the diamond shape at this tile position
   clipDiamond(blendCtx, screenX + hw, screenY + hh, hw, hh);
+
+  // Parse neighborColor hex to rgba for low-alpha blend
+  // We draw only a faint tint to soften the edge seam, not a hard color block
+  let r = 0, g = 0, b = 0;
+  const hex = neighborColor.replace('#', '');
+  if (hex.length === 6) {
+    r = parseInt(hex.slice(0, 2), 16);
+    g = parseInt(hex.slice(2, 4), 16);
+    b = parseInt(hex.slice(4, 6), 16);
+  }
+  const edgeColor = `rgba(${r},${g},${b},0.22)`; // very subtle tint
+  const fadeColor = `rgba(${r},${g},${b},0)`;     // fully transparent
 
   let grad: CanvasGradient;
 
@@ -238,8 +264,8 @@ export function applyEdgeBlend(
       break;
   }
 
-  grad.addColorStop(0, neighborColor);
-  grad.addColorStop(1, 'transparent');
+  grad.addColorStop(0, edgeColor);
+  grad.addColorStop(1, fadeColor);
   blendCtx.fillStyle = grad;
   blendCtx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
 

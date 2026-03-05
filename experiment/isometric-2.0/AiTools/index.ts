@@ -14,6 +14,7 @@ import { renderSvg, renderAnimatedSvg } from './svg-renderer-tool.js';
 import { renderGeoProof, renderVariationSweep } from './proof-renderer.js';
 import { resolveNamedScene, resolveScene, listScenes, type SceneEntry } from './scene-registry.js';
 import { renderGameTile, buildGameTileSvg } from './game-tile-renderer.js';
+import { renderNanoTile, renderNanoScene, type CanvasSceneEntry, type CanvasPlayerEntry } from './canvas-renderer.js';
 
 type ToolContent =
   | { type: 'text'; text: string }
@@ -718,6 +719,123 @@ server.registerTool(
         content: [
           { type: 'image' as const, data: result.base64, mimeType: 'image/png' },
           { type: 'text' as const, text: JSON.stringify(meta) },
+        ],
+        structuredContent: meta,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { isError: true, content: [{ type: 'text' as const, text: JSON.stringify({ error: message }) }], structuredContent: { error: message } };
+    }
+  },
+);
+
+// ─── Tool: render_nano_tile (canvas-native) ─────────────────
+
+server.registerTool(
+  'render_nano_tile',
+  {
+    title: 'Render Nano Tile (Canvas-Native Engine)',
+    description:
+      'Render a single NanoTile kind + variant to PNG by calling the ACTUAL game engine ' +
+      'draw functions (drawExtrudedNano, drawPositiveNano, etc.) via @napi-rs/canvas. ' +
+      'Zero math reimplemented — pixel-identical to browser output. ' +
+      'Extruded kinds (stone-wall, cathedral-wall, homestead-wall): full 3-face box geometry. ' +
+      'Billboard kinds (fence, gate, bridge): Z-pinned upright. ' +
+      'Negative kinds (river): sunken iso. Flat kinds (tall-grass): ground overlay.',
+    inputSchema: {
+      kind: z.enum([
+        'stone-wall', 'fence', 'river', 'river-bank', 'tall-grass',
+        'gate', 'troll-bridge', 'bridge', 'cathedral-wall', 'homestead-wall',
+      ]).describe('The NanoTileKind to render.'),
+      variant: z.enum([
+        'straight-h', 'straight-v', 'cross', 'end-r', 'end-l', 'end-t', 'end-b',
+        'corner-tr', 'corner-tl', 'corner-br', 'corner-bl',
+        'tee-t', 'tee-r', 'tee-b', 'tee-l', 'isolated',
+      ]).optional().describe('Feature variant. Default: straight-h.'),
+      zOffset: z.number().optional().describe('Z height level. Default per kind.'),
+      width:   z.number().int().min(150).max(800).optional().describe('Canvas width. Default: 320.'),
+      height:  z.number().int().min(150).max(800).optional().describe('Canvas height. Default: 320.'),
+      background: z.string().optional().describe('Background color CSS. Default: "#0d1117".'),
+    },
+  },
+  async (args) => {
+    try {
+      const result = await renderNanoTile(args.kind, {
+        variant:    args.variant as CanvasSceneEntry['variant'],
+        zOffset:    args.zOffset,
+        width:      args.width,
+        height:     args.height,
+        background: args.background,
+      });
+      const meta = { kind: args.kind, variant: args.variant ?? 'straight-h', width: result.width, height: result.height, renderTimeMs: result.renderTimeMs, bytes: result.png.length };
+      return {
+        content: [
+          { type: 'image' as const, data: result.png.toString('base64'), mimeType: 'image/png' },
+          { type: 'text'  as const, text: JSON.stringify(meta) },
+        ],
+        structuredContent: meta,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return { isError: true, content: [{ type: 'text' as const, text: JSON.stringify({ error: message }) }], structuredContent: { error: message } };
+    }
+  },
+);
+
+// ─── Tool: render_nano_scene (canvas-native) ─────────────────
+
+server.registerTool(
+  'render_nano_scene',
+  {
+    title: 'Render Nano Scene (Canvas-Native Engine)',
+    description:
+      'Render a multi-tile scene (terrain + nano overlay tiles + player sprites) PNG by calling ' +
+      'the ACTUAL game engine draw functions directly via @napi-rs/canvas. ' +
+      'Two-pass render: terrain diamonds first, then nano overlays in zMode order, then players. ' +
+      'Pixel-identical to browser output. Perfect for evaluating wall/fence perimeters, ' +
+      'river crossings, and walkability layouts.',
+    inputSchema: {
+      entries: z.array(z.object({
+        kind:     z.string().describe('Tile kind: terrain (grass/dirt/rock/water/sand/dry-grass) or nano kind.'),
+        col:      z.number().int(),
+        row:      z.number().int(),
+        variant:  z.string().optional(),
+        zOffset:  z.number().optional(),
+        label:    z.string().optional().describe('Unused for scene entries — use players array for labelled sprites.'),
+      })).describe('Scene tile entries.'),
+      players: z.array(z.object({
+        col:   z.number().int(),
+        row:   z.number().int(),
+        label: z.string().optional(),
+      })).optional().describe('Player sprite positions.'),
+      width:   z.number().int().min(200).max(2400).optional().describe('Canvas width. Default: 900.'),
+      height:  z.number().int().min(150).max(1600).optional().describe('Canvas height. Default: 600.'),
+      debug:   z.boolean().optional().describe('Draw walkability overlay + tile grid. Default: false.'),
+      background: z.string().optional().describe('Background color. Default: "#1a1f2b".'),
+    },
+  },
+  async (args) => {
+    try {
+      const entries: CanvasSceneEntry[] = args.entries.map(e => ({
+        kind: e.kind, col: e.col, row: e.row,
+        variant:  e.variant as CanvasSceneEntry['variant'],
+        zOffset:  e.zOffset,
+      }));
+      const players: CanvasPlayerEntry[] = (args.players ?? []).map(p => ({
+        col: p.col, row: p.row, label: p.label,
+      }));
+      const result = await renderNanoScene(entries, {
+        width:      args.width,
+        height:     args.height,
+        debug:      args.debug,
+        background: args.background,
+        players,
+      });
+      const meta = { tileCount: entries.length, playerCount: players.length, width: result.width, height: result.height, renderTimeMs: result.renderTimeMs, bytes: result.png.length };
+      return {
+        content: [
+          { type: 'image' as const, data: result.png.toString('base64'), mimeType: 'image/png' },
+          { type: 'text'  as const, text: JSON.stringify(meta) },
         ],
         structuredContent: meta,
       };
