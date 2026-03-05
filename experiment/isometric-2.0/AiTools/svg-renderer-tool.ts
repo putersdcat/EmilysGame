@@ -1,8 +1,61 @@
 /**
- * svg-renderer-tool.ts — 2.0 Experiment: Core SVG render logic for LLM tooling.
- * Renders SVG strings to PNG buffers, with optional isometric diamond mode.
- * Uses @resvg/resvg-js for headless SVG → PNG without a browser.
- * TODO: DOC — tool schema definitions for MCP integration
+ * svg-renderer-tool.ts — Thin rendering wrapper over the Iso 2.0 game engine.
+ *
+ * ╔══════════════════════════════════════════════════════════════════════╗
+ * ║  DESIGN CONTRACT — DO NOT VIOLATE                                   ║
+ * ║                                                                      ║
+ * ║  This file is a WRAPPER.  Its sole job is to take SVGs and geometry  ║
+ * ║  produced by the GAME ENGINE (experiment/isometric-2.0/src/) and    ║
+ * ║  render them to PNG via resvg — the same pixels the browser would   ║
+ * ║  show, just headless.                                               ║
+ * ║                                                                      ║
+ * ║  ALL coordinate math MUST be imported from or explicitly mirrored   ║
+ * ║  from the game source:                                              ║
+ * ║    • src/types.ts    → ISO_TILE_WIDTH, ISO_TILE_HEIGHT, MICRO_TILE  ║
+ * ║    • src/types.ts    → worldToIso()                                 ║
+ * ║    • src/nano-tile.ts→ transform matrices (mirrored, see comments)  ║
+ * ║                                                                      ║
+ * ║  ALL SVG content MUST come from the game engine generators:         ║
+ * ║    • src/solver.ts   → getVariantSvg(), woodenFenceSvg(), etc.      ║
+ * ║    • src/tile.ts     → base terrain SVG generators                  ║
+ * ║                                                                      ║
+ * ║  NEVER invent rendering constants here that do not have a source    ║
+ * ║  in the game engine.  If a value cannot be imported (e.g. because   ║
+ * ║  it lives in Canvas-dependent code), add an explicit comment:       ║
+ * ║    // MIRROR of nano-tile.ts:NANO_Z_SCALE — keep in sync            ║
+ * ║                                                                      ║
+ * ║  Purpose: the tool must show the CURRENT STATE of the game engine.  ║
+ * ║  If a tile looks wrong in this tool, it is wrong in the game.       ║
+ * ║  If a tile looks right here, it will look right in the game.        ║
+ * ╚══════════════════════════════════════════════════════════════════════╝
+ *
+ * Pipeline:
+ *   MCP tool call
+ *     → index.ts     (parse args, call resolveScene / getVariantSvg)
+ *     → scene-registry.ts (import getVariantSvg from src/solver.ts)
+ *     → svg-renderer-tool.ts (apply transforms mirrored from src/nano-tile.ts)
+ *     → @resvg/resvg-js (headless rasteriser — no browser, no Canvas API)
+ *     → PNG buffer → MCP image response
+ *
+ * ─── src/ imports used ───────────────────────────────────────────────────
+ *
+ *   src/types.ts (pure, no Canvas deps — safe to import directly):
+ *     ISO_TILE_WIDTH  = 256   (isometric tile diamond outer width)
+ *     ISO_TILE_HEIGHT = 128   (isometric tile diamond outer height)
+ *     MICRO_TILE_SIZE = 128   (SVG logical viewport size used by all generators)
+ *     worldToIso(col, row, W, H) → { sx, sy }  (canonical world→screen math)
+ *
+ *   src/nano-tile.ts (has Canvas deps — CANNOT import; mirror the math):
+ *     NANO_Z_SCALE    = 12    px / zOffset level  (MIRROR — keep in sync)
+ *     MIN_NANO_HEIGHT = 16    px minimum nano render height
+ *     drawPositiveNano():  translate(sx, sy+HALF_H)  matrix(1,0.5,0,1)  drawImage(0,-h,128,h)
+ *     drawNegativeNano():  matrix(1,0.5,-1,0.5, cx, sy+sinkPx)
+ *     drawFlatNano():      matrix(1,0.5,-1,0.5, cx, sy)  alpha=0.7
+ *     drawExtrudedNano():  3-face box (stone-wall only)
+ *
+ *   src/solver.ts (imported via scene-registry.ts for SVG generation):
+ *     getVariantSvg(kind, variant, col, row) → SVG string
+ *     woodenFenceSvg(), stoneWallSvg(), stoneWallTopSvg(), gateSvg(), ...
  */
 
 import { Resvg } from '@resvg/resvg-js';
@@ -276,77 +329,135 @@ function wrapIsometricZPinned(innerSvg: string, width: number, height: number, o
   return output;
 }
 
+/**
+ * wrapIsometricAssembly — compose a multi-tile scene into a single SVG.
+ *
+ * Coordinate system (matches chunk.ts + nano-tile.ts EXACTLY):
+ *   HALF_W = 128  (ISO_TILE_WIDTH / 2)
+ *   HALF_H = 64   (ISO_TILE_HEIGHT / 2)
+ *
+ *   drawX = (col - row) * HALF_W + originX - HALF_W   ← tile bounding-box LEFT edge
+ *   drawY = (col + row) * HALF_H + originY - HALF_H   ← tile bounding-box TOP edge
+ *
+ *   Diamond vertices (in tile-local space, i.e. relative to drawX, drawY):
+ *     top    (+HALF_W,           0)   = (128,   0)
+ *     right  (+ISO_TILE_WIDTH, +HALF_H) = (256,  64)
+ *     bottom (+HALF_W, +ISO_TILE_HEIGHT)= (128, 128)
+ *     left   (0,       +HALF_H)       = (  0,  64)  ← nano z-pin anchor
+ *
+ *   Nano z-pinned transform (mirrors nano-tile.ts drawPositiveNano):
+ *     translate(0, HALF_H)             → go to left vertex
+ *     matrix(1, 0.5, 0, 1, 0, 0)      → z-pin shear
+ *     translate(0, -MICRO_TILE)        → move up 128px (content rises from ground up)
+ *
+ *   Negative nano (river / trench):
+ *     matrix(1, 0.5, -1, 0.5, HALF_W, sinkPx)  → flat iso sunken
+ *
+ *   Flat nano (tall-grass):
+ *     matrix(1, 0.5, -1, 0.5, HALF_W, 0) + opacity 0.7
+ *
+ *   Player feet at bottom-vertex of their tile:
+ *     px = (col - row) * HALF_W + originX       = drawX + HALF_W
+ *     py = (col + row) * HALF_H + originY + HALF_H = drawY + ISO_TILE_HEIGHT
+ */
 function wrapIsometricAssembly(
   chain: AssemblyChainItem[],
   width: number,
   height: number,
   options: RenderOptions,
 ): string {
-  const originX = width / 2;
-  const originY = height / 4;
-  const debug = options.debug ?? false;
+  // originX/Y = where tile(0,0) TOP VERTEX lands on canvas.
+  // 40% / 25% gives visible room for most scenes growing right+down.
+  const originX = Math.round(width  * 0.4);
+  const originY = Math.round(height * 0.25);
+  const debug   = options.debug   ?? false;
   const players = options.players ?? [];
 
-  // Painter's algorithm: sort tiles and players together by (row + col).
-  // Tiles at same depth sort before players (player stands in front of tile at same depth).
+  // ── Painter's sort: depth = col+row, tiles before players at same depth ──
   type RenderItem =
-    | { type: 'tile'; item: AssemblyChainItem; sortKey: number }
-    | { type: 'player'; col: number; row: number; label?: string; sortKey: number };
+    | { type: 'tile';   item: AssemblyChainItem;                                   depth: number }
+    | { type: 'player'; col: number; row: number; label?: string;                  depth: number };
 
   const allItems: RenderItem[] = [
-    ...chain.map(item => ({ type: 'tile' as const, item, sortKey: item.row + item.col })),
-    ...players.map(p => ({ type: 'player' as const, col: p.col, row: p.row, label: p.label, sortKey: p.row + p.col })),
+    ...chain.map(  it => ({ type: 'tile'   as const, item: it,    depth: it.col + it.row })),
+    ...players.map(p  => ({ type: 'player' as const, col: p.col, row: p.row, label: p.label, depth: p.col + p.row })),
   ];
-  allItems.sort((a, b) => a.sortKey - b.sortKey || (a.type === 'tile' ? -1 : 1));
+  allItems.sort((a, b) => a.depth - b.depth || (a.type === 'tile' ? -1 : 1));
 
-  let output = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
 
   for (const ri of allItems) {
+
+    // ── Player sprite at bottom-vertex of its tile ──────────────────────────
     if (ri.type === 'player') {
-      // Player feet at front vertex of their tile
-      const px = originX + (ri.col - ri.row) * 64;
-      const py = originY + (ri.col + ri.row) * 32 + 32;
-      output += renderAssemblyPlayer(px, py, ri.label);
+      // bottom-vertex: drawX + HALF_W, drawY + ISO_TILE_HEIGHT
+      //              = (col-row)*HALF_W + originX,  (col+row)*HALF_H + originY + HALF_H
+      const px = (ri.col - ri.row) * HALF_W + originX;
+      const py = (ri.col + ri.row) * HALF_H + originY + HALF_H;
+      out += renderAssemblyPlayer(px, py, ri.label);
       continue;
     }
 
+    // ── Tile ─────────────────────────────────────────────────────────────────
     const item = ri.item;
-    const isoX = originX + (item.col - item.row) * (MICRO_TILE / 2) - 64;
-    const isoY = originY + (item.col + item.row) * (MICRO_TILE / 4);
+
+    // Bounding-box top-left (matches chunk.ts drawX / drawY)
+    const drawX = (item.col - item.row) * HALF_W + originX - HALF_W;   // (col-row)*128 + oX - 128
+    const drawY = (item.col + item.row) * HALF_H + originY - HALF_H;   // (col+row)*64  + oY - 64
 
     const innerContent = stripSvgWrapper(item.svg);
-    const zMode = item.zMode ?? 'positive';
-    const zOffset = item.zOffset ?? 0;
-    const isWalkable = item.walkable !== false;
+    const zMode    = item.zMode    ?? 'positive';
+    const zOffset  = item.zOffset  ?? 0;
+    const walkable = item.walkable !== false;
 
-    output += `<g transform="translate(${isoX}, ${isoY})">`;
+    // Group origin at tile bounding-box top-left
+    out += `<g transform="translate(${drawX}, ${drawY})">`;
 
-    let baseColor = 'rgba(0,0,0,0.05)';
-    let baseStroke = 'rgba(0,0,0,0.1)';
-    if (debug) {
-      baseColor = isWalkable ? 'rgba(0,255,0,0.1)' : 'rgba(255,0,0,0.1)';
-      baseStroke = isWalkable ? 'rgba(0,255,0,0.5)' : 'rgba(255,0,0,0.5)';
-    }
-    output += `<polygon points="0,0 64,32 128,0 64,-32" fill="${baseColor}" stroke="${baseStroke}"/>`;
+    // diamond vertices in tile-local space (256 wide × 128 tall)
+    const pts = `${HALF_W},0 ${ISO_TILE_WIDTH},${HALF_H} ${HALF_W},${ISO_TILE_HEIGHT} 0,${HALF_H}`;
+    const fill   = debug ? (walkable ? 'rgba(0,220,0,0.12)' : 'rgba(255,30,30,0.18)') : 'rgba(0,0,0,0.04)';
+    const stroke = debug ? (walkable ? 'rgba(0,200,0,0.6)'  : 'rgba(220,20,20,0.7)')  : 'rgba(0,0,0,0.12)';
+    out += `<polygon points="${pts}" fill="${fill}" stroke="${stroke}" stroke-width="1"/>`;
 
+    // ── Nano overlay ─────────────────────────────────────────────────────────
     if (zMode === 'negative') {
-      const sinkPx = zOffset * 8;
-      output += `<g transform="matrix(1, 0.5, -1, 0.5, 64, ${sinkPx - 32})">`;
-      output += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
+      // Sunken flat-iso — river / river-bank
+      // mirrors: ctx.transform(1, 0.5, -1, 0.5, cx, sY + sinkPx)
+      // cx = sX + HALF_W  →  in tile-local: HALF_W (= 128)
+      const sinkPx = Math.abs(zOffset) * Z_PX_PER_LEVEL;
+      out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, ${sinkPx})">`;
+      out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
+
+    } else if (zMode === 'flat') {
+      // Flat semi-transparent — tall-grass
+      // mirrors: ctx.transform(1, 0.5, -1, 0.5, cx, sY) + alpha 0.7
+      out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, 0)" opacity="0.7">`;
+      out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
+
     } else {
-      output += `<g transform="matrix(1, 0.5, 0, 1, 0, 0)">`;
-      output += `<g transform="translate(0, -${MICRO_TILE})">`;
-      output += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g></g>`;
+      // Positive z-pinned billboard — fence / wall / gate / bridge / homestead / cathedral
+      // mirrors nano-tile.ts drawPositiveNano:
+      //   ctx.translate(screenX, screenY + HALF_H)    → anchor at left diamond vertex
+      //   ctx.transform(1, 0.5, 0, 1, 0, 0)           → z-pin shear
+      //   ctx.drawImage(img, 0, -MICRO_TILE, 128, 128) → draw upward from ground
+      out += `<g transform="translate(0, ${HALF_H})">`;     // move to left-vertex (0, 64)
+      out += `<g transform="matrix(1, 0.5, 0, 1, 0, 0)">`; // z-pin shear
+      out += `<g transform="translate(0, -${MICRO_TILE})">`; // rise upward 128px
+      out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg>`;
+      out += `</g></g></g>`;
+
+      if (debug) {
+        // Z-height marker on the left edge
+        out += `<line x1="0" y1="${HALF_H}" x2="0" y2="${HALF_H - MICRO_TILE}" stroke="#4af" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+        out += `<text x="4" y="${HALF_H - MICRO_TILE - 2}" font-size="9" font-family="monospace" fill="#4af">z=${zOffset}</text>`;
+      }
     }
 
-    if (debug && zMode === 'positive') {
-      output += `<line x1="0" y1="0" x2="0" y2="-${zOffset * 8}" stroke="blue" stroke-width="2" stroke-dasharray="4" />`;
-    }
-    output += '</g>';
+    out += '</g>';
   }
 
-  output += '</svg>';
-  return output;
+  out += '</svg>';
+  return out;
 }
 
 /**

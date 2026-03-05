@@ -4,6 +4,37 @@ MCP stdio server used for **all visual validation** in `experiment/isometric-2.0
 
 Current server capabilities: **8 tool calls** for static previews, nano z-pinned checks, assemblies, scene rendering, geometric proof overlays, variation sweeps, sprite strips, and game-engine–generated tile renders.
 
+## Design Contract: Wrapper, Not Renderer
+
+> **This tool is a thin wrapper over the actual Iso 2.0 game engine code. It does not implement its own rendering logic.**
+
+The pipeline is:
+```
+MCP tool call
+  → index.ts          (parse args, call resolveScene / getVariantSvg)
+  → scene-registry.ts (imports getVariantSvg from src/solver.ts — real game SVGs)
+  → svg-renderer-tool.ts (applies transforms mirrored from src/nano-tile.ts)
+  → @resvg/resvg-js   (headless rasteriser, no browser, no Canvas API)
+  → PNG buffer → MCP image response
+```
+
+### Game source dependencies
+
+| File | What AiTools imports | How |
+|---|---|---|
+| `src/types.ts` | `ISO_TILE_WIDTH`, `ISO_TILE_HEIGHT`, `MICRO_TILE_SIZE`, `worldToIso()` | Direct import (pure, no Canvas) |
+| `src/solver.ts` | `getVariantSvg()`, `woodenFenceSvg()`, `stoneWallSvg()`, `gateSvg()`, etc. | Direct import via `scene-registry.ts` |
+| `src/types.ts` | `FeatureVariant`, `FeatureConnections` | Type imports |
+| `src/nano-tile.ts` | **Cannot import** (Canvas deps) | Constants and transforms mirrored in `iso-geometry.ts` with explicit sync comments |
+
+### What this means in practice
+
+- SVG textures come from `src/solver.ts` — every tile rendered here uses the same generator the browser uses.
+- Tile positions use `ISO_TILE_WIDTH=256`, `ISO_TILE_HEIGHT=128` from `src/types.ts` — same constants, same grid.
+- Nano transforms (`matrix(1,0.5,0,1,...)` etc.) are exact SVG equivalents of the Canvas calls in `src/nano-tile.ts`.
+- If you change a generator in `src/solver.ts`, rebuild AiTools and restart the MCP server — the tool immediately reflects the new generator.
+- **Never add a rendering shortcut here that doesn’t exist in the game engine.** The tool must be a faithful mirror, not a approximation.
+
 ## Quick Start
 
 ```bash
@@ -16,29 +47,15 @@ npm test
 
 The server runs over **stdio** (MCP), not HTTP.
 
-> **Design decision:** The spec originally described an Express HTTP server (`POST /render-svg`). The stdio MCP approach was chosen instead — it integrates directly with VS Code / Copilot Chat with no port management, is more secure, and streams responses natively. This is not a deficiency; it is intentionally superior for the development workflow.
+> **Design decision:** The spec originally described an Express HTTP server (`POST /render-svg`). The stdio MCP approach was chosen instead — it integrates directly with VS Code / Copilot Chat with no port management, is more secure, and streams responses natively.
 
-## VS Code MCP wiring
+## After Rebuilding
 
-Configured in `.vscode/mcp.json`:
+After `npm run build` the MCP server process must be restarted before VS Code picks up the new bundle:
+1. VS Code → MCP panel → restart `isoSvgRenderer`, **or** reload the VS Code window.
+2. Verify with a quick `render_game_tile stone-wall straight-h` call.
 
-```jsonc
-"isoSvgRenderer": {
-  "type": "stdio",
-  "command": "node",
-  "args": ["${workspaceFolder}/experiment/isometric-2.0/AiTools/dist/index.js"]
-}
-```
-
-## Validation Policy (Iso 2.0)
-
-For visual work in the Iso 2.0 branch, this toolchain is required before marking work complete:
-- verify changed asset geometry
-- verify in-context scene appearance
-- verify z/orientation correctness for nanos
-
-Use the new repo instruction file:  
-`.github/instructions/isosvgrenderer.instructions.md`
+Agents: see restart protocol in `.github/instructions/isosvgrenderer.instructions.md` — never stall the session, just ask the user and sleep.
 
 ## Tool Index (8 calls)
 
