@@ -442,8 +442,8 @@ export async function renderNanoScene(
     for (const e of terrain) drawDebugDiamond(ctx, e.col, e.row, true, ox, oy);
   }
 
-  // ── Pass 3: nano overlays in zMode order ─────────────────────
-  for (const zMode of ['negative', 'flat', 'positive'] as NanoZMode[]) {
+  // ── Pass 3a: negative + flat nanos ───────────────────────────
+  for (const zMode of ['negative', 'flat'] as NanoZMode[]) {
     for (const e of nanos) {
       const zm = NANO_ZMODE[e.kind] ?? 'positive';
       if (zm !== zMode) continue;
@@ -455,9 +455,29 @@ export async function renderNanoScene(
     }
   }
 
-  // ── Pass 4: players ──────────────────────────────────────────
-  const sortedPlayers = [...players].sort((a, b) => (a.col + a.row) - (b.col + b.row));
-  for (const p of sortedPlayers) drawPlayerSprite(ctx, p.col, p.row, p.label, ox, oy);
+  // ── Pass 3b: positive nanos + players — depth-sorted together ──
+  // Players get +0.5 so they appear in front of same-depth tile features.
+  type DrawItem =
+    | { kind: 'nano';   depth: number; entry: CanvasSceneEntry }
+    | { kind: 'player'; depth: number; player: CanvasPlayerEntry };
+
+  const positiveNanoEntries = nanos.filter(e => (NANO_ZMODE[e.kind] ?? 'positive') === 'positive');
+  const drawItems: DrawItem[] = [
+    ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: e.col + e.row,       entry: e  })),
+    ...players.map(            p  => ({ kind: 'player' as const, depth: p.col + p.row + 0.5, player: p })),
+  ].sort((a, b) => a.depth - b.depth);
+
+  for (const item of drawItems) {
+    if (item.kind === 'nano') {
+      const nano = buildNanoTile(item.entry);
+      if (!nano) continue;
+      const { screenX, screenY } = tilePos(item.entry.col, item.entry.row, ox, oy);
+      if (debug) drawDebugDiamond(ctx, item.entry.col, item.entry.row, NANO_WALKABLE[item.entry.kind] ?? true, ox, oy);
+      drawNanoStack(nctx, [nano], screenX, screenY);
+    } else {
+      drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy);
+    }
+  }
 
   return { png: canvas.toBuffer('image/png'), width, height, renderTimeMs: Date.now() - t0 };
 }
