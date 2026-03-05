@@ -73,12 +73,17 @@ export function woodenFenceNano(
 
 // ─── Nano Stack Factory ───────────────────────────────────────────────────────
 
+/** Module-level cache: key=`${tileType}:${variant}` → IsoNanoStack. */
+const _nanoStackCache = new Map<string, IsoNanoStack>();
+
 /**
  * Maps a v1 TileType string to a NanoStack (or null for base terrain types).
  *
  * For feature tiles (stone_wall, wooden_fence, etc.) returns a one-element
  * stack. For base terrain (grass, rock, etc.) returns null — these are handled
  * by the standard terrain-cache / getIsoTile path.
+ *
+ * Results are cached by (tileType, variant) key — safe to call every frame.
  *
  * @param tileType  v1 TileType key from ASSET_DEFS
  * @param variant   Connectivity variant (optional — pass when gen.ts annotates tiles)
@@ -88,14 +93,19 @@ export function getNanoStack(
   tileType: string,
   variant?: FeatureVariant,
 ): IsoNanoStack | null {
+  const key = `${tileType}:${variant ?? ''}`;
+  const cached = _nanoStackCache.get(key);
+  if (cached) return cached;
+
+  let stack: IsoNanoStack | null = null;
   switch (tileType) {
     case 'stone_wall':
-      return [stoneWallNano(variant ?? 'isolated')];
+      stack = [stoneWallNano(variant ?? 'isolated')]; break;
     case 'wooden_fence':
-      return [woodenFenceNano(variant ?? 'straight-h')];
-    default:
-      return null;
+      stack = [woodenFenceNano(variant ?? 'straight-h')]; break;
   }
+  if (stack) _nanoStackCache.set(key, stack);
+  return stack;
 }
 
 /**

@@ -9,6 +9,8 @@ import { ASSET_DEFS } from './config/assets.config';
 import { getEmojiSprite } from './emoji-cache';
 import { getBiome } from './config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
+import { getNanoStack } from './nano-tile-defs';
+import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
 import { cellJitter } from './utils';
@@ -251,8 +253,21 @@ export class IsometricRenderer {
     this.ctx.fillRect(0, 0, RENDER_CONFIG.canvasWidth, RENDER_CONFIG.canvasHeight);
   }
 
-  /** Draw a pre-rendered isometric tile (64x32 diamond) at screen position. */
+  /** Draw a pre-rendered isometric tile (64×32 diamond) at screen position.
+   *  For nano-capable tiles (stone_wall, wooden_fence), uses drawNanoStack
+   *  with a 0.25× scale transform to map 256×128 nano coords → 64×32 v1 space. */
   private drawTile(tileType: TileType, sx: number, sy: number): void {
+    const nanos = getNanoStack(tileType);
+    if (nanos) {
+      // Map iso 2.0 nano coords (256×128 diamond) down to v1 tile size (64×32).
+      // ctx origin → top-left of v1 diamond bounding box, scale 0.25 in both axes.
+      this.ctx.save();
+      this.ctx.translate(sx - 32, sy - 16);
+      this.ctx.scale(0.25, 0.25);
+      drawNanoStack(this.ctx, nanos, 0, 0);
+      this.ctx.restore();
+      return;
+    }
     const tileCanvas = getIsoTile(tileType);
     if (tileCanvas) {
       this.ctx.drawImage(tileCanvas, sx - 32, sy - 16);
