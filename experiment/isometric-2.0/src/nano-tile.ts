@@ -437,47 +437,50 @@ export function drawExtrudedNano(
     }
   }
 
-  // ── 2b. Secondary arm face for corner variants ──────────────────────────────────
-  // Corners have L-shaped footprints (two perpendicular arms). The primary face
-  // covers one arm direction; the other arm's camera-facing surface is blank.
-  // Derived geometry (tile-local → iso screen):
-  //   corner-br/tr (V primary): right arm south face → H mat at tile(88,88)
-  //   corner-bl     (H primary): bottom arm west face → V mat at tile(88,88) offset y=88
-  //   corner-tl     (H primary): top arm west face   → V mat at tile(88,0) = std V anchor
-  // In all cases width = WALL_OFFSET (40px = arm half-width).
-  if (nano.sideTextureSvg && (
-    nano.variant === 'corner-br' || nano.variant === 'corner-tr' ||
-    nano.variant === 'corner-bl' || nano.variant === 'corner-tl'
-  )) {
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
-      let secX: number, secY: number, secMat: 1 | -1;
-      if (nano.variant === 'corner-br' || nano.variant === 'corner-tr') {
-        // Right arm south face: tile(88,88) → (sX+HALF_W, sY+NE)
-        secX = screenX + HALF_W;   // sX+128
-        secY = screenY + NE;       // sY+88
-        secMat = 1;                // H direction (draws \)
-      } else if (nano.variant === 'corner-bl') {
-        // Bottom arm west face: V at offset y=88 → same screen anchor (sX+128, sY+88)
-        secX = screenX + HALF_W;   // sX+128
-        secY = screenY + NE;       // sY+88
-        secMat = -1;               // V direction (draws /)
+  // ── 2b. Secondary arm face for corner/tee variants ──────────────────────────────
+  // Corners have L-shaped footprints (two arms). Tees have T-shaped footprints (three arms).
+  // The primary face covers one arm direction; perpendicular arm front faces are blank.
+  // All secondary faces draw with width=WALL_OFFSET (40px = arm depth).
+  //
+  // Derived geometry (tile-local → iso screen, anchor = perpendicular face near corner):
+  //   corner-br/tr, tee-l: right arm south face  → H mat(+1) at tile(88,88) = (sX+128, sY+88)
+  //   corner-bl,    tee-t: bottom arm west face   → V mat(-1) at tile(88,88) offset = (sX+128, sY+88)
+  //   corner-tl,    tee-b: top arm west face      → V mat(-1) at tile(88,0) = (sX+216, sY+44)
+  //   tee-r:               left arm south face    → H mat(+1) at tile(0,88)  = (sX+40,  sY+44)
+  // @see #211 geometry proof for anchor derivation.
+  {
+    const v = nano.variant;
+    // Determine secondary face params if needed
+    let secX = 0, secY = 0, secMat: 1 | -1 = 1, needsSec = false;
+
+    if (v === 'corner-br' || v === 'corner-tr' || v === 'tee-l') {
+      // Right arm south face: H direction at tile(88,88)
+      secX = screenX + HALF_W; secY = screenY + NE; secMat = 1; needsSec = true;
+    } else if (v === 'corner-bl' || v === 'tee-t') {
+      // Bottom arm west face: V direction at tile(88,88)+y=88 offset
+      secX = screenX + HALF_W; secY = screenY + NE; secMat = -1; needsSec = true;
+    } else if (v === 'corner-tl' || v === 'tee-b') {
+      // Top arm west face: V direction at standard V anchor tile(88,0)
+      secX = screenX + HALF_W + NE; secY = screenY + NE / 2; secMat = -1; needsSec = true;
+    } else if (v === 'tee-r') {
+      // Left arm south face: H direction at tile(0,88) — far left H face start
+      secX = screenX + HALF_W - NE; secY = screenY + NE / 2; secMat = 1; needsSec = true;
+    }
+
+    if (needsSec && nano.sideTextureSvg) {
+      const sideImg = loadSvgImage(nano.sideTextureSvg);
+      if (sideImg) {
+        ctx.save();
+        ctx.translate(secX, secY);
+        ctx.transform(secMat, 0.5, 0, 1, 0, 0);
+        ctx.drawImage(sideImg, 0, -drawH, WALL_OFFSET, drawH);
+        // Slightly darker — secondary arm at an angle to primary
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        ctx.fillRect(0, -drawH, WALL_OFFSET, drawH);
+        ctx.restore();
       } else {
-        // corner-tl: top arm west face, standard V anchor tile(88,0)
-        secX = screenX + HALF_W + NE;  // sX+216
-        secY = screenY + NE / 2;       // sY+44
-        secMat = -1;                   // V direction (draws /)
+        loaded = false;
       }
-      ctx.save();
-      ctx.translate(secX, secY);
-      ctx.transform(secMat, 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, WALL_OFFSET, drawH);
-      // Slightly darker — secondary arm is at an angle to primary face
-      ctx.fillStyle = 'rgba(0,0,0,0.12)';
-      ctx.fillRect(0, -drawH, WALL_OFFSET, drawH);
-      ctx.restore();
-    } else {
-      loaded = false;
     }
   }
 
