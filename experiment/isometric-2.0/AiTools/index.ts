@@ -812,6 +812,7 @@ server.registerTool(
       height:  z.number().int().min(150).max(1600).optional().describe('Canvas height. Default: 600.'),
       debug:   z.boolean().optional().describe('Draw walkability overlay + tile grid. Default: false.'),
       background: z.string().optional().describe('Background color. Default: "#1a1f2b".'),
+      outputPath: z.string().optional().describe('Absolute or workspace-relative path to write the PNG file to disk.'),
     },
   },
   async (args) => {
@@ -831,7 +832,14 @@ server.registerTool(
         background: args.background,
         players,
       });
-      const meta = { tileCount: entries.length, playerCount: players.length, width: result.width, height: result.height, renderTimeMs: result.renderTimeMs, bytes: result.png.length };
+      if (args.outputPath) {
+        const absPath = args.outputPath.startsWith('/') || /^[A-Za-z]:/.test(args.outputPath)
+          ? args.outputPath
+          : `c:/GitRoots/EmilysGame/${args.outputPath}`;
+        mkdirSync(dirname(absPath), { recursive: true });
+        writeFileSync(absPath, result.png);
+      }
+      const meta = { tileCount: entries.length, playerCount: players.length, width: result.width, height: result.height, renderTimeMs: result.renderTimeMs, bytes: result.png.length, savedTo: args.outputPath ?? null };
       return {
         content: [
           { type: 'image' as const, data: result.png.toString('base64'), mimeType: 'image/png' },
