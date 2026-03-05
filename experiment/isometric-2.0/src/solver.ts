@@ -153,215 +153,188 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
  * Generate individual stone block SVGs for a rectangular region.
  * Produces staggered rows of stones with mortar gaps, color variation, and cracks.
  */
-function stoneBlocks(x: number, y: number, w: number, h: number, seed: number, baseRowH = 12): string {
-  const blocks: string[] = [];
-  const gap = 2; // mortar gap
-  const rowH = baseRowH;
-  let row = 0;
+// ─── Seamless running-bond brick texture ────────────────────────────────────
+//
+// Brick spec (128-unit tile-local space):
+//   BW=36  BH=14  MORTAR=4  →  courseW=40  courseH=18
+//   Running bond: odd rows stagger by courseW/2 = 20 units.
+//   Horizontal tiling: odd rows start at x-20 so left edge always shows a
+//     half-brick (seamless with next tile's odd-row right half).
+//   Vertical tiling: rows drawn from y-MORTAR so y=0 lands on clean mortar.
+//
+// Colors: earthy browns, terracotta, warm greys + light warm-grey mortar.
+// Only <rect> elements — no filters/paths needed.
 
-  for (let ry = y; ry < y + h - 2; ry += rowH + gap) {
-    const remainH = Math.min(rowH, y + h - ry - gap);
-    if (remainH < 4) break;
-    // Stagger every other row
-    const offset = (row % 2 === 0) ? 0 : 14;
-    let bx = x + offset;
-    let stoneIdx = 0;
+const BRICK_W = 36;
+const BRICK_H = 14;
+const BRICK_M = 4;  // mortar thickness
+const BRICK_CW = BRICK_W + BRICK_M; // course width  = 40
+const BRICK_CH = BRICK_H + BRICK_M; // course height = 18
 
-    while (bx < x + w - 2) {
-      const hash = ((seed * 7919 + row * 6581 + stoneIdx * 3571) >>> 0);
-      const bw = 20 + (hash % 18); // Stone width 20-37
-      const actualW = Math.min(bw, x + w - bx - gap);
-      if (actualW < 8) break;
+// Earthy brick palette: [r,g,b] tuples
+const BRICK_PALETTE: [number, number, number][] = [
+  [160, 78, 58],   // terracotta
+  [148, 68, 48],   // deep terracotta
+  [144, 104, 78],  // warm brown
+  [124, 90, 68],   // medium brown
+  [118, 86, 62],   // dark brown
+  [152, 124, 98],  // tan
+  [132, 118, 104], // warm grey
+  [112, 100, 90],  // stone grey
+];
+const MORTAR_COLOR = '#c2b8b0'; // light warm-grey mortar
 
-      // Color variation: base grey with slight warm/cool shift
-      const base = 145 + (hash >> 8) % 30;
-      const r = base + ((hash >> 12) % 10) - 5;
-      const g = base + ((hash >> 16) % 8) - 4;
-      const b = base + ((hash >> 20) % 12) - 2;
+/**
+ * Seamless running-bond brick fill for a rectangle in tile-local 128-unit space.
+ * Horizontal orientation: brick courses run left-right (mortar lines are horizontal).
+ * Used for side-face textures and H-arm tops.
+ */
+function runningBondH(x: number, y: number, w: number, h: number, seed: number): string {
+  const out: string[] = [];
+  // Mortar background — bricks drawn on top, gaps show mortar colour
+  out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MORTAR_COLOR}"/>`);
 
-      blocks.push(
-        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${remainH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
-      );
+  let rowIdx = 0;
+  for (let ry = y - BRICK_M; ry < y + h + BRICK_CH; ry += BRICK_CH) {
+    // Odd rows offset by half course width → seamless left/right tiling
+    const startX = x - (rowIdx % 2) * (BRICK_CW / 2);
+    let colIdx = 0;
+    for (let bx = startX; bx < x + w + BRICK_CW; bx += BRICK_CW) {
+      // Clip brick to our region
+      const rx  = Math.max(bx, x);
+      const ry2 = Math.max(ry, y);
+      const rw  = Math.min(bx + BRICK_W, x + w) - rx;
+      const rh  = Math.min(ry + BRICK_H, y + h) - ry2;
+      if (rw <= 0 || rh <= 0) { colIdx++; continue; }
 
-      // Top highlight
-      blocks.push(
-        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${Math.min(3, remainH)}" rx="1" fill="rgba(255,255,255,0.15)" />`
-      );
+      const hash = ((seed * 1543 + rowIdx * 521 + colIdx * 97) >>> 0);
+      const [br, bg, bb] = BRICK_PALETTE[hash % BRICK_PALETTE.length];
+      const v = ((hash >> 8) % 17) - 8; // ±8 brightness variance per brick
+      const r = Math.max(0, Math.min(255, br + v));
+      const g = Math.max(0, Math.min(255, bg + v));
+      const b = Math.max(0, Math.min(255, bb + v));
 
-      // Bottom shadow
-      blocks.push(
-        `<rect x="${bx}" y="${ry + remainH - 2}" width="${actualW}" height="2" rx="0.5" fill="rgba(0,0,0,0.08)" />`
-      );
-
-      // Occasional crack
-      if ((hash >> 24) % 5 === 0 && actualW > 14) {
-        const cx1 = bx + 4 + (hash % (actualW - 8));
-        const cy1 = ry + 2;
-        const cx2 = cx1 + ((hash >> 4) % 5) - 2;
-        const cy2 = ry + remainH - 2;
-        blocks.push(
-          `<line x1="${cx1}" y1="${cy1}" x2="${cx2}" y2="${cy2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
-        );
+      out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="${rh}" fill="rgb(${r},${g},${b})"/>`);
+      // Top-edge highlight (simulates rim light on brick face)
+      if (ry2 === ry && rh >= 3)
+        out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="2" fill="rgba(255,255,255,0.14)"/>`);
+      // Bottom-edge shadow
+      if (ry + BRICK_H <= y + h) {
+        const sy = Math.min(ry + BRICK_H - 2, y + h - 1);
+        if (sy >= y && rh + ry2 >= sy + 2)
+          out.push(`<rect x="${rx}" y="${sy}" width="${rw}" height="2" fill="rgba(0,0,0,0.18)"/>`);
       }
-
-      bx += actualW + gap;
-      stoneIdx++;
+      colIdx++;
     }
-    row++;
+    rowIdx++;
   }
-  return blocks.join('\n    ');
+  return out.join('');
 }
 
 /**
- * Generate capstone row (slightly different colored stones on top of wall).
+ * Seamless running-bond brick fill, rotated 90°.
+ * Vertical orientation: brick courses run top-bottom (mortar lines are vertical).
+ * Used for V-arm tops on the wall cap face so brick course direction aligns
+ * with the wall's iso-projected / direction.
  */
-function capStones(x: number, y: number, w: number, seed: number, capH = 6): string {
-  const caps: string[] = [];
-  // capH default 6 for side texture; pass ~2.5 for top texture to match scale.
-  let bx = x;
-  let idx = 0;
-  while (bx < x + w - 2) {
-    const hash = ((seed * 4271 + idx * 9137) >>> 0);
-    const bw = 16 + (hash % 14);
-    const actualW = Math.min(bw, x + w - bx - 2);
-    if (actualW < 6) break;
-    const grey = 150 + (hash >> 8) % 20;
-    caps.push(
-      `<rect x="${bx}" y="${y}" width="${actualW}" height="${capH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
-    );
-    bx += actualW + 2;
-    idx++;
-  }
-  return caps.join('\n    ');
-}
+function runningBondV(x: number, y: number, w: number, h: number, seed: number): string {
+  const out: string[] = [];
+  out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MORTAR_COLOR}"/>`);
 
-// ─── Vertical block generation (for vertical wall tops) ─────
-// Standard stoneBlocks/capStones iterate horizontal rows (y→x).
-// Under iso transform, horizontal lines (y=const) → \ diagonals.
-// Vertical walls (/ on screen) need brick courses running along /.
-// Vertical lines (x=const) → / diagonals under iso transform.
-// These V variants iterate vertical columns (x→y) so mortar lines
-// run parallel to the wall's / direction on screen.
+  let colIdx = 0;
+  for (let cx = x - BRICK_M; cx < x + w + BRICK_CW; cx += BRICK_CH) {
+    // Odd columns offset by half course height → seamless top/bottom tiling
+    const startY = y - (colIdx % 2) * (BRICK_CH / 2);
+    let rowIdx = 0;
+    for (let by = startY; by < y + h + BRICK_CW; by += BRICK_CW) {
+      const rx  = Math.max(cx, x);
+      const ry2 = Math.max(by, y);
+      const rw  = Math.min(cx + BRICK_H, x + w) - rx;  // H↔W swapped
+      const rh  = Math.min(by + BRICK_W, y + h) - ry2;
+      if (rw <= 0 || rh <= 0) { rowIdx++; continue; }
 
-/**
- * Generate stone blocks with VERTICAL mortar courses (columns instead of rows).
- * Used for top-view SVGs of vertical wall arms (N/S arms) so brick courses
- * align with the wall's / screen direction.
- */
-function stoneBlocksV(x: number, y: number, w: number, h: number, seed: number, baseColW = 12): string {
-  const blocks: string[] = [];
-  const gap = 2;
-  const colW = baseColW;
-  let col = 0;
+      const hash = ((seed * 1543 + colIdx * 521 + rowIdx * 97) >>> 0);
+      const [br, bg, bb] = BRICK_PALETTE[hash % BRICK_PALETTE.length];
+      const v = ((hash >> 8) % 17) - 8;
+      const r = Math.max(0, Math.min(255, br + v));
+      const g = Math.max(0, Math.min(255, bg + v));
+      const b = Math.max(0, Math.min(255, bb + v));
 
-  for (let cx = x; cx < x + w - 2; cx += colW + gap) {
-    const remainW = Math.min(colW, x + w - cx - gap);
-    if (remainW < 4) break;
-    // Stagger every other column
-    const offset = (col % 2 === 0) ? 0 : 14;
-    let by = y + offset;
-    let stoneIdx = 0;
-
-    while (by < y + h - 2) {
-      const hash = ((seed * 7919 + col * 6581 + stoneIdx * 3571) >>> 0);
-      const bh = 20 + (hash % 18);
-      const actualH = Math.min(bh, y + h - by - gap);
-      if (actualH < 8) break;
-
-      const base = 145 + (hash >> 8) % 30;
-      const r = base + ((hash >> 12) % 10) - 5;
-      const g = base + ((hash >> 16) % 8) - 4;
-      const b = base + ((hash >> 20) % 12) - 2;
-
-      blocks.push(
-        `<rect x="${cx}" y="${by}" width="${remainW}" height="${actualH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
-      );
-      // Left highlight
-      blocks.push(
-        `<rect x="${cx}" y="${by}" width="${Math.min(3, remainW)}" height="${actualH}" rx="1" fill="rgba(255,255,255,0.15)" />`
-      );
-      // Right shadow
-      blocks.push(
-        `<rect x="${cx + remainW - 2}" y="${by}" width="2" height="${actualH}" rx="0.5" fill="rgba(0,0,0,0.08)" />`
-      );
-      // Occasional horizontal crack
-      if ((hash >> 24) % 5 === 0 && actualH > 14) {
-        const ly = by + 4 + (hash % (actualH - 8));
-        blocks.push(
-          `<line x1="${cx + 2}" y1="${ly}" x2="${cx + remainW - 2}" y2="${ly + ((hash >> 4) % 5) - 2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
-        );
+      out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="${rh}" fill="rgb(${r},${g},${b})"/>`);
+      // Left-edge highlight
+      if (rx === cx && rw >= 3)
+        out.push(`<rect x="${rx}" y="${ry2}" width="2" height="${rh}" fill="rgba(255,255,255,0.14)"/>`);
+      // Right-edge shadow
+      if (cx + BRICK_H <= x + w) {
+        const sx = Math.min(cx + BRICK_H - 2, x + w - 1);
+        if (sx >= x && rw + rx >= sx + 2)
+          out.push(`<rect x="${sx}" y="${ry2}" width="2" height="${rh}" fill="rgba(0,0,0,0.18)"/>`);
       }
-
-      by += actualH + gap;
-      stoneIdx++;
+      rowIdx++;
     }
-    col++;
+    colIdx++;
   }
-  return blocks.join('\n    ');
-}
-
-/**
- * Generate capstone column strip (vertical cap edge).
- * Matches capStones() style but runs vertically along y.
- */
-function capStonesV(x: number, y: number, h: number, seed: number, capW = 6): string {
-  const caps: string[] = [];
-  let by = y;
-  let idx = 0;
-  while (by < y + h - 2) {
-    const hash = ((seed * 4271 + idx * 9137) >>> 0);
-    const bh = 16 + (hash % 14);
-    const actualH = Math.min(bh, y + h - by - 2);
-    if (actualH < 6) break;
-    const grey = 150 + (hash >> 8) % 20;
-    caps.push(
-      `<rect x="${x}" y="${by}" width="${capW}" height="${actualH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
-    );
-    by += actualH + 2;
-    idx++;
-  }
-  return caps.join('\n    ');
+  return out.join('');
 }
 
 /** Get wall footprint bounds based on variant and connection direction. */
+/**
+ * Edge-aligned wall bounds — each variant places the wall at the OUTER edge
+ * of the tile so a perimeter ring forms a clean rectangle (no # crossings).
+ *
+ * Coordinate convention (tile-local 128×128, iso projection):
+ *   y=0 = north vertex (far from camera),   y=128 = south vertex (near camera)
+ *   x=0 = west vertex (left on screen),     x=128 = east vertex (right on screen)
+ *
+ * Corner naming encodes which arms connect to INTERIOR tiles (not which side
+ * of the tile the wall occupies):
+ *   corner-br (arms go bottom+right): outer corner at tile top-left (0,0)
+ *   corner-bl (arms go bottom+left):  outer corner at tile top-right (128,0)
+ *   corner-tr (arms go top+right):    outer corner at tile bottom-left (0,128)
+ *   corner-tl (arms go top+left):     outer corner at tile bottom-right (128,128)
+/** Get wall footprint bounds based on variant. Center-aligned to match drawExtrudedNano geometry. */
+/**
+ * Center-aligned wall bounds — matches drawExtrudedNano() hardcoded geometry.
+ * WALL_OFFSET=40, WALL_THICKNESS=48, NE=88 (see nano-tile.ts).
+ * H wall strip: y=40..88. V wall strip: x=40..88.
+ * Corners have the ±40 center core plus arms to tile edges.
+ * end-b/end-r alias straight-h/v (same center-aligned footprint; 3D face is
+ * what differs, handled in drawExtrudedNano by isVerticalWall).
+ */
 function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
-  const W = 48; // wall thickness
-  const off = (128 - W) / 2; // 40
+  const W = 48;
+  const off = 40; // (128-48)/2
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
 
-  // Arm definitions: which edges the wall extends to
   const arms = { top: false, right: false, bottom: false, left: false };
   switch (variant) {
-    case 'straight-h': arms.left = true; arms.right = true; break;
-    case 'straight-v': arms.top = true; arms.bottom = true; break;
+    case 'straight-h': case 'end-b': case 'end-l':
+      arms.left = true; arms.right = true; break;
+    case 'straight-v': case 'end-t': case 'end-r':
+      arms.top = true; arms.bottom = true; break;
     case 'corner-tr': arms.top = true; arms.right = true; break;
-    case 'corner-tl': arms.top = true; arms.left = true; break;
+    case 'corner-tl': arms.top = true; arms.left  = true; break;
     case 'corner-br': arms.bottom = true; arms.right = true; break;
-    case 'corner-bl': arms.bottom = true; arms.left = true; break;
-    case 'cross': arms.top = arms.right = arms.bottom = arms.left = true; break;
-    case 'tee-t': arms.left = arms.right = arms.bottom = true; break;
-    case 'tee-b': arms.left = arms.right = arms.top = true; break;
-    case 'tee-r': arms.top = arms.bottom = arms.left = true; break;
-    case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
-    case 'end-t': arms.bottom = true; break;
-    case 'end-b': arms.top = true; break;
-    case 'end-r': arms.left = true; break;
-    case 'end-l': arms.right = true; break;
-    default: // isolated — central block
+    case 'corner-bl': arms.bottom = true; arms.left  = true; break;
+    case 'cross':     arms.top = arms.right = arms.bottom = arms.left = true; break;
+    case 'tee-t':     arms.left = arms.right = arms.bottom = true; break;
+    case 'tee-b':     arms.left = arms.right = arms.top    = true; break;
+    case 'tee-r':     arms.top  = arms.bottom = arms.left  = true; break;
+    case 'tee-l':     arms.top  = arms.bottom = arms.right = true; break;
+    default: // isolated
       rects.push({ x: off, y: off, w: W, h: W });
       return { rects };
   }
 
-  // Central core
-  rects.push({ x: off, y: off, w: W, h: W });
-  // Arms extending to tile edges
-  if (arms.top) rects.push({ x: off, y: 0, w: W, h: off });
-  if (arms.bottom) rects.push({ x: off, y: off + W, w: W, h: off });
-  if (arms.left) rects.push({ x: 0, y: off, w: off, h: W });
-  if (arms.right) rects.push({ x: off + W, y: off, w: off, h: W });
+  rects.push({ x: off, y: off, w: W, h: W }); // centre core always present
+  if (arms.top)    rects.push({ x: off,       y: 0,      w: W,  h: off });
+  if (arms.bottom) rects.push({ x: off,       y: off+W,  w: W,  h: off });
+  if (arms.left)   rects.push({ x: 0,         y: off,    w: off, h: W  });
+  if (arms.right)  rects.push({ x: off+W,     y: off,    w: off, h: W  });
 
   return { rects };
 }
+
 
 /**
  * Generate a SIDE-VIEW SVG for a stone wall tile (transparent background).
@@ -371,22 +344,14 @@ function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,
  * The variant param is used to seed pseudo-random stone block variation
  * so adjacent tiles don't look identical.
  */
-function stoneWallSvg(variant: FeatureVariant): string {
-  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
-  const parts: string[] = [];
-
-  // Stone blocks fill the entire 128×128 — will be scaled to (128 × drawH) by renderer
-  parts.push(stoneBlocks(0, 0, 128, 128, seed));
-
-  // Cap stones along top edge
-  parts.push(capStones(0, 0, 128, seed + 999));
-
-  // Subtle mortar overlay
-  parts.push(`<rect x="0" y="0" width="128" height="128" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.5" />`);
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    ${parts.join('\n    ')}
-  </svg>`;
+function stoneWallSvg(_variant: FeatureVariant): string {
+  // Side face: seamless running-bond brick, horizontal courses, full 128×128 viewBox.
+  // The renderer scales this into the actual wall face rect — no stretching needed
+  // because wall faces are always square (W=48 × W=48 per face segment).
+  const seed = 0x4B57; // fixed seed — all side faces share one tileable texture
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">`
+    + runningBondH(0, 0, 128, 128, seed)
+    + `</svg>`;
 }
 
 /**
@@ -403,53 +368,37 @@ function stoneWallSvg(variant: FeatureVariant): string {
  * Exported so AiTools game-tile-renderer can use it for the extruded top face.
  */
 export function stoneWallTopSvg(variant: FeatureVariant): string {
+  // Top (cap) face: brick texture clipped to each wall footprint rect.
+  // Brick orientation is chosen per-rect so mortar courses run parallel
+  // to the wall arm's iso-projected direction:
+  //   • rect.w >= rect.h → horizontal arm (→ screen \ direction) → runningBondH
+  //   • rect.h > rect.w  → vertical arm   (→ screen / direction) → runningBondV
+  // The two orientations ensure the top cap visually connects to the side face
+  // brick courses without a seam-direction mismatch.
   const { rects } = wallBounds(variant);
+  const seed = 0x4B57; // same base seed as side face for colour continuity
   const parts: string[] = [];
-  const seed = variant.charCodeAt(0) * 53 + 7;
-  const off = 40;
-  const W = 48;
 
-  // Determine if the variant has any vertical arm (top/bottom).
-  // Used to orient the central core block for primarily-vertical variants.
-  const hasVArm = variant !== 'straight-h' && variant !== 'end-r'
-               && variant !== 'end-l' && variant !== 'isolated';
-
-  for (const r of rects) {
-    const id = `wp${r.x}_${r.y}`;
-    // Clip to this wall footprint rectangle
-    parts.push(
-      `<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`
-    );
-
-    // Determine brick direction for THIS rect:
-    //   N/S arms (y < off or y >= off+W) → vertical bricks (/ on screen)
-    //   W/E arms (x < off or x >= off+W) → horizontal bricks (\ on screen)
-    //   Center core: follow overall variant direction
-    const isNSArm = r.y < off || r.y >= off + W;
-    const isCenter = r.x === off && r.y === off;
-    const useVertical = isNSArm || (isCenter && hasVArm);
-
-    // Stone block row/col size: 5px to match side texture's perceived scale.
-    // Side texture draws 128×128 viewBox into 128×48 dest → 2.67× vertical squash.
-    // Side brick rowH=12 appears as ~4.5px. Top 5px under iso ≈ 5.6px. ≈match.
+  for (let i = 0; i < rects.length; i++) {
+    const r = rects[i];
+    const id = `wt${i}_${r.x}_${r.y}`;
+    parts.push(`<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`);
     parts.push(`<g clip-path="url(#${id})">`);
-    if (useVertical) {
-      parts.push(stoneBlocksV(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
-      parts.push(capStonesV(r.x, r.y, r.h, seed + r.x * 3, 2.5));
+    // r.w > r.h → V arm (wide, top/bottom extension) → V brick courses
+    // r.h >= r.w → H arm or square core → H brick courses
+    if (r.w > r.h) {
+      parts.push(runningBondV(r.x, r.y, r.w, r.h, seed + r.x * 13 + r.y * 7));
     } else {
-      parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
-      parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
+      parts.push(runningBondH(r.x, r.y, r.w, r.h, seed + r.x * 13 + r.y * 7));
     }
     parts.push(`</g>`);
-    // Mortar border for definition
-    parts.push(
-      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="0.8" rx="1" />`
-    );
+    // Thin mortar border to define the wall footprint edge
+    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="0.8"/>`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    ${parts.join('\n    ')}
-  </svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">`
+    + parts.join('')
+    + `</svg>`;
 }
 
 /** Generate an SVG for a river tile variant. */
