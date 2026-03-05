@@ -381,7 +381,7 @@ function makeNanoTopSvg(baseColor: string, _col: number, _row: number): string {
 
 /** Create a stub NanoTile for a feature kind with demo visuals. */
 function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number, presetVariant?: FeatureVariant): NanoTile {
-    const zOffset = kind === 'stone-wall' ? 4 : kind === 'fence' ? 2 : kind === 'river' ? -2 : 0;
+    const zOffset = kind === 'stone-wall' ? 3.5 : kind === 'fence' ? 2 : kind === 'river' ? -2 : 0;
   const zMode: NanoZMode = kind === 'river' ? 'negative' : kind === 'tall-grass' ? 'flat' : 'positive';
   const walkable: WalkableRule = (kind === 'stone-wall' || kind === 'fence')
     ? { type: 'never' }
