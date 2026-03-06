@@ -416,90 +416,101 @@ export function drawExtrudedNano(
     frontMat = 1;   // front draws RIGHT+DOWN (\ direction)
   }
 
-  // ── 1. End cap (drawn first — further from camera) ─────────────────────────────
-  // Shadow face: narrower (WALL_THICKNESS=48px), darkened.
-  // Uses the OPPOSITE matrix sign from the front face.
-  // Only rendered when the variant has an exposed terminus (shouldDrawEndCap).
-  // straight-h, straight-v, cross: both ends connect → skip cap (no exposed face).
-  if (shouldDrawEndCap(nano.variant) && nano.sideTextureSvg) {
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
-      ctx.save();
-      ctx.translate(capX, capY);
-      ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);  // opposite of front
-      ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
-      // Darken — end cap receives less direct sunlight
-      ctx.fillStyle = 'rgba(0,0,0,0.22)';
-      ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
-      ctx.restore();
-    } else {
-      loaded = false;
-    }
-  }
-
-  // ── 2b. Secondary arm face for corner/tee variants ──────────────────────────────
-  // Corners have L-shaped footprints (two arms). Tees have T-shaped footprints (three arms).
-  // The primary face covers one arm direction; perpendicular arm front faces are blank.
-  // All secondary faces draw with width=WALL_OFFSET (40px = arm depth).
+  // ── 1 + 2. Face rendering: corners/tees vs straights/ends ──────────────────────
   //
-  // Derived geometry (tile-local → iso screen, anchor = perpendicular face near corner):
-  //   corner-br/tr, tee-l: right arm south face  → H mat(+1) at tile(88,88) = (sX+128, sY+88)
-  //   corner-bl,    tee-t: bottom arm west face   → V mat(-1) at tile(88,88) offset = (sX+128, sY+88)
-  //   corner-tl,    tee-b: top arm west face      → V mat(-1) at tile(88,0) = (sX+216, sY+44)
-  //   tee-r:               left arm south face    → H mat(+1) at tile(0,88)  = (sX+40,  sY+44)
-  // @see #211 geometry proof for anchor derivation.
-  {
-    const v = nano.variant;
-    // Determine secondary face params if needed
-    let secX = 0, secY = 0, secMat: 1 | -1 = 1, needsSec = false;
+  // STRAIGHTS/ENDS: one primary face (128-wide) + optional narrow end cap.
+  // CORNERS/TEES:   two explicit faces, each sized to match the exact arm extent:
+  //   SOUTH face (\ on screen, mat=+1): y=88 plane, covers core+H-arms
+  //   EAST  face (/ on screen, mat=-1): x=88 plane, covers core+V-arms
+  //
+  // Iso anchor formula: tile(tx,ty) → (sX+HALF_W+tx-ty, sY+(tx+ty)/2)
+  //   South anchor = tile(sx0, 88) = (sX+HALF_W+sx0-88, sY+(sx0+88)/2)
+  //   East  anchor = tile(88, ey0) = (sX+HALF_W+88-ey0, sY+(88+ey0)/2)
+  //
+  // @see GitHub Issue #211 for derivation.
 
-    if (v === 'corner-br' || v === 'corner-tr' || v === 'tee-l') {
-      // Right arm south face: H direction at tile(88,88)
-      secX = screenX + HALF_W; secY = screenY + NE; secMat = 1; needsSec = true;
-    } else if (v === 'corner-bl' || v === 'tee-t') {
-      // Bottom arm west face: V direction at tile(88,88)+y=88 offset
-      secX = screenX + HALF_W; secY = screenY + NE; secMat = -1; needsSec = true;
-    } else if (v === 'corner-tl' || v === 'tee-b') {
-      // Top arm west face: V direction at standard V anchor tile(88,0)
-      secX = screenX + HALF_W + NE; secY = screenY + NE / 2; secMat = -1; needsSec = true;
-    } else if (v === 'tee-r') {
-      // Left arm south face: H direction at tile(0,88) — far left H face start
-      secX = screenX + HALF_W - NE; secY = screenY + NE / 2; secMat = 1; needsSec = true;
+  const CORNER_TEE = ['corner-br','corner-bl','corner-tr','corner-tl','tee-t','tee-b','tee-r','tee-l'];
+  const isCornerOrTee = CORNER_TEE.includes(nano.variant);
+
+  if (isCornerOrTee && nano.sideTextureSvg) {
+    // ── CORNERS + TEES: explicit dual-arm geometry ───────────────────────────────
+    // South face params: sx0=tile-x start, sw=draw width (px)
+    // East  face params: ey0=tile-y start, ew=draw width (px)
+    // Widths fit exact arm extent (arm length = WALL_OFFSET=40 or wall+arm = 88 or full=128)
+    let sx0 = 0, sw = 128, ey0 = 0, ew = 128;
+    switch (nano.variant) {
+      case 'corner-br': sx0 = 40; sw = 88; ey0 = 88; ew = 40; break;
+      case 'corner-bl': sx0 = 0;  sw = 88; ey0 = 88; ew = 40; break;
+      case 'corner-tr': sx0 = 40; sw = 88; ey0 = 0;  ew = 88; break;
+      case 'corner-tl': sx0 = 0;  sw = 88; ey0 = 0;  ew = 88; break;
+      case 'tee-t':     sx0 = 0;  sw = 128;ey0 = 0;  ew = 88; break;
+      case 'tee-b':     sx0 = 0;  sw = 128;ey0 = 40; ew = 88; break;
+      case 'tee-r':     sx0 = 40; sw = 88; ey0 = 0;  ew = 128;break;
+      case 'tee-l':     sx0 = 0;  sw = 88; ey0 = 0;  ew = 128;break;
     }
 
-    if (needsSec && nano.sideTextureSvg) {
+    const sideImg = loadSvgImage(nano.sideTextureSvg);
+    if (!sideImg) {
+      loaded = false;
+    } else {
+      // South anchor: tile(sx0, NE) in screen space
+      const sax = screenX + HALF_W + sx0 - NE;
+      const say = screenY + (sx0 + NE) / 2;
+      // East anchor: tile(NE, ey0) in screen space
+      const eax = screenX + HALF_W + NE - ey0;
+      const eay = screenY + (NE + ey0) / 2;
+
+      // Draw East face first (further from camera — slight shadow ~0.14)
+      ctx.save();
+      ctx.translate(eax, eay);
+      ctx.transform(-1, 0.5, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, 0, -drawH, ew, drawH);
+      ctx.fillStyle = 'rgba(0,0,0,0.14)';
+      ctx.fillRect(0, -drawH, ew, drawH);
+      ctx.restore();
+
+      // Draw South face second (closer to camera — fully lit)
+      ctx.save();
+      ctx.translate(sax, say);
+      ctx.transform(1, 0.5, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, 0, -drawH, sw, drawH);
+      ctx.restore();
+    }
+  } else {
+    // ── STRAIGHTS + ENDS: end cap then primary face ──────────────────────────────
+
+    // ── 1. End cap (drawn first — further from camera) ───────────────────────────
+    // Narrow (WALL_THICKNESS=48px) darkened face for exposed arm termini.
+    if (shouldDrawEndCap(nano.variant) && nano.sideTextureSvg) {
       const sideImg = loadSvgImage(nano.sideTextureSvg);
       if (sideImg) {
         ctx.save();
-        ctx.translate(secX, secY);
-        ctx.transform(secMat, 0.5, 0, 1, 0, 0);
-        ctx.drawImage(sideImg, 0, -drawH, WALL_OFFSET, drawH);
-        // Slightly darker — secondary arm at an angle to primary
-        ctx.fillStyle = 'rgba(0,0,0,0.12)';
-        ctx.fillRect(0, -drawH, WALL_OFFSET, drawH);
+        ctx.translate(capX, capY);
+        ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);
+        ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
+        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
         ctx.restore();
       } else {
         loaded = false;
       }
     }
-  }
 
-  // ── 2. Front face (drawn second — closer to camera) ────────────────────────────
-  // Lit main surface: full tile length (MICRO_TILE_SIZE=128px).
-  if (nano.sideTextureSvg) {
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
-      ctx.save();
-      ctx.translate(frontX, frontY);
-      ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
-      ctx.restore();
+    // ── 2. Front face (drawn second — closer to camera) ──────────────────────────
+    if (nano.sideTextureSvg) {
+      const sideImg = loadSvgImage(nano.sideTextureSvg);
+      if (sideImg) {
+        ctx.save();
+        ctx.translate(frontX, frontY);
+        ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
+        ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
+        ctx.restore();
+      } else {
+        loaded = false;
+      }
     } else {
-      loaded = false;
+      if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
     }
-  } else {
-    // No dedicated side texture — fall back to billboard rendering
-    if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
   }
 
   // ── 3. Top cap: flat iso at elevated position  ──────────────────────────────────

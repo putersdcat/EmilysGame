@@ -188,39 +188,38 @@ const MORTAR_COLOR = '#c2b8b0'; // light warm-grey mortar
  * Seamless running-bond brick fill for a rectangle in tile-local 128-unit space.
  * Horizontal orientation: brick courses run left-right (mortar lines are horizontal).
  * Used for side-face textures and H-arm tops.
+ * bW/bH/bM: brick width, height, mortar gap — defaults match BRICK_W/H/M.
  */
-function runningBondH(x: number, y: number, w: number, h: number, seed: number): string {
+function runningBondH(x: number, y: number, w: number, h: number, seed: number,
+  bW = BRICK_W, bH = BRICK_H, bM = BRICK_M): string {
+  const bCW = bW + bM;
+  const bCH = bH + bM;
   const out: string[] = [];
-  // Mortar background — bricks drawn on top, gaps show mortar colour
   out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MORTAR_COLOR}"/>`);
 
   let rowIdx = 0;
-  for (let ry = y - BRICK_M; ry < y + h + BRICK_CH; ry += BRICK_CH) {
-    // Odd rows offset by half course width → seamless left/right tiling
-    const startX = x - (rowIdx % 2) * (BRICK_CW / 2);
+  for (let ry = y - bM; ry < y + h + bCH; ry += bCH) {
+    const startX = x - (rowIdx % 2) * (bCW / 2);
     let colIdx = 0;
-    for (let bx = startX; bx < x + w + BRICK_CW; bx += BRICK_CW) {
-      // Clip brick to our region
+    for (let bx = startX; bx < x + w + bCW; bx += bCW) {
       const rx  = Math.max(bx, x);
       const ry2 = Math.max(ry, y);
-      const rw  = Math.min(bx + BRICK_W, x + w) - rx;
-      const rh  = Math.min(ry + BRICK_H, y + h) - ry2;
+      const rw  = Math.min(bx + bW, x + w) - rx;
+      const rh  = Math.min(ry + bH, y + h) - ry2;
       if (rw <= 0 || rh <= 0) { colIdx++; continue; }
 
       const hash = ((seed * 1543 + rowIdx * 521 + colIdx * 97) >>> 0);
       const [br, bg, bb] = BRICK_PALETTE[hash % BRICK_PALETTE.length];
-      const v = ((hash >> 8) % 17) - 8; // ±8 brightness variance per brick
+      const v = ((hash >> 8) % 17) - 8;
       const r = Math.max(0, Math.min(255, br + v));
       const g = Math.max(0, Math.min(255, bg + v));
       const b = Math.max(0, Math.min(255, bb + v));
 
       out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="${rh}" fill="rgb(${r},${g},${b})"/>`);
-      // Top-edge highlight (simulates rim light on brick face)
       if (ry2 === ry && rh >= 3)
         out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="2" fill="rgba(255,255,255,0.14)"/>`);
-      // Bottom-edge shadow
-      if (ry + BRICK_H <= y + h) {
-        const sy = Math.min(ry + BRICK_H - 2, y + h - 1);
+      if (ry + bH <= y + h) {
+        const sy = Math.min(ry + bH - 2, y + h - 1);
         if (sy >= y && rh + ry2 >= sy + 2)
           out.push(`<rect x="${rx}" y="${sy}" width="${rw}" height="2" fill="rgba(0,0,0,0.18)"/>`);
       }
@@ -237,20 +236,27 @@ function runningBondH(x: number, y: number, w: number, h: number, seed: number):
  * Used for V-arm tops on the wall cap face so brick course direction aligns
  * with the wall's iso-projected / direction.
  */
-function runningBondV(x: number, y: number, w: number, h: number, seed: number): string {
+/**
+ * Vertical running-bond: brick courses run top-bottom (mortar lines are vertical).
+ * Used for V-arm tops. bW/bH/bM: brick width (along arm), height (across arm), mortar gap.
+ */
+function runningBondV(x: number, y: number, w: number, h: number, seed: number,
+  bW = BRICK_W, bH = BRICK_H, bM = BRICK_M): string {
+  const bCW = bW + bM;
+  const bCH = bH + bM;
   const out: string[] = [];
   out.push(`<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${MORTAR_COLOR}"/>`);
 
   let colIdx = 0;
-  for (let cx = x - BRICK_M; cx < x + w + BRICK_CW; cx += BRICK_CH) {
-    // Odd columns offset by half course height → seamless top/bottom tiling
-    const startY = y - (colIdx % 2) * (BRICK_CH / 2);
+  for (let cx = x - bM; cx < x + w + bCH; cx += bCH) {
+    // Odd columns offset by half course height → seamless tiling
+    const startY = y - (colIdx % 2) * (bCW / 2);
     let rowIdx = 0;
-    for (let by = startY; by < y + h + BRICK_CW; by += BRICK_CW) {
+    for (let by = startY; by < y + h + bCW; by += bCW) {
       const rx  = Math.max(cx, x);
       const ry2 = Math.max(by, y);
-      const rw  = Math.min(cx + BRICK_H, x + w) - rx;  // H↔W swapped
-      const rh  = Math.min(by + BRICK_W, y + h) - ry2;
+      const rw  = Math.min(cx + bH, x + w) - rx;  // bH is the "thin" dimension (across arm)
+      const rh  = Math.min(by + bW, y + h) - ry2; // bW is the "long" dimension (along arm)
       if (rw <= 0 || rh <= 0) { rowIdx++; continue; }
 
       const hash = ((seed * 1543 + colIdx * 521 + rowIdx * 97) >>> 0);
@@ -265,8 +271,8 @@ function runningBondV(x: number, y: number, w: number, h: number, seed: number):
       if (rx === cx && rw >= 3)
         out.push(`<rect x="${rx}" y="${ry2}" width="2" height="${rh}" fill="rgba(255,255,255,0.14)"/>`);
       // Right-edge shadow
-      if (cx + BRICK_H <= x + w) {
-        const sx = Math.min(cx + BRICK_H - 2, x + w - 1);
+      if (cx + bH <= x + w) {
+        const sx = Math.min(cx + bH - 2, x + w - 1);
         if (sx >= x && rw + rx >= sx + 2)
           out.push(`<rect x="${sx}" y="${ry2}" width="2" height="${rh}" fill="rgba(0,0,0,0.18)"/>`);
       }
@@ -375,6 +381,11 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const W = 48;
   const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
+
+  // Cap bricks are drawn through iso transform (1,0.5,-1,0.5) which stretches
+  // them ~1.118× on screen. Halve brick dims so the projected size matches the
+  // side-face bricks: bW=32 → 32*1.118 ≈ 36px (=side bW), bH=4 → 4*1.118 ≈ 4.5px (=side bH compressed into drawH).
+  const capBW = 32, capBH = 4, capBM = 1;
   const parts: string[] = [];
 
   // Determine which cardinal arms are present for this variant
@@ -400,21 +411,19 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const hasV = arms.top   || arms.bottom;
 
   if (!hasH && !hasV) {
-    // isolated — centre square only, H orientation
-    parts.push(runningBondH(off, off, W, W, seed));
+    // isolated — centre square only
+    parts.push(runningBondH(off, off, W, W, seed, capBW, capBH, capBM));
   } else {
-    // Pass 1: H strip — covers the horizontal arm span + centre core
-    // For pure-V walls (no H arms), still seed the centre for V to overwrite
+    // Pass 1: H strip
     const x0 = arms.left  ? 0   : off;
     const x1 = arms.right ? 128 : off + W;
-    parts.push(runningBondH(x0, off, x1 - x0, W, seed));
+    parts.push(runningBondH(x0, off, x1 - x0, W, seed, capBW, capBH, capBM));
 
-    // Pass 2: V strip — covers the vertical arm span + centre core (drawn on top)
-    // V wins at the centre joint: looks like two walls meeting at right angles.
+    // Pass 2: V strip (drawn on top so corners look like two walls meeting)
     if (hasV) {
       const y0 = arms.top    ? 0   : off;
       const y1 = arms.bottom ? 128 : off + W;
-      parts.push(runningBondV(off, y0, W, y1 - y0, seed));
+      parts.push(runningBondV(off, y0, W, y1 - y0, seed, capBW, capBH, capBM));
     }
   }
 
