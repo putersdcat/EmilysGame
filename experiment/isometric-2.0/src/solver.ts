@@ -357,48 +357,68 @@ function stoneWallSvg(_variant: FeatureVariant): string {
 /**
  * Generate a TOP-VIEW SVG for a stone wall cap (transparent background).
  * Shows the wall footprint from above for the extruded top cap.
- * Uses the variant-based wall bounds to determine the footprint shape.
  *
- * Uses stoneBlocks/capStones for horizontal arms (brick courses → \ on screen)
- * and stoneBlocksV/capStonesV for vertical arms (brick courses → / on screen).
- * This ensures the top face brick direction matches the side face brick direction
- * for both wall orientations.
+ * Key rule: draw CONTINUOUS strips, not per-rect fragments.
+ * The old per-rect approach used aspect ratio (w>h) to choose H vs V orientation
+ * per rect, but the centre core is always square (48×48), so it was always forced
+ * to H — causing visible 90° orientation flips right next to V-arm rects.
  *
- * Each footprint rect gets its own clip region + block fill + border.
+ * Fix: two passes based on which arms are present:
+ *   H-strip (left or right arm) → runningBondH, full y=off..off+W row
+ *   V-strip (top or bottom arm) → runningBondV, full x=off..off+W column
+ * Where both strips share the centre square, V is drawn last (wins), creating a
+ * natural brick-course joint that reads correctly in iso.
+ *
  * Exported so AiTools game-tile-renderer can use it for the extruded top face.
  */
 export function stoneWallTopSvg(variant: FeatureVariant): string {
-  // Top (cap) face: brick texture clipped to each wall footprint rect.
-  // Brick orientation is chosen per-rect so mortar courses run parallel
-  // to the wall arm's iso-projected direction:
-  //   • rect.w >= rect.h → horizontal arm (→ screen \ direction) → runningBondH
-  //   • rect.h > rect.w  → vertical arm   (→ screen / direction) → runningBondV
-  // The two orientations ensure the top cap visually connects to the side face
-  // brick courses without a seam-direction mismatch.
-  const { rects } = wallBounds(variant);
+  const W = 48;
+  const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
   const parts: string[] = [];
 
-  for (let i = 0; i < rects.length; i++) {
-    const r = rects[i];
-    const id = `wt${i}_${r.x}_${r.y}`;
-    parts.push(`<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`);
-    parts.push(`<g clip-path="url(#${id})">`);
-    // r.w > r.h → V arm (wide, top/bottom extension) → V brick courses
-    // r.h >= r.w → H arm or square core → H brick courses
-    if (r.w > r.h) {
-      parts.push(runningBondV(r.x, r.y, r.w, r.h, seed + r.x * 13 + r.y * 7));
-    } else {
-      parts.push(runningBondH(r.x, r.y, r.w, r.h, seed + r.x * 13 + r.y * 7));
-    }
-    parts.push(`</g>`);
-    // Thin mortar border to define the wall footprint edge
-    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="0.8"/>`);
+  // Determine which cardinal arms are present for this variant
+  const arms = { top: false, right: false, bottom: false, left: false };
+  switch (variant) {
+    case 'straight-h': case 'end-b': case 'end-l':
+      arms.left = true;  arms.right  = true;  break;
+    case 'straight-v': case 'end-t': case 'end-r':
+      arms.top  = true;  arms.bottom = true;  break;
+    case 'corner-tr': arms.top = true;    arms.right  = true; break;
+    case 'corner-tl': arms.top = true;    arms.left   = true; break;
+    case 'corner-br': arms.bottom = true; arms.right  = true; break;
+    case 'corner-bl': arms.bottom = true; arms.left   = true; break;
+    case 'cross':     arms.top = arms.right = arms.bottom = arms.left = true; break;
+    case 'tee-t':     arms.left = arms.right  = arms.bottom = true; break;
+    case 'tee-b':     arms.left = arms.right  = arms.top    = true; break;
+    case 'tee-r':     arms.top  = arms.bottom = arms.left   = true; break;
+    case 'tee-l':     arms.top  = arms.bottom = arms.right  = true; break;
+    default: break; // isolated — only centre square
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">`
-    + parts.join('')
-    + `</svg>`;
+  const hasH = arms.left  || arms.right;
+  const hasV = arms.top   || arms.bottom;
+
+  if (!hasH && !hasV) {
+    // isolated — centre square only, H orientation
+    parts.push(runningBondH(off, off, W, W, seed));
+  } else {
+    // Pass 1: H strip — covers the horizontal arm span + centre core
+    // For pure-V walls (no H arms), still seed the centre for V to overwrite
+    const x0 = arms.left  ? 0   : off;
+    const x1 = arms.right ? 128 : off + W;
+    parts.push(runningBondH(x0, off, x1 - x0, W, seed));
+
+    // Pass 2: V strip — covers the vertical arm span + centre core (drawn on top)
+    // V wins at the centre joint: looks like two walls meeting at right angles.
+    if (hasV) {
+      const y0 = arms.top    ? 0   : off;
+      const y1 = arms.bottom ? 128 : off + W;
+      parts.push(runningBondV(off, y0, W, y1 - y0, seed));
+    }
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">${parts.join('')}</svg>`;
 }
 
 /** Generate an SVG for a river tile variant. */
