@@ -49,13 +49,28 @@ The server runs over **stdio** (MCP), not HTTP.
 
 > **Design decision:** The spec originally described an Express HTTP server (`POST /render-svg`). The stdio MCP approach was chosen instead — it integrates directly with VS Code / Copilot Chat with no port management, is more secure, and streams responses natively.
 
-## After Rebuilding
+## When You Actually Need to Rebuild
 
-After `npm run build` the MCP server process must be restarted before VS Code picks up the new bundle:
-1. VS Code → MCP panel → restart `isoSvgRenderer`, **or** reload the VS Code window.
-2. Verify with a quick `render_game_tile stone-wall straight-h` call.
+Thanks to the hot-reload relay, **the vast majority of game engine changes require zero rebuild or restart**.
 
-Agents: see restart protocol in `.github/instructions/isosvgrenderer.instructions.md` — never stall the session, just ask the user and sleep.
+A **rebuild** (`npm run build`) is only required when `index.ts` changes (tool schema additions, relay logic edits). This is rare.
+
+A **restart** (VS Code → MCP panel → restart `isoSvgRenderer`) is only required after a rebuild.
+
+```
+Engine source changes (solver.ts, nano-tile.ts, canvas-renderer.ts…)
+  → NO action needed → change is live on next MCP call
+
+index.ts schema changes
+  → npm run build → MCP server restart → verify with render_game_tile
+```
+
+After a rebuild + restart, verify with:
+```bash
+render_game_tile  kind: stone-wall  variant: straight-h
+```
+
+Agents: see full restart protocol in `.github/instructions/isosvgrenderer.instructions.md`.
 
 ## Tool Index (8 calls)
 
@@ -183,18 +198,24 @@ Unit coverage is in `renderer.test.ts`; additional visual verification is done t
 
 ```
 AiTools/
-├── index.ts              # MCP server + tool registration (8 tools)
-├── game-tile-renderer.ts # game-engine bridge — imports solver.ts SVG generators directly
-├── svg-renderer-tool.ts  # core render modes (flat/iso/z-pinned/assembly)
-├── proof-renderer.ts     # geo-proof + variation sweep renderers
+├── index.ts              # MCP schema relay only (15 kb) — spawns render-worker per call
+├── render-worker.ts      # ★ Hot-reload worker — all render dispatch, imports game TS via tsx
+├── canvas-renderer.ts    # Canvas2D render pipeline — imports src/nano-tile.ts directly
+├── game-tile-renderer.ts # SVG game-engine bridge — imports src/solver.ts directly
+├── svg-renderer-tool.ts  # SVG-only render modes (flat/iso/z-pinned) via resvg
+├── proof-renderer.ts     # geo-proof + variation sweep renderers via resvg
 ├── scene-registry.ts     # named scene descriptors and kind resolution
+├── iso-geometry.ts       # mirrored constants for SVG-path tools (resvg, no Canvas)
 ├── cli.ts                # local CLI helper
+├── test-relay.mjs        # ★ quick smoke-test: node test-relay.mjs (no MCP needed)
 ├── renderer.test.ts      # unit tests
 ├── package.json
 ├── tsconfig.json
-├── dist/
+├── dist/                 # compiled index.js (relay only)
 ├── test-assets/
 └── README.md
 ```
+
+★ = new in hot-reload architecture (commit 64a1536)
 
 <!-- TODO: DOC - add copy/paste MCP payload snippets for each tool -->

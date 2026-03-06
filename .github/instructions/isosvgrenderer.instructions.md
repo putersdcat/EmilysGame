@@ -12,28 +12,40 @@ The AiTools MCP server is **not** a standalone renderer. It is a thin wrapper th
 > If a tile looks correct in this tool, it will look correct in the browser game.  
 > If it looks wrong here, it is wrong in the game.
 
+### Hot-Reload Relay Architecture
+
+`index.ts` is a **15 kb relay** — tool schemas only. Every MCP call spawns `render-worker.ts` via
+`execFileSync` through **tsx** (TypeScript runner, no compilation). `render-worker.ts` imports the
+game engine source files directly.
+
+```
+MCP call → index.ts (relay) → execFileSync(node tsx render-worker.ts <tool>)
+    render-worker.ts imports (live, via tsx):
+      canvas-renderer.ts → src/nano-tile.ts ← actual draw functions
+      game-tile-renderer.ts → src/solver.ts  ← actual SVG generators
+      scene-registry.ts   → src/types.ts    ← same constants as browser
+```
+
 ### What the tool imports from the game engine
 
-| Game source file | What is imported | How |
+| Game source file | What is imported | Path |
 |---|---|---|
-| `src/types.ts` | `ISO_TILE_WIDTH=256`, `ISO_TILE_HEIGHT=128`, `MICRO_TILE_SIZE=128`, `worldToIso()` | Direct import — pure constants, no Canvas dep |
-| `src/solver.ts` | `getVariantSvg()`, `woodenFenceSvg()`, `stoneWallSvg()`, `gateSvg()`, … | Direct import via `scene-registry.ts` — real game SVG generators |
-| `src/types.ts` | `FeatureVariant`, `FeatureConnections` | Type imports |
+| `src/types.ts` | `ISO_TILE_WIDTH=256`, `ISO_TILE_HEIGHT=128`, `MICRO_TILE_SIZE=128`, `worldToIso()` | Direct import (pure, no Canvas) |
+| `src/solver.ts` | `getVariantSvg()`, `woodenFenceSvg()`, `stoneWallSvg()`, `gateSvg()`, … | Via `game-tile-renderer.ts` + `scene-registry.ts` |
+| `src/nano-tile.ts` | `drawNanoStack()`, `drawExtrudedNano()`, `isVerticalWall()`, etc. | Via `canvas-renderer.ts` — tsx resolves Canvas deps at runtime via `@napi-rs/canvas` |
+| `src/types.ts` | `FeatureVariant`, `FeatureConnections`, `NanoTile`, `NanoTileKind` | Type imports |
 
-### What cannot be imported (Canvas API dependencies)
-
-`src/nano-tile.ts`, `src/tile.ts`, `src/chunk.ts`, `src/renderer.ts` all require `CanvasRenderingContext2D`.
-These **cannot** run in Node/resvg context. Instead `AiTools/iso-geometry.ts` mirrors their constants
-with explicit sync comments, and transforms in `svg-renderer-tool.ts` are transcribed from Canvas calls
-to equivalent SVG `matrix(a,b,c,d,e,f)` attributes, each pointing back to the source function.
+> **SVG-only tools** (`render_svg_isometric`, `render_geo_proof`, `render_variation_sweep`,
+> `render_svg_isometric_strip`) still use `svg-renderer-tool.ts` → `@resvg/resvg-js`. They do
+> **not** use Canvas. `iso-geometry.ts` mirrors exist for these SVG paths only.
 
 ### Rules for contributors
 
 - **Never invent a rendering constant** in AiTools that has no corresponding value in `src/`.
 - **Never duplicate an SVG generator** — if the game uses `getVariantSvg()`, the tool must too.
 - New nano kind in `src/solver.ts`? Wire it in `scene-registry.ts` — do not reimplement the SVG.
-- Constant changes in `src/nano-tile.ts`? Update the MIRROR value + comment in `iso-geometry.ts`.
-- Transform matrix changes in `src/nano-tile.ts`? Update the matching `matrix(…)` in `wrapIsometricAssembly()`.
+- Constant changes in `src/nano-tile.ts`? Update BOTH: the MIRROR in `iso-geometry.ts` (SVG tools) AND the live import path in `canvas-renderer.ts` (Canvas tools).
+- Transform matrix changes in `src/nano-tile.ts`? Update the matching `matrix(…)` in `wrapIsometricAssembly()` (SVG path) AND verify Canvas path still renders correctly.
 
 ---
 
@@ -73,19 +85,44 @@ Do **not** skip renderer validation for visual changes.
 
 8. **`render_iso_scene`** — named/custom multi-tile scene rendering. Supports `entries[]`, `players[]`, `outputPath`, `variant`, `debug`. Use `listScenes: true` to discover built-in scenes.
 
-## MCP Server Restart Protocol
+## When Rebuild / Restart Is Actually Needed
 
-After **any** `npm run build` in `AiTools/`, the MCP server process must be restarted for VS Code to pick up the new bundle. **Never stop or pause the session waiting for this.**
+**Hot-reload means most game engine changes require zero action.** Use this decision tree:
 
-Correct procedure:
+| What changed | Action needed |
+|---|---|
+| `src/solver.ts`, `src/nano-tile.ts`, `src/types.ts` | **Nothing** — live on next MCP call |
+| `canvas-renderer.ts`, `game-tile-renderer.ts`, `scene-registry.ts`, `svg-renderer-tool.ts`, `proof-renderer.ts` | **Nothing** — live on next MCP call |
+| `index.ts` (schema/relay logic) | `npm run build` + MCP restart |
+| New `npm install` dependency | `npm install` + `npm run build` + MCP restart |
+
+### Quick local verification (no MCP needed)
+
+Before asking for a restart, verify your change with the smoke-test relay:
+```powershell
+cd experiment/isometric-2.0/AiTools
+node test-relay.mjs
+# Renders stone-wall straight-h — prints bytes + ms. If it works, MCP will work.
+```
+
+For a custom tile check:
+```powershell
+cd experiment/isometric-2.0/AiTools
+echo '{"kind":"stone-wall","variant":"corner-br","width":320,"height":320}' |
+  node node_modules/tsx/dist/cli.mjs render-worker.ts render_nano_tile
+# Output: {"ok":true,"content":[{"type":"image","data":"...","mimeType":"image/png"}],...}
+```
+
+### MCP Restart Protocol (needed only after `index.ts` rebuild)
+
+**Never stop or pause the session waiting for restart.**
+
 1. Finish the build (`npm run build` exits 0).
-2. Post a message to the user: *"Build done — please restart the isoSvgRenderer MCP server (VS Code → MCP panel → restart, or reload window). I'll wait."*
-3. `run_in_terminal` a `Start-Sleep -Seconds 15` (or longer if the user needs more time).
-4. After the sleep, fire a cheap validation call (e.g. `render_game_tile stone-wall straight-h`) to confirm the new bundle is live.
-5. If the call fails or returns stale output, post *"Still not seeing new bundle — please confirm restart and I'll retry."* then sleep again.
-6. Continue the session once validated.
-
-Do **not** ask permission to continue after the sleep — just ping with the validation result and keep going.
+2. Alert user: play the beep tune **and** post *“Build done — please restart the isoSvgRenderer MCP server (VS Code → MCP panel → restart). I’ll wait.”*
+3. `run_in_terminal` a `Start-Sleep -Seconds 15` (or more if needed).
+4. After sleep, fire `render_game_tile stone-wall straight-h` to confirm new bundle.
+5. If stale, post *“Still not seeing new bundle — please confirm restart.”* then sleep again.
+6. Continue once validated — do not ask permission.
 
 ## Fast Iteration Defaults
 - Prefer `response: "metadata"` where supported to reduce payload size.
