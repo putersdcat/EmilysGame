@@ -168,8 +168,6 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 const BRICK_W = 36;
 const BRICK_H = 14;
 const BRICK_M = 4;  // mortar thickness
-const BRICK_CW = BRICK_W + BRICK_M; // course width  = 40
-const BRICK_CH = BRICK_H + BRICK_M; // course height = 18
 
 // Earthy brick palette: [r,g,b] tuples
 const BRICK_PALETTE: [number, number, number][] = [
@@ -307,7 +305,7 @@ function runningBondV(x: number, y: number, w: number, h: number, seed: number,
  * end-b/end-r alias straight-h/v (same center-aligned footprint; 3D face is
  * what differs, handled in drawExtrudedNano by isVerticalWall).
  */
-function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
+export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48;
   const off = 40; // (128-48)/2
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
@@ -351,13 +349,14 @@ function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,
  * so adjacent tiles don't look identical.
  */
 function stoneWallSvg(_variant: FeatureVariant): string {
-  // Side face SVG — viewBox matches drawH=24px × MICRO_TILE_SIZE=128px (1 SVG unit = 1 screen px).
-  // Bricks W=36, H=8, M=2 → 36×8px on screen → 4.5:1 aspect, clearly readable as bricks.
-  // drawImage(img, 0, -drawH, 128, drawH) renders this 1:1, no squash, no stretch.
-  const SIDE_H = 24; // must match drawH at stone-wall zOffset=2 (NANO_Z_SCALE*2=24)
+  // Side face SVG — make the SVG height match the actual wall height in screen px
+  // so we can reason about brick size directly in renderer space.
+  // Stone walls render at zOffset=4 → drawH=48px, which also matches the wall
+  // thickness in tile-local space (48). This gives a cleaner 1:1 texture design target.
+  const SIDE_H = 48;
   const seed = 0x4B57;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H}" viewBox="0 0 128 ${SIDE_H}">`
-    + runningBondH(0, 0, 128, SIDE_H, seed, 36, 8, 2)
+    + runningBondH(0, 0, 128, SIDE_H, seed, 20, 9, 2)
     + `</svg>`;
 }
 
@@ -383,12 +382,10 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
 
-  // Cap bricks drawn through iso transform (1,0.5,-1,0.5):
-  //   Along arm (X): SVG unit = 1 screen px → capBW=36 matches side bricks (36px wide)
-  //   Across arm (Y): iso squashes by ×0.5 → capBH × 0.5 = side_brick_H_px = 8 → capBH=16
-  //   Mortar: capBM × 0.5 = 2px → capBM=4
-  // Result: top bricks appear 36×8px on screen, identical to side face bricks.
-  const capBW = 36, capBH = 16, capBM = 4;
+  // Top cap uses the same brick language as the side face, but the depth axis is
+  // projected at 0.5× screen-Y. Doubling the cap brick height keeps the top/side
+  // mortar rhythm aligned at the lip without the giant-brick regression.
+  const capBW = 20, capBH = 18, capBM = 4;
   const parts: string[] = [];
 
   // Determine which cardinal arms are present for this variant

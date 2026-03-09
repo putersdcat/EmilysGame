@@ -430,7 +430,7 @@ export function drawExtrudedNano(
   // @see GitHub Issue #211 for derivation.
 
   const CORNER_TEE = ['corner-br','corner-bl','corner-tr','corner-tl','tee-t','tee-b','tee-r','tee-l'];
-  const isCornerOrTee = CORNER_TEE.includes(nano.variant);
+  const isCornerOrTee = nano.variant !== undefined && CORNER_TEE.includes(nano.variant);
 
   if (isCornerOrTee && nano.sideTextureSvg) {
     // ── CORNERS + TEES: explicit dual-arm geometry ───────────────────────────────
