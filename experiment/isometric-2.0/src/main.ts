@@ -27,7 +27,7 @@ import {
   createHillLayer,
   createCloudLayer,
 } from './renderer';
-import { solveChunkFeatures, resolveAllConditions, type NeighborLookup } from './solver';
+import { solveChunkFeatures, resolveAllConditions, isPointWalkableInTile, type NeighborLookup } from './solver';
 import {
   createPlayerState,
   preloadPlayerSprites,
@@ -247,7 +247,12 @@ function _isWalkableAt(col: number, row: number): boolean | null {
   if (!chunk || chunk.walkableMap.length === 0) return null;
   const lc = Math.floor((((col % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
   const lr = Math.floor((((row % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
-  return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
+  const tile = chunk.tiles[lr * CHUNK_TILES + lc];
+  if (!tile) return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
+
+  const localColFrac = ((col % 1) + 1) % 1;
+  const localRowFrac = ((row % 1) + 1) % 1;
+  return isPointWalkableInTile(tile, chunk.activeConditions, localColFrac, localRowFrac);
 }
 
 function update(dt: number): boolean {

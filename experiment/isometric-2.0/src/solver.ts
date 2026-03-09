@@ -16,6 +16,7 @@ import {
   type EdgeMasks,
   type MacroAssembly,
   CHUNK_TILES,
+  MICRO_TILE_SIZE,
 } from './types';
 
 // ─── Feature Configuration ───────────────────────────────────
@@ -339,6 +340,73 @@ export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:
   return { rects };
 }
 
+/**
+ * Exact point-vs-wall-footprint test in tile-local coordinates.
+ * localX/localY are in MICRO_TILE_SIZE space (0..128).
+ */
+export function pointHitsWallFootprint(
+  variant: FeatureVariant,
+  localX: number,
+  localY: number,
+): boolean {
+  const { rects } = wallBounds(variant);
+  for (const r of rects) {
+    if (localX >= r.x && localX < r.x + r.w && localY >= r.y && localY < r.y + r.h) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Fine-grained walkability check for a point inside a tile.
+ * Unlike buildWalkableMap(), this respects the actual wall strip footprint so
+ * the player can move up to the visible geometry rather than treating the whole
+ * tile as blocked.
+ */
+export function isPointWalkableInTile(
+  tile: MicroTile,
+  activeConditions: Map<string, 'locked' | 'unlocked'>,
+  localColFrac: number,
+  localRowFrac: number,
+): boolean {
+  const nanos = tile.nanos ?? [];
+  if (nanos.length === 0) return true;
+
+  const localX = localColFrac * MICRO_TILE_SIZE;
+  const localY = localRowFrac * MICRO_TILE_SIZE;
+  let hasAlwaysPass = false;
+  let blocked = false;
+
+  for (const nano of nanos) {
+    const walkable = nano.walkable;
+    if (walkable.type === 'always') {
+      hasAlwaysPass = true;
+      continue;
+    }
+
+    if (walkable.type === 'conditional') {
+      const state = activeConditions.get(walkable.conditionId);
+      if (state === 'unlocked') {
+        hasAlwaysPass = true;
+        continue;
+      }
+    }
+
+    if (nano.kind === 'stone-wall' && nano.variant) {
+      if (pointHitsWallFootprint(nano.variant, localX, localY)) {
+        blocked = true;
+      }
+      continue;
+    }
+
+    // Fallback for other never/locked nanos that still block their whole tile.
+    blocked = true;
+  }
+
+  return hasAlwaysPass || !blocked;
+}
+
 
 /**
  * Generate a SIDE-VIEW SVG for a stone wall tile (transparent background).
@@ -382,10 +450,11 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
 
-  // Top cap uses the same brick language as the side face, but the depth axis is
-  // projected at 0.5× screen-Y. Doubling the cap brick height keeps the top/side
-  // mortar rhythm aligned at the lip without the giant-brick regression.
-  const capBW = 20, capBH = 18, capBM = 4;
+  // Top cap units are stretched by the iso basis length sqrt(1^2 + 0.5^2) ≈ 1.118.
+  // Side bricks are authored at 20×9 with 2px mortar, so shrink the top texture
+  // to ~1/1.118 of those dimensions for a true 1:1 visual brick size match.
+  // 20 / 1.118 ≈ 17.9 → 18, 9 / 1.118 ≈ 8.0 → 8, 2 / 1.118 ≈ 1.8 → 2.
+  const capBW = 18, capBH = 8, capBM = 2;
   const parts: string[] = [];
 
   // Determine which cardinal arms are present for this variant
