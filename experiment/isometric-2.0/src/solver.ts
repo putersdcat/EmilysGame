@@ -351,12 +351,13 @@ function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,
  * so adjacent tiles don't look identical.
  */
 function stoneWallSvg(_variant: FeatureVariant): string {
-  // Side face: seamless running-bond brick, horizontal courses, full 128×128 viewBox.
-  // The renderer scales this into the actual wall face rect — no stretching needed
-  // because wall faces are always square (W=48 × W=48 per face segment).
-  const seed = 0x4B57; // fixed seed — all side faces share one tileable texture
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">`
-    + runningBondH(0, 0, 128, 128, seed)
+  // Side face SVG — viewBox matches drawH=24px × MICRO_TILE_SIZE=128px (1 SVG unit = 1 screen px).
+  // Bricks W=36, H=8, M=2 → 36×8px on screen → 4.5:1 aspect, clearly readable as bricks.
+  // drawImage(img, 0, -drawH, 128, drawH) renders this 1:1, no squash, no stretch.
+  const SIDE_H = 24; // must match drawH at stone-wall zOffset=2 (NANO_Z_SCALE*2=24)
+  const seed = 0x4B57;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H}" viewBox="0 0 128 ${SIDE_H}">`
+    + runningBondH(0, 0, 128, SIDE_H, seed, 36, 8, 2)
     + `</svg>`;
 }
 
@@ -382,10 +383,12 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
 
-  // Cap bricks are drawn through iso transform (1,0.5,-1,0.5) which stretches
-  // them ~1.118× on screen. Halve brick dims so the projected size matches the
-  // side-face bricks: bW=32 → 32*1.118 ≈ 36px (=side bW), bH=4 → 4*1.118 ≈ 4.5px (=side bH compressed into drawH).
-  const capBW = 32, capBH = 4, capBM = 1;
+  // Cap bricks drawn through iso transform (1,0.5,-1,0.5):
+  //   Along arm (X): SVG unit = 1 screen px → capBW=36 matches side bricks (36px wide)
+  //   Across arm (Y): iso squashes by ×0.5 → capBH × 0.5 = side_brick_H_px = 8 → capBH=16
+  //   Mortar: capBM × 0.5 = 2px → capBM=4
+  // Result: top bricks appear 36×8px on screen, identical to side face bricks.
+  const capBW = 36, capBH = 16, capBM = 4;
   const parts: string[] = [];
 
   // Determine which cardinal arms are present for this variant

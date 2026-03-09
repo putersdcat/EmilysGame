@@ -49,7 +49,8 @@ const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
 
 /** Z offset defaults per kind (matches NANO_Z in scene-registry.ts) */
 const NANO_Z: Partial<Record<string, number>> = {
-  'stone-wall':     3.5,
+  // drawH = zOffset * 12.  stone-wall: height = depth = WALL_THICKNESS*0.5 = 48*0.5 = 24px → zOffset=2
+  'stone-wall':     2,
   'cathedral-wall': 6,
   'homestead-wall': 3,
   'fence':          2,
