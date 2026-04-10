@@ -100,6 +100,7 @@ The dev server will typically open at `http://localhost:5173`.
 - `npm run typecheck` - Run TypeScript type checking
 - `npm test` - Run Playwright E2E tests
 - `npm run screenshot` - Capture game screenshot for README
+- `npm run editor` - Start asset editor
 
 ## Project Structure
 

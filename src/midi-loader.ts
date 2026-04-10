@@ -12,6 +12,7 @@ import type { MusicTrack } from './config/music.config';
 export interface MidiManifestEntry {
   id: string;
   file: string;
+  midiFile: string;
   name: string;
   composer: string;
   style: string;
@@ -25,8 +26,6 @@ export interface MidiManifest {
 }
 
 // ─── Track JSON shape (as emitted by convert-midi.ts) ───────
-// Contains legacy melody/bass arrays for backward compat with JSON files;
-// only id/name/composer/style/tempo/volume/biomes are forwarded to MusicTrack.
 
 interface TrackJson {
   id: string;
@@ -36,11 +35,7 @@ interface TrackJson {
   tempo: number;
   volume: number;
   biomes: number[];
-  // Legacy fields in JSON — parsed but not forwarded
-  melodyWave?: string;
-  bassWave?: string;
-  melody?: unknown[];
-  bass?: unknown[];
+  instrument?: MusicTrack['instrument'];
 }
 
 // ─── State ──────────────────────────────────────────────────
@@ -110,7 +105,7 @@ export async function loadMidiTrack(id: string): Promise<MusicTrack | null> {
       }
       const json: TrackJson = await resp.json();
 
-      // Convert to MusicTrack (legacy melody/bass/wave fields not forwarded)
+      // Convert to runtime MusicTrack model
       const track: MusicTrack = {
         id: json.id,
         name: json.name,
@@ -119,6 +114,7 @@ export async function loadMidiTrack(id: string): Promise<MusicTrack | null> {
         volume: json.volume,
         composer: json.composer,
         style: json.style,
+        instrument: json.instrument,
         source: 'midi',
       };
 

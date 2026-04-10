@@ -43,3 +43,6 @@ scripts/content-pipeline/.cache/
 
 # QA reports (generated artifacts)
 public/content/packs/*/qa-reports/
+asset-dev/Export/WorldTileAssets_OG_Backup.zip
+asset-dev/Export/
+#tests/screenshots/

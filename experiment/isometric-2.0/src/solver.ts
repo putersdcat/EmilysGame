@@ -327,9 +327,9 @@ export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:
 
   const arms = { top: false, right: false, bottom: false, left: false };
   switch (variant) {
-    case 'straight-h': case 'end-b': case 'end-l':
+    case 'straight-h': case 'end-r': case 'end-l':  // E-W direction → H-strip (y=40..88)
       arms.left = true; arms.right = true; break;
-    case 'straight-v': case 'end-t': case 'end-r':
+    case 'straight-v': case 'end-t': case 'end-b':  // N-S direction → V-strip (x=40..88)
       arms.top = true; arms.bottom = true; break;
     case 'corner-tr': arms.top = true; arms.right = true; break;
     case 'corner-tl': arms.top = true; arms.left  = true; break;
@@ -484,9 +484,9 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   // Determine which cardinal arms are present for this variant
   const arms = { top: false, right: false, bottom: false, left: false };
   switch (variant) {
-    case 'straight-h': case 'end-b': case 'end-l':
+    case 'straight-h': case 'end-r': case 'end-l':  // E-W direction → H-strip
       arms.left = true;  arms.right  = true;  break;
-    case 'straight-v': case 'end-t': case 'end-r':
+    case 'straight-v': case 'end-t': case 'end-b':  // N-S direction → V-strip
       arms.top  = true;  arms.bottom = true;  break;
     case 'corner-tr': arms.top = true;    arms.right  = true; break;
     case 'corner-tl': arms.top = true;    arms.left   = true; break;

@@ -26,9 +26,10 @@ const META_FILE = path.join(MIDI_DIR, 'metadata.json');
 // Note name mapping (MIDI note number → string)
 const NOTE_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
 
-// Supported octave range for our oscillator engine
+// Supported octave range for legacy JSON note payloads
 const MIN_OCTAVE = 2;
 const MAX_OCTAVE = 6;
+
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -41,6 +42,8 @@ interface MetadataEntry {
   style: string;
   filename: string;
 }
+
+type MusicInstrument = 'piano' | 'harpsichord' | 'pipe_organ' | 'nylon_guitar' | 'electric_guitar';
 
 interface GameNote {
   note: string;     // e.g., 'C4', 'Eb5', 'REST'
@@ -57,6 +60,7 @@ interface TrackJson {
   bassWave: string;
   volume: number;
   biomes: number[];
+  instrument?: MusicInstrument;
   melody: GameNote[];
   bass: GameNote[];
 }
@@ -64,6 +68,7 @@ interface TrackJson {
 interface ManifestEntry {
   id: string;
   file: string;
+  midiFile: string;
   name: string;
   composer: string;
   style: string;
@@ -74,14 +79,6 @@ interface ManifestEntry {
 
 // ─── Helpers ────────────────────────────────────────────────
 
-function midiToNoteName(midi: number): string {
-  const octave = Math.floor(midi / 12) - 1;
-  const name = NOTE_NAMES[midi % 12];
-  // Clamp to supported range
-  const clampedOctave = Math.max(MIN_OCTAVE, Math.min(MAX_OCTAVE, octave));
-  return `${name}${clampedOctave}`;
-}
-
 function filenameToId(filename: string): string {
   return filename
     .replace('.mid', '')
@@ -89,15 +86,49 @@ function filenameToId(filename: string): string {
     .toLowerCase();
 }
 
-/** Pick biomes based on tempo heuristic */
-function assignBiomes(tempo: number): number[] {
-  if (tempo < 70) return [2];          // cave — slow/sparse
-  if (tempo < 100) return [1, 2];      // forest/cave — mysterious
-  if (tempo < 130) return [0, 1];      // meadow/forest — moderate
-  return [0, 3];                       // meadow/castle — bright/grand
+function midiToNoteName(midi: number): string {
+  const octave = Math.floor(midi / 12) - 1;
+  const name = NOTE_NAMES[midi % 12];
+  const clampedOctave = Math.max(MIN_OCTAVE, Math.min(MAX_OCTAVE, octave));
+  return `${name}${clampedOctave}`;
 }
 
-/** Pick wave types based on tempo for variety */
+function inferMetadataFromFilename(filename: string): Pick<MetadataEntry, 'artist' | 'title' | 'composer' | 'style'> {
+  const base = filename.replace('.mid', '');
+  const split = base.split('_-_');
+  const composerRaw = split[0] ?? 'Unknown';
+  const titleRaw = split[1] ?? base;
+  const composer = composerRaw.replace(/_/g, ' ').trim();
+  const title = titleRaw.replace(/_/g, ' ').trim();
+
+  let style = 'Classical';
+  const lcComposer = composer.toLowerCase();
+  const lcTitle = title.toLowerCase();
+  if (lcComposer.includes('joplin') || lcTitle.includes('rag')) style = 'Ragtime';
+  if (lcComposer.includes('traditional')) style = 'Folk';
+
+  return {
+    artist: composer,
+    title,
+    composer,
+    style,
+  };
+}
+
+function inferInstrument(composer: string, style: string, title: string, tempo: number): MusicInstrument {
+  const c = composer.toLowerCase();
+  const s = style.toLowerCase();
+  const t = title.toLowerCase();
+
+  if (c.includes('bach') || c.includes('handel') || c.includes('vivaldi')) return 'harpsichord';
+  if (t.includes('toccata') || t.includes('fugue') || t.includes('dies irae')) return 'pipe_organ';
+  if (s.includes('ragtime') || c.includes('joplin')) return 'nylon_guitar';
+  if (s.includes('folk') || t.includes('wellerman') || t.includes('drunken sailor')) return 'nylon_guitar';
+  if (tempo >= 170) return 'electric_guitar';
+  return 'piano';
+}
+
+/** Pick wave types based on tempo for legacy JSON compat */
 function assignWaves(tempo: number): { melody: string; bass: string } {
   if (tempo < 70) return { melody: 'sine', bass: 'triangle' };
   if (tempo < 100) return { melody: 'triangle', bass: 'sine' };
@@ -105,21 +136,11 @@ function assignWaves(tempo: number): { melody: string; bass: string } {
   return { melody: 'square', bass: 'triangle' };
 }
 
-/**
- * Extract a monophonic melody line from polyphonic MIDI notes.
- * Strategy: at each note onset, pick the highest note.
- * Insert rests for gaps.
- */
-function extractMelody(
-  allNotes: MidiNote[],
-  ticksPerBeat: number,
-  maxNotes = 256
-): GameNote[] {
+function extractMelody(allNotes: MidiNote[], ticksPerBeat: number, maxNotes = 256): GameNote[] {
   if (allNotes.length === 0) return [{ note: 'REST', duration: 4 }];
 
-  // Sort by start time, then by pitch (high to low)
   const sorted = [...allNotes].sort((a, b) =>
-    a.startTick !== b.startTick ? a.startTick - b.startTick : b.midi - a.midi
+    a.startTick !== b.startTick ? a.startTick - b.startTick : b.midi - a.midi,
   );
 
   const result: GameNote[] = [];
@@ -127,16 +148,11 @@ function extractMelody(
 
   for (const n of sorted) {
     if (result.length >= maxNotes) break;
-
-    // Skip notes that overlap with current position
     if (n.startTick < currentTick) continue;
 
-    // Insert rest for gap
     if (n.startTick > currentTick) {
       const gapBeats = (n.startTick - currentTick) / ticksPerBeat;
-      if (gapBeats > 0.1) {
-        result.push({ note: 'REST', duration: round(gapBeats) });
-      }
+      if (gapBeats > 0.1) result.push({ note: 'REST', duration: round(gapBeats) });
     }
 
     const durBeats = Math.max(0.125, (n.endTick - n.startTick) / ticksPerBeat);
@@ -144,27 +160,17 @@ function extractMelody(
     currentTick = n.endTick;
   }
 
-  // Ensure at least some content
   if (result.length === 0) return [{ note: 'REST', duration: 4 }];
   return result;
 }
 
-/**
- * Extract a bass line: pick the lowest notes, reduce to ~1 note per beat.
- */
-function extractBass(
-  allNotes: MidiNote[],
-  ticksPerBeat: number,
-  maxNotes = 128
-): GameNote[] {
+function extractBass(allNotes: MidiNote[], ticksPerBeat: number, maxNotes = 128): GameNote[] {
   if (allNotes.length === 0) return [{ note: 'C3', duration: 4 }];
 
-  // Sort by start time, then by pitch (low to high)
   const sorted = [...allNotes].sort((a, b) =>
-    a.startTick !== b.startTick ? a.startTick - b.startTick : a.midi - b.midi
+    a.startTick !== b.startTick ? a.startTick - b.startTick : a.midi - b.midi,
   );
 
-  // Quantize to beats and pick lowest note per beat
   const beatMap = new Map<number, MidiNote>();
   for (const n of sorted) {
     const beat = Math.floor(n.startTick / ticksPerBeat);
@@ -179,14 +185,9 @@ function extractBass(
 
   for (const beat of beats) {
     if (result.length >= maxNotes) break;
-
-    // Rest for gap
     if (beat > prevBeat && result.length > 0) {
       const gapBeats = beat - prevBeat - 1;
-      if (gapBeats > 0) {
-        // Extend previous note or add rest
-        result[result.length - 1].duration += gapBeats;
-      }
+      if (gapBeats > 0) result[result.length - 1].duration += gapBeats;
     }
 
     const n = beatMap.get(beat)!;
@@ -201,6 +202,25 @@ function extractBass(
 
 function round(n: number): number {
   return Math.round(n * 100) / 100;
+}
+
+/** Pick biomes based on tempo heuristic */
+function assignBiomes(tempo: number): number[] {
+  if (tempo < 70) return [2];          // cave — slow/sparse
+  if (tempo < 100) return [1, 2];      // forest/cave — mysterious
+  if (tempo < 130) return [0, 1];      // meadow/forest — moderate
+  return [0, 3];                       // meadow/castle — bright/grand
+}
+
+
+function canonicalTrackKey(composer: string, title: string): string {
+  const clean = (s: string) => s
+    .toLowerCase()
+    .replace(/\(.*?\)/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return `${clean(composer)}::${clean(title)}`;
 }
 
 // ─── Main ───────────────────────────────────────────────────
@@ -230,8 +250,10 @@ function main(): void {
   console.log(`Found ${midFiles.length} MIDI files\n`);
 
   const manifest: ManifestEntry[] = [];
+  const seenCanonical = new Set<string>();
   let converted = 0;
   let failed = 0;
+  let skippedDuplicates = 0;
 
   for (const filename of midFiles) {
     const filePath = path.join(MIDI_DIR, filename);
@@ -250,28 +272,35 @@ function main(): void {
         continue;
       }
 
-      // Separate into high (melody) and low (bass) note pools
-      // Use MIDI note 60 (C4) as the split point
-      const melodyNotes = allNotes.filter(n => n.midi >= 55);
-      const bassNotes = allNotes.filter(n => n.midi < 65);
-
-      const melody = extractMelody(
-        melodyNotes.length > 0 ? melodyNotes : allNotes,
-        midi.ticksPerBeat
-      );
-      const bass = extractBass(
-        bassNotes.length > 0 ? bassNotes : allNotes,
-        midi.ticksPerBeat
-      );
-
       // Get tempo (use first tempo event or default 120)
       const tempo = midi.tempos[0]?.bpm || 120;
       const waves = assignWaves(tempo);
       const biomes = assignBiomes(tempo);
 
-      const name = meta?.title || filename.replace('.mid', '').replace(/_/g, ' ').replace(/ - /g, ' — ');
-      const composer = meta?.composer || meta?.artist || 'Unknown';
-      const style = meta?.style || 'Classical';
+      // Legacy JSON payload retained for compatibility/tests.
+      const melodyNotes = allNotes.filter(n => n.midi >= 55);
+      const bassNotes = allNotes.filter(n => n.midi < 65);
+      const melody = extractMelody(
+        melodyNotes.length > 0 ? melodyNotes : allNotes,
+        midi.ticksPerBeat,
+      );
+      const bass = extractBass(
+        bassNotes.length > 0 ? bassNotes : allNotes,
+        midi.ticksPerBeat,
+      );
+
+      const inferred = inferMetadataFromFilename(filename);
+      const name = (meta?.title || inferred.title || filename.replace('.mid', '').replace(/_/g, ' ')).trim();
+      const composer = (meta?.composer || meta?.artist || inferred.composer || 'Unknown').trim();
+      const style = (meta?.style || inferred.style || 'Classical').trim();
+      const instrument = inferInstrument(composer, style, name, tempo);
+      const canonical = canonicalTrackKey(composer, name);
+      if (seenCanonical.has(canonical)) {
+        console.log(`  ↷ ${filename}: duplicate canonical track (${composer} — ${name}), skipping`);
+        skippedDuplicates++;
+        continue;
+      }
+      seenCanonical.add(canonical);
 
       const track: TrackJson = {
         id,
@@ -283,6 +312,7 @@ function main(): void {
         bassWave: waves.bass,
         volume: 0.55,
         biomes,
+        instrument,
         melody,
         bass,
       };
@@ -294,6 +324,7 @@ function main(): void {
       manifest.push({
         id,
         file: `${id}.json`,
+        midiFile: `midi/${filename}`,
         name: track.name,
         composer,
         style,
@@ -334,7 +365,21 @@ function main(): void {
   const manifestPath = path.join(OUT_DIR, 'manifest.json');
   fs.writeFileSync(manifestPath, JSON.stringify({ tracks: manifest }, null, 2));
 
+  // Remove stale generated track JSONs that are no longer referenced.
+  const keepFiles = new Set(manifest.map(m => m.file));
+  const generatedJsons = fs.readdirSync(OUT_DIR)
+    .filter(f => f.endsWith('.json') && f !== 'manifest.json');
+  let pruned = 0;
+  for (const jsonFile of generatedJsons) {
+    if (!keepFiles.has(jsonFile)) {
+      fs.unlinkSync(path.join(OUT_DIR, jsonFile));
+      pruned++;
+    }
+  }
+
   console.log(`\n✓ Converted: ${converted}/${midFiles.length}`);
+  if (skippedDuplicates > 0) console.log(`↷ Skipped duplicates: ${skippedDuplicates}`);
+  if (pruned > 0) console.log(`🧹 Pruned stale track JSON files: ${pruned}`);
   if (failed > 0) console.log(`✗ Failed: ${failed}`);
   console.log(`Manifest: ${manifestPath} (${manifest.length} tracks)`);
 }

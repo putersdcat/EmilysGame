@@ -20,9 +20,18 @@ export interface MusicTrack {
   composer?: string;
   /** Musical style / era */
   style?: string;
+  /** Preferred sampler voicing for this track (runtime falls back to piano) */
+  instrument?: MusicInstrument;
   /** Track origin — always 'midi' now */
   source?: 'midi';
 }
+
+export type MusicInstrument =
+  | 'piano'
+  | 'harpsichord'
+  | 'pipe_organ'
+  | 'nylon_guitar'
+  | 'electric_guitar';
 
 // ─── Settings ───────────────────────────────────────────────
 

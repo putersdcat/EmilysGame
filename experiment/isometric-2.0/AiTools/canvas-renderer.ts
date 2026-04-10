@@ -388,6 +388,8 @@ export async function renderNanoTile(
   if (TERRAIN_COLORS[kind]) {
     drawTerrainTile(ctx, 0, 0, kind, screenX + HALF_W, screenY + HALF_H);
   } else {
+    // Always draw a grass base so the inner-corner void shows ground, not background.
+    drawTerrainTile(ctx, 0, 0, 'grass', screenX + HALF_W, screenY + HALF_H);
     const nano = buildNanoTile(entry);
     if (nano) {
       // Pass through drawNanoStack — it dispatches to the correct draw function.
@@ -433,8 +435,17 @@ export async function renderNanoScene(
   const nanos   = sorted.filter(e => !TERRAIN_COLORS[e.kind]);
 
   // ── Pass 1: terrain ──────────────────────────────────────────
+  // Explicit terrain entries first.
   for (const e of terrain) {
     drawTerrainTile(ctx, e.col, e.row, e.kind, ox, oy);
+  }
+  // Auto-grass: any nano position without an explicit terrain tile gets grass
+  // so that the inner-corner void shows ground rather than background.
+  const terrainPositions = new Set(terrain.map(e => `${e.col},${e.row}`));
+  for (const e of nanos) {
+    if (!terrainPositions.has(`${e.col},${e.row}`)) {
+      drawTerrainTile(ctx, e.col, e.row, 'grass', ox, oy);
+    }
   }
 
   // ── Pass 2: debug walkability overlay over terrain ───────────

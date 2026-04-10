@@ -1,48 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- stone-wall-01: Stacked stone wall segment (elevated) -->
+  <!-- stone-wall-01: Static stone wall tile - masonry blocks with moss and depth -->
   <defs>
-    <linearGradient id="swBase" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#787878"/>
-      <stop offset="100%" stop-color="#5a5a5a"/>
+    <linearGradient id="swGround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a7060"/>
+      <stop offset="100%" stop-color="#404438"/>
     </linearGradient>
   </defs>
-  <rect width="128" height="128" fill="url(#swBase)"/>
-  <rect width="128" height="128" fill="#4a4a4a" opacity="0.3"/>
-  <rect x="2" y="95" width="42" height="31" rx="2" fill="#6a6a6a" stroke="#505050" stroke-width="1"/>
-  <rect x="46" y="95" width="38" height="31" rx="2" fill="#626262" stroke="#505050" stroke-width="1"/>
-  <rect x="86" y="95" width="40" height="31" rx="2" fill="#686868" stroke="#505050" stroke-width="1"/>
-  <rect x="4" y="97" width="38" height="3" rx="1" fill="#808080" opacity="0.4"/>
-  <rect x="48" y="97" width="34" height="3" rx="1" fill="#787878" opacity="0.35"/>
-  <rect x="88" y="97" width="36" height="3" rx="1" fill="#808080" opacity="0.35"/>
-  <rect x="8" y="68" width="36" height="25" rx="2" fill="#6e6e6e" stroke="#505050" stroke-width="1"/>
-  <rect x="46" y="68" width="40" height="25" rx="2" fill="#646464" stroke="#505050" stroke-width="1"/>
-  <rect x="88" y="68" width="32" height="25" rx="2" fill="#6a6a6a" stroke="#505050" stroke-width="1"/>
-  <rect x="10" y="70" width="32" height="3" rx="1" fill="#828282" opacity="0.35"/>
-  <rect x="48" y="70" width="36" height="3" rx="1" fill="#7a7a7a" opacity="0.3"/>
-  <rect x="90" y="70" width="28" height="3" rx="1" fill="#808080" opacity="0.3"/>
-  <rect x="4" y="42" width="40" height="24" rx="2" fill="#6c6c6c" stroke="#505050" stroke-width="1"/>
-  <rect x="46" y="42" width="36" height="24" rx="2" fill="#606060" stroke="#505050" stroke-width="1"/>
-  <rect x="84" y="42" width="40" height="24" rx="2" fill="#686868" stroke="#505050" stroke-width="1"/>
-  <rect x="6" y="44" width="36" height="3" rx="1" fill="#828282" opacity="0.3"/>
-  <rect x="48" y="44" width="32" height="3" rx="1" fill="#787878" opacity="0.25"/>
-  <rect x="86" y="44" width="36" height="3" rx="1" fill="#808080" opacity="0.25"/>
-  <rect x="6" y="16" width="38" height="24" rx="2" fill="#727272" stroke="#505050" stroke-width="1"/>
-  <rect x="46" y="16" width="40" height="24" rx="2" fill="#666666" stroke="#505050" stroke-width="1"/>
-  <rect x="88" y="16" width="36" height="24" rx="2" fill="#6e6e6e" stroke="#505050" stroke-width="1"/>
-  <rect x="8" y="18" width="34" height="3" rx="1" fill="#868686" opacity="0.35"/>
-  <rect x="48" y="18" width="36" height="3" rx="1" fill="#7e7e7e" opacity="0.3"/>
-  <rect x="90" y="18" width="32" height="3" rx="1" fill="#848484" opacity="0.3"/>
-  <rect x="2" y="2" width="124" height="12" rx="2" fill="#747474" stroke="#505050" stroke-width="1"/>
-  <rect x="4" y="4" width="120" height="3" rx="1" fill="#8a8a8a" opacity="0.4"/>
-  <g fill="#525252" opacity="0.25">
-    <ellipse cx="22" cy="80" rx="5" ry="3"/>
-    <ellipse cx="65" cy="52" rx="4" ry="2.5"/>
-    <ellipse cx="100" cy="108" rx="6" ry="3"/>
-    <ellipse cx="38" cy="30" rx="4" ry="2"/>
-  </g>
-  <g stroke="#484848" stroke-width="0.7" fill="none" opacity="0.35">
-    <path d="M25,95 L28,108 L24,120"/>
-    <path d="M70,68 L72,78 L68,88"/>
-    <path d="M110,42 L112,52 L108,60"/>
-  </g>
+  <rect width="128" height="128" fill="url(#swGround)"/>
+  <!-- Wall base ground shadow -->
+  <ellipse cx="64" cy="95" rx="58" ry="20" fill="#1a1c18" opacity="0.5"/>
+  <!-- Bottom course of stones (widest) -->
+  <path d="M4,90 L40,75 L40,62 L4,77 Z" fill="#585650"/>
+  <path d="M4,77 L40,62 L52,68 L12,83 Z" fill="#9a9888"/>
+  <path d="M4,77 L12,83 L12,90 L4,90 Z" fill="#403e38"/>
+  <path d="M40,82 L76,67 L76,54 L40,69 Z" fill="#525048"/>
+  <path d="M40,69 L76,54 L88,60 L48,75 Z" fill="#96948a"/>
+  <path d="M40,69 L48,75 L48,82 L40,82 Z" fill="#3e3c38"/>
+  <line x1="40" y1="69" x2="40" y2="90" stroke="#2e2c28" stroke-width="1.5"/>
+  <!-- Top course of stones (set back) -->
+  <path d="M12,65 L48,50 L48,38 L12,53 Z" fill="#606058"/>
+  <path d="M12,53 L48,38 L60,44 L20,59 Z" fill="#a0a090"/>
+  <path d="M12,53 L20,59 L20,65 L12,65 Z" fill="#42403c"/>
+  <path d="M48,58 L84,43 L84,31 L48,46 Z" fill="#5a5850"/>
+  <path d="M48,46 L84,31 L96,37 L56,52 Z" fill="#9c9a8c"/>
+  <path d="M48,46 L56,52 L56,58 L48,58 Z" fill="#403e3a"/>
+  <path d="M76,52 L108,39 L108,28 L76,41 Z" fill="#585650"/>
+  <path d="M76,41 L108,28 L118,33 L84,46 Z" fill="#98968a"/>
+  <path d="M76,41 L84,46 L84,52 L76,52 Z" fill="#3c3a36"/>
+  <line x1="48" y1="46" x2="48" y2="58" stroke="#2a2828" stroke-width="1.2"/>
+  <line x1="76" y1="41" x2="76" y2="52" stroke="#2a2828" stroke-width="1.2"/>
+  <path d="M12,65 L84,52 L96,57" stroke="#282826" stroke-width="1.5" fill="none" opacity="0.6"/>
+  <!-- Moss patches on exposed stone faces -->
+  <ellipse cx="22" cy="58" rx="8" ry="3.5" fill="#4a7030" opacity="0.45"/>
+  <ellipse cx="58" cy="46" rx="7" ry="3" fill="#527838" opacity="0.4"/>
+  <ellipse cx="88" cy="34" rx="6" ry="2.5" fill="#4a7028" opacity="0.38"/>
+  <ellipse cx="32" cy="76" rx="9" ry="3.5" fill="#486028" opacity="0.35"/>
+  <!-- Top edge weathering highlights -->
+  <path d="M12,52 Q20,48 36,50 Q48,46 60,44 Q72,40 88,41 Q98,37 112,34" stroke="#c0c0b0" stroke-width="0.8" fill="none" opacity="0.4"/>
+  <path d="M4,75 Q14,70 28,72 Q40,68 52,68" stroke="#c0c0b0" stroke-width="0.7" fill="none" opacity="0.3"/>
+  <!-- Ground rubble at base -->
+  <ellipse cx="25" cy="102" rx="8" ry="3.5" fill="#6a6860" opacity="0.7"/>
+  <ellipse cx="55" cy="108" rx="6" ry="2.5" fill="#686660" opacity="0.65"/>
+  <ellipse cx="85" cy="105" rx="7" ry="3" fill="#666462" opacity="0.6"/>
+  <ellipse cx="110" cy="100" rx="5" ry="2.2" fill="#646260" opacity="0.55"/>
+  <path d="M22,100 Q25,96 28,99 Q27,103 24,103 Z" fill="#848280"/>
+  <path d="M52,106 Q56,102 58,105 Q57,109 53,109 Z" fill="#7e7c78"/>
 </svg>

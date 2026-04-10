@@ -1,0 +1,40 @@
+{
+  "entries": [
+    {"kind":"grass","col":0,"row":0},{"kind":"grass","col":1,"row":0},{"kind":"grass","col":2,"row":0},{"kind":"grass","col":3,"row":0},{"kind":"grass","col":4,"row":0},{"kind":"grass","col":5,"row":0},{"kind":"grass","col":6,"row":0},
+    {"kind":"grass","col":0,"row":1},{"kind":"grass","col":1,"row":1},{"kind":"grass","col":2,"row":1},{"kind":"grass","col":3,"row":1},{"kind":"grass","col":4,"row":1},{"kind":"grass","col":5,"row":1},{"kind":"grass","col":6,"row":1},
+    {"kind":"grass","col":0,"row":2},{"kind":"grass","col":1,"row":2},{"kind":"grass","col":2,"row":2},{"kind":"grass","col":3,"row":2},{"kind":"grass","col":4,"row":2},{"kind":"grass","col":5,"row":2},{"kind":"grass","col":6,"row":2},
+    {"kind":"grass","col":0,"row":3},{"kind":"grass","col":1,"row":3},{"kind":"grass","col":2,"row":3},{"kind":"grass","col":3,"row":3},{"kind":"grass","col":4,"row":3},{"kind":"grass","col":5,"row":3},{"kind":"grass","col":6,"row":3},
+    {"kind":"grass","col":0,"row":4},{"kind":"grass","col":1,"row":4},{"kind":"grass","col":2,"row":4},{"kind":"grass","col":3,"row":4},{"kind":"grass","col":4,"row":4},{"kind":"grass","col":5,"row":4},{"kind":"grass","col":6,"row":4},
+    {"kind":"grass","col":0,"row":5},{"kind":"grass","col":1,"row":5},{"kind":"grass","col":2,"row":5},{"kind":"grass","col":3,"row":5},{"kind":"grass","col":4,"row":5},{"kind":"grass","col":5,"row":5},{"kind":"grass","col":6,"row":5},
+    {"kind":"grass","col":0,"row":6},{"kind":"grass","col":1,"row":6},{"kind":"grass","col":2,"row":6},{"kind":"grass","col":3,"row":6},{"kind":"grass","col":4,"row":6},{"kind":"grass","col":5,"row":6},{"kind":"grass","col":6,"row":6},
+    {"kind":"stone-wall","col":1,"row":1,"variant":"corner-br","zOffset":4},
+    {"kind":"stone-wall","col":2,"row":1,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":3,"row":1,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":4,"row":1,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":5,"row":1,"variant":"corner-bl","zOffset":4},
+    {"kind":"stone-wall","col":1,"row":2,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":5,"row":2,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":1,"row":3,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":5,"row":3,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":1,"row":4,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":5,"row":4,"variant":"straight-v","zOffset":4},
+    {"kind":"stone-wall","col":1,"row":5,"variant":"corner-tr","zOffset":4},
+    {"kind":"stone-wall","col":2,"row":5,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":3,"row":5,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":4,"row":5,"variant":"straight-h","zOffset":4},
+    {"kind":"stone-wall","col":5,"row":5,"variant":"corner-tl","zOffset":4}
+  ],
+  "players": [
+    {"col":3.0,"row":1.74,"label":"IN-N"},
+    {"col":3.0,"row":1.26,"label":"OUT-N"},
+    {"col":5.26,"row":3.0,"label":"IN-E"},
+    {"col":5.74,"row":3.0,"label":"OUT-E"},
+    {"col":3.0,"row":5.26,"label":"IN-S"},
+    {"col":3.0,"row":5.74,"label":"OUT-S"},
+    {"col":1.74,"row":3.0,"label":"IN-W"},
+    {"col":1.26,"row":3.0,"label":"OUT-W"}
+  ],
+  "width": 1280,
+  "height": 900,
+  "outputPath": "C:/GitRoots/EmilysGame/experiment/isometric-2.0/ProgressEvaluations/stone-wall-perimeter-boundary-v7-float.png"
+}

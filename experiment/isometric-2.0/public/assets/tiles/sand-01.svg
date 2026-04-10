@@ -1,51 +1,50 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <!-- sand-01: Warm beach sand with grain detail -->
+  <!-- sand-01: Warm golden sand with dune contours, wind ripples, pebbles -->
   <defs>
-    <linearGradient id="sBase" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0%" stop-color="#d4c490"/>
-      <stop offset="100%" stop-color="#baa878"/>
+    <radialGradient id="sBase" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#e8d078"/>
+      <stop offset="60%" stop-color="#c8a840"/>
+      <stop offset="100%" stop-color="#a07820"/>
+    </radialGradient>
+    <linearGradient id="sSun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff0b0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#8a5810" stop-opacity="0.2"/>
     </linearGradient>
-    <filter id="snoise" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="3" seed="3"/>
-      <feColorMatrix type="saturate" values="0"/>
-      <feBlend in="SourceGraphic" mode="soft-light"/>
-    </filter>
   </defs>
   <rect width="128" height="128" fill="url(#sBase)"/>
-  <rect width="128" height="128" filter="url(#snoise)" opacity="0.12"/>
-  <ellipse cx="40" cy="35" rx="30" ry="22" fill="#d8c888" opacity="0.35"/>
-  <ellipse cx="95" cy="80" rx="28" ry="20" fill="#b09860" opacity="0.3"/>
-  <ellipse cx="15" cy="90" rx="22" ry="16" fill="#c8b880" opacity="0.25"/>
-  <ellipse cx="80" cy="20" rx="20" ry="14" fill="#ccb878" opacity="0.3"/>
-  <ellipse cx="55" cy="65" rx="18" ry="14" fill="#d0c085" opacity="0.2"/>
-  <g opacity="0.4">
-    <path d="M2,28 Q22,25 42,28 Q62,31 82,28 Q102,25 126,28" stroke="#c0a868" stroke-width="1.2" fill="none"/>
-    <path d="M2,27 Q22,24 42,27 Q62,30 82,27 Q102,24 126,27" stroke="#dcc890" stroke-width="0.5" fill="none" opacity="0.6"/>
-    <path d="M2,48 Q22,45 42,48 Q62,51 82,48 Q102,45 126,48" stroke="#c0a868" stroke-width="1.2" fill="none"/>
-    <path d="M2,47 Q22,44 42,47 Q62,50 82,47 Q102,44 126,47" stroke="#dcc890" stroke-width="0.5" fill="none" opacity="0.6"/>
-    <path d="M2,68 Q22,65 42,68 Q62,71 82,68 Q102,65 126,68" stroke="#c0a868" stroke-width="1" fill="none"/>
-    <path d="M2,67 Q22,64 42,67 Q62,70 82,67 Q102,64 126,67" stroke="#dcc890" stroke-width="0.5" fill="none" opacity="0.6"/>
-    <path d="M2,88 Q22,85 42,88 Q62,91 82,88 Q102,85 126,88" stroke="#c0a868" stroke-width="1" fill="none"/>
-    <path d="M2,87 Q22,84 42,87 Q62,90 82,87 Q102,84 126,87" stroke="#dcc890" stroke-width="0.5" fill="none" opacity="0.6"/>
-    <path d="M2,108 Q22,105 42,108 Q62,111 82,108 Q102,105 126,108" stroke="#c0a868" stroke-width="0.8" fill="none"/>
+  <rect width="128" height="128" fill="url(#sSun)"/>
+  <path d="M0,80 Q32,65 64,72 Q96,79 128,68" stroke="#d4a830" stroke-width="1.5" fill="none" opacity="0.4"/>
+  <path d="M0,50 Q28,40 60,48 Q92,56 128,44" stroke="#d4a830" stroke-width="1.2" fill="none" opacity="0.35"/>
+  <path d="M0,100 Q40,88 80,95 Q110,100 128,92" stroke="#b89020" stroke-width="1" fill="none" opacity="0.3"/>
+  <path d="M0,25 Q35,18 65,24 Q95,30 128,20" stroke="#d0a828" stroke-width="1" fill="none" opacity="0.3"/>
+  <g stroke="#b8901c" stroke-width="0.7" fill="none" opacity="0.35">
+    <line x1="12" y1="30" x2="45" y2="35"/><line x1="15" y1="35" x2="48" y2="40"/>
+    <line x1="55" y1="20" x2="88" y2="25"/><line x1="58" y1="25" x2="91" y2="30"/>
+    <line x1="90" y1="42" x2="120" y2="47"/><line x1="92" y1="48" x2="122" y2="53"/>
+    <line x1="8" y1="58" x2="42" y2="63"/><line x1="10" y1="64" x2="44" y2="69"/>
+    <line x1="50" y1="75" x2="85" y2="80"/><line x1="52" y1="81" x2="87" y2="86"/>
+    <line x1="88" y1="68" x2="118" y2="73"/><line x1="90" y1="75" x2="120" y2="80"/>
+    <line x1="15" y1="88" x2="45" y2="93"/><line x1="17" y1="95" x2="47" y2="100"/>
+    <line x1="52" y1="100" x2="82" y2="105"/><line x1="54" y1="108" x2="84" y2="113"/>
+    <line x1="90" y1="95" x2="120" y2="100"/>
+    <line x1="22" y1="115" x2="55" y2="120"/><line x1="65" y1="118" x2="98" y2="123"/>
   </g>
-  <g fill="#a89060" opacity="0.35">
-    <circle cx="18" cy="22" r="1.5"/><circle cx="50" cy="15" r="1.2"/>
-    <circle cx="78" cy="42" r="1.4"/><circle cx="35" cy="58" r="1.1"/>
-    <circle cx="110" cy="35" r="1.3"/><circle cx="12" cy="55" r="1"/>
-    <circle cx="62" cy="78" r="1.3"/><circle cx="98" cy="68" r="1.1"/>
-    <circle cx="28" cy="95" r="1.2"/><circle cx="85" cy="100" r="1"/>
-    <circle cx="118" cy="90" r="0.9"/><circle cx="45" cy="115" r="1.1"/>
-    <circle cx="75" cy="112" r="1"/><circle cx="105" cy="115" r="0.8"/>
+  <g fill="#f8e898" opacity="0.4">
+    <ellipse cx="40" cy="68" rx="20" ry="5" transform="rotate(-8,40,68)"/>
+    <ellipse cx="90" cy="45" rx="16" ry="4" transform="rotate(-8,90,45)"/>
+    <ellipse cx="60" cy="95" rx="18" ry="4" transform="rotate(-8,60,95)"/>
   </g>
-  <g opacity="0.4">
-    <ellipse cx="72" cy="38" rx="3.5" ry="2" fill="#a89870" transform="rotate(25,72,38)"/>
-    <path d="M70,37 Q72,35 74,37" stroke="#988860" stroke-width="0.5" fill="none"/>
-    <ellipse cx="28" cy="82" rx="3" ry="1.8" fill="#b0a078" transform="rotate(-12,28,82)"/>
-    <ellipse cx="105" cy="60" rx="2.5" ry="1.5" fill="#a89068" transform="rotate(40,105,60)"/>
-  </g>
-  <g fill="#988050" opacity="0.12">
-    <ellipse cx="60" cy="50" rx="20" ry="12"/>
-    <ellipse cx="20" cy="75" rx="15" ry="10"/>
+  <g opacity="0.5">
+    <circle cx="20" cy="45" r="1.5" fill="#c09020"/>
+    <circle cx="45" cy="28" r="1.2" fill="#b88018"/>
+    <circle cx="82" cy="55" r="1.8" fill="#c09828"/>
+    <circle cx="108" cy="85" r="1.4" fill="#b88020"/>
+    <circle cx="35" cy="100" r="1.6" fill="#c0a028"/>
+    <circle cx="70" cy="115" r="1.3" fill="#b87818"/>
+    <circle cx="95" cy="110" r="1.5" fill="#c09020"/>
+    <circle cx="15" cy="75" r="1.4" fill="#b88018"/>
+    <circle cx="115" cy="55" r="1.2" fill="#c09528"/>
+    <path d="M60,40 Q65,35 70,40 Q67,44 63,44 Z" fill="#e8d898" opacity="0.7"/>
+    <path d="M100,20 Q104,16 108,20 Q106,23 102,23 Z" fill="#e8d898" opacity="0.6"/>
   </g>
 </svg>
