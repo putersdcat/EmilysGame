@@ -19,6 +19,20 @@ import {
   MICRO_TILE_SIZE,
 } from './types';
 
+// ─── Debug Mode ──────────────────────────────────────────────
+
+/**
+ * WALL_DEBUG_FLAT — when true, stone-wall SVGs render as solid flat colors
+ * with white outlines instead of brick textures. Use this to inspect geometry
+ * alignment at corners/tees before texturing. Set false to restore bricks.
+ *
+ *   Side face  → amber  #d4762a
+ *   Top cap H  → green  #4caf50
+ *   Top cap V  → blue   #1e88e5
+ *   Outlines   → white  1.5px
+ */
+const WALL_DEBUG_FLAT = false;
+
 // ─── Feature Configuration ───────────────────────────────────
 
 /** Nano tile kinds that participate in same-kind connection solving. */
@@ -417,14 +431,24 @@ export function isPointWalkableInTile(
  * so adjacent tiles don't look identical.
  */
 function stoneWallSvg(_variant: FeatureVariant): string {
-  // Side face SVG — make the SVG height match the actual wall height in screen px
-  // so we can reason about brick size directly in renderer space.
-  // Stone walls render at zOffset=4 → drawH=48px, which also matches the wall
-  // thickness in tile-local space (48). This gives a cleaner 1:1 texture design target.
   const SIDE_H = 48;
+  if (WALL_DEBUG_FLAT) {
+    // Flat amber fill + white border lines — pure geometry, no texture noise.
+    // Vertical tick marks every 16px help spot misalignment.
+    let ticks = '';
+    for (let x = 16; x < 128; x += 16) {
+      ticks += `<line x1="${x}" y1="0" x2="${x}" y2="${SIDE_H}" stroke="rgba(255,255,255,0.25)" stroke-width="0.5"/>`;
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H}" viewBox="0 0 128 ${SIDE_H}">`
+      + `<rect width="128" height="${SIDE_H}" fill="#d4762a"/>`
+      + ticks
+      + `<rect width="128" height="${SIDE_H}" fill="none" stroke="white" stroke-width="1.5"/>`
+      + `</svg>`;
+  }
+  const SIDE_H2 = 48;
   const seed = 0x4B57;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H}" viewBox="0 0 128 ${SIDE_H}">`
-    + runningBondH(0, 0, 128, SIDE_H, seed, 20, 9, 2)
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H2}" viewBox="0 0 128 ${SIDE_H2}">`
+    + runningBondH(0, 0, 128, SIDE_H2, seed, 20, 9, 2)
     + `</svg>`;
 }
 
@@ -481,18 +505,33 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
 
   if (!hasH && !hasV) {
     // isolated — centre square only
-    parts.push(runningBondH(off, off, W, W, seed, capBW, capBH, capBM));
+    if (WALL_DEBUG_FLAT) {
+      parts.push(`<rect x="${off}" y="${off}" width="${W}" height="${W}" fill="#4caf50"/>`);
+      parts.push(`<rect x="${off}" y="${off}" width="${W}" height="${W}" fill="none" stroke="white" stroke-width="1.5"/>`);
+    } else {
+      parts.push(runningBondH(off, off, W, W, seed, capBW, capBH, capBM));
+    }
   } else {
     // Pass 1: H strip
     const x0 = arms.left  ? 0   : off;
     const x1 = arms.right ? 128 : off + W;
-    parts.push(runningBondH(x0, off, x1 - x0, W, seed, capBW, capBH, capBM));
+    if (WALL_DEBUG_FLAT) {
+      parts.push(`<rect x="${x0}" y="${off}" width="${x1 - x0}" height="${W}" fill="#4caf50"/>`);
+      parts.push(`<rect x="${x0}" y="${off}" width="${x1 - x0}" height="${W}" fill="none" stroke="white" stroke-width="1.5"/>`);
+    } else {
+      parts.push(runningBondH(x0, off, x1 - x0, W, seed, capBW, capBH, capBM));
+    }
 
     // Pass 2: V strip (drawn on top so corners look like two walls meeting)
     if (hasV) {
       const y0 = arms.top    ? 0   : off;
       const y1 = arms.bottom ? 128 : off + W;
-      parts.push(runningBondV(off, y0, W, y1 - y0, seed, capBW, capBH, capBM));
+      if (WALL_DEBUG_FLAT) {
+        parts.push(`<rect x="${off}" y="${y0}" width="${W}" height="${y1 - y0}" fill="#1e88e5"/>`);
+        parts.push(`<rect x="${off}" y="${y0}" width="${W}" height="${y1 - y0}" fill="none" stroke="white" stroke-width="1.5"/>`);
+      } else {
+        parts.push(runningBondV(off, y0, W, y1 - y0, seed, capBW, capBH, capBM));
+      }
     }
   }
 

@@ -293,6 +293,11 @@ s identified
    - Current: procedural SVG
    - Recommendation: **Benchmark first (Phase 5); rasterize only if bottleneck identified**
 
+5. **MCP Debug Render Mode**: Expose `WALL_DEBUG_FLAT` (flat colors + outlines) as a parametric option on the MCP tools so geometry can be inspected without textures from the tool-call level (no source edit required).
+   - Current: `WALL_DEBUG_FLAT` constant in `solver.ts` — works but requires a source change
+   - Proposed: add `debugFlat?: boolean` param to `render_nano_tile` / `render_nano_scene` MCP tools; pass through to SVG generators via a context arg
+   - When to pursue: **after debug mode proves its value during stone-wall iteration (Phase 1)**
+
 5. **Evaluation PNG Versioning**: How to track visual changes across iterations?
    - Current: `stone-wall-perimeter-clean-v8.png`, `v9.png`, etc.
    - Recommendation: **Continue versioning; delete old versions after 2 iterations to save space**

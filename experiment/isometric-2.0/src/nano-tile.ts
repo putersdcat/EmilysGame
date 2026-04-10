@@ -429,7 +429,7 @@ export function drawExtrudedNano(
   //
   // @see GitHub Issue #211 for derivation.
 
-  const CORNER_TEE = ['corner-br','corner-bl','corner-tr','corner-tl','tee-t','tee-b','tee-r','tee-l'];
+  const CORNER_TEE = ['corner-br','corner-bl','corner-tr','corner-tl','tee-t','tee-b','tee-r','tee-l','isolated'];
   const isCornerOrTee = nano.variant !== undefined && CORNER_TEE.includes(nano.variant);
 
   if (isCornerOrTee && nano.sideTextureSvg) {
@@ -439,14 +439,19 @@ export function drawExtrudedNano(
     // Widths fit exact arm extent (arm length = WALL_OFFSET=40 or wall+arm = 88 or full=128)
     let sx0 = 0, sw = 128, ey0 = 0, ew = 128;
     switch (nano.variant) {
-      case 'corner-br': sx0 = 40; sw = 88; ey0 = 88; ew = 40; break;
-      case 'corner-bl': sx0 = 0;  sw = 88; ey0 = 88; ew = 40; break;
+      // Bottom-connecting top corners need the vertical interior face to span the
+      // centre core + bottom arm (y=40..128), not just the outer 40px arm. Using
+      // only the 40px segment made the cap appear to float / disappear on the
+      // wrong plane in corner-br and corner-bl.
+      case 'corner-br': sx0 = 40; sw = 88; ey0 = 40; ew = 88; break;
+      case 'corner-bl': sx0 = 0;  sw = 88; ey0 = 40; ew = 88; break;
       case 'corner-tr': sx0 = 40; sw = 88; ey0 = 0;  ew = 88; break;
       case 'corner-tl': sx0 = 0;  sw = 88; ey0 = 0;  ew = 88; break;
       case 'tee-t':     sx0 = 0;  sw = 128;ey0 = 0;  ew = 88; break;
       case 'tee-b':     sx0 = 0;  sw = 128;ey0 = 40; ew = 88; break;
       case 'tee-r':     sx0 = 40; sw = 88; ey0 = 0;  ew = 128;break;
       case 'tee-l':     sx0 = 0;  sw = 88; ey0 = 0;  ew = 128;break;
+      case 'isolated':   sx0 = 40; sw = 48; ey0 = 40; ew = 48;  break; // square pillar: 48px south + east faces, aligns with 48×48 top cap
     }
 
     const sideImg = loadSvgImage(nano.sideTextureSvg);
