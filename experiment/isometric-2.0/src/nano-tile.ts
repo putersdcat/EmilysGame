@@ -25,7 +25,6 @@ import {
 } from './types';
 import { loadSvgImage, Z_PX_PER_LEVEL } from './tile';
 import { computeShadowOffset } from './renderer';
-import { wallBounds } from './solver';
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -270,9 +269,8 @@ const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 
  *     sees the left arm extend toward them on the \ diagonal.
  *
  * @see solver.ts wallBounds() for the footprint layout that this must match.
- * Exported so AiTools game-tile-renderer.ts can share the same classification.
  */
-export function isVerticalWall(variant: FeatureVariant | undefined): boolean {
+function isVerticalWall(variant: FeatureVariant | undefined): boolean {
   switch (variant) {
     case 'straight-v':
     case 'end-t':
@@ -284,34 +282,6 @@ export function isVerticalWall(variant: FeatureVariant | undefined): boolean {
       return true;
     default:
       return false;     // straight-h, end-r, end-l, corner-tl, corner-bl, tee-t, tee-b, cross, isolated
-  }
-}
-
-/**
- * Returns true when the narrow end-cap face should be rendered for this variant.
- *
- * Mid-run tiles (straight-h, straight-v) and 4-way crossing tiles (cross)
- * connect on BOTH ends of their primary axis — no exposed terminus face visible.
- * Drawing the cap on these creates disconnected-post artifacts in long runs.
- *
- * All other variants (end-*, corner-*, tee-*, isolated, undefined/fallback) have
- * at least one exposed end on the primary axis and need the cap rendered.
- *
- * For corner-* and tee-* the cap represents the terminus of the primary arm arm.
- * The secondary arm's terminus is currently not separately rendered (future work).
- *
- * @see Issue #211 — end-cap chaining fix derivation.
- * Exported so AiTools game-tile-renderer.ts can share the same determination.
- */
-export function shouldDrawEndCap(variant: FeatureVariant | undefined): boolean {
-  switch (variant) {
-    case 'straight-h': // both ends connect east+west — no exposed face
-    case 'straight-v': // both ends connect north+south — no exposed face
-    case 'cross':      // 4-way: all arms connect to neighbors — no exposed face
-      return false;
-    default:
-      // end-r, end-l, end-t, end-b, isolated, corner-*, tee-*, undefined(fallback)
-      return true;
   }
 }
 
@@ -417,136 +387,55 @@ export function drawExtrudedNano(
     frontMat = 1;   // front draws RIGHT+DOWN (\ direction)
   }
 
-  // ── 1 + 2. Face rendering: corners/tees vs straights/ends ──────────────────────
-  //
-  // STRAIGHTS/ENDS: one primary face (128-wide) + optional narrow end cap.
-  // CORNERS/TEES:   two explicit faces, each sized to match the exact arm extent:
-  //   SOUTH face (\ on screen, mat=+1): y=88 plane, covers core+H-arms
-  //   EAST  face (/ on screen, mat=-1): x=88 plane, covers core+V-arms
-  //
-  // Iso anchor formula: tile(tx,ty) → (sX+HALF_W+tx-ty, sY+(tx+ty)/2)
-  //   South anchor = tile(sx0, 88) = (sX+HALF_W+sx0-88, sY+(sx0+88)/2)
-  //   East  anchor = tile(88, ey0) = (sX+HALF_W+88-ey0, sY+(88+ey0)/2)
-  //
-  // @see GitHub Issue #211 for derivation.
-
-  const CORNER_TEE = ['corner-br','corner-bl','corner-tr','corner-tl','tee-t','tee-b','tee-r','tee-l','isolated'];
-  const isCornerOrTee = nano.variant !== undefined && CORNER_TEE.includes(nano.variant);
-
-  if (isCornerOrTee && nano.sideTextureSvg) {
-    // ── CORNERS + TEES: explicit dual-arm geometry ───────────────────────────────
-    // South face params: sx0=tile-x start, sw=draw width (px)
-    // East  face params: ey0=tile-y start, ew=draw width (px)
-    // Widths fit exact arm extent (arm length = WALL_OFFSET=40 or wall+arm = 88 or full=128)
-    let sx0 = 0, sw = 128, ey0 = 0, ew = 128;
-    switch (nano.variant) {
-      // Bottom-connecting top corners need the vertical interior face to span the
-      // centre core + bottom arm (y=40..128), not just the outer 40px arm. Using
-      // only the 40px segment made the cap appear to float / disappear on the
-      // wrong plane in corner-br and corner-bl.
-      case 'corner-br': sx0 = 40; sw = 88; ey0 = 40; ew = 88; break;
-      case 'corner-bl': sx0 = 0;  sw = 88; ey0 = 40; ew = 88; break;
-      case 'corner-tr': sx0 = 40; sw = 88; ey0 = 0;  ew = 88; break;
-      case 'corner-tl': sx0 = 0;  sw = 88; ey0 = 0;  ew = 88; break;
-      case 'tee-t':     sx0 = 0;  sw = 128;ey0 = 0;  ew = 88; break;
-      case 'tee-b':     sx0 = 0;  sw = 128;ey0 = 40; ew = 88; break;
-      case 'tee-r':     sx0 = 40; sw = 88; ey0 = 0;  ew = 128;break;
-      case 'tee-l':     sx0 = 0;  sw = 88; ey0 = 0;  ew = 128;break;
-      case 'isolated':   sx0 = 40; sw = 48; ey0 = 40; ew = 48;  break; // square pillar: 48px south + east faces, aligns with 48×48 top cap
-    }
-
+  // ── 1. End cap (drawn first — further from camera) ─────────────────────────────
+  // Shadow face: narrower (WALL_THICKNESS=48px), darkened.
+  // Uses the OPPOSITE matrix sign from the front face.
+  if (nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (!sideImg) {
+    if (sideImg) {
+      ctx.save();
+      ctx.translate(capX, capY);
+      ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);  // opposite of front
+      ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
+      // Darken — end cap receives less direct sunlight
+      ctx.fillStyle = 'rgba(0,0,0,0.22)';
+      ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
+      ctx.restore();
+    } else {
       loaded = false;
-    } else {
-      // South anchor: tile(sx0, NE) in screen space
-      const sax = screenX + HALF_W + sx0 - NE;
-      const say = screenY + (sx0 + NE) / 2;
-      // East anchor: tile(NE, ey0) in screen space
-      const eax = screenX + HALF_W + NE - ey0;
-      const eay = screenY + (NE + ey0) / 2;
-
-      // Draw East face first (further from camera, in shadow)
-      // obelisk.js uses ~0.25–0.30 darkening on the right/east face for clear face differentiation
-      ctx.save();
-      ctx.translate(eax, eay);
-      ctx.transform(-1, 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, ew, drawH);
-      ctx.fillStyle = 'rgba(0,0,0,0.28)';
-      ctx.fillRect(0, -drawH, ew, drawH);
-      ctx.restore();
-
-      // Draw South face second (closer to camera — fully lit)
-      ctx.save();
-      ctx.translate(sax, say);
-      ctx.transform(1, 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, sw, drawH);
-      ctx.restore();
-    }
-  } else {
-    // ── STRAIGHTS + ENDS: end cap then primary face ──────────────────────────────
-
-    // ── 1. End cap (drawn first — further from camera) ───────────────────────────
-    // Narrow (WALL_THICKNESS=48px) darkened face for exposed arm termini.
-    if (shouldDrawEndCap(nano.variant) && nano.sideTextureSvg) {
-      const sideImg = loadSvgImage(nano.sideTextureSvg);
-      if (sideImg) {
-        ctx.save();
-        ctx.translate(capX, capY);
-        ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);
-        ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
-        ctx.fillStyle = 'rgba(0,0,0,0.28)';
-        ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
-        ctx.restore();
-      } else {
-        loaded = false;
-      }
-    }
-
-    // ── 2. Front face (drawn second — closer to camera) ──────────────────────────
-    if (nano.sideTextureSvg) {
-      const sideImg = loadSvgImage(nano.sideTextureSvg);
-      if (sideImg) {
-        ctx.save();
-        ctx.translate(frontX, frontY);
-        ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
-        ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
-        ctx.restore();
-      } else {
-        loaded = false;
-      }
-    } else {
-      if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
     }
   }
 
+  // ── 2. Front face (drawn second — closer to camera) ────────────────────────────
+  // Lit main surface: full tile length (MICRO_TILE_SIZE=128px).
+  if (nano.sideTextureSvg) {
+    const sideImg = loadSvgImage(nano.sideTextureSvg);
+    if (sideImg) {
+      ctx.save();
+      ctx.translate(frontX, frontY);
+      ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
+      ctx.restore();
+    } else {
+      loaded = false;
+    }
+  } else {
+    // No dedicated side texture — fall back to billboard rendering
+    if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
+  }
+
   // ── 3. Top cap: flat iso at elevated position  ──────────────────────────────────
-  // topTextureSvg fills only the wall footprint strip. The footprint is not
-  // always centered in tile-local space for corners/tees, so we offset the
-  // cap anchor to the actual wall footprint center before projecting.
+  // topTextureSvg fills only the wall footprint strip (y=40..88 in tile-local).
+  // Iso projection at elevatedY = screenY − drawH places it atop both side faces.
+  //
+  // Alignment proof: tile(128, 88) under iso transform at elevatedY maps to
+  //   (cx + 40, elevatedY + 108) — the Z-edge top corner, where both face
+  //   tops also converge. Top cap sits flush on the V-shaped face pair. ✓
   if (nano.topTextureSvg) {
     const topImg = loadSvgImage(nano.topTextureSvg);
     if (topImg) {
-      const elevatedOffset = screenY - drawH;
-      let cx = screenX + HALF_W;
-      let elevatedY = elevatedOffset;
-
-      if (nano.variant) {
-        const { rects } = wallBounds(nano.variant);
-        let minX = MICRO_TILE_SIZE, maxX = 0, minY = MICRO_TILE_SIZE, maxY = 0;
-        for (const r of rects) {
-          minX = Math.min(minX, r.x);
-          maxX = Math.max(maxX, r.x + r.w);
-          minY = Math.min(minY, r.y);
-          maxY = Math.max(maxY, r.y + r.h);
-        }
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const dx = centerX - HALF_W;
-        const dy = centerY - HALF_H;
-        cx += dx - dy;
-        elevatedY += (dx + dy) / 2;
-      }
+      const elevatedY = screenY - drawH;
+      const cx = screenX + HALF_W;
 
       ctx.save();
       clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);

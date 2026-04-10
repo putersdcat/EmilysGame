@@ -16,9 +16,6 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { Image } from '@napi-rs/canvas';
-
-globalThis.Image = globalThis.Image ?? Image;
 
 import { renderSvg, renderAnimatedSvg } from './svg-renderer-tool.js';
 import { renderGeoProof, renderVariationSweep } from './proof-renderer.js';
@@ -237,19 +234,18 @@ async function dispatch(): Promise<WorkerResult> {
 
     // ── render_nano_tile ──────────────────────────────────────
     case 'render_nano_tile': {
-      const { kind, variant, zOffset, width, height, background, wallDebugFlat } = args as Record<string, any>;
-      const r = await renderNanoTile(kind, { variant, zOffset, width, height, background, wallDebugFlat });
+      const { kind, variant, zOffset, width, height, background } = args as Record<string, any>;
+      const r = await renderNanoTile(kind, { variant, zOffset, width, height, background });
       const m: Record<string, unknown> = {
         kind, variant: variant ?? 'straight-h',
         width: r.width, height: r.height, renderTimeMs: r.renderTimeMs, bytes: r.png.length,
-        wallDebugFlat: wallDebugFlat ?? false,
       };
       return { ok: true, content: [img(r.png.toString('base64')), metaTxt(m)], structuredContent: m };
     }
 
     // ── render_nano_scene ─────────────────────────────────────
     case 'render_nano_scene': {
-      const { entries, players: rawPlayers, width, height, debug, background, outputPath, wallDebugFlat } = args as Record<string, any>;
+      const { entries, players: rawPlayers, width, height, debug, background, outputPath } = args as Record<string, any>;
       const sceneEntries: CanvasSceneEntry[] = (entries ?? []).map((e: Record<string, any>) => ({
         kind: e.kind, col: e.col, row: e.row,
         variant: e.variant as CanvasSceneEntry['variant'],
@@ -258,7 +254,7 @@ async function dispatch(): Promise<WorkerResult> {
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
         col: p.col, row: p.row, label: p.label,
       }));
-      const r = await renderNanoScene(sceneEntries, { width, height, debug, background, players: playerEntries, wallDebugFlat });
+      const r = await renderNanoScene(sceneEntries, { width, height, debug, background, players: playerEntries });
       if (outputPath) savePng(outputPath, r.png);
       const m: Record<string, unknown> = {
         tileCount: sceneEntries.length, playerCount: playerEntries.length,

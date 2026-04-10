@@ -24,7 +24,7 @@ import type { SKRSContext2D } from '@napi-rs/canvas';
 import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
-import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg, setWallDebugFlat } from '../src/solver.js';
+import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg } from '../src/solver.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -49,7 +49,7 @@ const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
 
 /** Z offset defaults per kind (matches NANO_Z in scene-registry.ts) */
 const NANO_Z: Partial<Record<string, number>> = {
-  'stone-wall':     4,
+  'stone-wall':     3.5,
   'cathedral-wall': 6,
   'homestead-wall': 3,
   'fence':          2,
@@ -118,8 +118,6 @@ export interface CanvasSceneOptions {
   debug?: boolean;
   background?: string;
   players?: CanvasPlayerEntry[];
-  /** When true, solver renders flat debug colors instead of brick textures. */
-  wallDebugFlat?: boolean;
 }
 
 export interface CanvasRenderResult {
@@ -354,7 +352,6 @@ export async function renderNanoTile(
     width?: number;
     height?: number;
     background?: string;
-    wallDebugFlat?: boolean;
   } = {},
 ): Promise<CanvasRenderResult> {
   const t0      = Date.now();
@@ -367,8 +364,6 @@ export async function renderNanoTile(
 
   const canvas = createCanvas(width, height);
   const ctx    = canvas.getContext('2d') as SKRSContext2D;
-
-  if (opts.wallDebugFlat !== undefined) setWallDebugFlat(opts.wallDebugFlat);
 
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
@@ -393,8 +388,6 @@ export async function renderNanoTile(
   if (TERRAIN_COLORS[kind]) {
     drawTerrainTile(ctx, 0, 0, kind, screenX + HALF_W, screenY + HALF_H);
   } else {
-    // Always draw a grass base so the inner-corner void shows ground, not background.
-    drawTerrainTile(ctx, 0, 0, 'grass', screenX + HALF_W, screenY + HALF_H);
     const nano = buildNanoTile(entry);
     if (nano) {
       // Pass through drawNanoStack — it dispatches to the correct draw function.
@@ -423,8 +416,6 @@ export async function renderNanoScene(
   const players = opts.players ?? [];
   const bg      = opts.background ?? '#1a1f2b';
 
-  if (opts.wallDebugFlat !== undefined) setWallDebugFlat(opts.wallDebugFlat);
-
   await preloadTextures(collectSvgStrings(entries));
 
   const canvas = createCanvas(width, height);
@@ -437,28 +428,13 @@ export async function renderNanoScene(
   const { ox, oy } = computeOrigin(entries, players, width, height);
 
   // Sort all entries back-to-front by painter's key col+row
-  const sorted = [...entries].sort((a, b) => {
-    const da = (a.col + a.row) - (b.col + b.row);
-    if (da !== 0) return da;
-    const dr = a.row - b.row;
-    if (dr !== 0) return dr;
-    return a.col - b.col;
-  });
+  const sorted = [...entries].sort((a, b) => (a.col + a.row) - (b.col + b.row));
   const terrain = sorted.filter(e => TERRAIN_COLORS[e.kind]);
   const nanos   = sorted.filter(e => !TERRAIN_COLORS[e.kind]);
 
   // ── Pass 1: terrain ──────────────────────────────────────────
-  // Explicit terrain entries first.
   for (const e of terrain) {
     drawTerrainTile(ctx, e.col, e.row, e.kind, ox, oy);
-  }
-  // Auto-grass: any nano position without an explicit terrain tile gets grass
-  // so that the inner-corner void shows ground rather than background.
-  const terrainPositions = new Set(terrain.map(e => `${e.col},${e.row}`));
-  for (const e of nanos) {
-    if (!terrainPositions.has(`${e.col},${e.row}`)) {
-      drawTerrainTile(ctx, e.col, e.row, 'grass', ox, oy);
-    }
   }
 
   // ── Pass 2: debug walkability overlay over terrain ───────────
@@ -489,17 +465,7 @@ export async function renderNanoScene(
   const drawItems: DrawItem[] = [
     ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: e.col + e.row,       entry: e  })),
     ...players.map(            p  => ({ kind: 'player' as const, depth: p.col + p.row + 0.5, player: p })),
-  ].sort((a, b) => {
-    if (a.depth !== b.depth) return a.depth - b.depth;
-    if (a.kind === 'nano' && b.kind === 'nano') {
-      const aEntry = a.entry;
-      const bEntry = b.entry;
-      const dr = aEntry.row - bEntry.row;
-      if (dr !== 0) return dr;
-      return aEntry.col - bEntry.col;
-    }
-    return a.kind === 'nano' ? -1 : 1;
-  });
+  ].sort((a, b) => a.depth - b.depth);
 
   for (const item of drawItems) {
     if (item.kind === 'nano') {
