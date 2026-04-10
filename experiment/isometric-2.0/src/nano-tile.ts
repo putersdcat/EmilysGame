@@ -25,6 +25,7 @@ import {
 } from './types';
 import { loadSvgImage, Z_PX_PER_LEVEL } from './tile';
 import { computeShadowOffset } from './renderer';
+import { wallBounds } from './solver';
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -465,18 +466,9 @@ export function drawExtrudedNano(
       const eax = screenX + HALF_W + NE - ey0;
       const eay = screenY + (NE + ey0) / 2;
 
-      // Corner seam: the V-ridge peak sits at tile(NE,NE) → screen x = screenX + HALF_W.
-      // Each face is clipped to its own side of this vertical seam so brick texture
-      // from one face never bleeds across the ridge onto the other face.
-      const seam = screenX + HALF_W;
-
       // Draw East face first (further from camera, in shadow)
-      // Clip to x >= seam (right/east side of corner ridge)
       // obelisk.js uses ~0.25–0.30 darkening on the right/east face for clear face differentiation
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(seam, -50000, 100000, 200000);
-      ctx.clip();
       ctx.translate(eax, eay);
       ctx.transform(-1, 0.5, 0, 1, 0, 0);
       ctx.drawImage(sideImg, 0, -drawH, ew, drawH);
@@ -485,11 +477,7 @@ export function drawExtrudedNano(
       ctx.restore();
 
       // Draw South face second (closer to camera — fully lit)
-      // Clip to x <= seam (left/south side of corner ridge)
       ctx.save();
-      ctx.beginPath();
-      ctx.rect(-50000, -50000, 50000 + seam, 200000);
-      ctx.clip();
       ctx.translate(sax, say);
       ctx.transform(1, 0.5, 0, 1, 0, 0);
       ctx.drawImage(sideImg, 0, -drawH, sw, drawH);
@@ -533,17 +521,32 @@ export function drawExtrudedNano(
   }
 
   // ── 3. Top cap: flat iso at elevated position  ──────────────────────────────────
-  // topTextureSvg fills only the wall footprint strip (y=40..88 in tile-local).
-  // Iso projection at elevatedY = screenY − drawH places it atop both side faces.
-  //
-  // Alignment proof: tile(128, 88) under iso transform at elevatedY maps to
-  //   (cx + 40, elevatedY + 108) — the Z-edge top corner, where both face
-  //   tops also converge. Top cap sits flush on the V-shaped face pair. ✓
+  // topTextureSvg fills only the wall footprint strip. The footprint is not
+  // always centered in tile-local space for corners/tees, so we offset the
+  // cap anchor to the actual wall footprint center before projecting.
   if (nano.topTextureSvg) {
     const topImg = loadSvgImage(nano.topTextureSvg);
     if (topImg) {
-      const elevatedY = screenY - drawH;
-      const cx = screenX + HALF_W;
+      const elevatedOffset = screenY - drawH;
+      let cx = screenX + HALF_W;
+      let elevatedY = elevatedOffset;
+
+      if (nano.variant) {
+        const { rects } = wallBounds(nano.variant);
+        let minX = MICRO_TILE_SIZE, maxX = 0, minY = MICRO_TILE_SIZE, maxY = 0;
+        for (const r of rects) {
+          minX = Math.min(minX, r.x);
+          maxX = Math.max(maxX, r.x + r.w);
+          minY = Math.min(minY, r.y);
+          maxY = Math.max(maxY, r.y + r.h);
+        }
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const dx = centerX - HALF_W;
+        const dy = centerY - HALF_H;
+        cx += dx - dy;
+        elevatedY += (dx + dy) / 2;
+      }
 
       ctx.save();
       clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);

@@ -24,7 +24,7 @@ import type { SKRSContext2D } from '@napi-rs/canvas';
 import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
-import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg } from '../src/solver.js';
+import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg, setWallDebugFlat } from '../src/solver.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -118,6 +118,8 @@ export interface CanvasSceneOptions {
   debug?: boolean;
   background?: string;
   players?: CanvasPlayerEntry[];
+  /** When true, solver renders flat debug colors instead of brick textures. */
+  wallDebugFlat?: boolean;
 }
 
 export interface CanvasRenderResult {
@@ -352,6 +354,7 @@ export async function renderNanoTile(
     width?: number;
     height?: number;
     background?: string;
+    wallDebugFlat?: boolean;
   } = {},
 ): Promise<CanvasRenderResult> {
   const t0      = Date.now();
@@ -364,6 +367,8 @@ export async function renderNanoTile(
 
   const canvas = createCanvas(width, height);
   const ctx    = canvas.getContext('2d') as SKRSContext2D;
+
+  if (opts.wallDebugFlat !== undefined) setWallDebugFlat(opts.wallDebugFlat);
 
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
@@ -418,6 +423,8 @@ export async function renderNanoScene(
   const players = opts.players ?? [];
   const bg      = opts.background ?? '#1a1f2b';
 
+  if (opts.wallDebugFlat !== undefined) setWallDebugFlat(opts.wallDebugFlat);
+
   await preloadTextures(collectSvgStrings(entries));
 
   const canvas = createCanvas(width, height);
@@ -430,7 +437,13 @@ export async function renderNanoScene(
   const { ox, oy } = computeOrigin(entries, players, width, height);
 
   // Sort all entries back-to-front by painter's key col+row
-  const sorted = [...entries].sort((a, b) => (a.col + a.row) - (b.col + b.row));
+  const sorted = [...entries].sort((a, b) => {
+    const da = (a.col + a.row) - (b.col + b.row);
+    if (da !== 0) return da;
+    const dr = a.row - b.row;
+    if (dr !== 0) return dr;
+    return a.col - b.col;
+  });
   const terrain = sorted.filter(e => TERRAIN_COLORS[e.kind]);
   const nanos   = sorted.filter(e => !TERRAIN_COLORS[e.kind]);
 
@@ -476,7 +489,17 @@ export async function renderNanoScene(
   const drawItems: DrawItem[] = [
     ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: e.col + e.row,       entry: e  })),
     ...players.map(            p  => ({ kind: 'player' as const, depth: p.col + p.row + 0.5, player: p })),
-  ].sort((a, b) => a.depth - b.depth);
+  ].sort((a, b) => {
+    if (a.depth !== b.depth) return a.depth - b.depth;
+    if (a.kind === 'nano' && b.kind === 'nano') {
+      const aEntry = a.entry;
+      const bEntry = b.entry;
+      const dr = aEntry.row - bEntry.row;
+      if (dr !== 0) return dr;
+      return aEntry.col - bEntry.col;
+    }
+    return a.kind === 'nano' ? -1 : 1;
+  });
 
   for (const item of drawItems) {
     if (item.kind === 'nano') {

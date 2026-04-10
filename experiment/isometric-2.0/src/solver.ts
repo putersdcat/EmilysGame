@@ -31,7 +31,15 @@ import {
  *   Top cap V  → blue   #1e88e5
  *   Outlines   → white  1.5px
  */
-const WALL_DEBUG_FLAT = false;
+let WALL_DEBUG_FLAT = false;
+
+/**
+ * Toggle flat-colour debug rendering without editing this file.
+ * If `v` is undefined, the current state is preserved.
+ */
+export function setWallDebugFlat(v?: boolean): void {
+  if (v !== undefined) WALL_DEBUG_FLAT = v;
+}
 
 // ─── Feature Configuration ───────────────────────────────────
 
@@ -184,18 +192,18 @@ const BRICK_W = 36;
 const BRICK_H = 14;
 const BRICK_M = 4;  // mortar thickness
 
-// Earthy brick palette: [r,g,b] tuples
+// Medieval stone palette: [r,g,b] — grey granite/limestone with warm undertone
 const BRICK_PALETTE: [number, number, number][] = [
-  [160, 78, 58],   // terracotta
-  [148, 68, 48],   // deep terracotta
-  [144, 104, 78],  // warm brown
-  [124, 90, 68],   // medium brown
-  [118, 86, 62],   // dark brown
-  [152, 124, 98],  // tan
-  [132, 118, 104], // warm grey
-  [112, 100, 90],  // stone grey
+  [128, 122, 114], // warm light grey
+  [112, 108,  98], // medium grey-stone
+  [102,  98,  92], // medium-dark grey
+  [142, 136, 126], // pale warm stone
+  [118, 114, 108], // cool grey
+  [ 96,  94,  88], // dark grey
+  [ 90,  88,  84], // slate grey
+  [124, 120, 114], // blue-grey stone
 ];
-const MORTAR_COLOR = '#c2b8b0'; // light warm-grey mortar
+const MORTAR_COLOR = '#3e3c3a'; // deep grey-brown recessed mortar
 
 /**
  * Seamless running-bond brick fill for a rectangle in tile-local 128-unit space.
@@ -229,12 +237,14 @@ function runningBondH(x: number, y: number, w: number, h: number, seed: number,
       const b = Math.max(0, Math.min(255, bb + v));
 
       out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="${rh}" fill="rgb(${r},${g},${b})"/>`);
+      // Top-edge lit highlight (obelisk.js face-edge technique)
       if (ry2 === ry && rh >= 3)
-        out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="2" fill="rgba(255,255,255,0.14)"/>`);
-      if (ry + bH <= y + h) {
-        const sy = Math.min(ry + bH - 2, y + h - 1);
-        if (sy >= y && rh + ry2 >= sy + 2)
-          out.push(`<rect x="${rx}" y="${sy}" width="${rw}" height="2" fill="rgba(0,0,0,0.18)"/>`);
+        out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="2" fill="rgba(255,255,255,0.28)"/>`);
+      // Bottom-edge shadow (mortar joint depth illusion)
+      if (rh >= 3) {
+        const bot = ry2 + rh - 2;
+        if (bot >= y)
+          out.push(`<rect x="${rx}" y="${bot}" width="${rw}" height="2" fill="rgba(0,0,0,0.38)"/>`);
       }
       colIdx++;
     }
@@ -280,14 +290,14 @@ function runningBondV(x: number, y: number, w: number, h: number, seed: number,
       const b = Math.max(0, Math.min(255, bb + v));
 
       out.push(`<rect x="${rx}" y="${ry2}" width="${rw}" height="${rh}" fill="rgb(${r},${g},${b})"/>`);
-      // Left-edge highlight
+      // Left-edge lit highlight
       if (rx === cx && rw >= 3)
-        out.push(`<rect x="${rx}" y="${ry2}" width="2" height="${rh}" fill="rgba(255,255,255,0.14)"/>`);
-      // Right-edge shadow
-      if (cx + bH <= x + w) {
-        const sx = Math.min(cx + bH - 2, x + w - 1);
-        if (sx >= x && rw + rx >= sx + 2)
-          out.push(`<rect x="${sx}" y="${ry2}" width="2" height="${rh}" fill="rgba(0,0,0,0.18)"/>`);
+        out.push(`<rect x="${rx}" y="${ry2}" width="2" height="${rh}" fill="rgba(255,255,255,0.28)"/>`);
+      // Right-edge shadow (mortar joint depth)
+      if (rw >= 3) {
+        const rside = rx + rw - 2;
+        if (rside >= x)
+          out.push(`<rect x="${rside}" y="${ry2}" width="2" height="${rh}" fill="rgba(0,0,0,0.38)"/>`);
       }
       rowIdx++;
     }
@@ -447,8 +457,9 @@ function stoneWallSvg(_variant: FeatureVariant): string {
   }
   const SIDE_H2 = 48;
   const seed = 0x4B57;
+  // Stone block proportions: 28×12 with 3px mortar → castle wall scale (~4 stones/row, ~3 rows)
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="${SIDE_H2}" viewBox="0 0 128 ${SIDE_H2}">`
-    + runningBondH(0, 0, 128, SIDE_H2, seed, 20, 9, 2)
+    + runningBondH(0, 0, 128, SIDE_H2, seed, 28, 12, 3)
     + `</svg>`;
 }
 
@@ -474,11 +485,9 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const off = 40; // (128-W)/2 — matches drawExtrudedNano WALL_OFFSET
   const seed = 0x4B57; // same base seed as side face for colour continuity
 
-  // Top cap units are stretched by the iso basis length sqrt(1^2 + 0.5^2) ≈ 1.118.
-  // Side bricks are authored at 20×9 with 2px mortar, so shrink the top texture
-  // to ~1/1.118 of those dimensions for a true 1:1 visual brick size match.
-  // 20 / 1.118 ≈ 17.9 → 18, 9 / 1.118 ≈ 8.0 → 8, 2 / 1.118 ≈ 1.8 → 2.
-  const capBW = 18, capBH = 8, capBM = 2;
+  // Top cap stone dimensions: slightly smaller than side (24×10, 3px mortar) to
+  // compensate for iso squish and match apparent stone scale of side face.
+  const capBW = 24, capBH = 10, capBM = 3;
   const parts: string[] = [];
 
   // Determine which cardinal arms are present for this variant

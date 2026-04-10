@@ -219,6 +219,7 @@ server.registerTool('render_nano_tile', {
     width: z.number().int().min(150).max(800).optional().describe('Canvas width. Default: 320.'),
     height: z.number().int().min(150).max(800).optional().describe('Canvas height. Default: 320.'),
     background: z.string().optional().describe('Background color CSS. Default: "#0d1117".'),
+    wallDebugFlat: z.boolean().optional().describe('Render wall tiles as flat debug colors instead of textures. Default: false.'),
   },
 }, async (args) => spawnWorker('render_nano_tile', args));
 
@@ -239,6 +240,7 @@ server.registerTool('render_nano_scene', {
     width: z.number().int().min(200).max(2400).optional().describe('Canvas width. Default: 900.'),
     height: z.number().int().min(150).max(1600).optional().describe('Canvas height. Default: 600.'),
     debug: z.boolean().optional().describe('Draw walkability overlay + tile grid. Default: false.'),
+    wallDebugFlat: z.boolean().optional().describe('Render wall tiles as flat debug colors (amber face, green/blue top) instead of brick textures. Default: false.'),
     background: z.string().optional().describe('Background color. Default: "#1a1f2b".'),
     outputPath: z.string().optional().describe('Absolute or workspace-relative path to write the PNG file to disk.'),
   },
