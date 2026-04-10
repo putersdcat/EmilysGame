@@ -465,17 +465,31 @@ export function drawExtrudedNano(
       const eax = screenX + HALF_W + NE - ey0;
       const eay = screenY + (NE + ey0) / 2;
 
-      // Draw East face first (further from camera — slight shadow ~0.14)
+      // Corner seam: the V-ridge peak sits at tile(NE,NE) → screen x = screenX + HALF_W.
+      // Each face is clipped to its own side of this vertical seam so brick texture
+      // from one face never bleeds across the ridge onto the other face.
+      const seam = screenX + HALF_W;
+
+      // Draw East face first (further from camera, in shadow)
+      // Clip to x >= seam (right/east side of corner ridge)
+      // obelisk.js uses ~0.25–0.30 darkening on the right/east face for clear face differentiation
       ctx.save();
+      ctx.beginPath();
+      ctx.rect(seam, -50000, 100000, 200000);
+      ctx.clip();
       ctx.translate(eax, eay);
       ctx.transform(-1, 0.5, 0, 1, 0, 0);
       ctx.drawImage(sideImg, 0, -drawH, ew, drawH);
-      ctx.fillStyle = 'rgba(0,0,0,0.14)';
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
       ctx.fillRect(0, -drawH, ew, drawH);
       ctx.restore();
 
       // Draw South face second (closer to camera — fully lit)
+      // Clip to x <= seam (left/south side of corner ridge)
       ctx.save();
+      ctx.beginPath();
+      ctx.rect(-50000, -50000, 50000 + seam, 200000);
+      ctx.clip();
       ctx.translate(sax, say);
       ctx.transform(1, 0.5, 0, 1, 0, 0);
       ctx.drawImage(sideImg, 0, -drawH, sw, drawH);
@@ -493,7 +507,7 @@ export function drawExtrudedNano(
         ctx.translate(capX, capY);
         ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);
         ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
-        ctx.fillStyle = 'rgba(0,0,0,0.22)';
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
         ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
         ctx.restore();
       } else {
