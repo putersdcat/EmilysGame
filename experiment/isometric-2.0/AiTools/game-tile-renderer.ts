@@ -269,14 +269,9 @@ function buildExtrudedFacesAt(
     if (!eastOccluded(r)) {
       const ex = isoX(r.x + r.w, r.y);
       const ey = isoY(r.x + r.w, r.y);
-      // East face is shaded slightly darker (less direct sun than south face)
       faces.push(
         `<image href="${sideHref}" x="0" y="-${drawH}" width="${r.h}" height="${drawH}" ` +
         `transform="matrix(-1,0.5,0,1,${ex},${ey})" preserveAspectRatio="none"/>`
-      );
-      faces.push(
-        `<rect x="0" y="-${drawH}" width="${r.h}" height="${drawH}" fill="rgba(0,0,0,0.18)" ` +
-        `transform="matrix(-1,0.5,0,1,${ex},${ey})"/>`
       );
     }
   }
