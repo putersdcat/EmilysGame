@@ -324,7 +324,7 @@ function capStonesV(x: number, y: number, h: number, seed: number, capW = 6): st
 }
 
 /** Get wall footprint bounds based on variant and connection direction. */
-function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
+export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48; // wall thickness
   const off = (128 - W) / 2; // 40
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
@@ -371,7 +371,7 @@ function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,
  * The variant param is used to seed pseudo-random stone block variation
  * so adjacent tiles don't look identical.
  */
-function stoneWallSvg(variant: FeatureVariant): string {
+export function stoneWallSvg(variant: FeatureVariant): string {
   const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
   const parts: string[] = [];
 

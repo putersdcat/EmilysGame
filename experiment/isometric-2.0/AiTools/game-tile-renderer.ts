@@ -31,7 +31,7 @@
  * TODO: DOC — extend for animated tiles, custom assembly scenes
  */
 
-import { getVariantSvg, woodenFenceSvg, stoneWallTopSvg } from '../src/solver.js';
+import { getVariantSvg, woodenFenceSvg, stoneWallTopSvg, wallBounds, stoneWallSvg } from '../src/solver.js';
 import type { FeatureVariant, FeatureConnections, NanoTileKind } from '../src/types.js';
 import { renderSvg, type RenderResult } from './svg-renderer-tool.js';
 
@@ -204,9 +204,26 @@ function buildExtrudedSvg(
 }
 
 /**
- * Internal: build just the 3 face <image>/<rect> elements for an extruded nano.
- * No outer SVG, no background rect, no reference polygon.
+ * Internal: build per-rect extruded face elements for an extruded nano.
+ *
+ * For each rect in solver.ts wallBounds(variant), emits two camera-facing
+ * faces (south + east), skipping any face that is occluded by another rect
+ * within the same tile (interior seams that would never be visible).
+ *
+ * This replaces the legacy single-front-face approach which over-rendered
+ * "phantom brick" along the full 128px tile length and missed the second
+ * arm of corner / tee variants entirely. With per-rect faces, every visible
+ * exposed surface of the L / T / + footprint gets its own properly-sized
+ * brick face, and corners look like solid 3D corners.
+ *
+ * The top cap continues to use stoneWallTopSvg, which already paints the
+ * footprint as an L / T / + shape on the elevated diamond surface.
+ *
  * Coordinates are relative to anchor (sX, sY) = tile bounding-box top-left.
+ *
+ * Iso projection (tile-local → screen, relative to (sX, sY)):
+ *   sx = sX + tx - ty + HALF_W
+ *   sy = sY + (tx + ty) / 2
  */
 function buildExtrudedFacesAt(
   sideSvg: string,
@@ -219,37 +236,58 @@ function buildExtrudedFacesAt(
   const drawH    = Math.max(zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
   const sideHref = svgToDataUri(sideSvg);
   const topHref  = svgToDataUri(topSvg);
-  const NE = WALL_OFFSET + WALL_THICKNESS; // 88
 
-  const vertical = isVerticalWall(variant);
-  const hasCap   = shouldDrawEndCap(variant);
+  const { rects } = wallBounds(variant);
 
-  let frontX: number, frontY: number, capX: number, capY: number, frontMat: 1 | -1;
-  if (vertical) {
-    frontX   = sX + HALF_W + NE;
-    frontY   = sY + NE / 2;
-    capX     = sX + HALF_W + WALL_OFFSET - MICRO_TILE_SIZE;
-    capY     = sY + (WALL_OFFSET + MICRO_TILE_SIZE) / 2;
-    frontMat = -1;
-  } else {
-    frontX   = sX + HALF_W - NE;
-    frontY   = sY + NE / 2;
-    capX     = sX + HALF_W + MICRO_TILE_SIZE - WALL_OFFSET;
-    capY     = sY + (MICRO_TILE_SIZE + WALL_OFFSET) / 2;
-    frontMat = 1;
+  // Same-tile occlusion checks: a face is hidden if another rect abuts it directly.
+  function southOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
+    return rects.some(o => o !== r && o.y === r.y + r.h
+      && o.x < r.x + r.w && o.x + o.w > r.x);
+  }
+  function eastOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
+    return rects.some(o => o !== r && o.x === r.x + r.w
+      && o.y < r.y + r.h && o.y + o.h > r.y);
   }
 
+  // Iso project a tile-local (tx, ty) into bounding-box screen coords.
+  const isoX = (tx: number, ty: number) => sX + tx - ty + HALF_W;
+  const isoY = (tx: number, ty: number) => sY + (tx + ty) / 2;
+
+  const faces: string[] = [];
+
+  for (const r of rects) {
+    // ── SOUTH (front) face: anchored at iso(r.x, r.y + r.h), width = r.w ──
+    if (!southOccluded(r)) {
+      const ex = isoX(r.x, r.y + r.h);
+      const ey = isoY(r.x, r.y + r.h);
+      faces.push(
+        `<image href="${sideHref}" x="0" y="-${drawH}" width="${r.w}" height="${drawH}" ` +
+        `transform="matrix(1,0.5,0,1,${ex},${ey})" preserveAspectRatio="none"/>`
+      );
+    }
+    // ── EAST (right side) face: anchored at iso(r.x + r.w, r.y), width = r.h ──
+    if (!eastOccluded(r)) {
+      const ex = isoX(r.x + r.w, r.y);
+      const ey = isoY(r.x + r.w, r.y);
+      // East face is shaded slightly darker (less direct sun than south face)
+      faces.push(
+        `<image href="${sideHref}" x="0" y="-${drawH}" width="${r.h}" height="${drawH}" ` +
+        `transform="matrix(-1,0.5,0,1,${ex},${ey})" preserveAspectRatio="none"/>`
+      );
+      faces.push(
+        `<rect x="0" y="-${drawH}" width="${r.h}" height="${drawH}" fill="rgba(0,0,0,0.18)" ` +
+        `transform="matrix(-1,0.5,0,1,${ex},${ey})"/>`
+      );
+    }
+  }
+
+  // ── Top cap: flat iso of stoneWallTopSvg at elevated height ──
   const cx        = sX + HALF_W;
   const elevatedY = sY - drawH;
+  const topFace = `<image href="${topHref}" x="0" y="0" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" ` +
+    `transform="matrix(1,0.5,-1,0.5,${cx},${elevatedY})" preserveAspectRatio="none"/>`;
 
-  const capImg    = hasCap
-    ? `<image href="${sideHref}" x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})" preserveAspectRatio="none"/>\n  `
-    : '';
-  const capDarken = hasCap
-    ? `<rect x="0" y="-${drawH}" width="${WALL_THICKNESS}" height="${drawH}" fill="rgba(0,0,0,0.22)" transform="matrix(${-frontMat},0.5,0,1,${capX},${capY})"/>\n  `
-    : '';
-
-  return `${capImg}${capDarken}<image href="${sideHref}" x="0" y="-${drawH}" width="${MICRO_TILE_SIZE}" height="${drawH}" transform="matrix(${frontMat},0.5,0,1,${frontX},${frontY})" preserveAspectRatio="none"/>\n  <image href="${topHref}" x="0" y="0" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" transform="matrix(1,0.5,-1,0.5,${cx},${elevatedY})" preserveAspectRatio="none"/>`;
+  return faces.join('\n  ') + '\n  ' + topFace;
 }
 
 /**

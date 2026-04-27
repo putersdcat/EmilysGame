@@ -481,8 +481,24 @@ function wrapIsometricAssembly(
       out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, 0)" opacity="0.7">`;
       out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
 
+    } else if (item.renderMode === 'extruded') {
+      // Pre-positioned 3-face extruded markup (stone-wall, etc).
+      // The svg already contains absolute coordinates inside the 256×128 tile
+      // bounding box (sX=0, sY=0 in buildExtrudedFaceMarkup), with each face
+      // carrying its own matrix(...) transform anchored at the correct
+      // tile-local position. We must NOT re-wrap in the billboard transform
+      // (translate→shear→translate) and we must NOT clip to a 128×128 viewBox —
+      // both would offset the faces and chop off the right end cap.
+      // Just emit the markup directly inside the per-tile <g translate(drawX,drawY)>.
+      out += innerContent;
+
+      if (debug) {
+        out += `<line x1="0" y1="${HALF_H}" x2="0" y2="${HALF_H - MICRO_TILE}" stroke="#4af" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+        out += `<text x="4" y="${HALF_H - MICRO_TILE - 2}" font-size="9" font-family="monospace" fill="#4af">z=${zOffset}</text>`;
+      }
+
     } else {
-      // Positive z-pinned billboard — fence / wall / gate / bridge / homestead / cathedral
+      // Positive z-pinned billboard — fence / gate / bridge / homestead / cathedral
       // mirrors nano-tile.ts drawPositiveNano:
       //   ctx.translate(screenX, screenY + HALF_H)    → anchor at left diamond vertex
       //   ctx.transform(1, 0.5, 0, 1, 0, 0)           → z-pin shear
