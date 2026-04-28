@@ -252,25 +252,22 @@ function drawFlatNano(
  *
  * WALL_OFFSET = distance from tile edge to the near wall face (camera side).
  * WALL_THICKNESS = wall width perpendicular to its run direction.
+ *
+ * NOTE: kept as documented constants — the v5 per-rect renderer derives
+ * geometry directly from solver.wallBounds() rather than these values.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const WALL_THICKNESS = 48;                                    // solver.ts W
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 40
 
 /**
  * Determine if a wall variant's PRIMARY run direction is vertical ("/" on screen).
- * Returns true for variants where the wall strip is at x=40..88 (vertical),
- * false for variants where the strip is at y=40..88 (horizontal, "\" on screen).
- *
- * Mixed variants (corners, tees, cross) have arms in both directions.
- * For extrusion, we use the front face along the LONGER visible run.
- * Corners: the "V" faces camera → pick orientation that shows the most surface.
- *   - corner-tr, corner-br: front face runs along y (vertical primary) — player
- *     sees the right arm extend toward them on the / diagonal.
- *   - corner-tl, corner-bl: front face runs along x (horizontal primary) — player
- *     sees the left arm extend toward them on the \ diagonal.
- *
- * @see solver.ts wallBounds() for the footprint layout that this must match.
+ * Used by the legacy single-face extrusion path; the v5 per-rect renderer
+ * does not call this. Kept for AiTools/game-tile-renderer.ts which still
+ * mirrors the old approach.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function isVerticalWall(variant: FeatureVariant | undefined): boolean {
   switch (variant) {
     case 'straight-v':
@@ -337,21 +334,30 @@ export function drawExtrudedNano(
   const drawH = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
   let loaded = true;
 
-  // ─── Per-rect extruded faces (v4 — wallBounds-driven) ───
+  // ─── Per-rect extruded faces (v5 — single image, aligned-grout) ───
   //
-  // Iterate every rect in solver.ts wallBounds(variant) and emit a south
-  // (camera-front, "\") face plus an east (camera-right, "/") face per rect,
-  // skipping any face hidden by another rect within the same tile.
+  // ONE source image (sideTextureSvg) is used for BOTH side faces and the
+  // top face via ctx.createPattern(). Pattern phase is anchored at a single
+  // per-tile screen point (the bottom-front corner of the full diamond,
+  // elevated by drawH) so:
   //
-  // Iso projection (tile-local → screen, relative to (screenX, screenY)):
-  //   sx = screenX + tx - ty + HALF_W
-  //   sy = screenY + (tx + ty) / 2
+  //   • Every face of the same wall samples a CONSISTENT pattern → grout
+  //     lines continue across rect boundaries within a tile (corner /
+  //     tee variants don't show a seam between arms).
+  //   • South face's TOP edge and top face's FRONT edge share source y=0
+  //     → mortar lines wrap from side onto top across the wall-top edge.
+  //   • Adjacent tiles re-derive the same anchor at world-tile-origin
+  //     spacing, so pattern phase repeats every game-tile (128 source-px
+  //     period divides evenly into the iso step) → no inter-tile seam.
   //
-  // This replaces the old single-front-face approach, which over-rendered
-  // "phantom brick" along sections of the tile with no actual wall and
-  // missed the second arm of corner / tee variants entirely.
-  // @see AiTools/game-tile-renderer.ts buildExtrudedFacesAt — must stay in sync.
-  // @see solver.ts wallBounds() for the per-variant rect layout.
+  // Rect occlusion: if another rect in the same variant abuts on the
+  // south or east boundary, that face is hidden by the adjacent rect's
+  // matching face; skip drawing it. This avoids overdraw and z-fighting
+  // along internal arm joints.
+  //
+  // @see textures/stone-brick.ts for the texture image.
+  // @see solver.ts wallBounds() for per-variant rect layout.
+  // @see AiTools/game-tile-renderer.ts for the SVG-path mirror (separate code).
 
   const variant = nano.variant ?? 'straight-h';
   const { rects } = wallBounds(variant);
@@ -367,46 +373,139 @@ export function drawExtrudedNano(
   const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
 
+  // Shared pattern anchor (screen): bottom-front corner of the full tile
+  // diamond, elevated by the wall height. All face pattern transforms
+  // map source (0,0) → THIS screen point. (Math derivation in commit msg.)
+  const ANCHOR_SX = screenX;                       // = isoX(0, 128)
+  const ANCHOR_SY = screenY + HALF_H - drawH;      // = isoY(0, 128) - drawH
+
   if (nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
-      // ─── createPattern (uniform brick scale across all rect dimensions) ───
-      // drawImage stretches a 128×128 source into r.w × drawH dst, which
-      // squashes bricks differently per rect (corner end-cap r.w=48 vs long
-      // arm r.w=88). createPattern with 'repeat' tiles at SOURCE pixel size
-      // regardless of fill rect dimensions, so every brick on every face
-      // displays at the same size — what real cut stones look like.
-      // The SVG pattern unit (32px) divides cleanly into 128 so the
-      // rasterized image tiles seamlessly.
-      const pattern = ctx.createPattern(sideImg, 'repeat');
-      if (pattern) {
+      // SIDE-SOUTH pattern — source axes (right=(1,0.5), down=(0,1)) match
+      // the canvas shear used during south-face fill, so source-y=0 lies on
+      // the wall-top sheared screen line.
+      const sPattern = ctx.createPattern(sideImg, 'repeat');
+      // SIDE-EAST pattern — source axes (right=(-1,0.5), down=(0,1)) match
+      // the canvas shear used during east-face fill.
+      const ePattern = ctx.createPattern(sideImg, 'repeat');
+      // TOP pattern — source axes (right=(1,0.5), down=(-1,0.5)) match the
+      // canvas shear used during top fill. CRITICALLY this shares its
+      // source-x axis with the SIDE-SOUTH pattern, so source-y=0 traces
+      // the SAME screen line on both → mortar continuity across the
+      // south-top edge.
+      const tPattern = ctx.createPattern(sideImg, 'repeat');
+
+      if (sPattern && ePattern && tPattern) {
+        // ── SIDE: south + east faces, per visible rect ───────────────
         for (const r of rects) {
-          // SOUTH (front, "\") face — anchored at iso(r.x, r.y + r.h), width = r.w
           if (!southOccluded(r)) {
             const ex = isoX(r.x, r.y + r.h);
             const ey = isoY(r.x, r.y + r.h);
+            // Pattern transform DERIVED:
+            //   M_canvas (south) = (1, 0.5, 0, 1)
+            //   For source-x → screen direction (1, 0.5) (along wall top
+            //   edge), pattern linear part must be IDENTITY. Composing
+            //   IDENTITY with the canvas shear gives source-x → screen
+            //   (1, 0.5) ✓ and source-y → screen (0, 1) ✓ (gravity).
+            //
+            //   Previous version used (1, 0.5, 0, 1) for the linear part —
+            //   that double-sheared the source so bricks ran at 45° down,
+            //   instead of along the iso wall edge. This was the visible
+            //   over-slant on the south face.
+            //
+            //   dx = ANCHOR_SX − ex       (canvas-local Δ for anchor)
+            //   dy = (ANCHOR_SY − ey) − 0.5·dx   (canvas shear y-offset)
+            const dx = ANCHOR_SX - ex;
+            const dy = (ANCHOR_SY - ey) - 0.5 * dx;
+            sPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: dx, f: dy });
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(1, 0.5, 0, 1, 0, 0);
-            ctx.fillStyle = pattern;
+            ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
             ctx.restore();
           }
-          // EAST (right side, "/") face — anchored at iso(r.x + r.w, r.y), width = r.h
           if (!eastOccluded(r)) {
             const ex = isoX(r.x + r.w, r.y);
             const ey = isoY(r.x + r.w, r.y);
+            // East canvas shear is (-1, 0.5, 0, 1). To anchor pattern source
+            // (0,0) at ANCHOR via this shear:
+            //   dx = ex − ANCHOR_SX  (note: −1 sign on shear flips dx sign)
+            //   dy = (ANCHOR_SY − ey) − 0.5·dx
+            const dx = ex - ANCHOR_SX;
+            const dy = (ANCHOR_SY - ey) - 0.5 * dx;
+            // Pattern axes IDENTITY in canvas-local; canvas shear already
+            // gives source-x → screen (-1, 0.5) and source-y → screen (0,1).
+            ePattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: dx, f: dy });
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(-1, 0.5, 0, 1, 0, 0);
-            ctx.fillStyle = pattern;
+            ctx.fillStyle = ePattern;
             ctx.fillRect(0, -drawH, r.h, drawH);
-            // Subtle directional shading: east face receives less light → darken slightly.
+            // Directional shading: east receives less light → darken.
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
             ctx.restore();
           }
         }
+
+        // ── TOP: fill each rect (footprint) on the elevated diamond ──
+        // The top canvas transform is matrix(1, 0.5, -1, 0.5, screenX+HALF_W,
+        // elevatedY). In that frame, the ANCHOR screen point lands at
+        // canvas-local (0, 128) — the back-left vertex of the diamond.
+        // Pattern transform IDENTITY-with-translate (0, 128) makes source
+        // (0,0) land there. Source-x axis maps via canvas shear to screen
+        // (1, 0.5) — same as side-south's source-x → grout aligns.
+        const elevatedY = screenY - drawH;
+        const cx = screenX + HALF_W;
+        // TOP pattern transform: orientation-dependent so brick rows
+        // run ALONG the wall's primary length axis on the top face.
+        //
+        //   H-axis variants (wall extends along world-x, screen direction
+        //   (1, 0.5)): pattern (1,0,0,1) → source-x → screen (1, 0.5) ✓
+        //
+        //   V-axis variants (wall extends along world-y, screen direction
+        //   (-1, 0.5)): pattern (0,1,1,0) [transposed] composed with the
+        //   top shear (1, 0.5, -1, 0.5) yields:
+        //     source-x → canvas (0,1) → screen (-1, 0.5) ✓ along V-wall
+        //     source-y → canvas (1,0) → screen (1, 0.5)   (course pitch)
+        //
+        // GROUT-RIDGE ALIGNMENT (iter14, derived):
+        //
+        //   Goal: at the wall's front-top ridge, top face samples the SAME
+        //   source pixel the side face samples, AND the source-y axis on
+        //   top runs INTO the wall (screen direction (-1, 0.5)).
+        //
+        //   Top frame: shear (1, 0.5, -1, 0.5). For source-y → screen
+        //   (-1, 0.5) we need pattern d-axis = (0, 1) → linear (1,0,0,1).
+        //
+        //   At the ridge corner of straight-h core (tile 40,88), top
+        //   user-space coord is (40, 88) and side samples source (80, 88)
+        //   there (from anchor math). To make top sample (80, 88) at user
+        //   (40, 88) with identity linear: e = 80 - 40 = 40 (mod 128),
+        //   f = 88 - 88 = 0.
+        //
+        //   For V wall: transposed (a=0,b=1,c=-1,d=0) for source-x → screen
+        //   (-1, 0.5) along V wall ridge; e=88, f=80 (mirrored algebra).
+        const isVAxis = variant === 'straight-v' || variant === 'end-t' || variant === 'end-b';
+        if (isVAxis) {
+          tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: 88, f: 40 });
+        } else {
+          tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: 40, f: 0 });
+        }
+        ctx.save();
+        clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
+        ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
+        ctx.fillStyle = tPattern;
+        for (const r of rects) {
+          ctx.fillRect(r.x, r.y, r.w, r.h);
+        }
+        // (Removed per-rect strokeRect overlay — it was a debug helper that
+        // drew visible orange/black dividing lines on the top face between
+        // adjacent footprint rects. The brick pattern alone provides the
+        // visual definition we need.)
+        ctx.restore();
       } else {
         loaded = false;
       }
@@ -418,24 +517,10 @@ export function drawExtrudedNano(
     if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
   }
 
-  // ── Top cap: flat iso at elevated position  ──────────────────────────────────
-  // topTextureSvg paints the L / T / + footprint shape via stoneWallTopSvg.
-  // Iso projection at elevatedY = screenY − drawH places it atop the side faces.
-  if (nano.topTextureSvg) {
-    const topImg = loadSvgImage(nano.topTextureSvg);
-    if (topImg) {
-      const elevatedY = screenY - drawH;
-      const cx = screenX + HALF_W;
-
-      ctx.save();
-      clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
-      ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
-      ctx.drawImage(topImg, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
-      ctx.restore();
-    } else {
-      loaded = false;
-    }
-  }
+  // Note: the TOP face is drawn inside the side-pattern block above (it
+  // shares the same image and pattern anchor for grout continuity). We
+  // intentionally ignore nano.topTextureSvg here for stone-wall — it
+  // remains used by the legacy SVG render path only (AiTools).
 
   return loaded;
 }
