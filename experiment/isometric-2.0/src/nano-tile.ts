@@ -370,27 +370,45 @@ export function drawExtrudedNano(
   if (nano.sideTextureSvg) {
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
-      for (const r of rects) {
-        // SOUTH (front, "\") face — anchored at iso(r.x, r.y + r.h), width = r.w
-        if (!southOccluded(r)) {
-          const ex = isoX(r.x, r.y + r.h);
-          const ey = isoY(r.x, r.y + r.h);
-          ctx.save();
-          ctx.translate(ex, ey);
-          ctx.transform(1, 0.5, 0, 1, 0, 0);
-          ctx.drawImage(sideImg, 0, -drawH, r.w, drawH);
-          ctx.restore();
+      // ─── createPattern (uniform brick scale across all rect dimensions) ───
+      // drawImage stretches a 128×128 source into r.w × drawH dst, which
+      // squashes bricks differently per rect (corner end-cap r.w=48 vs long
+      // arm r.w=88). createPattern with 'repeat' tiles at SOURCE pixel size
+      // regardless of fill rect dimensions, so every brick on every face
+      // displays at the same size — what real cut stones look like.
+      // The SVG pattern unit (32px) divides cleanly into 128 so the
+      // rasterized image tiles seamlessly.
+      const pattern = ctx.createPattern(sideImg, 'repeat');
+      if (pattern) {
+        for (const r of rects) {
+          // SOUTH (front, "\") face — anchored at iso(r.x, r.y + r.h), width = r.w
+          if (!southOccluded(r)) {
+            const ex = isoX(r.x, r.y + r.h);
+            const ey = isoY(r.x, r.y + r.h);
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.transform(1, 0.5, 0, 1, 0, 0);
+            ctx.fillStyle = pattern;
+            ctx.fillRect(0, -drawH, r.w, drawH);
+            ctx.restore();
+          }
+          // EAST (right side, "/") face — anchored at iso(r.x + r.w, r.y), width = r.h
+          if (!eastOccluded(r)) {
+            const ex = isoX(r.x + r.w, r.y);
+            const ey = isoY(r.x + r.w, r.y);
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.transform(-1, 0.5, 0, 1, 0, 0);
+            ctx.fillStyle = pattern;
+            ctx.fillRect(0, -drawH, r.h, drawH);
+            // Subtle directional shading: east face receives less light → darken slightly.
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            ctx.fillRect(0, -drawH, r.h, drawH);
+            ctx.restore();
+          }
         }
-        // EAST (right side, "/") face — anchored at iso(r.x + r.w, r.y), width = r.h
-        if (!eastOccluded(r)) {
-          const ex = isoX(r.x + r.w, r.y);
-          const ey = isoY(r.x + r.w, r.y);
-          ctx.save();
-          ctx.translate(ex, ey);
-          ctx.transform(-1, 0.5, 0, 1, 0, 0);
-          ctx.drawImage(sideImg, 0, -drawH, r.h, drawH);
-          ctx.restore();
-        }
+      } else {
+        loaded = false;
       }
     } else {
       loaded = false;

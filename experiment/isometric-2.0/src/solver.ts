@@ -149,6 +149,58 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 // High-quality procedural SVGs for connection variants.
 // TODO: DOC — SVG generation patterns for each feature kind
 
+// ─── Stone Brick texture (seamless, tileable) ────────────────
+//
+// One uniform pattern, two orientations (H and V). Used for BOTH the
+// side faces and the top of stone-wall nanos so bricks logically wrap
+// from side to top at consistent scale.
+//
+// Pattern unit: 32×32 px = two brick courses with running-bond stagger.
+// Brick: 32×16 (incl. 2px mortar). Solid mortar background fills every
+// pixel — NO transparency gaps. Pattern unit size (32) divides cleanly
+// into the canonical 128 px SVG size, so adjacent tiles meet at exact
+// brick/mortar boundaries.
+//
+// IMPORTANT (renderer contract):
+//   - The SIDE face is drawn via ctx.createPattern in nano-tile.ts so
+//     bricks render at source-pixel scale regardless of rect width or
+//     wall height. This is what gives us "same brick size everywhere".
+//   - The TOP face is drawn via drawImage of stoneWallTopSvg, which
+//     itself fills the wall footprint with the same brick pattern.
+//     Per-rect orientation (H for E/W arms, V for N/S arms) is selected
+//     so brick courses on the top face continue the direction of the
+//     brick rows on the connected side face.
+
+const STONE_BRICK_DEFS = `
+    <defs>
+      <pattern id="stoneBrickH" patternUnits="userSpaceOnUse" width="32" height="32">
+        <rect width="32" height="32" fill="#3d3d3d" />
+        <!-- Course A — full brick centered, mortar gap on each side -->
+        <rect x="1"  y="1"  width="30" height="14" fill="#9c9c9a" />
+        <rect x="1"  y="1"  width="30" height="2"  fill="#bcbcb8" />
+        <rect x="1"  y="13" width="30" height="2"  fill="#7a7a78" />
+        <!-- Course B — staggered by 16; two halves at the edges keep it seamless -->
+        <rect x="0"  y="17" width="15" height="14" fill="#9c9c9a" />
+        <rect x="0"  y="17" width="15" height="2"  fill="#bcbcb8" />
+        <rect x="0"  y="29" width="15" height="2"  fill="#7a7a78" />
+        <rect x="17" y="17" width="15" height="14" fill="#9c9c9a" />
+        <rect x="17" y="17" width="15" height="2"  fill="#bcbcb8" />
+        <rect x="17" y="29" width="15" height="2"  fill="#7a7a78" />
+      </pattern>
+      <pattern id="stoneBrickV" patternUnits="userSpaceOnUse" width="32" height="32" patternTransform="rotate(90)">
+        <rect width="32" height="32" fill="#3d3d3d" />
+        <rect x="1"  y="1"  width="30" height="14" fill="#9c9c9a" />
+        <rect x="1"  y="1"  width="30" height="2"  fill="#bcbcb8" />
+        <rect x="1"  y="13" width="30" height="2"  fill="#7a7a78" />
+        <rect x="0"  y="17" width="15" height="14" fill="#9c9c9a" />
+        <rect x="0"  y="17" width="15" height="2"  fill="#bcbcb8" />
+        <rect x="0"  y="29" width="15" height="2"  fill="#7a7a78" />
+        <rect x="17" y="17" width="15" height="14" fill="#9c9c9a" />
+        <rect x="17" y="17" width="15" height="2"  fill="#bcbcb8" />
+        <rect x="17" y="29" width="15" height="2"  fill="#7a7a78" />
+      </pattern>
+    </defs>`;
+
 /**
  * Generate individual stone block SVGs for a rectangular region.
  * Produces staggered rows of stones with mortar gaps, color variation, and cracks.
@@ -371,82 +423,60 @@ export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:
  * The variant param is used to seed pseudo-random stone block variation
  * so adjacent tiles don't look identical.
  */
-export function stoneWallSvg(variant: FeatureVariant): string {
-  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
-  const parts: string[] = [];
-
-  // Stone blocks fill the entire 128×128 — will be scaled to (128 × drawH) by renderer
-  parts.push(stoneBlocks(0, 0, 128, 128, seed));
-
-  // Cap stones along top edge
-  parts.push(capStones(0, 0, 128, seed + 999));
-
-  // Subtle mortar overlay
-  parts.push(`<rect x="0" y="0" width="128" height="128" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.5" />`);
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    ${parts.join('\n    ')}
+/**
+ * Stone Brick — SIDE TEXTURE.
+ *
+ * Returns a 128×128 SVG filled edge-to-edge with the seamless brick pattern.
+ * Variant param is unused (kept for signature compatibility); bricks are
+ * uniform across all wall variants by design — like real cut stone bricks.
+ *
+ * The renderer (nano-tile.ts) consumes this image via createPattern so the
+ * brick scale stays the same on every face regardless of rect width or
+ * wall height. Adjacent tiles tile seamlessly because the pattern unit
+ * (32×32) divides evenly into the 128 image edge.
+ */
+export function stoneWallSvg(_variant: FeatureVariant): string {
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" shape-rendering="crispEdges">${STONE_BRICK_DEFS}
+    <rect width="128" height="128" fill="url(#stoneBrickH)" />
   </svg>`;
 }
 
 /**
- * Generate a TOP-VIEW SVG for a stone wall cap (transparent background).
- * Shows the wall footprint from above for the extruded top cap.
- * Uses the variant-based wall bounds to determine the footprint shape.
+ * Stone Brick — TOP TEXTURE.
  *
- * Uses stoneBlocks/capStones for horizontal arms (brick courses → \ on screen)
- * and stoneBlocksV/capStonesV for vertical arms (brick courses → / on screen).
- * This ensures the top face brick direction matches the side face brick direction
- * for both wall orientations.
+ * Fills each rect of the wall footprint with the brick pattern. Pattern
+ * orientation is selected per rect so brick courses on top continue the
+ * direction of brick rows on the connected side face:
+ *   - E/W arms  → H pattern (rows along x → \ diagonal under iso)
+ *   - N/S arms  → V pattern (rows along y → / diagonal under iso)
+ * Uses the SAME pixel-scale brick definition as stoneWallSvg() so the
+ * texture wraps continuously from side to top at uniform scale.
  *
- * Each footprint rect gets its own clip region + block fill + border.
+ * A subtle border on each rect provides edge definition.
  */
 export function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
-  const parts: string[] = [];
-  const seed = variant.charCodeAt(0) * 53 + 7;
-  const off = 40;
-  const W = 48;
-
-  // Determine if the variant has any vertical arm (top/bottom).
-  // Used to orient the central core block for primarily-vertical variants.
+  const off = 40;  // WALL_OFFSET
+  const W = 48;    // WALL_THICKNESS
+  // For variants with any vertical arm, the central core block also reads as V.
   const hasVArm = variant !== 'straight-h' && variant !== 'end-r'
                && variant !== 'end-l' && variant !== 'isolated';
+  const parts: string[] = [];
 
   for (const r of rects) {
-    const id = `wp${r.x}_${r.y}`;
-    // Clip to this wall footprint rectangle
-    parts.push(
-      `<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`
-    );
-
-    // Determine brick direction for THIS rect:
-    //   N/S arms (y < off or y >= off+W) → vertical bricks (/ on screen)
-    //   W/E arms (x < off or x >= off+W) → horizontal bricks (\ on screen)
-    //   Center core: follow overall variant direction
     const isNSArm = r.y < off || r.y >= off + W;
     const isCenter = r.x === off && r.y === off;
-    const useVertical = isNSArm || (isCenter && hasVArm);
-
-    // Stone block row/col size: 5px to match side texture's perceived scale.
-    // Side texture draws 128×128 viewBox into 128×48 dest → 2.67× vertical squash.
-    // Side brick rowH=12 appears as ~4.5px. Top 5px under iso ≈ 5.6px. ≈match.
-    parts.push(`<g clip-path="url(#${id})">`);
-    if (useVertical) {
-      parts.push(stoneBlocksV(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
-      parts.push(capStonesV(r.x, r.y, r.h, seed + r.x * 3, 2.5));
-    } else {
-      parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
-      parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
-    }
-    parts.push(`</g>`);
-    // Mortar border for definition
+    const useV = isNSArm || (isCenter && hasVArm);
+    const fillId = useV ? 'stoneBrickV' : 'stoneBrickH';
     parts.push(
-      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="0.8" rx="1" />`
+      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#${fillId})" />`
+    );
+    parts.push(
+      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`
     );
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" shape-rendering="crispEdges">${STONE_BRICK_DEFS}
     ${parts.join('\n    ')}
   </svg>`;
 }
