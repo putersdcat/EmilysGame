@@ -370,6 +370,20 @@ export function drawExtrudedNano(
     return rects.some(o => o !== r && o.x === r.x + r.w
       && o.y < r.y + r.h && o.y + o.h > r.y);
   }
+  // ENDFACE detection: a face is an END (header/cap) if it's at the
+  // terminal of a wall RUN — meaning (a) no rect extends further in that
+  // direction, AND (b) the wall does extend in the OPPOSITE direction
+  // (so this isn't a side face along the wall's length).
+  function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
+    const hasNorth = rects.some(o => o.y + o.h <= r.y && o.x < r.x + r.w && o.x + o.w > r.x);
+    return noSouth && hasNorth;
+  }
+  function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    const noEast = !rects.some(o => o.x >= r.x + r.w && o.y < r.y + r.h && o.y + o.h > r.y);
+    const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
+    return noEast && hasWest;
+  }
   const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
 
@@ -424,6 +438,29 @@ export function drawExtrudedNano(
             ctx.transform(1, 0.5, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
+            // END-FACE grout overlay: draw horizontal mortar lines at the
+            // same course pitch (8px) the side faces use, so the side's
+            // brick courses visually continue ONTO the end cap. We do NOT
+            // change the underlying texture — just stroke continuation
+            // grout lines (and one centered vertical "perp" grout to break
+            // the long brick illusion).
+            if (southIsEnd(r)) {
+              // END-FACE: vertical mortar ticks at every course-mortar y-line
+              // and every header-brick x position (every 8px). Each tick
+              // descends one brick deep (7px). Iterate upward from bottom
+              // so no tick rect overflows the wall base into the ground.
+              // Corner bricks (x=0, x=r.w) stay unbroken — they wrap
+              // around the wall corner.
+              ctx.fillStyle = '#3a3835';
+              const COURSE_PITCH = 8;
+              const TICK_DEPTH = 7;
+              const TICK_W = 2;
+              for (let yy = -COURSE_PITCH; yy + TICK_DEPTH > -drawH; yy -= COURSE_PITCH) {
+                for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
+                  ctx.fillRect(x - TICK_W / 2, yy, TICK_W, TICK_DEPTH);
+                }
+              }
+            }
             ctx.restore();
           }
           if (!eastOccluded(r)) {
@@ -446,6 +483,18 @@ export function drawExtrudedNano(
             // Directional shading: east receives less light → darken.
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
+            // END-FACE: vertical mortar ticks at every course (mirror).
+            if (eastIsEnd(r)) {
+              ctx.fillStyle = '#3a3835';
+              const COURSE_PITCH = 8;
+              const TICK_DEPTH = 7;
+              const TICK_W = 2;
+              for (let yy = -COURSE_PITCH; yy + TICK_DEPTH > -drawH; yy -= COURSE_PITCH) {
+                for (let x = COURSE_PITCH; x < r.h; x += COURSE_PITCH) {
+                  ctx.fillRect(x - TICK_W / 2, yy, TICK_W, TICK_DEPTH);
+                }
+              }
+            }
             ctx.restore();
           }
         }
