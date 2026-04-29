@@ -106,10 +106,35 @@ export interface CanvasSceneEntry {
   svgOverride?: string;
 }
 
+/**
+ * CanvasPlayerEntry — placement of a player avatar.
+ *
+ * CANONICAL ANCHOR (Iso 2.0): the player sprite renders CENTERED inside
+ * one nano-tile patch (1/9 of a micro-tile). A micro-tile is a 3×3 grid
+ * of nano-tiles indexed (nanoCol, nanoRow) ∈ {0,1,2} × {0,1,2} where
+ *   nanoCol=0  is the WEST  nano column (back-left in iso)
+ *   nanoCol=2  is the EAST  nano column (front-right in iso)
+ *   nanoRow=0  is the NORTH nano row    (back-right in iso)
+ *   nanoRow=2  is the SOUTH nano row    (front-left in iso)
+ *
+ * The sprite's feet anchor at the SOUTH vertex of the chosen nano patch
+ * (not the micro tile), so movement and visual depth are nano-granular.
+ *
+ * Backwards compatibility: if `nanoCol` / `nanoRow` are omitted, the
+ * sprite anchors at the south vertex of the (col,row) micro tile (the
+ * legacy behaviour used by older harnesses).
+ */
 export interface CanvasPlayerEntry {
+  /** Micro-tile column. Integer expected; fractional values still work but skip nano snapping. */
   col: number;
+  /** Micro-tile row. Integer expected; fractional values still work but skip nano snapping. */
   row: number;
+  /** Optional label tag rendered above the head. */
   label?: string;
+  /** Nano sub-cell column inside the micro tile (0=W, 1=center, 2=E). */
+  nanoCol?: 0 | 1 | 2;
+  /** Nano sub-cell row inside the micro tile (0=N, 1=center, 2=S). */
+  nanoRow?: 0 | 1 | 2;
 }
 
 export interface CanvasSceneOptions {
@@ -296,11 +321,33 @@ function drawDebugDiamond(ctx: SKRSContext2D, col: number, row: number, walkable
 
 // ─── Player sprite ────────────────────────────────────────────
 
-function drawPlayerSprite(ctx: SKRSContext2D, col: number, row: number, label: string | undefined, ox: number, oy: number): void {
-  const { screenX: sx, screenY: sy } = tilePos(col, row, ox, oy);
-  // Anchor at bottom vertex of diamond
-  const px = sx + HALF_W;
-  const py = sy + ISO_TILE_HEIGHT;
+function drawPlayerSprite(
+  ctx: SKRSContext2D,
+  col: number,
+  row: number,
+  label: string | undefined,
+  ox: number,
+  oy: number,
+  nanoCol?: 0 | 1 | 2,
+  nanoRow?: 0 | 1 | 2,
+): void {
+  // Effective foot world coords. With nano snapping, feet land at the
+  // SOUTH vertex of the chosen 1/3 × 1/3 nano patch within the micro
+  // tile (col, row). Without snapping, feet land at the south vertex of
+  // the whole micro tile (legacy).
+  let footWorldCol: number;
+  let footWorldRow: number;
+  if (nanoCol !== undefined && nanoRow !== undefined) {
+    footWorldCol = col + (nanoCol + 1) / 3;
+    footWorldRow = row + (nanoRow + 1) / 3;
+  } else {
+    footWorldCol = col + 1;
+    footWorldRow = row + 1;
+  }
+  const px = ox + (footWorldCol - footWorldRow) * HALF_W;
+  // -HALF_H aligns to the diamond south-vertex (matches legacy
+  // tilePos(...) + HALF_W/ISO_TILE_HEIGHT anchor used before nano-snap.)
+  const py = oy + (footWorldCol + footWorldRow) * HALF_H - HALF_H;
 
   const bodyH = 28, bodyW = 12, headR = 7;
   const bodyTop = py - bodyH;
@@ -462,9 +509,16 @@ export async function renderNanoScene(
     | { kind: 'player'; depth: number; player: CanvasPlayerEntry };
 
   const positiveNanoEntries = nanos.filter(e => (NANO_ZMODE[e.kind] ?? 'positive') === 'positive');
+  const playerDepth = (p: CanvasPlayerEntry): number => {
+    // Sort by foot world position so nano-snapped sprites layer correctly.
+    if (p.nanoCol !== undefined && p.nanoRow !== undefined) {
+      return (p.col + (p.nanoCol + 1) / 3) + (p.row + (p.nanoRow + 1) / 3);
+    }
+    return p.col + p.row + 0.5;
+  };
   const drawItems: DrawItem[] = [
     ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: e.col + e.row,       entry: e  })),
-    ...players.map(            p  => ({ kind: 'player' as const, depth: p.col + p.row + 0.5, player: p })),
+    ...players.map(            p  => ({ kind: 'player' as const, depth: playerDepth(p),      player: p })),
   ].sort((a, b) => a.depth - b.depth);
 
   for (const item of drawItems) {
@@ -476,7 +530,7 @@ export async function renderNanoScene(
       const nb = computeWallNeighbors(item.entry, entries);
       drawNanoStack(nctx, [nano], screenX, screenY, undefined, nb);
     } else {
-      drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy);
+      drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy, item.player.nanoCol, item.player.nanoRow);
     }
   }
 
