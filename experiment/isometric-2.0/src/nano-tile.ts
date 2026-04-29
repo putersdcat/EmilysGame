@@ -443,13 +443,13 @@ export function drawExtrudedNano(
             ctx.transform(1, 0.5, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
-            // END-FACE grout overlay: draw horizontal mortar lines at the
-            // same course pitch (8px) the side faces use, so the side's
-            // brick courses visually continue ONTO the end cap. We do NOT
-            // change the underlying texture — just stroke continuation
-            // grout lines (and one centered vertical "perp" grout to break
-            // the long brick illusion).
-            if (southIsEnd(r)) {
+            // END-FACE grout overlay: only fired for true terminal walls
+            // (variant === 'end-*'). Corners and tees already communicate
+            // direction through the top winner-takes-strip pattern, so
+            // adding ticks on their exposed core faces conflicts with the
+            // top texture and reads as noise.
+            const isEndVariant = variant === 'end-t' || variant === 'end-b' || variant === 'end-l' || variant === 'end-r';
+            if (isEndVariant && southIsEnd(r)) {
               // END-FACE: short vertical mortar ticks descending from each
               // top COURSE-mortar line where it meets the end-face top
               // edge. One brick deep. Corner bricks (x=0, x=r.w) stay
@@ -485,7 +485,10 @@ export function drawExtrudedNano(
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
             // END-FACE: course-aligned vertical mortar ticks (mirror).
-            if (eastIsEnd(r)) {
+            // See south-face note above: only fired for true 'end-*'
+            // variants to avoid noise on corner/tee exposed cores.
+            const isEndVariantE = variant === 'end-t' || variant === 'end-b' || variant === 'end-l' || variant === 'end-r';
+            if (isEndVariantE && eastIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
