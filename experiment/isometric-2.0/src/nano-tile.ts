@@ -445,20 +445,16 @@ export function drawExtrudedNano(
             // grout lines (and one centered vertical "perp" grout to break
             // the long brick illusion).
             if (southIsEnd(r)) {
-              // END-FACE: vertical mortar ticks at every course-mortar y-line
-              // and every header-brick x position (every 8px). Each tick
-              // descends one brick deep (7px). Iterate upward from bottom
-              // so no tick rect overflows the wall base into the ground.
-              // Corner bricks (x=0, x=r.w) stay unbroken — they wrap
-              // around the wall corner.
-              ctx.fillStyle = '#3a3835';
+              // END-FACE: short vertical mortar ticks descending from each
+              // top COURSE-mortar line where it meets the end-face top
+              // edge. One brick deep. Corner bricks (x=0, x=r.w) stay
+              // unbroken — they wrap around the wall corner.
+              ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
               const TICK_W = 2;
-              for (let yy = -COURSE_PITCH; yy + TICK_DEPTH > -drawH; yy -= COURSE_PITCH) {
-                for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
-                  ctx.fillRect(x - TICK_W / 2, yy, TICK_W, TICK_DEPTH);
-                }
+              for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
+                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
               }
             }
             ctx.restore();
@@ -483,16 +479,14 @@ export function drawExtrudedNano(
             // Directional shading: east receives less light → darken.
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
-            // END-FACE: vertical mortar ticks at every course (mirror).
+            // END-FACE: course-aligned vertical mortar ticks (mirror).
             if (eastIsEnd(r)) {
-              ctx.fillStyle = '#3a3835';
+              ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
               const TICK_W = 2;
-              for (let yy = -COURSE_PITCH; yy + TICK_DEPTH > -drawH; yy -= COURSE_PITCH) {
-                for (let x = COURSE_PITCH; x < r.h; x += COURSE_PITCH) {
-                  ctx.fillRect(x - TICK_W / 2, yy, TICK_W, TICK_DEPTH);
-                }
+              for (let x = COURSE_PITCH; x < r.h; x += COURSE_PITCH) {
+                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
               }
             }
             ctx.restore();
