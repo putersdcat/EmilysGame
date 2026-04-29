@@ -245,7 +245,7 @@ async function dispatch(): Promise<WorkerResult> {
 
     // ── render_nano_scene ─────────────────────────────────────
     case 'render_nano_scene': {
-      const { entries, players: rawPlayers, width, height, debug, background, outputPath } = args as Record<string, any>;
+      const { entries, players: rawPlayers, width, height, debug, geometryLayers, background, outputPath } = args as Record<string, any>;
       const sceneEntries: CanvasSceneEntry[] = (entries ?? []).map((e: Record<string, any>) => ({
         kind: e.kind, col: e.col, row: e.row,
         variant: e.variant as CanvasSceneEntry['variant'],
@@ -253,8 +253,9 @@ async function dispatch(): Promise<WorkerResult> {
       }));
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
         col: p.col, row: p.row, label: p.label,
+        nanoCol: p.nanoCol, nanoRow: p.nanoRow,
       }));
-      const r = await renderNanoScene(sceneEntries, { width, height, debug, background, players: playerEntries });
+      const r = await renderNanoScene(sceneEntries, { width, height, debug, geometryLayers, background, players: playerEntries });
       if (outputPath) savePng(outputPath, r.png);
       const m: Record<string, unknown> = {
         tileCount: sceneEntries.length, playerCount: playerEntries.length,

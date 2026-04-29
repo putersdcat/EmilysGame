@@ -29,7 +29,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const TSX_CLI = join(__dirname, 'node_modules', 'tsx', 'dist', 'cli.mjs');
 const WORKER  = join(__dirname, 'render-worker.ts');
 const outName = process.argv[2] ?? 'closed-with-players.png';
-const debug   = process.argv[3] === 'debug';
+const mode    = process.argv[3] ?? '';
+const debug          = mode === 'debug';
+const geometryLayers = mode === 'layers';
 const outputPath = `experiment/isometric-2.0/ProgressEvaluations/${outName}`;
 
 const entries = [];
@@ -73,7 +75,7 @@ const players = [
   { col: 5, row: 3, nanoCol: 2, nanoRow: 1, label: 'E' },
 ];
 
-const args = { entries, width: 1600, height: 1100, background: '#0d1117', players, debug, outputPath };
+const args = { entries, width: 1600, height: 1100, background: '#0d1117', players, debug, geometryLayers, outputPath };
 const out = execFileSync(process.execPath, [TSX_CLI, WORKER, 'render_nano_scene'], {
   input: JSON.stringify(args), maxBuffer: 50 * 1024 * 1024, cwd: __dirname, timeout: 60_000,
 });

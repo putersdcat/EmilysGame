@@ -24,7 +24,7 @@ import type { SKRSContext2D } from '@napi-rs/canvas';
 import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
-import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg } from '../src/solver.js';
+import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -32,6 +32,8 @@ import { injectSvgImage } from '../src/tile.js';
 import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
+  CHUNK_TILES,
+  MICRO_TILE_SIZE,
   type NanoTile,
   type NanoTileKind,
   type NanoZMode,
@@ -141,6 +143,8 @@ export interface CanvasSceneOptions {
   width?: number;
   height?: number;
   debug?: boolean;
+  /** Overlay world geometry layers (chunk / micro / nano / wall-rect) with labels. */
+  geometryLayers?: boolean;
   background?: string;
   players?: CanvasPlayerEntry[];
 }
@@ -332,14 +336,19 @@ function drawPlayerSprite(
   nanoRow?: 0 | 1 | 2,
 ): void {
   // Effective foot world coords. With nano snapping, feet land at the
-  // SOUTH vertex of the chosen 1/3 × 1/3 nano patch within the micro
-  // tile (col, row). Without snapping, feet land at the south vertex of
-  // the whole micro tile (legacy).
+  // CENTER of the chosen 1/3 × 1/3 nano patch within the micro tile
+  // (col, row). This keeps the avatar visually centered in its nano cell
+  // regardless of which side of the cell faces a wall — without this,
+  // anchoring at the patch's south vertex made north/west wall-huggers
+  // look much farther from the wall than south/east huggers, because the
+  // sprite body rises northward off the foot point.
+  // Without snapping, feet land at the south vertex of the whole micro
+  // tile (legacy behaviour).
   let footWorldCol: number;
   let footWorldRow: number;
   if (nanoCol !== undefined && nanoRow !== undefined) {
-    footWorldCol = col + (nanoCol + 1) / 3;
-    footWorldRow = row + (nanoRow + 1) / 3;
+    footWorldCol = col + (nanoCol + 0.5) / 3;
+    footWorldRow = row + (nanoRow + 0.5) / 3;
   } else {
     footWorldCol = col + 1;
     footWorldRow = row + 1;
@@ -459,7 +468,8 @@ export async function renderNanoScene(
   const t0      = Date.now();
   const width   = opts.width   ?? 900;
   const height  = opts.height  ?? 600;
-  const debug   = opts.debug   ?? false;
+  const debug          = opts.debug          ?? false;
+  const geometryLayers = opts.geometryLayers ?? false;
   const players = opts.players ?? [];
   const bg      = opts.background ?? '#1a1f2b';
 
@@ -512,7 +522,7 @@ export async function renderNanoScene(
   const playerDepth = (p: CanvasPlayerEntry): number => {
     // Sort by foot world position so nano-snapped sprites layer correctly.
     if (p.nanoCol !== undefined && p.nanoRow !== undefined) {
-      return (p.col + (p.nanoCol + 1) / 3) + (p.row + (p.nanoRow + 1) / 3);
+      return (p.col + (p.nanoCol + 0.5) / 3) + (p.row + (p.nanoRow + 0.5) / 3);
     }
     return p.col + p.row + 0.5;
   };
@@ -532,6 +542,11 @@ export async function renderNanoScene(
     } else {
       drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy, item.player.nanoCol, item.player.nanoRow);
     }
+  }
+
+  // ── Pass 4: world-geometry layer overlay (chunk → micro → nano → wall-rect) ──
+  if (geometryLayers) {
+    drawGeometryLayers(ctx, entries, ox, oy);
   }
 
   return { png: canvas.toBuffer('image/png'), width, height, renderTimeMs: Date.now() - t0 };
@@ -556,6 +571,188 @@ function computeWallNeighbors(
     e: has(entry.col + 1, entry.row),
     w: has(entry.col - 1, entry.row),
   };
+}
+
+// ─── Geometry-layer debug overlay ─────────────────────────────
+
+/**
+ * World (col,row, possibly fractional) → screen (px,py).
+ * Mirrors the isometric projection used by tilePos() / drawPlayerSprite().
+ */
+function worldToScreen(wc: number, wr: number, ox: number, oy: number): { x: number; y: number } {
+  return {
+    x: ox + (wc - wr) * HALF_W,
+    y: oy + (wc + wr) * HALF_H - HALF_H,
+  };
+}
+
+/** Stroke a 4-corner iso quad (corners in [W,N,E,S] or any closed order). */
+function strokeIsoQuad(
+  ctx: SKRSContext2D,
+  pts: ReadonlyArray<{ x: number; y: number }>,
+  color: string,
+  lineWidth: number,
+  dash?: number[],
+): void {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  if (dash) (ctx as unknown as CanvasRenderingContext2D).setLineDash(dash);
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Label helper with semi-opaque pill background for readability. */
+function drawLayerLabel(
+  ctx: SKRSContext2D,
+  x: number,
+  y: number,
+  text: string,
+  color: string,
+  fontPx = 10,
+): void {
+  ctx.save();
+  ctx.font = `bold ${fontPx}px sans-serif`;
+  const metrics = ctx.measureText(text);
+  const padX = 3;
+  const padY = 2;
+  const w = metrics.width + padX * 2;
+  const h = fontPx + padY * 2;
+  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillRect(x, y - h, w, h);
+  ctx.fillStyle = color;
+  ctx.textBaseline = 'bottom';
+  ctx.fillText(text, x + padX, y - padY);
+  ctx.restore();
+}
+
+/**
+ * Overlay every world-geometry tier the engine actually uses, biggest → smallest:
+ *   1. CHUNK boundary (5×5 micro tiles)        — cyan, thick
+ *   2. MICRO TILE diamond (1 ISO_TILE)          — yellow
+ *   3. NANO sub-cell (1/9 of micro, 3×3 grid)   — magenta, thin
+ *   4. WALL FOOTPRINT rect (per solver.wallBounds, central 48/128 + arms) — orange
+ * Plus a legend pinned to the top-left of the canvas.
+ */
+function drawGeometryLayers(
+  ctx: SKRSContext2D,
+  entries: readonly CanvasSceneEntry[],
+  ox: number,
+  oy: number,
+): void {
+  if (entries.length === 0) return;
+
+  const cols = entries.map(e => e.col);
+  const rows = entries.map(e => e.row);
+  const minCol = Math.min(...cols);
+  const maxCol = Math.max(...cols);
+  const minRow = Math.min(...rows);
+  const maxRow = Math.max(...rows);
+
+  const COLOR_CHUNK = '#00e5ff'; // cyan
+  const COLOR_MICRO = '#ffd400'; // yellow
+  const COLOR_NANO  = '#ff3df0'; // magenta
+  const COLOR_WALL  = '#ff8a00'; // orange
+
+  // ── 1. CHUNK boundaries (CHUNK_TILES × CHUNK_TILES micro tiles) ──
+  const chunkColMin = Math.floor(minCol / CHUNK_TILES);
+  const chunkColMax = Math.floor(maxCol / CHUNK_TILES);
+  const chunkRowMin = Math.floor(minRow / CHUNK_TILES);
+  const chunkRowMax = Math.floor(maxRow / CHUNK_TILES);
+  for (let cy = chunkRowMin; cy <= chunkRowMax; cy++) {
+    for (let cx = chunkColMin; cx <= chunkColMax; cx++) {
+      const c0 = cx * CHUNK_TILES;
+      const r0 = cy * CHUNK_TILES;
+      const c1 = c0 + CHUNK_TILES;
+      const r1 = r0 + CHUNK_TILES;
+      const W = worldToScreen(c0, r1, ox, oy);  // west vertex
+      const N = worldToScreen(c0, r0, ox, oy);  // north vertex
+      const E = worldToScreen(c1, r0, ox, oy);  // east vertex
+      const S = worldToScreen(c1, r1, ox, oy);  // south vertex
+      strokeIsoQuad(ctx, [W, N, E, S], COLOR_CHUNK, 3);
+      drawLayerLabel(ctx, N.x + 4, N.y - 2, `CHUNK ${cx},${cy}`, COLOR_CHUNK, 11);
+    }
+  }
+
+  // ── 2. MICRO TILE diamonds + 3. NANO sub-cells ──
+  for (const e of entries) {
+    const c = e.col;
+    const r = e.row;
+    // Micro diamond corners.
+    const W = worldToScreen(c,     r + 1, ox, oy);
+    const N = worldToScreen(c,     r,     ox, oy);
+    const E = worldToScreen(c + 1, r,     ox, oy);
+    const S = worldToScreen(c + 1, r + 1, ox, oy);
+    strokeIsoQuad(ctx, [W, N, E, S], COLOR_MICRO, 1.25);
+
+    // 3×3 nano grid (each sub-diamond is 1/9 of micro)
+    for (let nr = 0; nr < 3; nr++) {
+      for (let nc = 0; nc < 3; nc++) {
+        const fc0 = c + nc / 3;
+        const fr0 = r + nr / 3;
+        const fc1 = c + (nc + 1) / 3;
+        const fr1 = r + (nr + 1) / 3;
+        const w = worldToScreen(fc0, fr1, ox, oy);
+        const n = worldToScreen(fc0, fr0, ox, oy);
+        const ee = worldToScreen(fc1, fr0, ox, oy);
+        const s = worldToScreen(fc1, fr1, ox, oy);
+        strokeIsoQuad(ctx, [w, n, ee, s], COLOR_NANO, 0.6, [3, 2]);
+      }
+    }
+
+    // ── 4. WALL FOOTPRINT rects (only for wall-bearing entries) ──
+    if (e.variant && EXTRUDED_KINDS.has(e.kind)) {
+      const { rects } = wallBounds(e.variant);
+      for (const rect of rects) {
+        // wallBounds is in micro-tile pixel space [0..MICRO_TILE_SIZE]² →
+        // convert to fractional col/row inside the tile.
+        const fx0 = c + rect.x / MICRO_TILE_SIZE;
+        const fy0 = r + rect.y / MICRO_TILE_SIZE;
+        const fx1 = c + (rect.x + rect.w) / MICRO_TILE_SIZE;
+        const fy1 = r + (rect.y + rect.h) / MICRO_TILE_SIZE;
+        const wp = worldToScreen(fx0, fy1, ox, oy);
+        const np = worldToScreen(fx0, fy0, ox, oy);
+        const ep = worldToScreen(fx1, fy0, ox, oy);
+        const sp = worldToScreen(fx1, fy1, ox, oy);
+        strokeIsoQuad(ctx, [wp, np, ep, sp], COLOR_WALL, 1.4);
+      }
+    }
+  }
+
+  // Per-tile micro labels (drawn after grid so they sit on top).
+  for (const e of entries) {
+    const N = worldToScreen(e.col, e.row, ox, oy);
+    drawLayerLabel(ctx, N.x + 2, N.y + 14, `m ${e.col},${e.row}`, COLOR_MICRO, 9);
+  }
+
+  // ── Legend (top-left) ──
+  ctx.save();
+  const legendX = 12;
+  const legendY = 14;
+  const lh = 16;
+  const legend: Array<[string, string]> = [
+    [COLOR_CHUNK, `CHUNK   (${CHUNK_TILES}\u00d7${CHUNK_TILES} micro tiles)`],
+    [COLOR_MICRO, `MICRO   (1 iso tile = ${MICRO_TILE_SIZE}px world)`],
+    [COLOR_NANO,  'NANO    (1/9 of micro = 3\u00d73 grid)'],
+    [COLOR_WALL,  'WALL    (solver wallBounds rect)'],
+  ];
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(legendX - 6, legendY - 12, 260, lh * legend.length + 10);
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < legend.length; i++) {
+    const [color, label] = legend[i];
+    const y = legendY + i * lh;
+    ctx.fillStyle = color;
+    ctx.fillRect(legendX, y - 4, 14, 8);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, legendX + 22, y);
+  }
+  ctx.restore();
 }
 
 function variantToConnections(variant: FeatureVariant): FeatureConnections {

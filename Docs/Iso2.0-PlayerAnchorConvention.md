@@ -7,8 +7,13 @@ introducing nano-snapped player placement in `AiTools/canvas-renderer.ts`.
 
 Every player avatar renders **centered inside one nano-tile** — a 1/9
 sub-cell (1/3 × 1/3) of a micro-tile. The sprite's **feet anchor at the
-south vertex of the chosen nano patch**, mirroring the legacy micro-tile
-anchor but at nano granularity.
+geometric CENTER of the chosen nano patch**.
+
+Anchoring at the center (rather than the patch's south vertex) is what
+makes "centered in a nano cell" hold visually: the avatar body extends
+upward from the foot point, so a south-vertex anchor would make N/W
+wall-huggers look much farther from their wall than S/E huggers (the
+asymmetry observed in iter04 — see Git history).
 
 ## Coordinates
 
@@ -27,8 +32,8 @@ interface CanvasPlayerEntry {
 Foot world position:
 
 ```
-footWorldCol = col + (nanoCol + 1) / 3
-footWorldRow = row + (nanoRow + 1) / 3
+footWorldCol = col + (nanoCol + 0.5) / 3
+footWorldRow = row + (nanoRow + 0.5) / 3
 ```
 
 Nano-grid screen mapping (with `HALF_W = 64`, `HALF_H = 32`):
@@ -58,7 +63,13 @@ that the wall geometry doesn't actually fill.
 
 ## Reference Render
 
-`experiment/isometric-2.0/ProgressEvaluations/closed-players-iter04.png`
+`experiment/isometric-2.0/ProgressEvaluations/closed-players-iter06.png`
 — closed stone-wall square with one player nano-snapped against each
-interior wall (N/S/E/W), demonstrating both the centered-in-nano anchor
-and correct depth layering.
+interior wall (N/S/E/W). All four are equidistant from their respective
+walls (centered in the closest non-wall nano cell), demonstrating both
+the centered-in-nano anchor and correct depth layering.
+
+`experiment/isometric-2.0/ProgressEvaluations/closed-players-iter06-layers.png`
+— same scene with the world-geometry layer overlay (cyan CHUNK / yellow
+MICRO / magenta NANO / orange WALL footprint) for visualizing the
+hierarchy the engine actually uses.
