@@ -51,12 +51,28 @@ for (let r = 2; r <= 5; r++) {
   entries.push({ kind: 'stone-wall', col: 6, row: r, variant: 'straight-v' });
 }
 
-// Four interior players, one hugging each wall.
+// Four interior players, one hugging each wall — maximally close.
+//
+// The drawPlayerSprite anchor places FEET at the SOUTH vertex of the
+// passed (col, row) diamond. South vertex of tile (a, b) lies at
+// world point (a+1, b+1). Walls fill the central 48/128 (~37.5%) of
+// their tile, so wall faces sit at world-coord +/- 0.1875 from tile center.
+//
+//   North wall in row=1 → south face at world-row 1.6875 → feet should
+//     be at world-row ~2.0 (one nano south of wall) → arg row = 1.0.
+//   South wall in row=6 → north face at world-row 6.3125 → feet at
+//     world-row ~6.0 → arg row = 5.0.
+//   West wall in col=1  → east face at world-col 1.6875 → feet at
+//     world-col ~2.0 → arg col = 1.0.
+//   East wall in col=6  → west face at world-col 6.3125 → feet at
+//     world-col ~6.0 → arg col = 5.0.
+//
+// The "free" axis is centered along the wall (world coord 3.5 → arg 2.5).
 const players = [
-  { col: 3, row: 2, label: 'N' },  // against north (back) wall
-  { col: 3, row: 5, label: 'S' },  // against south (front) wall — will be partially behind
-  { col: 2, row: 3, label: 'W' },  // against west (back) wall
-  { col: 5, row: 3, label: 'E' },  // against east (front) wall — will be partially behind
+  { col: 2.5, row: 1.0, label: 'N' },  // feet just south of north wall
+  { col: 2.5, row: 5.0, label: 'S' },  // feet just north of south wall
+  { col: 1.0, row: 2.5, label: 'W' },  // feet just east of west wall
+  { col: 5.0, row: 2.5, label: 'E' },  // feet just west of east wall
 ];
 
 const args = { entries, width: 1600, height: 1100, background: '#0d1117', players, debug, outputPath };
