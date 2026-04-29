@@ -531,17 +531,87 @@ export function drawExtrudedNano(
         //
         //   For V wall: transposed (a=0,b=1,c=-1,d=0) for source-x → screen
         //   (-1, 0.5) along V wall ridge; e=88, f=80 (mirrored algebra).
-        const isVAxis = variant === 'straight-v' || variant === 'end-t' || variant === 'end-b';
-        if (isVAxis) {
-          tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: 88, f: 40 });
+        // ── TOP-FACE RECT BUILDER (corner/tee winner-takes-strip) ──
+        //
+        // The `rects` array above describes the wall FOOTPRINT (used for
+        // side faces, occlusion tests, and end-cap detection). For the TOP
+        // face we deliberately use a DIFFERENT decomposition because brick
+        // courses on top must run ALONG the wall's length axis, and a
+        // single tile can contain BOTH an H run and a V run (corners/tees).
+        //
+        // Picking one global pattern made the whole tile read in that one
+        // orientation, so a corner-br tile drawn with H pattern showed
+        // H bricks bending down through the V arm — looked like the top
+        // texture wrapped around the corner like an L.
+        //
+        // Picking pattern per footprint-rect made each arm correct in
+        // isolation but introduced TWO competing brick courses meeting at
+        // the inside-corner core, with neither matching the neighbor tile.
+        //
+        // Solution: for each variant, declare a "winner" wall (the one
+        // whose bricks pass STRAIGHT through the central core) and a
+        // "loser" wall (the one whose top is just the stub of footprint
+        // NOT covered by the winner strip). The winner strip extends from
+        // tile edge to tile edge along its axis, swallowing the central
+        // core. The loser stub gets the perpendicular pattern.
+        //
+        // For corner-br: winner = H (strip y ∈ [off, off+W], x ∈ [off, 128]).
+        //                loser  = V (stub  x ∈ [off, off+W], y ∈ [off+W, 128]).
+        //
+        // The choice of "H wins" for all corners/tees/cross is arbitrary
+        // but consistent: H wall reads as continuous straight-through
+        // wherever it meets a V wall. The V wall then butts into it on
+        // the neighbor tile (the V neighbor's own straight-v top draws
+        // up to the shared tile boundary, where it meets the H winner).
+        const W2 = 48; const off2 = 40;
+        type Rect = { x:number; y:number; w:number; h:number; v:boolean };
+        const tops: Rect[] = [];
+        // Two pattern transforms — kept here (not hoisted) because they
+        // are only used by this block. See iter14 derivation comment above
+        // for why H = (1,0,0,1, 40,0) and V = (0,1,-1,0, 88,40).
+        const setH = () => tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: 40, f: 0 });
+        const setV = () => tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: 88, f: 40 });
+        if (variant === 'straight-h') {
+          tops.push({ x: 0, y: off2, w: 128, h: W2, v: false });
+        } else if (variant === 'straight-v') {
+          tops.push({ x: off2, y: 0, w: W2, h: 128, v: true });
+        } else if (variant === 'corner-br') {
+          // H winner: core + right arm as one strip.
+          // V loser:  bottom-arm stub only.
+          tops.push({ x: off2, y: off2, w: 128 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-bl') {
+          tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
+          tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-tr') {
+          tops.push({ x: off2, y: off2, w: 128 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-tl') {
+          tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
+          tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+        } else if (variant === 'tee-t' || variant === 'tee-b' || variant === 'cross') {
+          // H winner runs the full width of the tile; V stubs hang off
+          // the core to whichever side(s) the variant calls for.
+          tops.push({ x: 0, y: off2, w: 128, h: W2, v: false });
+          if (variant === 'tee-b' || variant === 'cross') tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+          if (variant === 'tee-t' || variant === 'cross') tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'tee-l' || variant === 'tee-r') {
+          // No H arm in these tees → V is the only continuous run, so it
+          // wins. H stub on the side that has the arm.
+          tops.push({ x: off2, y: 0, w: W2, h: 128, v: true });
+          if (variant === 'tee-l') tops.push({ x: off2 + W2, y: off2, w: off2, h: W2, v: false });
+          else                     tops.push({ x: 0,         y: off2, w: off2, h: W2, v: false });
         } else {
-          tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: 40, f: 0 });
+          // end-* and isolated — single rect, pattern matches the wall axis.
+          for (const r of rects) tops.push({ ...r, v: (variant === 'end-t' || variant === 'end-b') });
         }
+
         ctx.save();
         clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
         ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
-        ctx.fillStyle = tPattern;
-        for (const r of rects) {
+        for (const r of tops) {
+          if (r.v) setV(); else setH();
+          ctx.fillStyle = tPattern;
           ctx.fillRect(r.x, r.y, r.w, r.h);
         }
         // (Removed per-rect strokeRect overlay — it was a debug helper that
