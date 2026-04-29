@@ -402,15 +402,6 @@ export function drawExtrudedNano(
         && r.x === WALL_OFFSET
         && r.y === WALL_OFFSET;
   }
-  function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
-    if (r.y + r.h >= MICRO_TILE_SIZE) {
-      // Tile-boundary: only an end if the south neighbor has NO wall.
-      return neighborWalls ? !neighborWalls.s : false;
-    }
-    const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
-    const hasNorth = rects.some(o => o.y + o.h <= r.y && o.x < r.x + r.w && o.x + o.w > r.x);
-    return noSouth && hasNorth;
-  }
   function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
     if (r.x + r.w >= MICRO_TILE_SIZE) {
       return neighborWalls ? !neighborWalls.e : false;
@@ -419,10 +410,9 @@ export function drawExtrudedNano(
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
   }
-  // NOTE: We do NOT skip core-rect faces just because a perpendicular arm
-  // exists. A corner-tl's south/east core faces are genuinely exposed when
-  // no S/E arm and no S/E neighbor wall block them — they should tick.
-  // The perpendicular arm sits on a DIFFERENT edge and doesn't occlude.
+  // NOTE: No southIsEnd. With the H-winner top texture, brick headers
+  // face east/west only — south faces always show brick long-sides and
+  // never carry vertical grout ticks. See the south-face draw site below.
   void isCoreRect;
   const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
@@ -478,23 +468,16 @@ export function drawExtrudedNano(
             ctx.transform(1, 0.5, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
-            // END-FACE grout overlay: drawn UNCONDITIONALLY on every face
-            // that southIsEnd flags (i.e., terminal of a wall run within
-            // this tile). The hope is that adjacent-tile rendering order
-            // will overdraw these ticks where another wall butts in.
-            if (southIsEnd(r)) {
-              // END-FACE: short vertical mortar ticks descending from each
-              // top COURSE-mortar line where it meets the end-face top
-              // edge. One brick deep. Corner bricks (x=0, x=r.w) stay
-              // unbroken — they wrap around the wall corner.
-              ctx.fillStyle = '#1c1a17';
-              const COURSE_PITCH = 8;
-              const TICK_DEPTH = 7;
-              const TICK_W = 2;
-              for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
-                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
-              }
-            }
+            // NOTE: NO end-face vertical grout ticks on the SOUTH face.
+            // Vertical grout marks represent brick HEADERS (the short ends
+            // of bricks). Headers face perpendicular to the brick run
+            // direction. Our top texture is ALWAYS H-winner (bricks lie
+            // horizontal, running east/west), so headers point E/W —
+            // visible only on east and west faces. The south face shows
+            // brick LONG-SIDES (parallel to the run), which have no
+            // vertical grout marks. Drawing them here was physically
+            // inconsistent with the top texture — see issue #211 / closed-
+            // iter07 feedback ("90 degrees out of phase").
             ctx.restore();
           }
           if (!eastOccluded(r)) {
