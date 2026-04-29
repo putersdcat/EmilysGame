@@ -402,7 +402,40 @@ export function drawExtrudedNano(
         && r.x === WALL_OFFSET
         && r.y === WALL_OFFSET;
   }
+  /**
+   * Per-rect top texture orientation. MUST mirror the iter03 winner-takes-
+   * strip logic in the TOP-FACE block below. End-cap ticks represent brick
+   * HEADERS — only valid on faces perpendicular to the brick run direction.
+   * Top runs V → bricks run N/S → headers face N/S → SOUTH-face ticks valid.
+   * Top runs H → bricks run E/W → headers face E/W → EAST-face ticks valid.
+   */
+  function topIsV(r: { x:number; y:number; w:number; h:number }): boolean {
+    const v = nano.variant;
+    if (v === 'straight-v' || v === 'end-t' || v === 'end-b' || v === 'tee-l' || v === 'tee-r') return true;
+    if (v === 'straight-h' || v === 'end-l' || v === 'end-r') return false;
+    // H-winner variants: corner-*, tee-t, tee-b, cross.
+    // Core is covered by the H winner strip; vertical arms (top-arm and
+    // bottom-arm rects, identified by W-thick column at off, extending
+    // above or below the core band) are V stubs.
+    if (isCoreRect(r)) return false;
+    const inHBand = r.x === WALL_OFFSET && r.w === WALL_THICKNESS;
+    const aboveCore = r.y + r.h <= WALL_OFFSET;
+    const belowCore = r.y >= WALL_OFFSET + WALL_THICKNESS;
+    return inHBand && (aboveCore || belowCore);
+  }
+  function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    // Physically: south ticks = brick headers, only valid when top above is V.
+    if (!topIsV(r)) return false;
+    if (r.y + r.h >= MICRO_TILE_SIZE) {
+      return neighborWalls ? !neighborWalls.s : false;
+    }
+    const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
+    const hasNorth = rects.some(o => o.y + o.h <= r.y && o.x < r.x + r.w && o.x + o.w > r.x);
+    return noSouth && hasNorth;
+  }
   function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    // Physically: east ticks = brick headers, only valid when top above is H.
+    if (topIsV(r)) return false;
     if (r.x + r.w >= MICRO_TILE_SIZE) {
       return neighborWalls ? !neighborWalls.e : false;
     }
@@ -410,10 +443,6 @@ export function drawExtrudedNano(
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
   }
-  // NOTE: No southIsEnd. With the H-winner top texture, brick headers
-  // face east/west only — south faces always show brick long-sides and
-  // never carry vertical grout ticks. See the south-face draw site below.
-  void isCoreRect;
   const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
 
@@ -468,16 +497,19 @@ export function drawExtrudedNano(
             ctx.transform(1, 0.5, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
-            // NOTE: NO end-face vertical grout ticks on the SOUTH face.
-            // Vertical grout marks represent brick HEADERS (the short ends
-            // of bricks). Headers face perpendicular to the brick run
-            // direction. Our top texture is ALWAYS H-winner (bricks lie
-            // horizontal, running east/west), so headers point E/W —
-            // visible only on east and west faces. The south face shows
-            // brick LONG-SIDES (parallel to the run), which have no
-            // vertical grout marks. Drawing them here was physically
-            // inconsistent with the top texture — see issue #211 / closed-
-            // iter07 feedback ("90 degrees out of phase").
+            // END-FACE: vertical mortar ticks descending from each course
+            // line. PHYSICALLY VALID only when the top above this rect runs
+            // V (bricks running N/S → headers face N/S). topIsV(r) gates
+            // this — see southIsEnd().
+            if (southIsEnd(r)) {
+              ctx.fillStyle = '#1c1a17';
+              const COURSE_PITCH = 8;
+              const TICK_DEPTH = 7;
+              const TICK_W = 2;
+              for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
+                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
+              }
+            }
             ctx.restore();
           }
           if (!eastOccluded(r)) {
