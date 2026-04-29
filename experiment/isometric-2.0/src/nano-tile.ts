@@ -402,20 +402,9 @@ export function drawExtrudedNano(
         && r.x === WALL_OFFSET
         && r.y === WALL_OFFSET;
   }
-  /** True if any rect represents an arm extending east or west of the core. */
-  function hasHorizontalArm(): boolean {
-    return rects.some(o => (o.x + o.w <= WALL_OFFSET) || (o.x >= WALL_OFFSET + WALL_THICKNESS));
-  }
-  /** True if any rect represents an arm extending north or south of the core. */
-  function hasVerticalArm(): boolean {
-    return rects.some(o => (o.y + o.h <= WALL_OFFSET) || (o.y >= WALL_OFFSET + WALL_THICKNESS));
-  }
   function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
-    // Core rule: a core face is a true cap ONLY when there is NO perpendicular
-    // arm. A perpendicular (E/W) arm makes this an L-corner / tee cross-section,
-    // not a cap, so its end-tick texture would compete with the top-face texture.
-    if (isCoreRect(r) && hasHorizontalArm()) return false;
     if (r.y + r.h >= MICRO_TILE_SIZE) {
+      // Tile-boundary: only an end if the south neighbor has NO wall.
       return neighborWalls ? !neighborWalls.s : false;
     }
     const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
@@ -423,7 +412,6 @@ export function drawExtrudedNano(
     return noSouth && hasNorth;
   }
   function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
-    if (isCoreRect(r) && hasVerticalArm()) return false;
     if (r.x + r.w >= MICRO_TILE_SIZE) {
       return neighborWalls ? !neighborWalls.e : false;
     }
@@ -431,6 +419,11 @@ export function drawExtrudedNano(
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
   }
+  // NOTE: We do NOT skip core-rect faces just because a perpendicular arm
+  // exists. A corner-tl's south/east core faces are genuinely exposed when
+  // no S/E arm and no S/E neighbor wall block them — they should tick.
+  // The perpendicular arm sits on a DIFFERENT edge and doesn't occlude.
+  void isCoreRect;
   const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
 
