@@ -373,13 +373,18 @@ export function drawExtrudedNano(
   // ENDFACE detection: a face is an END (header/cap) if it's at the
   // terminal of a wall RUN — meaning (a) no rect extends further in that
   // direction, AND (b) the wall does extend in the OPPOSITE direction
-  // (so this isn't a side face along the wall's length).
+  // (so this isn't a side face along the wall's length), AND (c) the
+  // rect's edge does NOT sit on the tile boundary (otherwise the wall
+  // continues into the neighbor tile — wallBounds only extends arms to
+  // the tile edge when a connection is intended).
   function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    if (r.y + r.h >= MICRO_TILE_SIZE) return false; // connects to S neighbor
     const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
     const hasNorth = rects.some(o => o.y + o.h <= r.y && o.x < r.x + r.w && o.x + o.w > r.x);
     return noSouth && hasNorth;
   }
   function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
+    if (r.x + r.w >= MICRO_TILE_SIZE) return false; // connects to E neighbor
     const noEast = !rects.some(o => o.x >= r.x + r.w && o.y < r.y + r.h && o.y + o.h > r.y);
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
