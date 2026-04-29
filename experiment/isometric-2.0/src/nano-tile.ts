@@ -325,6 +325,14 @@ export function drawExtrudedNano(
   screenX: number,
   screenY: number,
   sun?: SunState,
+  /**
+   * Optional: which of the 4 cardinal neighbor tiles also contains a wall
+   * (any wall variant). Used to suppress end-cap ticks at tile boundaries
+   * where the wall continues into the next tile. n=north (-y), s=south (+y),
+   * e=east (+x), w=west (-x). When omitted (null), defaults to the within-tile
+   * heuristic only.
+   */
+  neighborWalls?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): boolean {
   const hasExtrusion = nano.sideTextureSvg || nano.topTextureSvg;
   if (!hasExtrusion) {
@@ -370,21 +378,55 @@ export function drawExtrudedNano(
     return rects.some(o => o !== r && o.x === r.x + r.w
       && o.y < r.y + r.h && o.y + o.h > r.y);
   }
-  // ENDFACE detection: a face is an END (header/cap) if it's at the
-  // terminal of a wall RUN — meaning (a) no rect extends further in that
-  // direction, AND (b) the wall does extend in the OPPOSITE direction
-  // (so this isn't a side face along the wall's length), AND (c) the
-  // rect's edge does NOT sit on the tile boundary (otherwise the wall
-  // continues into the neighbor tile — wallBounds only extends arms to
-  // the tile edge when a connection is intended).
+  // ENDFACE detection: a face is an END (header/cap) only when it is
+  // GENUINELY EXPOSED at the terminal of a wall run. Three rules combine:
+  //
+  //  (A) WITHIN-TILE: no rect of this tile extends further in that
+  //      direction, AND a rect extends in the OPPOSITE direction (so
+  //      this isn't a side face along the wall's length).
+  //
+  //  (B) TILE-BOUNDARY: if the rect's edge sits on the tile boundary,
+  //      check the neighbor tile in that direction. If the neighbor has
+  //      a wall, the run continues — NOT an end. Without neighbor info,
+  //      assume continuation (safer to under-tick than to bleed ticks
+  //      into adjacent walls).
+  //
+  //  (C) CORE-IS-NOT-A-CAP: the central 48×48 "core" rect represents the
+  //      interior wall pillar where arms join, not a cap. Its faces may
+  //      be exposed when an arm is missing on that side (e.g. corner-tr
+  //      has no bottom-arm so the core's south face is exposed grass-
+  //      ward), but ticking it competes with the top winner-strip and
+  //      reads as visual noise. Skip ticks on core rects.
+  function isCoreRect(r: { x:number; y:number; w:number; h:number }): boolean {
+    return r.w === WALL_THICKNESS && r.h === WALL_THICKNESS
+        && r.x === WALL_OFFSET
+        && r.y === WALL_OFFSET;
+  }
+  /** True if any rect represents an arm extending east or west of the core. */
+  function hasHorizontalArm(): boolean {
+    return rects.some(o => (o.x + o.w <= WALL_OFFSET) || (o.x >= WALL_OFFSET + WALL_THICKNESS));
+  }
+  /** True if any rect represents an arm extending north or south of the core. */
+  function hasVerticalArm(): boolean {
+    return rects.some(o => (o.y + o.h <= WALL_OFFSET) || (o.y >= WALL_OFFSET + WALL_THICKNESS));
+  }
   function southIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
-    if (r.y + r.h >= MICRO_TILE_SIZE) return false; // connects to S neighbor
+    // Core rule: a core face is a true cap ONLY when there is NO perpendicular
+    // arm. A perpendicular (E/W) arm makes this an L-corner / tee cross-section,
+    // not a cap, so its end-tick texture would compete with the top-face texture.
+    if (isCoreRect(r) && hasHorizontalArm()) return false;
+    if (r.y + r.h >= MICRO_TILE_SIZE) {
+      return neighborWalls ? !neighborWalls.s : false;
+    }
     const noSouth = !rects.some(o => o.y >= r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
     const hasNorth = rects.some(o => o.y + o.h <= r.y && o.x < r.x + r.w && o.x + o.w > r.x);
     return noSouth && hasNorth;
   }
   function eastIsEnd(r: { x: number; y: number; w: number; h: number }): boolean {
-    if (r.x + r.w >= MICRO_TILE_SIZE) return false; // connects to E neighbor
+    if (isCoreRect(r) && hasVerticalArm()) return false;
+    if (r.x + r.w >= MICRO_TILE_SIZE) {
+      return neighborWalls ? !neighborWalls.e : false;
+    }
     const noEast = !rects.some(o => o.x >= r.x + r.w && o.y < r.y + r.h && o.y + o.h > r.y);
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
@@ -443,13 +485,11 @@ export function drawExtrudedNano(
             ctx.transform(1, 0.5, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
-            // END-FACE grout overlay: only fired for true terminal walls
-            // (variant === 'end-*'). Corners and tees already communicate
-            // direction through the top winner-takes-strip pattern, so
-            // adding ticks on their exposed core faces conflicts with the
-            // top texture and reads as noise.
-            const isEndVariant = variant === 'end-t' || variant === 'end-b' || variant === 'end-l' || variant === 'end-r';
-            if (isEndVariant && southIsEnd(r)) {
+            // END-FACE grout overlay: drawn UNCONDITIONALLY on every face
+            // that southIsEnd flags (i.e., terminal of a wall run within
+            // this tile). The hope is that adjacent-tile rendering order
+            // will overdraw these ticks where another wall butts in.
+            if (southIsEnd(r)) {
               // END-FACE: short vertical mortar ticks descending from each
               // top COURSE-mortar line where it meets the end-face top
               // edge. One brick deep. Corner bricks (x=0, x=r.w) stay
@@ -485,10 +525,7 @@ export function drawExtrudedNano(
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
             // END-FACE: course-aligned vertical mortar ticks (mirror).
-            // See south-face note above: only fired for true 'end-*'
-            // variants to avoid noise on corner/tee exposed cores.
-            const isEndVariantE = variant === 'end-t' || variant === 'end-b' || variant === 'end-l' || variant === 'end-r';
-            if (isEndVariantE && eastIsEnd(r)) {
+            if (eastIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
@@ -662,6 +699,11 @@ export function drawNanoStack(
   screenX: number,
   screenY: number,
   sun?: SunState,
+  /**
+   * Optional neighbor-wall flags (n/s/e/w). Used by drawExtrudedNano to
+   * suppress end-cap ticks at tile boundaries when the wall continues.
+   */
+  neighborWalls?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): NanoDrawResult {
   let sinkDepthPx = 0;
   let allImagesLoaded = true;
@@ -679,7 +721,7 @@ export function drawNanoStack(
         break;
       case 'positive':
         if (nano.sideTextureSvg || nano.topTextureSvg) {
-          if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;
+          if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun, neighborWalls)) allImagesLoaded = false;
         } else {
           if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;
         }

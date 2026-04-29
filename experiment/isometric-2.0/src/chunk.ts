@@ -94,6 +94,36 @@ const KIND_COLORS: Record<TileKind, string> = {
   'dry-grass': '#7a9a3a',
 };
 
+/** Nano kinds that render via drawExtrudedNano (have side+top textures). */
+const EXTRUDED_WALL_KINDS = new Set<NanoTileKind>([
+  'stone-wall', 'cathedral-wall', 'homestead-wall',
+]);
+
+/**
+ * For a tile at (col,row) within `chunk`, report which of the 4 cardinal
+ * neighbor tiles inside the same chunk also contains an extruded wall.
+ * Used by drawExtrudedNano to suppress end-cap ticks where the wall continues.
+ * Tiles outside the chunk return false — at worst the seam loses tick suppression.
+ */
+function computeWallNeighbors(
+  chunk: WorldUnitChunk,
+  col: number,
+  row: number,
+): { n: boolean; s: boolean; e: boolean; w: boolean } {
+  const has = (c: number, r: number): boolean => {
+    if (c < 0 || r < 0 || c >= CHUNK_TILES || r >= CHUNK_TILES) return false;
+    const t = chunk.tiles[r * CHUNK_TILES + c];
+    if (!t.nanos) return false;
+    return t.nanos.some(n => EXTRUDED_WALL_KINDS.has(n.kind));
+  };
+  return {
+    n: has(col,     row - 1),
+    s: has(col,     row + 1),
+    e: has(col + 1, row),
+    w: has(col - 1, row),
+  };
+}
+
 // ─── Chunk Baking ────────────────────────────────────────────
 
 /**
@@ -162,7 +192,8 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
 
       // Draw nano overlays for this tile (negative → flat → positive order)
       if (tile.nanos && tile.nanos.length > 0) {
-        const nanoResult = drawNanoStack(ctx, tile.nanos, drawX, drawY, sun);
+        const nb = computeWallNeighbors(chunk, col, row);
+        const nanoResult = drawNanoStack(ctx, tile.nanos, drawX, drawY, sun, nb);
         if (!nanoResult.allImagesLoaded) allLoaded = false;
       }
     }

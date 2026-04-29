@@ -473,7 +473,8 @@ export async function renderNanoScene(
       if (!nano) continue;
       const { screenX, screenY } = tilePos(item.entry.col, item.entry.row, ox, oy);
       if (debug) drawDebugDiamond(ctx, item.entry.col, item.entry.row, NANO_WALKABLE[item.entry.kind] ?? true, ox, oy);
-      drawNanoStack(nctx, [nano], screenX, screenY);
+      const nb = computeWallNeighbors(item.entry, entries);
+      drawNanoStack(nctx, [nano], screenX, screenY, undefined, nb);
     } else {
       drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy);
     }
@@ -483,6 +484,25 @@ export async function renderNanoScene(
 }
 
 // ─── Utility ──────────────────────────────────────────────────
+
+/**
+ * Inspect the 4 cardinal neighbor cells of `entry` in the scene `entries`
+ * and report whether each contains an EXTRUDED wall (any variant).
+ * Used to suppress end-cap ticks at tile boundaries where the wall continues.
+ */
+function computeWallNeighbors(
+  entry: CanvasSceneEntry,
+  entries: readonly CanvasSceneEntry[],
+): { n: boolean; s: boolean; e: boolean; w: boolean } {
+  const has = (col: number, row: number): boolean =>
+    entries.some(e => e.col === col && e.row === row && EXTRUDED_KINDS.has(e.kind));
+  return {
+    n: has(entry.col,     entry.row - 1),
+    s: has(entry.col,     entry.row + 1),
+    e: has(entry.col + 1, entry.row),
+    w: has(entry.col - 1, entry.row),
+  };
+}
 
 function variantToConnections(variant: FeatureVariant): FeatureConnections {
   switch (variant) {
