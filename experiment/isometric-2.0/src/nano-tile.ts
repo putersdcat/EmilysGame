@@ -624,6 +624,16 @@ export function drawExtrudedNano(
         // for why H = (1,0,0,1, 40,0) and V = (0,1,-1,0, 88,40).
         const setH = () => tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: 40, f: 0 });
         const setV = () => tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: 88, f: 40 });
+        // ── Rotation-invariant texture override ─────────────────────
+        // For non-brick textures (e.g. Voronoi natural stone) the
+        // 90°-rotation between H winner strip and V loser stub creates
+        // a visible seam at inside corners — cells from the two
+        // patterns don't match across the meeting line. When
+        // topRotateWithAxis === false, ALL top rects use the H
+        // transform; the source texture's rotational symmetry hides
+        // the fact that V rects "should" run perpendicular.
+        const rotateWithAxis = nano.topRotateWithAxis !== false;
+        const setForRect = (v: boolean) => (v && rotateWithAxis) ? setV() : setH();
         if (variant === 'straight-h') {
           tops.push({ x: 0, y: off2, w: 128, h: W2, v: false });
         } else if (variant === 'straight-v') {
@@ -663,7 +673,7 @@ export function drawExtrudedNano(
         clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
         ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
         for (const r of tops) {
-          if (r.v) setV(); else setH();
+          if (r.v) setForRect(true); else setForRect(false);
           ctx.fillStyle = tPattern;
           ctx.fillRect(r.x, r.y, r.w, r.h);
         }

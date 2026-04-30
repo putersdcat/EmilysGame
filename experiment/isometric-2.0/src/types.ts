@@ -211,6 +211,20 @@ export interface NanoTile {
   readonly connections?: FeatureConnections;
   /** Solver-resolved variant piece. */
   readonly variant?: FeatureVariant;
+  /**
+   * When true (default), the wall TOP face uses an axis-aware pattern
+   * transform — H wall rects use the H transform (bricks running E/W),
+   * V wall rects use the V transform (bricks running N/S). Correct for
+   * brick textures whose orientation should match the wall length axis.
+   *
+   * When false, ALL top rects use the H pattern transform. Correct for
+   * rotation-invariant textures (Voronoi natural stone) — kills the
+   * 90°-rotation seam where an H winner strip meets a V loser stub
+   * inside corner/tee tiles. The visual cost is that V walls have stones
+   * "running" in the H direction on top, but cells have no clear
+   * direction, so this is invisible.
+   */
+  readonly topRotateWithAxis?: boolean;
 }
 
 /**

@@ -122,6 +122,14 @@ export interface CanvasSceneEntry {
    * for non-brick textures (e.g. ancient-stone Voronoi).
    */
   topOutline?: boolean;
+  /**
+   * When true (default), wall TOP face uses an axis-aware pattern
+   * transform per rect (H rects → H pattern, V rects → V pattern).
+   * Set false for rotation-invariant textures (e.g. ancient-stone
+   * Voronoi) so all top rects share the H transform — eliminates the
+   * 90°-rotation seam at inside corners. Forwarded to NanoTile.
+   */
+  topRotateWithAxis?: boolean;
 }
 
 /**
@@ -248,6 +256,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       topTextureSvg:  topSvg,
       variant,
       connections: conn,
+      topRotateWithAxis: e.topRotateWithAxis,
     };
   }
 

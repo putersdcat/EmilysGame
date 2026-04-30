@@ -38,11 +38,17 @@ import { StoneBrick, RedClinker, AncientStone } from '../src/textures/index.js';
  * irregular — a rectangular outline painted on top of polygons reads
  * as a foreign shape and breaks the illusion.
  */
-interface BrickTextureSpec { svg(): string; topOutline: boolean; }
+interface BrickTextureSpec {
+  svg(): string;
+  topOutline: boolean;
+  /** True for textures whose orientation should match the wall axis
+   *  (bricks). False for rotation-invariant textures (Voronoi). */
+  topRotateWithAxis: boolean;
+}
 const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
-  'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true  },
-  'red-clinker':    { svg: () => RedClinker.svg(),    topOutline: true  },
-  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false },
+  'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true,  topRotateWithAxis: true  },
+  'red-clinker':    { svg: () => RedClinker.svg(),    topOutline: true,  topRotateWithAxis: true  },
+  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false, topRotateWithAxis: false },
 };
 
 // ─── Types ────────────────────────────────────────────────────
@@ -273,13 +279,15 @@ async function dispatch(): Promise<WorkerResult> {
         let svgOverride: string | undefined = e.svgOverride;
         let topSvgOverride: string | undefined = e.topSvgOverride;
         let topOutline: boolean | undefined = e.topOutline;
+        let topRotateWithAxis: boolean | undefined = e.topRotateWithAxis;
         if (typeof e.texture === 'string') {
           const spec = BRICK_TEXTURES[e.texture];
           if (!spec) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
           const tex = spec.svg();
-          svgOverride    = svgOverride    ?? tex;
-          topSvgOverride = topSvgOverride ?? tex;
-          topOutline     = topOutline     ?? spec.topOutline;
+          svgOverride       = svgOverride       ?? tex;
+          topSvgOverride    = topSvgOverride    ?? tex;
+          topOutline        = topOutline        ?? spec.topOutline;
+          topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
         }
         return {
           kind: e.kind, col: e.col, row: e.row,
@@ -288,6 +296,7 @@ async function dispatch(): Promise<WorkerResult> {
           svgOverride,
           topSvgOverride,
           topOutline,
+          topRotateWithAxis,
         };
       });
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
