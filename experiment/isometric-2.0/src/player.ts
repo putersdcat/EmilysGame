@@ -305,9 +305,21 @@ export function drawPlayer(
 /**
  * Get the isometric sort key for the player.
  * Used to interleave player draw with nano overlay redraws.
+ *
+ * The key is the sum of the player's continuous world position
+ * (`worldCol + worldRow`). Because `worldCol` / `worldRow` already
+ * include the player's sub-tile offset (including L0.5 nano-patch
+ * snapping), this naturally yields the foot's true centroid depth.
+ *
+ * NOTE: a legacy `+ 0.5` term used to live here to compensate for
+ * extruded tiles incorrectly sorting at their back-corner origin.
+ * That was removed when `drawOccludingNanos` was fixed to use the
+ * tile centroid (`wc + wr + 1`); adding +0.5 here as well would
+ * over-shift the player forward and break occlusion in the
+ * player's OWN micro tile.
  */
 export function getPlayerSortKey(player: PlayerState): number {
-  return (player.worldRow + player.worldCol) + 0.5; // +0.5 to place between tile rows
+  return player.worldRow + player.worldCol;
 }
 
 // ─── Occlusion: Re-draw positive nanos in front of player ────
@@ -341,7 +353,27 @@ export function drawOccludingNanos(
     for (let dc = -2; dc <= 2; dc++) {
       const wc = pCol + dc;
       const wr = pRow + dr;
-      const tileSortKey = (wr + wc) + 0.01 * wc;
+      // ── Iso painter's-algorithm depth for an extruded (positive-z) nano ──
+      // CRITICAL: an extruded wall's blocking geometry occupies the CENTER
+      // of its host micro tile (the center column / center row of the 3×3
+      // L0.5 nano grid for a vertical / horizontal straight). The wall's
+      // visual footprint extends through the FULL micro, so its centroid
+      // is at (wc+0.5, wr+0.5) and its painter-sort depth is wc + wr + 1
+      // — NOT wc + wr (the back corner of the micro).
+      //
+      // Without this +1 shift, a player nano-snapped to an interior-side
+      // patch of the SAME micro as a wall (e.g. nano (1,0) of a south-wall
+      // micro = the patch immediately north of, and behind, the wall in
+      // iso) gets a LARGER depth than the wall and is incorrectly painted
+      // on top — the wall fails to occlude the player's lower body. With
+      // the +1 shift, the wall's centroid depth correctly exceeds the
+      // player's foot depth in that case and `drawOccludingNanos` pulls
+      // the wall back over the player.
+      //
+      // The 0.01 * wc term breaks ties between equal-depth tiles in a
+      // deterministic way (right-of-pair wins, matching the chunk bake's
+      // stable ordering).
+      const tileSortKey = (wr + wc + 1) + 0.01 * wc;
 
       // Only redraw nanos that are IN FRONT of the player (higher sort key)
       if (tileSortKey <= playerSortKey) continue;

@@ -528,9 +528,32 @@ export async function renderNanoScene(
     }
     return p.col + p.row + 0.5;
   };
+  // Iso painter's-algorithm depth for an extruded (positive-z) nano entry.
+  //
+  // CRITICAL: the wall's extruded geometry occupies the CENTER of its
+  // host micro tile (the center row of the 3×3 nano grid for a horizontal
+  // straight, the center column for a vertical straight, etc.) — NOT the
+  // back corner. Using `col + row` as the sort key was wrong: it placed
+  // the wall too far back in the paint order, so a player nano-snapped
+  // to an interior-side patch of the SAME micro (e.g. nano (1,0) of the
+  // south-wall micro = the north-of-wall patch) ended up with a larger
+  // depth and got painted ON TOP of the wall it should be hidden behind.
+  //
+  // The wall's footprint actually extends through the full micro, so its
+  // centroid is at (col+0.5, row+0.5) → depth = col + row + 1. With this
+  // key:
+  //   * a player on the FAR (back) side of a wall in its own micro
+  //     (toward smaller col+row) gets a SMALLER depth → painted first →
+  //     wall correctly occludes their lower body.
+  //   * a player on the NEAR (front) side of a wall in its own micro
+  //     (toward larger col+row) gets a LARGER depth → painted last →
+  //     player correctly stands in front of the wall.
+  //   * wall-vs-wall and wall-vs-terrain ordering is preserved (the
+  //     +1 shift is uniform across all positive nanos).
+  const nanoDepth = (e: CanvasSceneEntry): number => e.col + e.row + 1;
   const drawItems: DrawItem[] = [
-    ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: e.col + e.row,       entry: e  })),
-    ...players.map(            p  => ({ kind: 'player' as const, depth: playerDepth(p),      player: p })),
+    ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: nanoDepth(e),    entry: e  })),
+    ...players.map(            p  => ({ kind: 'player' as const, depth: playerDepth(p), player: p })),
   ].sort((a, b) => a.depth - b.depth);
 
   for (const item of drawItems) {
