@@ -29,12 +29,20 @@ import { StoneBrick, RedClinker, AncientStone } from '../src/textures/index.js';
 /**
  * Named brick textures available to scene entries via `texture: '<name>'`.
  * Maps to the canonical 128×128 self-tileable SVG (textures/README.md).
- * Add new entries here when authoring additional brick palettes.
+ *
+ * `topOutline` controls whether stoneWallTopSvg draws its 0.30-alpha
+ * black rectangular stroke around each wall footprint rect on the top
+ * face. True (default) is correct for *brick* textures whose internal
+ * lines are also rectangular grout. False is correct for non-brick
+ * textures (e.g. Voronoi natural stone) whose internal geometry is
+ * irregular — a rectangular outline painted on top of polygons reads
+ * as a foreign shape and breaks the illusion.
  */
-const BRICK_TEXTURES: Record<string, () => string> = {
-  'stone-brick':    () => StoneBrick.svg(),
-  'red-clinker':    () => RedClinker.svg(),
-  'ancient-stone':  () => AncientStone.svg(),
+interface BrickTextureSpec { svg(): string; topOutline: boolean; }
+const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
+  'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true  },
+  'red-clinker':    { svg: () => RedClinker.svg(),    topOutline: true  },
+  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false },
 };
 
 // ─── Types ────────────────────────────────────────────────────
@@ -260,16 +268,18 @@ async function dispatch(): Promise<WorkerResult> {
       const { entries, players: rawPlayers, width, height, debug, geometryLayers, background, outputPath } = args as Record<string, any>;
       const sceneEntries: CanvasSceneEntry[] = (entries ?? []).map((e: Record<string, any>) => {
         // Resolve the optional `texture` shorthand (e.g. 'red-clinker')
-        // into svgOverride + topSvgOverride. Explicit *Override fields
-        // win if both are supplied.
+        // into svgOverride + topSvgOverride + topOutline. Explicit
+        // override fields win if both are supplied.
         let svgOverride: string | undefined = e.svgOverride;
         let topSvgOverride: string | undefined = e.topSvgOverride;
+        let topOutline: boolean | undefined = e.topOutline;
         if (typeof e.texture === 'string') {
-          const factory = BRICK_TEXTURES[e.texture];
-          if (!factory) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
-          const tex = factory();
+          const spec = BRICK_TEXTURES[e.texture];
+          if (!spec) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
+          const tex = spec.svg();
           svgOverride    = svgOverride    ?? tex;
           topSvgOverride = topSvgOverride ?? tex;
+          topOutline     = topOutline     ?? spec.topOutline;
         }
         return {
           kind: e.kind, col: e.col, row: e.row,
@@ -277,6 +287,7 @@ async function dispatch(): Promise<WorkerResult> {
           zOffset: e.zOffset,
           svgOverride,
           topSvgOverride,
+          topOutline,
         };
       });
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({

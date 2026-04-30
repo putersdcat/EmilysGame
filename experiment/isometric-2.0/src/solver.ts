@@ -223,10 +223,18 @@ export function stoneWallSvg(_variant: FeatureVariant): string {
  *        (or any other module conforming to textures/README.md) to
  *        retexture the wall top without touching the rest of the
  *        pipeline.
+ * @param topOutline — when true (default), draws a 0.30-alpha black
+ *        rectangular stroke around each wall-footprint rect. This
+ *        reads as mortar end-caps for *brick* textures (whose internal
+ *        lines are also rectangular and grout-coloured), but should
+ *        be turned OFF for non-brick textures (e.g. Voronoi stone)
+ *        whose internal geometry is irregular — otherwise the
+ *        rectangle outline is visibly painted on top of the polygons.
  */
 export function stoneWallTopSvg(
   variant: FeatureVariant,
   sourceBrickSvg: string = StoneBrick.svg(),
+  topOutline: boolean = true,
 ): string {
   const { rects } = wallBounds(variant);
   const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(sourceBrickSvg)}`;
@@ -234,7 +242,9 @@ export function stoneWallTopSvg(
   parts.push(`<defs><pattern id="brickP" patternUnits="userSpaceOnUse" width="128" height="128"><image href="${dataUrl}" width="128" height="128" /></pattern></defs>`);
   for (const r of rects) {
     parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#brickP)" />`);
-    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`);
+    if (topOutline) {
+      parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`);
+    }
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}

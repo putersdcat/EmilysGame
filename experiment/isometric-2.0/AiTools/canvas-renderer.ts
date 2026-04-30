@@ -116,6 +116,12 @@ export interface CanvasSceneEntry {
    * canonical StoneBrick top texture is used.
    */
   topSvgOverride?: string;
+  /**
+   * Whether stoneWallTopSvg draws its rectangular grout outline on the
+   * top face. Defaults to true (correct for brick textures). Set false
+   * for non-brick textures (e.g. ancient-stone Voronoi).
+   */
+  topOutline?: boolean;
 }
 
 /**
@@ -182,7 +188,7 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
 
     if (EXTRUDED_KINDS.has(e.kind)) {
       const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row);
-      const top  = stoneWallTopSvg(variant, e.topSvgOverride ?? side ?? undefined);
+      const top  = stoneWallTopSvg(variant, e.topSvgOverride ?? side ?? undefined, e.topOutline);
       if (side) out.add(side);
       if (top)  out.add(top);
     } else {
@@ -234,7 +240,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
     // consistent. Falls back to canonical StoneBrick when both are
     // empty (unreachable in practice — extruded kinds always supply a
     // side via getVariantSvg).
-    const topSvg  = stoneWallTopSvg(variant, e.topSvgOverride ?? sideSvg ?? undefined);
+    const topSvg  = stoneWallTopSvg(variant, e.topSvgOverride ?? sideSvg ?? undefined, e.topOutline);
     return {
       kind, zOffset, zMode, walkable, blendEdges: false,
       svg:            sideSvg,

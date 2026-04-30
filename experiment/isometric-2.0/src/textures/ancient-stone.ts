@@ -58,13 +58,22 @@
 
 export const IMAGE_SIZE = 128;
 
-// Lattice & jitter knobs. 5×5 = 25 stones at ~25.6 px spacing reads as
-// chunky-but-not-cartoonish ancient masonry. JITTER below half-spacing
-// keeps cells reasonably convex (avoids slivers and self-intersections).
-const GRID    = 5;
-const SPACING = IMAGE_SIZE / GRID;       // 25.6
-const JITTER  = SPACING * 0.38;          // ~9.7 px max axial jitter
-const INSET   = 1.1;                     // mortar half-width in px
+// Lattice & jitter knobs.
+//
+// SCALE — sized to the game's nano-tile grid, NOT the source-image
+// pixel grid. A micro tile is MICRO_TILE_SIZE=128 px subdivided into a
+// 3x3 nano overlay, so one nano tile is 128/3 ≈ 42.7 px wide. We want
+// roughly 4 stones across each nano unit (i.e. several stones per
+// nano), which means ~12 stones across the 128 px source image.
+// GRID=12 gives SPACING ≈ 10.67 px and ~144 stones per tile — small
+// natural cobbles, not boulders.
+//
+// JITTER below half-spacing keeps cells reasonably convex (avoids
+// slivers and self-intersections in the bisector clip).
+const GRID    = 12;
+const SPACING = IMAGE_SIZE / GRID;       // ~10.67
+const JITTER  = SPACING * 0.38;          // ~4.05 px max axial jitter
+const INSET   = 0.55;                    // mortar half-width in px (scaled with stones)
 
 const MORTAR_FILL    = '#262019';
 const RIM_HIGHLIGHT  = 'rgba(255,240,220,0.18)';
@@ -192,7 +201,9 @@ function polygonsMarkup(): string {
       const inset = insetPoly(raw, INSET);
       const pts = inset.map(p => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
       const fill = stoneFill(i, j);
-      out.push(`<polygon points="${pts}" fill="${fill}" stroke="${RIM_HIGHLIGHT}" stroke-width="0.5" />`);
+      // Stroke width scaled to stone size so it reads as a thin rim,
+      // not a thick outline that swallows tiny cells.
+      out.push(`<polygon points="${pts}" fill="${fill}" stroke="${RIM_HIGHLIGHT}" stroke-width="0.25" />`);
     }
   }
   return out.join('\n    ');
