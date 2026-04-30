@@ -37,6 +37,7 @@ import { getFeatureKind, getDiagonalFenceVariant, placeAssembly } from './solver
 import { drawNanoStack, drawNanoShadow, NANO_Z_SCALE } from './nano-tile';
 import { loadAssembly } from './assemblies';
 import type { SunState } from './types';
+import { StoneStub } from './textures';
 
 // ─── Chunk Bounding Box Constants ────────────────────────────
 
@@ -386,29 +387,11 @@ function makeNanoDemoSvg(kind: NanoTileKind, col: number, row: number): string {
   </svg>`;
 }
 
-/** Create a demo side-texture SVG for extrusion rendering. */
-function makeNanoSideSvg(baseColor: string, col: number, row: number): string {
-  const rr = (parseInt(baseColor.slice(1, 3), 16) - 15) & 0xff;
-  const gg = (parseInt(baseColor.slice(3, 5), 16) - 15) & 0xff;
-  const bb = (parseInt(baseColor.slice(5, 7), 16) - 10) & 0xff;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" fill="rgb(${rr},${gg},${bb})" />
-    <line x1="0" y1="32" x2="128" y2="32" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-    <line x1="0" y1="64" x2="128" y2="64" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-    <line x1="0" y1="96" x2="128" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-    <text x="64" y="64" text-anchor="middle" dy=".35em" font-size="7" fill="rgba(255,255,255,0.3)">${col},${row}</text>
-  </svg>`;
-}
-
 /** Create a demo top-cap SVG for extrusion rendering. */
-function makeNanoTopSvg(baseColor: string, _col: number, _row: number): string {
-  const rr = (parseInt(baseColor.slice(1, 3), 16) + 20) & 0xff;
-  const gg = (parseInt(baseColor.slice(3, 5), 16) + 20) & 0xff;
-  const bb = (parseInt(baseColor.slice(5, 7), 16) + 15) & 0xff;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-    <rect width="128" height="128" fill="rgb(${rr},${gg},${bb})" />
-  </svg>`;
-}
+// Stub stone-wall side/top textures live in textures/stone-stub.ts so
+// they sit alongside StoneBrick / RedClinker. The duplicated inline
+// versions here have been removed; call sites import the textures
+// namespace directly.
 
 /** Create a stub NanoTile for a feature kind with demo visuals. */
 function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number, presetVariant?: FeatureVariant): NanoTile {
@@ -432,8 +415,8 @@ function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number,
   if (kind === 'stone-wall') {
     return {
       ...base,
-      sideTextureSvg: makeNanoSideSvg('#6a6a6a', worldCol, worldRow),
-      topTextureSvg: makeNanoTopSvg('#7a7a7a', worldCol, worldRow),
+      sideTextureSvg: StoneStub.svgSide('#6a6a6a', worldCol, worldRow),
+      topTextureSvg: StoneStub.svgTop('#7a7a7a', worldCol, worldRow),
     };
   }
 
