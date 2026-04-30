@@ -225,6 +225,18 @@ export interface NanoTile {
    * direction, so this is invisible.
    */
   readonly topRotateWithAxis?: boolean;
+  /**
+   * When true (default), exposed wall ends draw vertical course-aligned
+   * mortar TICKS on the south/east end faces (the dark `#1c1a17` notches
+   * representing brick-header joints). Correct for brick textures whose
+   * end caps are visually a row of stacked headers.
+   *
+   * When false, no end-face ticks are drawn. Correct for irregular
+   * masonry textures (e.g. ancient-stone Voronoi) where there is no
+   * regular course pitch and the ticks read as black streaks instead of
+   * stone joints.
+   */
+  readonly endCapTicks?: boolean;
 }
 
 /**

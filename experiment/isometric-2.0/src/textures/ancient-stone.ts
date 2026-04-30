@@ -37,10 +37,15 @@
  *
  * ─── Visual approach ────────────────────────────────────────────────
  *
- * - Solid dark mortar background (showing through the inset gaps).
- * - Each stone filled with a deterministic grey-tan in the ancient-
- *   limestone family; per-stone hue jitter is wide enough to read as
- *   "individually quarried blocks" rather than a tinted palette.
+ * - Solid mortar background (showing through the inset gaps), tinted a
+ *   muted warm brown rather than near-black so gaps read as recessed
+ *   joint, not void.
+ * - Each stone is filled by picking one of several WEATHERING CLASSES
+ *   (limestone / pale lime / damp / iron-stained / mossy) deterministically
+ *   per lattice cell, then jittering within that class's variance band.
+ *   This gives the wall the look of mixed-quarry rubble masonry where
+ *   most stones share a tone but a minority of weathered, mossy, or
+ *   stained stones break up the field.
  * - A subtle 0.5 px highlight stroke on the polygon perimeter gives
  *   each stone a chiseled rim. (Top-light fakery via per-edge
  *   shading was considered and skipped — Voronoi polygons have many
@@ -75,14 +80,42 @@ const SPACING = IMAGE_SIZE / GRID;       // ~10.67
 const JITTER  = SPACING * 0.38;          // ~4.05 px max axial jitter
 const INSET   = 0.55;                    // mortar half-width in px (scaled with stones)
 
-const MORTAR_FILL    = '#262019';
-const RIM_HIGHLIGHT  = 'rgba(255,240,220,0.18)';
+const MORTAR_FILL    = '#3a322a';
+const RIM_HIGHLIGHT  = 'rgba(255,240,220,0.22)';
 
-// Per-channel base + variance for the stone fill. Warm limestone
-// greys with a tan tint — neither cold-grey concrete nor brick-red.
-const R_BASE = 158, R_VAR = 22;
-const G_BASE = 148, G_VAR = 20;
-const B_BASE = 128, B_VAR = 18;
+// Per-stone weathering classes. Each lattice cell deterministically picks
+// one class via rng01(i,j,7); class probabilities sum to 1.0. The base
+// limestone palette dominates so the wall reads as one material, with a
+// minority of weathered stones giving the wall life.
+//
+// (R,G,B) base + per-channel variance. Variance is wider than the v1
+// palette (which used ±22/20/18) so even "limestone" stones show
+// noticeable hue spread — reads as individually quarried blocks rather
+// than a tinted block of a single colour.
+interface StoneClass {
+  weight: number;     // selection weight (cumulative threshold below)
+  rb: number; gb: number; bb: number;   // base RGB
+  rv: number; gv: number; bv: number;   // per-channel variance
+}
+const STONE_CLASSES: readonly StoneClass[] = [
+  // Warm limestone — the dominant tone (~58% of stones).
+  { weight: 0.58, rb: 168, gb: 156, bb: 132, rv: 28, gv: 26, bv: 22 },
+  // Pale weather-bleached lime (~14%) — sun-faded, brightest.
+  { weight: 0.14, rb: 198, gb: 188, bb: 168, rv: 18, gv: 18, bv: 18 },
+  // Damp shadowed stone (~14%) — darker, slightly cooler.
+  { weight: 0.14, rb: 108, gb: 100, bb:  88, rv: 16, gv: 16, bv: 16 },
+  // Iron-stained / rust-touched (~8%) — warm rosy ochre.
+  { weight: 0.08, rb: 158, gb: 116, bb:  88, rv: 22, gv: 16, bv: 12 },
+  // Mossy / lichen-greened (~6%) — olive-green tint, low saturation.
+  { weight: 0.06, rb: 118, gb: 132, bb:  92, rv: 18, gv: 20, bv: 14 },
+];
+// Cumulative thresholds for the picker. Computed once at module load.
+const STONE_CUM: readonly number[] = (() => {
+  const out: number[] = [];
+  let acc = 0;
+  for (const c of STONE_CLASSES) { acc += c.weight; out.push(acc); }
+  return out;
+})();
 
 interface Pt { x: number; y: number; }
 
@@ -144,14 +177,22 @@ function insetPoly(poly: Pt[], d: number): Pt[] {
   });
 }
 
-/** Stone fill colour, deterministic per lattice cell. */
+/** Stone fill colour, deterministic per lattice cell. Picks one of the
+ *  STONE_CLASSES weather classes, then jitters within that class's
+ *  variance band. */
 function stoneFill(i: number, j: number): string {
+  // Class pick: deterministic 0..1 against the cumulative weights.
+  const pick = rng01(i, j, 7);
+  let cls = STONE_CLASSES[STONE_CLASSES.length - 1];
+  for (let k = 0; k < STONE_CUM.length; k++) {
+    if (pick < STONE_CUM[k]) { cls = STONE_CLASSES[k]; break; }
+  }
   const fr = rng01(i, j, 11) * 2 - 1;
   const fg = rng01(i, j, 13) * 2 - 1;
   const fb = rng01(i, j, 17) * 2 - 1;
-  const r = Math.max(0, Math.min(255, R_BASE + Math.round(fr * R_VAR)));
-  const g = Math.max(0, Math.min(255, G_BASE + Math.round(fg * G_VAR)));
-  const b = Math.max(0, Math.min(255, B_BASE + Math.round(fb * B_VAR)));
+  const r = Math.max(0, Math.min(255, cls.rb + Math.round(fr * cls.rv)));
+  const g = Math.max(0, Math.min(255, cls.gb + Math.round(fg * cls.gv)));
+  const b = Math.max(0, Math.min(255, cls.bb + Math.round(fb * cls.bv)));
   return `rgb(${r},${g},${b})`;
 }
 

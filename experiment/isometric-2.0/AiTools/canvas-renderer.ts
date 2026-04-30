@@ -130,6 +130,13 @@ export interface CanvasSceneEntry {
    * 90°-rotation seam at inside corners. Forwarded to NanoTile.
    */
   topRotateWithAxis?: boolean;
+  /**
+   * When true (default), exposed wall ends draw brick-header-style
+   * vertical mortar TICKS on the south/east end faces. Set false for
+   * irregular-masonry textures (e.g. ancient-stone Voronoi) where the
+   * ticks read as black streaks instead of joints. Forwarded to NanoTile.
+   */
+  endCapTicks?: boolean;
 }
 
 /**
@@ -257,6 +264,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       variant,
       connections: conn,
       topRotateWithAxis: e.topRotateWithAxis,
+      endCapTicks: e.endCapTicks,
     };
   }
 

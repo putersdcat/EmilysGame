@@ -453,6 +453,11 @@ export function drawExtrudedNano(
   const ANCHOR_SY = screenY + HALF_H - drawH;      // = isoY(0, 128) - drawH
 
   if (nano.sideTextureSvg) {
+    // Texture-level opt-out for brick-header-style end ticks. Default is
+    // true (correct for brick textures); ancient-stone Voronoi sets false
+    // because there is no regular course pitch to align the ticks to.
+    const drawEndCapTicks = nano.endCapTicks !== false;
+
     const sideImg = loadSvgImage(nano.sideTextureSvg);
     if (sideImg) {
       // SIDE-SOUTH pattern — source axes (right=(1,0.5), down=(0,1)) match
@@ -500,8 +505,11 @@ export function drawExtrudedNano(
             // END-FACE: vertical mortar ticks descending from each course
             // line. PHYSICALLY VALID only when the top above this rect runs
             // V (bricks running N/S → headers face N/S). topIsV(r) gates
-            // this — see southIsEnd().
-            if (southIsEnd(r)) {
+            // this — see southIsEnd(). Texture-level opt-out: irregular
+            // masonry (e.g. ancient-stone Voronoi) sets nano.endCapTicks=
+            // false because there is no regular course pitch and the ticks
+            // read as black streaks instead of joints.
+            if (drawEndCapTicks && southIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
@@ -533,7 +541,7 @@ export function drawExtrudedNano(
             ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0, -drawH, r.h, drawH);
             // END-FACE: course-aligned vertical mortar ticks (mirror).
-            if (eastIsEnd(r)) {
+            if (drawEndCapTicks && eastIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
