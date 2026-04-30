@@ -11,14 +11,16 @@
  *   grid (vertical / horizontal straights) — so 8 of 9 nano patches
  *   in a wall micro tile are still walkable.
  *
- *   Inside our closed square, the *interior* L0 micro is (2,2) — fully
- *   open grass. To "hug a wall", a player stands inside (2,2) on the
- *   nano patch closest to that wall:
+ *   The square's interior is bounded by the walls themselves, so the
+ *   tightest legal "hug" is the nano patch IMMEDIATELY ADJACENT to the
+ *   wall geometry on the interior side — which lives inside the wall's
+ *   OWN micro tile (each wall micro has 8 walkable nano patches, only
+ *   the wall geometry's center patches are blocked).
  *
- *     NORTH-hugger : micro (2,2), nano (1,0)   (top-center patch)
- *     EAST-hugger  : micro (2,2), nano (2,1)   (right-center patch)
- *     SOUTH-hugger : micro (2,2), nano (1,2)   (bottom-center patch)
- *     WEST-hugger  : micro (2,2), nano (0,1)   (left-center patch)
+ *     NORTH-hugger : micro (2,1) — N wall — nano (1, 2)  (S of wall)
+ *     EAST-hugger  : micro (3,2) — E wall — nano (0, 1)  (W of wall)
+ *     SOUTH-hugger : micro (2,3) — S wall — nano (1, 0)  (N of wall)
+ *     WEST-hugger  : micro (1,2) — W wall — nano (2, 1)  (E of wall)
  *
  * Same wall geometry as render-spatial-hierarchy.mjs (closed 3-micro
  * square at micros (1,1)..(3,3)) so the renders are directly
@@ -54,12 +56,13 @@ entries.push({ kind: 'stone-wall', col: 2, row: 3, variant: 'straight-h' });
 entries.push({ kind: 'stone-wall', col: 1, row: 2, variant: 'straight-v' });
 entries.push({ kind: 'stone-wall', col: 3, row: 2, variant: 'straight-v' });
 
-// Four players in the interior micro (2,2), each hugging a wall via nano offset.
+// Four players, each in the wall's own micro tile, on the interior-side
+// nano patch immediately adjacent to the wall's blocking geometry.
 const players = [
-  { col: 2, row: 2, nanoCol: 1, nanoRow: 0, label: 'N' },
-  { col: 2, row: 2, nanoCol: 2, nanoRow: 1, label: 'E' },
-  { col: 2, row: 2, nanoCol: 1, nanoRow: 2, label: 'S' },
-  { col: 2, row: 2, nanoCol: 0, nanoRow: 1, label: 'W' },
+  { col: 2, row: 1, nanoCol: 1, nanoRow: 2, label: 'N' }, // N wall, south-of-wall patch
+  { col: 3, row: 2, nanoCol: 0, nanoRow: 1, label: 'E' }, // E wall, west-of-wall patch
+  { col: 2, row: 3, nanoCol: 1, nanoRow: 0, label: 'S' }, // S wall, north-of-wall patch
+  { col: 1, row: 2, nanoCol: 2, nanoRow: 1, label: 'W' }, // W wall, east-of-wall patch
 ];
 
 const args = {
