@@ -208,20 +208,32 @@ export function stoneWallSvg(_variant: FeatureVariant): string {
  * Stone-wall TOP texture — compat shim for the SVG render path.
  *
  * The canvas/game renderer in nano-tile.ts does NOT use this — it draws
- * the top via createPattern of the SAME StoneBrick image so grout aligns
- * pixel-perfectly between side and top.
+ * the top via createPattern of the SAME source brick image so grout
+ * aligns pixel-perfectly between side and top.
  *
  * The legacy SVG path (AiTools/render_iso_scene) still <image>-stretches
- * this into the iso shear, so we wrap the StoneBrick image in a pattern
- * and fill the wall footprint rects so empty tile space stays transparent.
+ * this into the iso shear, so we wrap the source brick image in a
+ * pattern and fill the wall footprint rects so empty tile space stays
+ * transparent.
+ *
+ * @param variant — wall variant (selects the wallBounds rect layout).
+ * @param sourceBrickSvg — the 128×128 self-tileable brick image to use
+ *        as the pattern source. Defaults to the canonical StoneBrick so
+ *        existing call sites keep their behaviour. Pass `RedClinker.svg()`
+ *        (or any other module conforming to textures/README.md) to
+ *        retexture the wall top without touching the rest of the
+ *        pipeline.
  */
-export function stoneWallTopSvg(variant: FeatureVariant): string {
+export function stoneWallTopSvg(
+  variant: FeatureVariant,
+  sourceBrickSvg: string = StoneBrick.svg(),
+): string {
   const { rects } = wallBounds(variant);
-  const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(StoneBrick.svg())}`;
+  const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(sourceBrickSvg)}`;
   const parts: string[] = [];
-  parts.push(`<defs><pattern id="stoneBrickP" patternUnits="userSpaceOnUse" width="128" height="128"><image href="${dataUrl}" width="128" height="128" /></pattern></defs>`);
+  parts.push(`<defs><pattern id="brickP" patternUnits="userSpaceOnUse" width="128" height="128"><image href="${dataUrl}" width="128" height="128" /></pattern></defs>`);
   for (const r of rects) {
-    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#stoneBrickP)" />`);
+    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#brickP)" />`);
     parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`);
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">

@@ -9,3 +9,4 @@
  */
 
 export * as StoneBrick from './stone-brick';
+export * as RedClinker from './red-clinker';

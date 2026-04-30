@@ -106,8 +106,16 @@ export interface CanvasSceneEntry {
   variant?: FeatureVariant;
   zOffset?: number;
   connections?: FeatureConnections;
-  /** Raw SVG override — skips getVariantSvg lookup */
+  /** Raw SVG override — skips getVariantSvg lookup. For extruded kinds, this overrides the SIDE texture only. */
   svgOverride?: string;
+  /**
+   * Optional override for the wall TOP texture (extruded kinds only).
+   * Pass any 128×128 self-tileable brick SVG (textures/README.md
+   * contract). When supplied, the wall top is patterned from this image
+   * via stoneWallTopSvg(variant, topSvgOverride). When omitted, the
+   * canonical StoneBrick top texture is used.
+   */
+  topSvgOverride?: string;
 }
 
 /**
@@ -174,7 +182,7 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
 
     if (EXTRUDED_KINDS.has(e.kind)) {
       const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row);
-      const top  = stoneWallTopSvg(variant);
+      const top  = stoneWallTopSvg(variant, e.topSvgOverride ?? side ?? undefined);
       if (side) out.add(side);
       if (top)  out.add(top);
     } else {
@@ -221,7 +229,12 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
 
   if (EXTRUDED_KINDS.has(e.kind)) {
     const sideSvg = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row) ?? '';
-    const topSvg  = stoneWallTopSvg(variant);
+    // Top texture: prefer explicit topSvgOverride, otherwise reuse the
+    // side SVG so a re-textured wall (e.g. red clinker) stays self-
+    // consistent. Falls back to canonical StoneBrick when both are
+    // empty (unreachable in practice — extruded kinds always supply a
+    // side via getVariantSvg).
+    const topSvg  = stoneWallTopSvg(variant, e.topSvgOverride ?? sideSvg ?? undefined);
     return {
       kind, zOffset, zMode, walkable, blendEdges: false,
       svg:            sideSvg,

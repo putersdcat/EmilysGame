@@ -24,6 +24,17 @@ import type { SceneEntry } from './scene-registry.js';
 import { renderGameTile, buildGameTileSvg } from './game-tile-renderer.js';
 import { renderNanoTile, renderNanoScene } from './canvas-renderer.js';
 import type { CanvasSceneEntry, CanvasPlayerEntry } from './canvas-renderer.js';
+import { StoneBrick, RedClinker } from '../src/textures/index.js';
+
+/**
+ * Named brick textures available to scene entries via `texture: '<name>'`.
+ * Maps to the canonical 128×128 self-tileable SVG (textures/README.md).
+ * Add new entries here when authoring additional brick palettes.
+ */
+const BRICK_TEXTURES: Record<string, () => string> = {
+  'stone-brick': () => StoneBrick.svg(),
+  'red-clinker': () => RedClinker.svg(),
+};
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -246,11 +257,27 @@ async function dispatch(): Promise<WorkerResult> {
     // ── render_nano_scene ─────────────────────────────────────
     case 'render_nano_scene': {
       const { entries, players: rawPlayers, width, height, debug, geometryLayers, background, outputPath } = args as Record<string, any>;
-      const sceneEntries: CanvasSceneEntry[] = (entries ?? []).map((e: Record<string, any>) => ({
-        kind: e.kind, col: e.col, row: e.row,
-        variant: e.variant as CanvasSceneEntry['variant'],
-        zOffset: e.zOffset,
-      }));
+      const sceneEntries: CanvasSceneEntry[] = (entries ?? []).map((e: Record<string, any>) => {
+        // Resolve the optional `texture` shorthand (e.g. 'red-clinker')
+        // into svgOverride + topSvgOverride. Explicit *Override fields
+        // win if both are supplied.
+        let svgOverride: string | undefined = e.svgOverride;
+        let topSvgOverride: string | undefined = e.topSvgOverride;
+        if (typeof e.texture === 'string') {
+          const factory = BRICK_TEXTURES[e.texture];
+          if (!factory) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
+          const tex = factory();
+          svgOverride    = svgOverride    ?? tex;
+          topSvgOverride = topSvgOverride ?? tex;
+        }
+        return {
+          kind: e.kind, col: e.col, row: e.row,
+          variant: e.variant as CanvasSceneEntry['variant'],
+          zOffset: e.zOffset,
+          svgOverride,
+          topSvgOverride,
+        };
+      });
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
         col: p.col, row: p.row, label: p.label,
         nanoCol: p.nanoCol, nanoRow: p.nanoRow,
