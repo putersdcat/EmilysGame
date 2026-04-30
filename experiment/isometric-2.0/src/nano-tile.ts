@@ -86,9 +86,9 @@ function clipDiamond(
  *
  * Layout after transform:
  *   Top-left: (screenX, screenY + HALF_H - drawH)
- *   Top-right: (screenX + 128, screenY + HALF_H - drawH + 64)
+ *   Top-right: (screenX + HALF_W*2, screenY + HALF_H - drawH + 64)
  *   Bottom-left: (screenX, screenY + HALF_H) = diamond left vertex
- *   Bottom-right: (screenX + 128, screenY + HALF_H + 64) = diamond bottom vertex
+ *   Bottom-right: (screenX + HALF_W*2, screenY + HALF_H + 64) = diamond bottom vertex
  */
 export function drawPositiveNano(
   ctx: CanvasRenderingContext2D,
@@ -246,9 +246,9 @@ function drawFlatNano(
 /**
  * Wall geometry constants — must stay in sync with solver.ts wallBounds().
  *
- * In tile-local space (128×128), the wall occupies a centered strip:
- *   Horizontal wall: x=0..128 (full length), y=40..88 (48px thickness)
- *   Vertical wall:   x=40..88 (48px thickness), y=0..128 (full length)
+ * In tile-local space (144×144), the wall occupies a centered strip:
+ *   Horizontal wall: x=0..144 (full length), y=40..88 (48px thickness)
+ *   Vertical wall:   x=40..88 (48px thickness), y=0..144 (full length)
  *
  * WALL_OFFSET = distance from tile edge to the near wall face (camera side).
  * WALL_THICKNESS = wall width perpendicular to its run direction.
@@ -296,14 +296,14 @@ function isVerticalWall(variant: FeatureVariant | undefined): boolean {
  * │ HORIZONTAL (\\ on screen)         │ VERTICAL (/ on screen)            │
  * │ Wall strip y=40..88              │ Wall strip x=40..88              │
  * │                                  │                                  │
- * │ Z-edge: tile(128, 88)            │ Z-edge: tile(88, 128)            │
+ * │ Z-edge: tile(144, 88)            │ Z-edge: tile(88, 144)            │
  * │ screen (sX+168, sY+108)          │ screen (sX+88, sY+108)           │
  * │                                  │                                  │
  * │ Front: anchor(0, 88)             │ Front: anchor(88, 0)             │
  * │   matrix(1, 0.5, 0, 1)          │   matrix(-1, 0.5, 0, 1)         │
- * │   width=128, draws RIGHT+DOWN    │   width=128, draws LEFT+DOWN     │
+ * │   width=144, draws RIGHT+DOWN    │   width=144, draws LEFT+DOWN     │
  * │                                  │                                  │
- * │ Cap: anchor(128, 40)             │ Cap: anchor(40, 128)             │
+ * │ Cap: anchor(144, 40)             │ Cap: anchor(40, 144)             │
  * │   matrix(-1, 0.5, 0, 1)         │   matrix(1, 0.5, 0, 1)          │
  * │   width=48, draws LEFT+DOWN      │   width=48, draws RIGHT+DOWN     │
  * │                                  │                                  │
@@ -355,7 +355,7 @@ export function drawExtrudedNano(
   //   • South face's TOP edge and top face's FRONT edge share source y=0
   //     → mortar lines wrap from side onto top across the wall-top edge.
   //   • Adjacent tiles re-derive the same anchor at world-tile-origin
-  //     spacing, so pattern phase repeats every game-tile (128 source-px
+  //     spacing, so pattern phase repeats every game-tile (144 source-px
   //     period divides evenly into the iso step) → no inter-tile seam.
   //
   // Rect occlusion: if another rect in the same variant abuts on the
@@ -449,8 +449,8 @@ export function drawExtrudedNano(
   // Shared pattern anchor (screen): bottom-front corner of the full tile
   // diamond, elevated by the wall height. All face pattern transforms
   // map source (0,0) → THIS screen point. (Math derivation in commit msg.)
-  const ANCHOR_SX = screenX;                       // = isoX(0, 128)
-  const ANCHOR_SY = screenY + HALF_H - drawH;      // = isoY(0, 128) - drawH
+  const ANCHOR_SX = screenX;                       // = isoX(0, 144)
+  const ANCHOR_SY = screenY + HALF_H - drawH;      // = isoY(0, 144) - drawH
 
   if (nano.sideTextureSvg) {
     // Texture-level opt-out for brick-header-style end ticks. Default is
@@ -557,8 +557,8 @@ export function drawExtrudedNano(
         // ── TOP: fill each rect (footprint) on the elevated diamond ──
         // The top canvas transform is matrix(1, 0.5, -1, 0.5, screenX+HALF_W,
         // elevatedY). In that frame, the ANCHOR screen point lands at
-        // canvas-local (0, 128) — the back-left vertex of the diamond.
-        // Pattern transform IDENTITY-with-translate (0, 128) makes source
+        // canvas-local (0, 144) — the back-left vertex of the diamond.
+        // Pattern transform IDENTITY-with-translate (0, 144) makes source
         // (0,0) land there. Source-x axis maps via canvas shear to screen
         // (1, 0.5) — same as side-south's source-x → grout aligns.
         const elevatedY = screenY - drawH;
@@ -587,7 +587,7 @@ export function drawExtrudedNano(
         //   At the ridge corner of straight-h core (tile 40,88), top
         //   user-space coord is (40, 88) and side samples source (80, 88)
         //   there (from anchor math). To make top sample (80, 88) at user
-        //   (40, 88) with identity linear: e = 80 - 40 = 40 (mod 128),
+        //   (40, 88) with identity linear: e = 80 - 40 = 40 (mod 144),
         //   f = 88 - 88 = 0.
         //
         //   For V wall: transposed (a=0,b=1,c=-1,d=0) for source-x → screen
@@ -616,8 +616,8 @@ export function drawExtrudedNano(
         // tile edge to tile edge along its axis, swallowing the central
         // core. The loser stub gets the perpendicular pattern.
         //
-        // For corner-br: winner = H (strip y ∈ [off, off+W], x ∈ [off, 128]).
-        //                loser  = V (stub  x ∈ [off, off+W], y ∈ [off+W, 128]).
+        // For corner-br: winner = H (strip y ∈ [off, off+W], x ∈ [off, 144]).
+        //                loser  = V (stub  x ∈ [off, off+W], y ∈ [off+W, 144]).
         //
         // The choice of "H wins" for all corners/tees/cross is arbitrary
         // but consistent: H wall reads as continuous straight-through
@@ -643,19 +643,19 @@ export function drawExtrudedNano(
         const rotateWithAxis = nano.topRotateWithAxis !== false;
         const setForRect = (v: boolean) => (v && rotateWithAxis) ? setV() : setH();
         if (variant === 'straight-h') {
-          tops.push({ x: 0, y: off2, w: 128, h: W2, v: false });
+          tops.push({ x: 0, y: off2, w: 144, h: W2, v: false });
         } else if (variant === 'straight-v') {
-          tops.push({ x: off2, y: 0, w: W2, h: 128, v: true });
+          tops.push({ x: off2, y: 0, w: W2, h: 144, v: true });
         } else if (variant === 'corner-br') {
           // H winner: core + right arm as one strip.
           // V loser:  bottom-arm stub only.
-          tops.push({ x: off2, y: off2, w: 128 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: off2, w: 144 - off2, h: W2, v: false });
           tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
         } else if (variant === 'corner-bl') {
           tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
           tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
         } else if (variant === 'corner-tr') {
-          tops.push({ x: off2, y: off2, w: 128 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: off2, w: 144 - off2, h: W2, v: false });
           tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
         } else if (variant === 'corner-tl') {
           tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
@@ -663,13 +663,13 @@ export function drawExtrudedNano(
         } else if (variant === 'tee-t' || variant === 'tee-b' || variant === 'cross') {
           // H winner runs the full width of the tile; V stubs hang off
           // the core to whichever side(s) the variant calls for.
-          tops.push({ x: 0, y: off2, w: 128, h: W2, v: false });
+          tops.push({ x: 0, y: off2, w: 144, h: W2, v: false });
           if (variant === 'tee-b' || variant === 'cross') tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
           if (variant === 'tee-t' || variant === 'cross') tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
         } else if (variant === 'tee-l' || variant === 'tee-r') {
           // No H arm in these tees → V is the only continuous run, so it
           // wins. H stub on the side that has the arm.
-          tops.push({ x: off2, y: 0, w: W2, h: 128, v: true });
+          tops.push({ x: off2, y: 0, w: W2, h: 144, v: true });
           if (variant === 'tee-l') tops.push({ x: off2 + W2, y: off2, w: off2, h: W2, v: false });
           else                     tops.push({ x: 0,         y: off2, w: off2, h: W2, v: false });
         } else {

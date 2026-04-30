@@ -68,11 +68,11 @@ function bricksForCourse(course: number): Brick[] {
   }
   // Course B — half | full | full | full | half (halves span vertical seam)
   return [
-    { x: 0,   w: 15,      idx: 0 },
-    { x: 17,  w: BRICK_W, idx: 1 },
-    { x: 49,  w: BRICK_W, idx: 2 },
-    { x: 81,  w: BRICK_W, idx: 3 },
-    { x: 113, w: 15,      idx: 4 },
+    { x: 0,   w: 17,      idx: 0 },
+    { x: 19,  w: BRICK_W, idx: 1 },
+    { x: 55,  w: BRICK_W, idx: 2 },
+    { x: 91,  w: BRICK_W, idx: 3 },
+    { x: 127, w: 17,      idx: 4 },
   ];
 }
 
@@ -109,7 +109,7 @@ function brickRects(): string {
 
 let _cached: string | null = null;
 
-/** The full 128×128 SVG string. Cached — same reference every call. */
+/** The full 144×144 SVG string. Cached — same reference every call. */
 export function svg(): string {
   if (_cached) return _cached;
   _cached = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" viewBox="0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}" shape-rendering="crispEdges">

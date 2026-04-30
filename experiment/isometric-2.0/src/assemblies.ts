@@ -17,11 +17,11 @@ import { woodenFenceSvg, gateSvg, homesteadWallSvg, cathedralWallSvg } from './s
 // These SVGs are generated from solver.ts functions (shared source of truth).
 // Use RUBBLE_SVG for stone rubble patches since solver doesn't have a rubble kind.
 
-/** Stone rubble SVG (128×128, flat/walkable). */
-const RUBBLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
-  <rect width="128" height="64" fill="#888"/>
-  <polygon points="10,60 40,30 60,55 90,20 120,50 128,60 0,60" fill="#999"/>
-  <polygon points="20,60 45,45 70,58 100,35 128,55 128,60 0,60" fill="#777"/>
+/** Stone rubble SVG (144×144, flat/walkable). */
+const RUBBLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  <rect width="144" height="64" fill="#888"/>
+  <polygon points="10,60 40,30 60,55 90,20 120,50 144,60 0,60" fill="#999"/>
+  <polygon points="20,60 45,45 70,58 100,35 144,55 144,60 0,60" fill="#777"/>
 </svg>`;
 
 // ─── Fence Nano Builder ───────────────────────────────────────

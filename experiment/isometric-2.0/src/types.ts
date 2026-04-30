@@ -20,8 +20,15 @@
 // retains the "chunk" word because it is the *runtime baked* container
 // of an L1 World Unit Tile (it carries cachedCanvas + walkableMap).
 
-/** Logical pixel size of a single micro tile (source SVG viewport). */
-export const MICRO_TILE_SIZE = 128;
+/** Logical pixel size of a single micro tile (source SVG viewport).
+ *
+ *  Value chosen as 144 so it divides cleanly by NANO_GRID=3 → nano cell = 48 px.
+ *  The 48 px figure is also WALL_THICKNESS in the wall geometry, so every
+ *  spatial unit in the engine is an integer multiple of 48 px:
+ *    micro = 144 = 3 × nano(48) = 3 × wall_thickness
+ *    chunk (L1) = 5 × micro = 720
+ *  Earlier value (128) gave nano = 42.667 — fractional pixels everywhere. */
+export const MICRO_TILE_SIZE = 144;
 
 /** Width of the isometric diamond after projection (2:1 ratio). */
 export const ISO_TILE_WIDTH = 256;
@@ -135,7 +142,7 @@ export type NanoTileKind =
 
 /**
  * MicroTile: The fundamental rendering unit.
- * 128×128 logical pixels → projects to a 256×128 isometric diamond.
+ * 144×144 logical pixels → projects to a 256×128 isometric diamond.
  */
 export interface MicroTile {
   /** Terrain/feature type. */

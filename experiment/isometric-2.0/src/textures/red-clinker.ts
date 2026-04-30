@@ -42,14 +42,14 @@
  * @see textures/README.md — module contract.
  */
 
-export const IMAGE_SIZE = 128;
+export const IMAGE_SIZE = 144;
 
-const BRICK_W       = 30;
+const BRICK_W       = 34;
 const BRICK_H       = 6;
 const MORTAR        = 2;
 const COURSE_PITCH  = BRICK_H + MORTAR; // 8
-const BRICK_PITCH   = BRICK_W + MORTAR; // 32
-const COURSE_COUNT  = IMAGE_SIZE / COURSE_PITCH; // 16
+const BRICK_PITCH   = BRICK_W + MORTAR; // 36
+const COURSE_COUNT  = IMAGE_SIZE / COURSE_PITCH; // 18
 const MORTAR_FILL   = '#2a201c';
 
 // Channel base + per-channel variance. R is widest because clinker
@@ -69,11 +69,11 @@ function bricksForCourse(course: number): Brick[] {
   // Course B — half | full | full | full | half. Halves span the
   // vertical seam to form one continuous brick across adjacent images.
   return [
-    { x: 0,   w: 15,      idx: 0 },
-    { x: 17,  w: BRICK_W, idx: 1 },
-    { x: 49,  w: BRICK_W, idx: 2 },
-    { x: 81,  w: BRICK_W, idx: 3 },
-    { x: 113, w: 15,      idx: 4 },
+    { x: 0,   w: 17,      idx: 0 },
+    { x: 19,  w: BRICK_W, idx: 1 },
+    { x: 55,  w: BRICK_W, idx: 2 },
+    { x: 91,  w: BRICK_W, idx: 3 },
+    { x: 127, w: 17,      idx: 4 },
   ];
 }
 

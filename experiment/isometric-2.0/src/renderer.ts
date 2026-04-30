@@ -9,6 +9,7 @@ import {
   type ParallaxLayer,
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
+  MICRO_TILE_SIZE,
 } from './types';
 import { Z_PX_PER_LEVEL } from './tile';
 
@@ -103,8 +104,8 @@ export function drawTileShadow(
   if (points.length < 3) return;
 
   const offset = computeShadowOffset(sun, z);
-  const scaleX = ISO_TILE_WIDTH / 128;  // SVG 128 → ISO 256
-  const scaleY = ISO_TILE_HEIGHT / 128; // SVG 128 → ISO 128
+  const scaleX = ISO_TILE_WIDTH / MICRO_TILE_SIZE;  // SVG MICRO → ISO 256
+  const scaleY = ISO_TILE_HEIGHT / MICRO_TILE_SIZE; // SVG MICRO → ISO 128
 
   ctx.save();
   ctx.fillStyle = `rgba(0, 0, 0, ${sun.shadowAlpha})`;

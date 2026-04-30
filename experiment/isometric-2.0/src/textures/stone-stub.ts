@@ -19,7 +19,7 @@
  * @see textures/red-clinker.ts — production red clinker variant.
  */
 
-export const IMAGE_SIZE = 128;
+export const IMAGE_SIZE = 144;
 
 /**
  * Side-face stub: a darker shade of the supplied baseColor with three
@@ -32,9 +32,9 @@ export function svgSide(baseColor: string, col: number, row: number): string {
   const bb = (parseInt(baseColor.slice(5, 7), 16) - 10) & 0xff;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" viewBox="0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}">
     <rect width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" fill="rgb(${rr},${gg},${bb})" />
-    <line x1="0" y1="32" x2="128" y2="32" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-    <line x1="0" y1="64" x2="128" y2="64" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-    <line x1="0" y1="96" x2="128" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="0" y1="32" x2="144" y2="32" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="0" y1="64" x2="144" y2="64" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+    <line x1="0" y1="96" x2="144" y2="96" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
     <text x="64" y="64" text-anchor="middle" dy=".35em" font-size="7" fill="rgba(255,255,255,0.3)">${col},${row}</text>
   </svg>`;
 }

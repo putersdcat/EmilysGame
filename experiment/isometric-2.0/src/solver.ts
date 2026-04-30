@@ -150,7 +150,7 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 // Per-feature texture/SVG generators.
 //
 // Note: stone-wall textures live in src/textures/stone-brick.ts (one
-// 128×128 self-tileable image used for both side and top via
+// 144×144 self-tileable image used for both side and top via
 // createPattern in nano-tile.ts). solver.ts only orchestrates which
 // feature kind/variant maps to which texture.
 // TODO: DOC — SVG generation patterns for each feature kind
@@ -158,7 +158,7 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 /** Get wall footprint bounds based on variant and connection direction. */
 export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48; // wall thickness
-  const off = (128 - W) / 2; // 40
+  const off = (144 - W) / 2; // 40
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
 
   // Arm definitions: which edges the wall extends to
@@ -217,7 +217,7 @@ export function stoneWallSvg(_variant: FeatureVariant): string {
  * transparent.
  *
  * @param variant — wall variant (selects the wallBounds rect layout).
- * @param sourceBrickSvg — the 128×128 self-tileable brick image to use
+ * @param sourceBrickSvg — the 144×144 self-tileable brick image to use
  *        as the pattern source. Defaults to the canonical StoneBrick so
  *        existing call sites keep their behaviour. Pass `RedClinker.svg()`
  *        (or any other module conforming to textures/README.md) to
@@ -239,14 +239,14 @@ export function stoneWallTopSvg(
   const { rects } = wallBounds(variant);
   const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(sourceBrickSvg)}`;
   const parts: string[] = [];
-  parts.push(`<defs><pattern id="brickP" patternUnits="userSpaceOnUse" width="128" height="128"><image href="${dataUrl}" width="128" height="128" /></pattern></defs>`);
+  parts.push(`<defs><pattern id="brickP" patternUnits="userSpaceOnUse" width="144" height="144"><image href="${dataUrl}" width="144" height="144" /></pattern></defs>`);
   for (const r of rects) {
     parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#brickP)" />`);
     if (topOutline) {
       parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`);
     }
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -256,13 +256,13 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   const parts: string[] = [];
 
   // Grass background
-  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  parts.push(`<rect width="144" height="144" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="20" cy="20" rx="14" ry="10" fill="#458550" opacity="0.3" />`);
   parts.push(`<ellipse cx="108" cy="108" rx="12" ry="8" fill="#2d6838" opacity="0.25" />`);
 
   // Determine channel areas
   const chW = 64; // channel width
-  const off = (128 - chW) / 2; // 32
+  const off = (144 - chW) / 2; // 32
   const bankW = 10; // bank thickness
 
   // Helper: draw a natural-edged bank using wavy paths
@@ -291,7 +291,7 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
     parts.push(`<circle cx="64" cy="64" r="34" fill="#1a5588" />`);
     parts.push(`<circle cx="64" cy="64" r="24" fill="#2277aa" opacity="0.5" />`);
     parts.push(`<ellipse cx="58" cy="55" rx="10" ry="4" fill="rgba(255,255,255,0.1)" />`);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">\n    ${parts.join('\n    ')}\n  </svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">\n    ${parts.join('\n    ')}\n  </svg>`;
   }
 
   // Draw channel water with depth gradient
@@ -316,24 +316,24 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   // Water channels
   if (conn.top || conn.bottom) {
     const y1 = conn.top ? 0 : off;
-    const y2 = conn.bottom ? 128 : off + chW;
+    const y2 = conn.bottom ? 144 : off + chW;
     parts.push(`<rect x="${off - 4}" y="${y1}" width="${chW + 8}" height="${y2 - y1}" fill="url(#${waterDefsId}-v)" />`);
   }
   if (conn.left || conn.right) {
     const x1 = conn.left ? 0 : off;
-    const x2 = conn.right ? 128 : off + chW;
+    const x2 = conn.right ? 144 : off + chW;
     parts.push(`<rect x="${x1}" y="${off - 4}" width="${x2 - x1}" height="${chW + 8}" fill="url(#${waterDefsId}-h)" />`);
   }
 
   // Deeper center highlight
   if (conn.top || conn.bottom) {
     const y1 = conn.top ? 0 : off + 8;
-    const y2 = conn.bottom ? 128 : off + chW - 8;
+    const y2 = conn.bottom ? 144 : off + chW - 8;
     parts.push(`<rect x="${off + 14}" y="${y1}" width="${chW - 28}" height="${y2 - y1}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
   }
   if (conn.left || conn.right) {
     const x1 = conn.left ? 0 : off + 8;
-    const x2 = conn.right ? 128 : off + chW - 8;
+    const x2 = conn.right ? 144 : off + chW - 8;
     parts.push(`<rect x="${x1}" y="${off + 14}" width="${x2 - x1}" height="${chW - 28}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
   }
 
@@ -365,14 +365,14 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   // Flow ripple lines
   parts.push(`<g opacity="0.2">`);
   if (conn.top && conn.bottom) {
-    for (let y = 10; y < 128; y += 18) {
+    for (let y = 10; y < 144; y += 18) {
       const x1 = off + 10 + Math.sin(y * 0.1) * 4;
       const x2 = off + chW - 10 + Math.sin(y * 0.1 + 1) * 4;
       parts.push(`<path d="M ${x1} ${y} Q ${64 + Math.sin(y * 0.08) * 6} ${y + 3} ${x2} ${y}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
     }
   }
   if (conn.left && conn.right) {
-    for (let x = 10; x < 128; x += 18) {
+    for (let x = 10; x < 144; x += 18) {
       const y1 = off + 10 + Math.sin(x * 0.1) * 4;
       const y2 = off + chW - 10 + Math.sin(x * 0.1 + 1) * 4;
       parts.push(`<path d="M ${x} ${y1} Q ${x + 3} ${64 + Math.sin(x * 0.08) * 6} ${x} ${y2}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
@@ -404,7 +404,7 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   }
   parts.push(`</g>`);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -416,7 +416,7 @@ function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
   const parts: string[] = [];
 
   // Rich base with color patches
-  parts.push(`<rect width="128" height="128" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />`);
+  parts.push(`<rect width="144" height="144" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />`);
   // Ground variation
   const p1g = baseGreen + 10;
   parts.push(`<ellipse cx="40" cy="80" rx="28" ry="20" fill="rgb(${p1g - 5}, ${p1g + 45}, ${p1g - 12})" opacity="0.35" />`);
@@ -479,7 +479,7 @@ function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
     parts.push(`<circle cx="${fx}" cy="${fy}" r="1" fill="white" opacity="0.5" />`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -499,17 +499,17 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
   const parts: string[] = [];
 
   // Side-view fence — NO grass background (transparent)
-  // 128×128 SVG: x=0..128 is width along iso axis, y=0..128 is height
-  // y=128 is ground level, y=0 is top
+  // 144×144 SVG: x=0..144 is width along iso axis, y=0..144 is height
+  // y=144 is ground level, y=0 is top
 
   const postW = 10;   // post width
   const railH = 7;    // rail thickness
   const capRy = 3;    // cap ellipse ry
 
-  // Helper: post at centre-x, rising from base y=128 to topY
+  // Helper: post at centre-x, rising from base y=144 to topY
   function sidePost(cx: number, topY: number): string {
     const px = cx - postW / 2;
-    const h = 128 - topY;
+    const h = 144 - topY;
     return [
       // Post shadow
       `<rect x="${px + 2}" y="${topY + 3}" width="${postW}" height="${h}" rx="1.5" fill="rgba(0,0,0,0.15)" />`,
@@ -539,8 +539,8 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
     ].join('\n    ');
   }
 
-  // Post top Y and rail positions (relative to 128-high canvas, ground at y=128)
-  const postTopY = 10;          // posts extend from y=10 to y=128
+  // Post top Y and rail positions (relative to 144-high canvas, ground at y=144)
+  const postTopY = 10;          // posts extend from y=10 to y=144
   const topRailY = 30;          // upper rail
   const botRailY = 80;          // lower rail
 
@@ -570,13 +570,13 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
 
   // Draw rails behind posts
   if (arms.left && arms.right) {
-    // Full-width rails: 0 → 128
-    parts.push(sideRail(0, 128, topRailY, true));
-    parts.push(sideRail(0, 128, botRailY, false));
+    // Full-width rails: 0 → 144
+    parts.push(sideRail(0, 144, topRailY, true));
+    parts.push(sideRail(0, 144, botRailY, false));
   } else if (arms.right) {
     // Right half: center → right edge
-    parts.push(sideRail(64, 128, topRailY, true));
-    parts.push(sideRail(64, 128, botRailY, false));
+    parts.push(sideRail(64, 144, topRailY, true));
+    parts.push(sideRail(64, 144, botRailY, false));
   } else if (arms.left) {
     // Left half: left edge → center
     parts.push(sideRail(0, 64, topRailY, true));
@@ -600,7 +600,7 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
     parts.push(sidePost(64, postTopY));
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -894,7 +894,7 @@ export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind
 /** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
 function gateSvg(unlocked: boolean): string {
   const parts: string[] = [];
-  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
+  parts.push(`<rect width="144" height="144" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
 
   const postH = 48;
@@ -932,7 +932,7 @@ function gateSvg(unlocked: boolean): string {
     parts.push(`<path d="M61 ${topY + 6} Q61 ${topY + 2} 64 ${topY + 2} Q67 ${topY + 2} 67 ${topY + 6}" fill="none" stroke="#c0a020" stroke-width="2" />`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -943,8 +943,8 @@ function gateSvg(unlocked: boolean): string {
 function bridgeSvg(): string {
   const parts: string[] = [];
   // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
+  parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="144" height="64" fill="#0d3a6a" />`);
   // Water ripples
   parts.push(`<g opacity="0.15">`);
   for (let y = 40; y < 96; y += 16) {
@@ -964,7 +964,7 @@ function bridgeSvg(): string {
   // Side rails
   parts.push(`<rect x="14" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
   parts.push(`<rect x="108" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -973,8 +973,8 @@ function bridgeSvg(): string {
 function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
   // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
+  parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="144" height="64" fill="#0d3a6a" />`);
   // Water ripples
   parts.push(`<g opacity="0.15">`);
   parts.push(`<path d="M8 50 Q34 46 64 50 Q94 54 120 50" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
@@ -1007,7 +1007,7 @@ function trollBridgeSvg(unlocked: boolean): string {
     parts.push(`<text x="64" y="25" text-anchor="middle" font-size="9" font-family="monospace" fill="#4aff4a">OPEN</text>`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
     ${parts.join('\n    ')}
   </svg>`;
 }
