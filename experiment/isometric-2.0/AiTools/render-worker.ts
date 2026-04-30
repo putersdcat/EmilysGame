@@ -24,7 +24,7 @@ import type { SceneEntry } from './scene-registry.js';
 import { renderGameTile, buildGameTileSvg } from './game-tile-renderer.js';
 import { renderNanoTile, renderNanoScene } from './canvas-renderer.js';
 import type { CanvasSceneEntry, CanvasPlayerEntry } from './canvas-renderer.js';
-import { StoneBrick, RedClinker } from '../src/textures/index.js';
+import { StoneBrick, RedClinker, AncientStone } from '../src/textures/index.js';
 
 /**
  * Named brick textures available to scene entries via `texture: '<name>'`.
@@ -32,8 +32,9 @@ import { StoneBrick, RedClinker } from '../src/textures/index.js';
  * Add new entries here when authoring additional brick palettes.
  */
 const BRICK_TEXTURES: Record<string, () => string> = {
-  'stone-brick': () => StoneBrick.svg(),
-  'red-clinker': () => RedClinker.svg(),
+  'stone-brick':    () => StoneBrick.svg(),
+  'red-clinker':    () => RedClinker.svg(),
+  'ancient-stone':  () => AncientStone.svg(),
 };
 
 // ─── Types ────────────────────────────────────────────────────

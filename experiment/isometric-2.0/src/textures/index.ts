@@ -8,6 +8,7 @@
  * Convention: import as a namespace so call sites read `StoneBrick.svg()`.
  */
 
-export * as StoneBrick from './stone-brick';
-export * as RedClinker from './red-clinker';
-export * as StoneStub  from './stone-stub';
+export * as StoneBrick   from './stone-brick';
+export * as RedClinker   from './red-clinker';
+export * as AncientStone from './ancient-stone';
+export * as StoneStub    from './stone-stub';
