@@ -12,11 +12,11 @@ import {
   type MicroTile,
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
-  CHUNK_TILES,
+  WORLD_UNIT_TILES,
   worldToIso,
   type WorldUnitChunk,
 } from './types';
-import { bakeChunk, generateDemoChunk, getChunkDrawPos, CHUNK_CANVAS_W, CHUNK_CANVAS_H } from './chunk';
+import { bakeChunk, generateDemoChunk, getChunkDrawPos, WORLD_UNIT_CANVAS_W, WORLD_UNIT_CANVAS_H } from './chunk';
 import { loadAllAssets, getAssetLoadState } from './asset-loader';
 import {
   createDefaultSunState,
@@ -96,18 +96,18 @@ function chunkKey(cx: number, cy: number): string { return `${cx},${cy}`; }
 
 /** Cross-chunk neighbor lookup for the solver. */
 const _neighborLookup: NeighborLookup = (worldCol: number, worldRow: number) => {
-  const cx = Math.floor(worldCol / CHUNK_TILES);
-  const cy = Math.floor(worldRow / CHUNK_TILES);
+  const cx = Math.floor(worldCol / WORLD_UNIT_TILES);
+  const cy = Math.floor(worldRow / WORLD_UNIT_TILES);
   const chunk = _chunks.get(chunkKey(cx, cy));
   if (!chunk) return null;
-  const localCol = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  const localRow = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  return chunk.tiles[localRow * CHUNK_TILES + localCol] ?? null;
+  const localCol = ((worldCol % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+  const localRow = ((worldRow % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+  return chunk.tiles[localRow * WORLD_UNIT_TILES + localCol] ?? null;
 };
 
 function ensureChunksAroundCamera(): boolean {
-  const camChunkX = Math.floor(camera.x / CHUNK_TILES);
-  const camChunkY = Math.floor(camera.y / CHUNK_TILES);
+  const camChunkX = Math.floor(camera.x / WORLD_UNIT_TILES);
+  const camChunkY = Math.floor(camera.y / WORLD_UNIT_TILES);
   const half = Math.floor(VISIBLE_CHUNKS / 2);
   let added = false;
   const newKeys = new Set<string>();
@@ -172,8 +172,8 @@ function isChunkVisible(
   const { dx, dy } = getChunkDrawPos(chunk.cx, chunk.cy);
   const left = dx;
   const top = dy;
-  const right = dx + CHUNK_CANVAS_W;
-  const bottom = dy + CHUNK_CANVAS_H;
+  const right = dx + WORLD_UNIT_CANVAS_W;
+  const bottom = dy + WORLD_UNIT_CANVAS_H;
 
   const halfVpW = (vpW / 2) / zoom;
   const halfVpH = (vpH / 2) / zoom;
@@ -225,13 +225,13 @@ const FPS_UPDATE_INTERVAL = 500;
 
 /** Tile lookup for player sink-depth queries (cross-chunk). */
 function getTileAt(worldCol: number, worldRow: number): MicroTile | null {
-  const cx = Math.floor(worldCol / CHUNK_TILES);
-  const cy = Math.floor(worldRow / CHUNK_TILES);
+  const cx = Math.floor(worldCol / WORLD_UNIT_TILES);
+  const cy = Math.floor(worldRow / WORLD_UNIT_TILES);
   const chunk = _chunks.get(chunkKey(cx, cy));
   if (!chunk) return null;
-  const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-  return chunk.tiles[lr * CHUNK_TILES + lc] ?? null;
+  const lc = ((worldCol % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+  const lr = ((worldRow % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+  return chunk.tiles[lr * WORLD_UNIT_TILES + lc] ?? null;
 }
 
 /** Chunk lookup for occlusion nano re-draws. */
@@ -241,14 +241,14 @@ function getChunkAt(cx: number, cy: number): WorldUnitChunk | null {
 
 /** Check walkability at a world position. Returns true if walkable, false if blocked, null if no data. */
 function _isWalkableAt(col: number, row: number): boolean | null {
-  const cx = Math.floor(col / CHUNK_TILES);
-  const cy = Math.floor(row / CHUNK_TILES);
+  const cx = Math.floor(col / WORLD_UNIT_TILES);
+  const cy = Math.floor(row / WORLD_UNIT_TILES);
   const chunk = _chunks.get(chunkKey(cx, cy));
   if (!chunk || chunk.walkableMap.length === 0) return null;
-  const lc = Math.floor((((col % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
-  const lr = Math.floor((((row % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES));
-  const tile = chunk.tiles[lr * CHUNK_TILES + lc];
-  if (!tile) return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
+  const lc = Math.floor((((col % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES));
+  const lr = Math.floor((((row % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES));
+  const tile = chunk.tiles[lr * WORLD_UNIT_TILES + lc];
+  if (!tile) return chunk.walkableMap[lr * WORLD_UNIT_TILES + lc] ?? null;
 
   const localColFrac = ((col % 1) + 1) % 1;
   const localRowFrac = ((row % 1) + 1) % 1;
@@ -551,13 +551,13 @@ function createTestAPI(): TestAPI {
       };
     },
     getTile(worldCol: number, worldRow: number) {
-      const cx = Math.floor(worldCol / CHUNK_TILES);
-      const cy = Math.floor(worldRow / CHUNK_TILES);
+      const cx = Math.floor(worldCol / WORLD_UNIT_TILES);
+      const cy = Math.floor(worldRow / WORLD_UNIT_TILES);
       const chunk = _chunks.get(`${cx},${cy}`);
       if (!chunk) return null;
-      const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      const tile = chunk.tiles[lr * CHUNK_TILES + lc];
+      const lc = ((worldCol % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      const lr = ((worldRow % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      const tile = chunk.tiles[lr * WORLD_UNIT_TILES + lc];
       if (!tile) return null;
       return {
         kind: tile.kind,
@@ -591,13 +591,13 @@ function createTestAPI(): TestAPI {
       _canvasDirty = true;
     },
     getWalkable(worldCol: number, worldRow: number) {
-      const cx = Math.floor(worldCol / CHUNK_TILES);
-      const cy = Math.floor(worldRow / CHUNK_TILES);
+      const cx = Math.floor(worldCol / WORLD_UNIT_TILES);
+      const cy = Math.floor(worldRow / WORLD_UNIT_TILES);
       const chunk = _chunks.get(`${cx},${cy}`);
       if (!chunk || chunk.walkableMap.length === 0) return null;
-      const lc = ((worldCol % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      const lr = ((worldRow % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      return chunk.walkableMap[lr * CHUNK_TILES + lc] ?? null;
+      const lc = ((worldCol % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      const lr = ((worldRow % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      return chunk.walkableMap[lr * WORLD_UNIT_TILES + lc] ?? null;
     },
   };
 }

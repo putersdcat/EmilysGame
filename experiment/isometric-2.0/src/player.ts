@@ -8,7 +8,7 @@
 import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
-  CHUNK_TILES,
+  WORLD_UNIT_TILES,
   worldToIso,
   type PlayerState,
   type AnimFrame,
@@ -347,14 +347,14 @@ export function drawOccludingNanos(
       if (tileSortKey <= playerSortKey) continue;
 
       // Look up the tile
-      const cx = Math.floor(wc / CHUNK_TILES);
-      const cy = Math.floor(wr / CHUNK_TILES);
+      const cx = Math.floor(wc / WORLD_UNIT_TILES);
+      const cy = Math.floor(wr / WORLD_UNIT_TILES);
       const chunk = chunkLookup(cx, cy);
       if (!chunk) continue;
 
-      const localCol = ((wc % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      const localRow = ((wr % CHUNK_TILES) + CHUNK_TILES) % CHUNK_TILES;
-      const tile = chunk.tiles[localRow * CHUNK_TILES + localCol];
+      const localCol = ((wc % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      const localRow = ((wr % WORLD_UNIT_TILES) + WORLD_UNIT_TILES) % WORLD_UNIT_TILES;
+      const tile = chunk.tiles[localRow * WORLD_UNIT_TILES + localCol];
       if (!tile?.nanos) continue;
 
       // Only care about positive nanos (fences, walls) that can occlude

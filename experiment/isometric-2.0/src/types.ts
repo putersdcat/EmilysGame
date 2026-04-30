@@ -44,17 +44,6 @@ export const MACRO_UNIT_TILES = 5;
 /** L2: Number of micro tiles per side spanned by a Macro Tile (= MACRO × WORLD_UNIT). */
 export const MACRO_UNIT_MICROS = MACRO_UNIT_TILES * WORLD_UNIT_TILES;
 
-/**
- * @deprecated Use `WORLD_UNIT_TILES` — preserved as a transitional alias
- * so the refactor lands in a single mechanical pass without breaking
- * external callers in tmp/ or third-party scripts. Remove after one
- * green release.
- */
-export const CHUNK_TILES = WORLD_UNIT_TILES;
-
-/** @deprecated Use `WORLD_UNIT_SIZE`. */
-export const CHUNK_SIZE = WORLD_UNIT_SIZE;
-
 /** Maximum Z-height value for tiles (0–12 range). */
 export const MAX_Z_HEIGHT = 12;
 

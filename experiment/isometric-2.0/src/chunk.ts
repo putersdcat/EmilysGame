@@ -9,7 +9,7 @@
 import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
-  CHUNK_TILES,
+  WORLD_UNIT_TILES,
   worldToIso,
   type MicroTile,
   type WorldUnitChunk,
@@ -46,18 +46,18 @@ const MAX_Z_PX = MAX_Z_HEIGHT * Z_PX_PER_LEVEL;
 /** Padding above the chunk canvas for Z-elevated tiles. */
 const PAD_TOP = MAX_Z_PX + ISO_TILE_HEIGHT;
 
-/** Chunk canvas width: iso footprint of CHUNK_TILES columns + CHUNK_TILES rows. */
-export const CHUNK_CANVAS_W = CHUNK_TILES * ISO_TILE_WIDTH;
+/** Chunk canvas width: iso footprint of WORLD_UNIT_TILES columns + WORLD_UNIT_TILES rows. */
+export const WORLD_UNIT_CANVAS_W = WORLD_UNIT_TILES * ISO_TILE_WIDTH;
 
 /**
  * Chunk canvas height: iso footprint + Z headroom.
  * NOTE: bakeChunk may produce a taller canvas for structure chunks with tall nanos.
  * This constant is used only by getChunkDrawPos for screen-position math.
  */
-export const CHUNK_CANVAS_H = (CHUNK_TILES + 1) * ISO_TILE_HEIGHT + PAD_TOP;
+export const WORLD_UNIT_CANVAS_H = (WORLD_UNIT_TILES + 1) * ISO_TILE_HEIGHT + PAD_TOP;
 
 /** Horizontal origin offset to center the iso grid in the canvas. */
-const ORIGIN_X = CHUNK_TILES * (ISO_TILE_WIDTH / 2);
+const ORIGIN_X = WORLD_UNIT_TILES * (ISO_TILE_WIDTH / 2);
 
 // ─── Dynamic Canvas Headroom ────────────────────────────────
 
@@ -111,8 +111,8 @@ function computeWallNeighbors(
   row: number,
 ): { n: boolean; s: boolean; e: boolean; w: boolean } {
   const has = (c: number, r: number): boolean => {
-    if (c < 0 || r < 0 || c >= CHUNK_TILES || r >= CHUNK_TILES) return false;
-    const t = chunk.tiles[r * CHUNK_TILES + c];
+    if (c < 0 || r < 0 || c >= WORLD_UNIT_TILES || r >= WORLD_UNIT_TILES) return false;
+    const t = chunk.tiles[r * WORLD_UNIT_TILES + c];
     if (!t.nanos) return false;
     return t.nanos.some(n => EXTRUDED_WALL_KINDS.has(n.kind));
   };
@@ -137,19 +137,19 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
     chunk.cachedCanvas = document.createElement('canvas');
   }
   const padTop = computePadTop(chunk);
-  const canvasH = (CHUNK_TILES + 1) * ISO_TILE_HEIGHT + padTop;
-  chunk.cachedCanvas.width = CHUNK_CANVAS_W;
+  const canvasH = (WORLD_UNIT_TILES + 1) * ISO_TILE_HEIGHT + padTop;
+  chunk.cachedCanvas.width = WORLD_UNIT_CANVAS_W;
   chunk.cachedCanvas.height = canvasH;
   const ctx = chunk.cachedCanvas.getContext('2d')!;
-  ctx.clearRect(0, 0, CHUNK_CANVAS_W, canvasH);
+  ctx.clearRect(0, 0, WORLD_UNIT_CANVAS_W, canvasH);
 
   let allLoaded = true;
 
   // Pass 0: Shadows (drawn first, so tiles render on top)
   if (sun) {
-    for (let row = 0; row < CHUNK_TILES; row++) {
-      for (let col = 0; col < CHUNK_TILES; col++) {
-        const tile = chunk.tiles[row * CHUNK_TILES + col];
+    for (let row = 0; row < WORLD_UNIT_TILES; row++) {
+      for (let col = 0; col < WORLD_UNIT_TILES; col++) {
+        const tile = chunk.tiles[row * WORLD_UNIT_TILES + col];
         const { sx, sy } = worldToIso(col, row, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
         const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
         const drawY = sy + padTop - ISO_TILE_HEIGHT / 2;
@@ -174,9 +174,9 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
   }
 
   // Pass 1: Draw tiles in back-to-front order (row-major for iso)
-  for (let row = 0; row < CHUNK_TILES; row++) {
-    for (let col = 0; col < CHUNK_TILES; col++) {
-      const tile = chunk.tiles[row * CHUNK_TILES + col];
+  for (let row = 0; row < WORLD_UNIT_TILES; row++) {
+    for (let col = 0; col < WORLD_UNIT_TILES; col++) {
+      const tile = chunk.tiles[row * WORLD_UNIT_TILES + col];
       const rendered = getRenderedTile(tile);
       if (!rendered) { allLoaded = false; continue; }
 
@@ -200,9 +200,9 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
   }
 
   // Pass 2: Edge blending between adjacent tiles of different kinds
-  for (let row = 0; row < CHUNK_TILES; row++) {
-    for (let col = 0; col < CHUNK_TILES; col++) {
-      const tile = chunk.tiles[row * CHUNK_TILES + col];
+  for (let row = 0; row < WORLD_UNIT_TILES; row++) {
+    for (let col = 0; col < WORLD_UNIT_TILES; col++) {
+      const tile = chunk.tiles[row * WORLD_UNIT_TILES + col];
       const { sx, sy } = worldToIso(col, row, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
       const drawX = sx + ORIGIN_X - ISO_TILE_WIDTH / 2;
       const drawY = sy + padTop - ISO_TILE_HEIGHT / 2 - tile.z * Z_PX_PER_LEVEL;
@@ -210,28 +210,28 @@ export function bakeChunk(chunk: WorldUnitChunk, sun?: SunState): boolean {
       // Check each neighbor and blend if different kind
       // Top neighbor (row-1)
       if (row > 0) {
-        const neighbor = chunk.tiles[(row - 1) * CHUNK_TILES + col];
+        const neighbor = chunk.tiles[(row - 1) * WORLD_UNIT_TILES + col];
         if (neighbor.kind !== tile.kind) {
           applyEdgeBlend(ctx, drawX, drawY, 'top', tile.edgeMasks.top.samples, KIND_COLORS[neighbor.kind]);
         }
       }
       // Right neighbor (col+1)
-      if (col < CHUNK_TILES - 1) {
-        const neighbor = chunk.tiles[row * CHUNK_TILES + col + 1];
+      if (col < WORLD_UNIT_TILES - 1) {
+        const neighbor = chunk.tiles[row * WORLD_UNIT_TILES + col + 1];
         if (neighbor.kind !== tile.kind) {
           applyEdgeBlend(ctx, drawX, drawY, 'right', tile.edgeMasks.right.samples, KIND_COLORS[neighbor.kind]);
         }
       }
       // Bottom neighbor (row+1)
-      if (row < CHUNK_TILES - 1) {
-        const neighbor = chunk.tiles[(row + 1) * CHUNK_TILES + col];
+      if (row < WORLD_UNIT_TILES - 1) {
+        const neighbor = chunk.tiles[(row + 1) * WORLD_UNIT_TILES + col];
         if (neighbor.kind !== tile.kind) {
           applyEdgeBlend(ctx, drawX, drawY, 'bottom', tile.edgeMasks.bottom.samples, KIND_COLORS[neighbor.kind]);
         }
       }
       // Left neighbor (col-1)
       if (col > 0) {
-        const neighbor = chunk.tiles[row * CHUNK_TILES + col - 1];
+        const neighbor = chunk.tiles[row * WORLD_UNIT_TILES + col - 1];
         if (neighbor.kind !== tile.kind) {
           applyEdgeBlend(ctx, drawX, drawY, 'left', tile.edgeMasks.left.samples, KIND_COLORS[neighbor.kind]);
         }
@@ -460,10 +460,10 @@ export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
   const tiles: MicroTile[] = [];
   const useAssets = hasLoadedAssets();
 
-  for (let row = 0; row < CHUNK_TILES; row++) {
-    for (let col = 0; col < CHUNK_TILES; col++) {
-      const worldCol = cx * CHUNK_TILES + col;
-      const worldRow = cy * CHUNK_TILES + row;
+  for (let row = 0; row < WORLD_UNIT_TILES; row++) {
+    for (let col = 0; col < WORLD_UNIT_TILES; col++) {
+      const worldCol = cx * WORLD_UNIT_TILES + col;
+      const worldRow = cy * WORLD_UNIT_TILES + row;
 
       // Check for feature override first (walls, fences, rivers, tall grass)
       const featureKind = getFeatureKind(worldCol, worldRow);
@@ -534,8 +534,8 @@ export function generateDemoChunk(cx: number, cy: number): WorldUnitChunk {
 
 /** Get the screen-space draw position for a chunk's cached canvas. */
 export function getChunkDrawPos(cx: number, cy: number): { dx: number; dy: number } {
-  const chunkCol = cx * CHUNK_TILES;
-  const chunkRow = cy * CHUNK_TILES;
+  const chunkCol = cx * WORLD_UNIT_TILES;
+  const chunkRow = cy * WORLD_UNIT_TILES;
   const { sx, sy } = worldToIso(chunkCol, chunkRow, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
   return {
     dx: sx - ORIGIN_X,

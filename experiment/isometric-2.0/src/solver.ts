@@ -15,7 +15,7 @@ import {
   type FeatureVariant,
   type EdgeMasks,
   type MacroAssembly,
-  CHUNK_TILES,
+  WORLD_UNIT_TILES,
 } from './types';
 import { StoneBrick } from './textures';
 
@@ -70,21 +70,21 @@ function getNeighbors(
   row: number,
   lookup: NeighborLookup,
 ): Neighbors {
-  const worldCol = chunk.cx * CHUNK_TILES + col;
-  const worldRow = chunk.cy * CHUNK_TILES + row;
+  const worldCol = chunk.cx * WORLD_UNIT_TILES + col;
+  const worldRow = chunk.cy * WORLD_UNIT_TILES + row;
 
   return {
     top: row > 0
-      ? chunk.tiles[(row - 1) * CHUNK_TILES + col]
+      ? chunk.tiles[(row - 1) * WORLD_UNIT_TILES + col]
       : lookup(worldCol, worldRow - 1),
-    right: col < CHUNK_TILES - 1
-      ? chunk.tiles[row * CHUNK_TILES + col + 1]
+    right: col < WORLD_UNIT_TILES - 1
+      ? chunk.tiles[row * WORLD_UNIT_TILES + col + 1]
       : lookup(worldCol + 1, worldRow),
-    bottom: row < CHUNK_TILES - 1
-      ? chunk.tiles[(row + 1) * CHUNK_TILES + col]
+    bottom: row < WORLD_UNIT_TILES - 1
+      ? chunk.tiles[(row + 1) * WORLD_UNIT_TILES + col]
       : lookup(worldCol, worldRow + 1),
     left: col > 0
-      ? chunk.tiles[row * CHUNK_TILES + col - 1]
+      ? chunk.tiles[row * WORLD_UNIT_TILES + col - 1]
       : lookup(worldCol - 1, worldRow),
   };
 }
@@ -718,11 +718,11 @@ export function solveChunkFeatures(
   const newTiles: MicroTile[] = [];
   let changed = false;
 
-  for (let row = 0; row < CHUNK_TILES; row++) {
-    for (let col = 0; col < CHUNK_TILES; col++) {
-      const tile = chunk.tiles[row * CHUNK_TILES + col];
-      const worldCol = chunk.cx * CHUNK_TILES + col;
-      const worldRow = chunk.cy * CHUNK_TILES + row;
+  for (let row = 0; row < WORLD_UNIT_TILES; row++) {
+    for (let col = 0; col < WORLD_UNIT_TILES; col++) {
+      const tile = chunk.tiles[row * WORLD_UNIT_TILES + col];
+      const worldCol = chunk.cx * WORLD_UNIT_TILES + col;
+      const worldRow = chunk.cy * WORLD_UNIT_TILES + row;
       const nanoKind = getNanoKind(tile);
 
       // Diagonal fence tiles carry a pre-set variant — skip connection solving, just apply SVG
@@ -1004,7 +1004,7 @@ function placeGatesInFenceRuns(
 ): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
   const newConditions = new Map<string, 'locked' | 'unlocked'>();
   const result = [...tiles];
-  const N = CHUNK_TILES;
+  const N = WORLD_UNIT_TILES;
 
   // Scan horizontal runs (straight-h fence)
   for (let row = 0; row < N; row++) {
@@ -1119,7 +1119,7 @@ function placeRiverCrossings(
 ): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
   const newConditions = new Map<string, 'locked' | 'unlocked'>();
   const result = [...tiles];
-  const N = CHUNK_TILES;
+  const N = WORLD_UNIT_TILES;
   const entropy = ((cx * 31 + cy * 17) >>> 0);
 
   for (let row = 0; row < N; row++) {
@@ -1192,7 +1192,7 @@ function placeRiverCrossings(
  *   4. type:'conditional' blocks if condition is 'locked', passable if 'unlocked'
  */
 export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
-  const N = CHUNK_TILES;
+  const N = WORLD_UNIT_TILES;
   const map: boolean[] = new Array(N * N).fill(true);
 
   for (let i = 0; i < N * N; i++) {
@@ -1245,7 +1245,7 @@ export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
  * Uses locked walkable map (worst-case; conditional nanos = blocked).
  */
 export function validateChunkTraversability(chunk: WorldUnitChunk): boolean {
-  const N = CHUNK_TILES;
+  const N = WORLD_UNIT_TILES;
   const walkable = chunk.walkableMap.length === N * N
     ? chunk.walkableMap
     : buildWalkableMap(chunk);
@@ -1338,8 +1338,8 @@ export function placeAssembly(
   originRow: number,
   chunk: WorldUnitChunk,
 ): void {
-  const chunkOriginCol = chunk.cx * CHUNK_TILES;
-  const chunkOriginRow = chunk.cy * CHUNK_TILES;
+  const chunkOriginCol = chunk.cx * WORLD_UNIT_TILES;
+  const chunkOriginRow = chunk.cy * WORLD_UNIT_TILES;
 
   const zOrder: Record<string, number> = { 'negative': 0, 'flat': 1, 'positive': 2 };
 
@@ -1349,12 +1349,12 @@ export function placeAssembly(
 
     const localCol = worldCol - chunkOriginCol;
     const localRow = worldRow - chunkOriginRow;
-    if (localCol < 0 || localCol >= CHUNK_TILES || localRow < 0 || localRow >= CHUNK_TILES) {
+    if (localCol < 0 || localCol >= WORLD_UNIT_TILES || localRow < 0 || localRow >= WORLD_UNIT_TILES) {
       // TODO: multi-chunk spanning tracked — tile belongs to a different chunk
       continue;
     }
 
-    const idx = localRow * CHUNK_TILES + localCol;
+    const idx = localRow * WORLD_UNIT_TILES + localCol;
     const tile = chunk.tiles[idx];
     const existing: readonly NanoTile[] = tile.nanos ?? [];
     const merged: NanoTile[] = [...existing, ...placement.nanos];
