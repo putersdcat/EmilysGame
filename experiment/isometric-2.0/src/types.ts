@@ -5,6 +5,20 @@
  */
 
 // ─── Constants ───────────────────────────────────────────────
+//
+// Spatial hierarchy (see Docs/WorldEngine-01-SpatialHierarchy.md):
+//
+//   L2  Macro Tile      — 5 × 5 World Unit Tiles (= 25 × 25 micro tiles)
+//   L1  World Unit Tile — 5 × 5 Micro Tiles
+//   L0  Micro Tile      — atomic terrain / collision cell (1 iso diamond)
+//   L0.5 Nano Tile      — 3 × 3 sub-grid OVERLAY of one Micro Tile
+//                         (does NOT enlarge the micro footprint; subdivides it)
+//
+// These constants are the single source of truth for every grid math
+// operation in the engine. Renamed from the legacy `CHUNK_*` family in
+// alignment with the world-engine spec; the `WorldUnitChunk` interface
+// retains the "chunk" word because it is the *runtime baked* container
+// of an L1 World Unit Tile (it carries cachedCanvas + walkableMap).
 
 /** Logical pixel size of a single micro tile (source SVG viewport). */
 export const MICRO_TILE_SIZE = 128;
@@ -15,11 +29,31 @@ export const ISO_TILE_WIDTH = 256;
 /** Height of the isometric diamond after projection (2:1 ratio). */
 export const ISO_TILE_HEIGHT = 128;
 
-/** Number of micro tiles per side in a World Unit Chunk. */
-export const CHUNK_TILES = 5;
+/** Nano sub-grid resolution per micro tile (3 × 3 patches per L0.5 overlay). */
+export const NANO_GRID = 3;
 
-/** Logical pixel size of a chunk (CHUNK_TILES * MICRO_TILE_SIZE). */
-export const CHUNK_SIZE = CHUNK_TILES * MICRO_TILE_SIZE;
+/** L1: Number of micro tiles per side in a World Unit Tile (a.k.a. chunk). */
+export const WORLD_UNIT_TILES = 5;
+
+/** L1: Logical pixel size of a World Unit Tile (WORLD_UNIT_TILES × MICRO_TILE_SIZE). */
+export const WORLD_UNIT_SIZE = WORLD_UNIT_TILES * MICRO_TILE_SIZE;
+
+/** L2: Number of World Unit Tiles per side in a Macro Tile. */
+export const MACRO_UNIT_TILES = 5;
+
+/** L2: Number of micro tiles per side spanned by a Macro Tile (= MACRO × WORLD_UNIT). */
+export const MACRO_UNIT_MICROS = MACRO_UNIT_TILES * WORLD_UNIT_TILES;
+
+/**
+ * @deprecated Use `WORLD_UNIT_TILES` — preserved as a transitional alias
+ * so the refactor lands in a single mechanical pass without breaking
+ * external callers in tmp/ or third-party scripts. Remove after one
+ * green release.
+ */
+export const CHUNK_TILES = WORLD_UNIT_TILES;
+
+/** @deprecated Use `WORLD_UNIT_SIZE`. */
+export const CHUNK_SIZE = WORLD_UNIT_SIZE;
 
 /** Maximum Z-height value for tiles (0–12 range). */
 export const MAX_Z_HEIGHT = 12;
@@ -223,25 +257,27 @@ export interface PlayerState {
   moving: boolean;
 }
 
-// ─── Chunk ───────────────────────────────────────────────────
+// ─── World Unit Chunk (L1 runtime container) ─────────────────
 
 /**
- * WorldUnitChunk: A 5×5 grid of MicroTiles (640×640 logical).
- * Chunks are the spatial unit for loading, culling, and caching.
+ * WorldUnitChunk: A baked, runtime container for one L1 World Unit Tile —
+ * a 5×5 grid of MicroTiles with cachedCanvas + walkableMap. Loading,
+ * culling, and bake caching all happen at this granularity.
+ * (See Docs/WorldEngine-01-SpatialHierarchy.md for the L0/L0.5/L1/L2 spec.)
  */
 export interface WorldUnitChunk {
-  /** Chunk coordinate in chunk-space (not pixel-space). */
+  /** World-Unit grid coordinate (NOT pixel-space, NOT micro-space). */
   readonly cx: number;
   readonly cy: number;
 
   /**
-   * 5×5 tile grid, row-major: tiles[row * CHUNK_TILES + col].
-   * Length always === CHUNK_TILES * CHUNK_TILES.
+   * 5×5 micro-tile grid, row-major: tiles[row * WORLD_UNIT_TILES + col].
+   * Length always === WORLD_UNIT_TILES * WORLD_UNIT_TILES.
    */
   readonly tiles: readonly MicroTile[];
 
   /**
-   * Pre-rendered composite canvas for the entire chunk (nullable until baked).
+   * Pre-rendered composite canvas for the entire World Unit (nullable until baked).
    * Width/height match the isometric bounding box of the 5×5 grid.
    */
   cachedCanvas: HTMLCanvasElement | null;
@@ -250,7 +286,7 @@ export interface WorldUnitChunk {
   dirty: boolean;
 
   /**
-   * Active conditions on this chunk (troll-bridge quiz answers, gate unlocks).
+   * Active conditions on this World Unit (troll-bridge quiz answers, gate unlocks).
    * Key: conditionId string (e.g., 'quiz:gate-20-4').
    * Value: 'locked' | 'unlocked'.
    * Mutated by resolveCondition() — NOT readonly.
@@ -259,7 +295,7 @@ export interface WorldUnitChunk {
 
   /**
    * Cached walkable map for fast collision queries.
-   * CHUNK_TILES * CHUNK_TILES boolean flags (row-major).
+   * WORLD_UNIT_TILES * WORLD_UNIT_TILES boolean flags (row-major).
    * Recomputed by buildWalkableMap() after each solver pass.
    */
   walkableMap: boolean[];

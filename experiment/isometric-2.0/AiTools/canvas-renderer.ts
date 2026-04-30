@@ -32,7 +32,9 @@ import { injectSvgImage } from '../src/tile.js';
 import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
-  CHUNK_TILES,
+  WORLD_UNIT_TILES,
+  MACRO_UNIT_TILES,
+  NANO_GRID,
   MICRO_TILE_SIZE,
   type NanoTile,
   type NanoTileKind,
@@ -606,6 +608,19 @@ function strokeIsoQuad(
   ctx.restore();
 }
 
+/** Build the 4 iso-diamond corners (W,N,E,S) for a world rect [c0..c1] × [r0..r1]. */
+function isoDiamondCorners(
+  c0: number, r0: number, c1: number, r1: number,
+  ox: number, oy: number,
+): Array<{ x: number; y: number }> {
+  return [
+    worldToScreen(c0, r1, ox, oy), // W
+    worldToScreen(c0, r0, ox, oy), // N
+    worldToScreen(c1, r0, ox, oy), // E
+    worldToScreen(c1, r1, ox, oy), // S
+  ];
+}
+
 /** Label helper with semi-opaque pill background for readability. */
 function drawLayerLabel(
   ctx: SKRSContext2D,
@@ -613,16 +628,16 @@ function drawLayerLabel(
   y: number,
   text: string,
   color: string,
-  fontPx = 10,
+  fontPx = 11,
 ): void {
   ctx.save();
   ctx.font = `bold ${fontPx}px sans-serif`;
   const metrics = ctx.measureText(text);
-  const padX = 3;
+  const padX = 4;
   const padY = 2;
   const w = metrics.width + padX * 2;
   const h = fontPx + padY * 2;
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
+  ctx.fillStyle = 'rgba(0,0,0,0.78)';
   ctx.fillRect(x, y - h, w, h);
   ctx.fillStyle = color;
   ctx.textBaseline = 'bottom';
@@ -631,12 +646,17 @@ function drawLayerLabel(
 }
 
 /**
- * Overlay every world-geometry tier the engine actually uses, biggest → smallest:
- *   1. CHUNK boundary (5×5 micro tiles)        — cyan, thick
- *   2. MICRO TILE diamond (1 ISO_TILE)          — yellow
- *   3. NANO sub-cell (1/9 of micro, 3×3 grid)   — magenta, thin
- *   4. WALL FOOTPRINT rect (per solver.wallBounds, central 48/128 + arms) — orange
- * Plus a legend pinned to the top-left of the canvas.
+ * Overlay every world-geometry tier the engine actually uses, biggest → smallest.
+ *
+ * Canonical hierarchy (Docs/WorldEngine-01-SpatialHierarchy.md):
+ *   L2  MACRO TILE       — 5×5 World Unit Tiles  (= 25×25 micro tiles)  cyan, very thick
+ *   L1  WORLD UNIT TILE  — 5×5 Micro Tiles                              lime, thick
+ *   L0  MICRO TILE       — 1 iso diamond                                yellow
+ *   L0.5 NANO TILE       — 3×3 sub-grid OVERLAY of one Micro            magenta dashed
+ *
+ * Wall footprint rects (orange) are drawn on top as a render-pipeline aid
+ * — they are NOT a spatial tier; they are solver output for the L0.5 wall
+ * nano kind.
  */
 function drawGeometryLayers(
   ctx: SKRSContext2D,
@@ -653,72 +673,76 @@ function drawGeometryLayers(
   const minRow = Math.min(...rows);
   const maxRow = Math.max(...rows);
 
-  const COLOR_CHUNK = '#00e5ff'; // cyan
-  const COLOR_MICRO = '#ffd400'; // yellow
-  const COLOR_NANO  = '#ff3df0'; // magenta
-  const COLOR_WALL  = '#ff8a00'; // orange
+  // Bright distinct colors, biggest tier → smallest.
+  const COLOR_MACRO = '#00e5ff'; // cyan      L2
+  const COLOR_WORLD = '#7cff3f'; // lime      L1
+  const COLOR_MICRO = '#ffd400'; // yellow    L0
+  const COLOR_NANO  = '#ff3df0'; // magenta   L0.5
+  const COLOR_WALL  = '#ff8a00'; // orange    (wall solver footprint, not a tier)
 
-  // ── 1. CHUNK boundaries (CHUNK_TILES × CHUNK_TILES micro tiles) ──
-  const chunkColMin = Math.floor(minCol / CHUNK_TILES);
-  const chunkColMax = Math.floor(maxCol / CHUNK_TILES);
-  const chunkRowMin = Math.floor(minRow / CHUNK_TILES);
-  const chunkRowMax = Math.floor(maxRow / CHUNK_TILES);
-  for (let cy = chunkRowMin; cy <= chunkRowMax; cy++) {
-    for (let cx = chunkColMin; cx <= chunkColMax; cx++) {
-      const c0 = cx * CHUNK_TILES;
-      const r0 = cy * CHUNK_TILES;
-      const c1 = c0 + CHUNK_TILES;
-      const r1 = r0 + CHUNK_TILES;
-      const W = worldToScreen(c0, r1, ox, oy);  // west vertex
-      const N = worldToScreen(c0, r0, ox, oy);  // north vertex
-      const E = worldToScreen(c1, r0, ox, oy);  // east vertex
-      const S = worldToScreen(c1, r1, ox, oy);  // south vertex
-      strokeIsoQuad(ctx, [W, N, E, S], COLOR_CHUNK, 3);
-      drawLayerLabel(ctx, N.x + 4, N.y - 2, `CHUNK ${cx},${cy}`, COLOR_CHUNK, 11);
+  // ── L2: MACRO TILE boundaries ────────────────────────────────
+  // A macro spans MACRO_UNIT_TILES × WORLD_UNIT_TILES micros per side.
+  const MACRO_MICROS = MACRO_UNIT_TILES * WORLD_UNIT_TILES;
+  const macroColMin = Math.floor(minCol / MACRO_MICROS);
+  const macroColMax = Math.floor(maxCol / MACRO_MICROS);
+  const macroRowMin = Math.floor(minRow / MACRO_MICROS);
+  const macroRowMax = Math.floor(maxRow / MACRO_MICROS);
+  for (let my = macroRowMin; my <= macroRowMax; my++) {
+    for (let mx = macroColMin; mx <= macroColMax; mx++) {
+      const c0 = mx * MACRO_MICROS;
+      const r0 = my * MACRO_MICROS;
+      const c1 = c0 + MACRO_MICROS;
+      const r1 = r0 + MACRO_MICROS;
+      strokeIsoQuad(ctx, isoDiamondCorners(c0, r0, c1, r1, ox, oy), COLOR_MACRO, 4);
+      const N = worldToScreen(c0, r0, ox, oy);
+      // L2 label sits ABOVE the L1 label at the same vertex.
+      drawLayerLabel(ctx, N.x + 6, N.y - 22, `L2 MACRO ${mx},${my}`, COLOR_MACRO, 14);
     }
   }
 
-  // ── 2. MICRO TILE diamonds + 3. NANO sub-cells ──
+  // ── L1: WORLD UNIT TILE boundaries ───────────────────────────
+  const wuColMin = Math.floor(minCol / WORLD_UNIT_TILES);
+  const wuColMax = Math.floor(maxCol / WORLD_UNIT_TILES);
+  const wuRowMin = Math.floor(minRow / WORLD_UNIT_TILES);
+  const wuRowMax = Math.floor(maxRow / WORLD_UNIT_TILES);
+  for (let wy = wuRowMin; wy <= wuRowMax; wy++) {
+    for (let wx = wuColMin; wx <= wuColMax; wx++) {
+      const c0 = wx * WORLD_UNIT_TILES;
+      const r0 = wy * WORLD_UNIT_TILES;
+      const c1 = c0 + WORLD_UNIT_TILES;
+      const r1 = r0 + WORLD_UNIT_TILES;
+      strokeIsoQuad(ctx, isoDiamondCorners(c0, r0, c1, r1, ox, oy), COLOR_WORLD, 2.5);
+      const N = worldToScreen(c0, r0, ox, oy);
+      drawLayerLabel(ctx, N.x + 4, N.y - 2, `L1 WU ${wx},${wy}`, COLOR_WORLD, 12);
+    }
+  }
+
+  // ── L0: MICRO TILE diamonds + L0.5 NANO 3×3 sub-grid ─────────
   for (const e of entries) {
     const c = e.col;
     const r = e.row;
-    // Micro diamond corners.
-    const W = worldToScreen(c,     r + 1, ox, oy);
-    const N = worldToScreen(c,     r,     ox, oy);
-    const E = worldToScreen(c + 1, r,     ox, oy);
-    const S = worldToScreen(c + 1, r + 1, ox, oy);
-    strokeIsoQuad(ctx, [W, N, E, S], COLOR_MICRO, 1.25);
+    strokeIsoQuad(ctx, isoDiamondCorners(c, r, c + 1, r + 1, ox, oy), COLOR_MICRO, 1.25);
 
-    // 3×3 nano grid (each sub-diamond is 1/9 of micro)
-    for (let nr = 0; nr < 3; nr++) {
-      for (let nc = 0; nc < 3; nc++) {
-        const fc0 = c + nc / 3;
-        const fr0 = r + nr / 3;
-        const fc1 = c + (nc + 1) / 3;
-        const fr1 = r + (nr + 1) / 3;
-        const w = worldToScreen(fc0, fr1, ox, oy);
-        const n = worldToScreen(fc0, fr0, ox, oy);
-        const ee = worldToScreen(fc1, fr0, ox, oy);
-        const s = worldToScreen(fc1, fr1, ox, oy);
-        strokeIsoQuad(ctx, [w, n, ee, s], COLOR_NANO, 0.6, [3, 2]);
+    // L0.5 nano grid
+    for (let nr = 0; nr < NANO_GRID; nr++) {
+      for (let nc = 0; nc < NANO_GRID; nc++) {
+        const fc0 = c + nc / NANO_GRID;
+        const fr0 = r + nr / NANO_GRID;
+        const fc1 = c + (nc + 1) / NANO_GRID;
+        const fr1 = r + (nr + 1) / NANO_GRID;
+        strokeIsoQuad(ctx, isoDiamondCorners(fc0, fr0, fc1, fr1, ox, oy), COLOR_NANO, 0.6, [3, 2]);
       }
     }
 
-    // ── 4. WALL FOOTPRINT rects (only for wall-bearing entries) ──
+    // Wall solver footprint (NOT a spatial tier — solver output for the L0.5 wall kind)
     if (e.variant && EXTRUDED_KINDS.has(e.kind)) {
       const { rects } = wallBounds(e.variant);
       for (const rect of rects) {
-        // wallBounds is in micro-tile pixel space [0..MICRO_TILE_SIZE]² →
-        // convert to fractional col/row inside the tile.
         const fx0 = c + rect.x / MICRO_TILE_SIZE;
         const fy0 = r + rect.y / MICRO_TILE_SIZE;
         const fx1 = c + (rect.x + rect.w) / MICRO_TILE_SIZE;
         const fy1 = r + (rect.y + rect.h) / MICRO_TILE_SIZE;
-        const wp = worldToScreen(fx0, fy1, ox, oy);
-        const np = worldToScreen(fx0, fy0, ox, oy);
-        const ep = worldToScreen(fx1, fy0, ox, oy);
-        const sp = worldToScreen(fx1, fy1, ox, oy);
-        strokeIsoQuad(ctx, [wp, np, ep, sp], COLOR_WALL, 1.4);
+        strokeIsoQuad(ctx, isoDiamondCorners(fx0, fy0, fx1, fy1, ox, oy), COLOR_WALL, 1.4);
       }
     }
   }
@@ -726,32 +750,218 @@ function drawGeometryLayers(
   // Per-tile micro labels (drawn after grid so they sit on top).
   for (const e of entries) {
     const N = worldToScreen(e.col, e.row, ox, oy);
-    drawLayerLabel(ctx, N.x + 2, N.y + 14, `m ${e.col},${e.row}`, COLOR_MICRO, 9);
+    drawLayerLabel(ctx, N.x + 2, N.y + 16, `L0 m ${e.col},${e.row}`, COLOR_MICRO, 9);
   }
 
-  // ── Legend (top-left) ──
-  ctx.save();
-  const legendX = 12;
-  const legendY = 14;
-  const lh = 16;
+  // ── Schematic inset: L2 → L1 → L0 → L0.5 nesting at proportional scale ──
+  // Drawn in the bottom-right corner. The actual L2 iso footprint is too
+  // large (25 micros = ~6400px wide) to fit alongside a useful L0/L0.5
+  // view, so we show their proportional nesting as a flat schematic.
+  drawHierarchyInset(ctx, COLOR_MACRO, COLOR_WORLD, COLOR_MICRO, COLOR_NANO);
+
+  // ── Legend (top-left, opaque box, large font) ────────────────
+  // Note: @napi-rs/canvas collapses multi-space runs in fillText, so we
+  // use a single space between the tier label and its description and
+  // size the box from explicit measurements per-row.
   const legend: Array<[string, string]> = [
-    [COLOR_CHUNK, `CHUNK   (${CHUNK_TILES}\u00d7${CHUNK_TILES} micro tiles)`],
-    [COLOR_MICRO, `MICRO   (1 iso tile = ${MICRO_TILE_SIZE}px world)`],
-    [COLOR_NANO,  'NANO    (1/9 of micro = 3\u00d73 grid)'],
-    [COLOR_WALL,  'WALL    (solver wallBounds rect)'],
+    [COLOR_MACRO, `L2 MACRO TILE \u2014 ${MACRO_UNIT_TILES}\u00d7${MACRO_UNIT_TILES} World Units (= ${MACRO_MICROS}\u00d7${MACRO_MICROS} micros)`],
+    [COLOR_WORLD, `L1 WORLD UNIT TILE \u2014 ${WORLD_UNIT_TILES}\u00d7${WORLD_UNIT_TILES} Micro Tiles`],
+    [COLOR_MICRO, `L0 MICRO TILE \u2014 atomic cell (1 iso diamond, ${MICRO_TILE_SIZE}px world)`],
+    [COLOR_NANO,  `L0.5 NANO TILE \u2014 ${NANO_GRID}\u00d7${NANO_GRID} sub-grid OVERLAY of a Micro`],
+    [COLOR_WALL,  'wall solver footprint (not a tier \u2014 L0.5 wall geometry)'],
   ];
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillRect(legendX - 6, legendY - 12, 260, lh * legend.length + 10);
-  ctx.font = 'bold 11px sans-serif';
+  ctx.save();
+  const padX = 14, padY = 12;
+  const lh = 24;
+  const fontPx = 14;
+  ctx.font = `bold ${fontPx}px sans-serif`;
+  let maxTextW = 0;
+  for (const [, label] of legend) {
+    maxTextW = Math.max(maxTextW, ctx.measureText(label).width);
+  }
+  const swatchW = 26, swatchGap = 12;
+  // Clamp to a generous minimum to defend against measureText under-reporting
+  // on @napi-rs/canvas when fonts are not embedded.
+  const safeTextW = Math.max(maxTextW, 540);
+  const boxW = padX * 2 + swatchW + swatchGap + safeTextW;
+  const boxH = padY * 2 + lh * legend.length;
+  const boxX = 18;
+  const boxY = 36; // leave room above for the title strip
+  ctx.fillStyle = 'rgba(0,0,0,0.88)';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
   ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
   for (let i = 0; i < legend.length; i++) {
     const [color, label] = legend[i];
-    const y = legendY + i * lh;
+    const y = boxY + padY + lh / 2 + i * lh;
     ctx.fillStyle = color;
-    ctx.fillRect(legendX, y - 4, 14, 8);
+    ctx.fillRect(boxX + padX, y - 7, swatchW, 14);
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, legendX + 22, y);
+    ctx.fillText(label, boxX + padX + swatchW + swatchGap, y);
   }
+  // Title strip above the box.
+  ctx.fillStyle = COLOR_MACRO;
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('WORLD ENGINE \u2014 SPATIAL HIERARCHY (biggest \u2192 smallest)', boxX, boxY - 4);
+  ctx.restore();
+}
+
+// ─── Hierarchy inset schematic ─────────────────────────────────
+
+/**
+ * Bottom-right inset diagram showing the four-tier nesting at
+ * proportional scale: an L2 macro (5×5 grid of L1 World Units),
+ * one of those L1 cells expanded into a 5×5 grid of L0 Micro Tiles,
+ * and one of those L0 cells expanded into a 3×3 grid of L0.5 Nano patches.
+ *
+ * This is a flat (non-iso) schematic — its purpose is to make the
+ * tier relationships unambiguous, not to replicate iso geometry.
+ */
+function drawHierarchyInset(
+  ctx: SKRSContext2D,
+  colorMacro: string,
+  colorWorld: string,
+  colorMicro: string,
+  colorNano: string,
+): void {
+  ctx.save();
+  const canvas = ctx.canvas as unknown as { width: number; height: number };
+  const cellPx = 16; // L0 micro cell size in the inset
+  const wuPx   = cellPx * WORLD_UNIT_TILES;             // 80px per L1
+  const macroPx = wuPx * MACRO_UNIT_TILES;              // 400px per L2
+
+  // Position the inset in the bottom-right with margin for the nano callout
+  // on the LEFT side and the textual annotations BELOW.
+  const margin = 24;
+  const annotationH = 100;
+  const x0 = canvas.width  - macroPx - margin;
+  const y0 = canvas.height - macroPx - margin - annotationH;
+
+  // Title above the inset.
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 14px sans-serif';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('Hierarchy (proportional schematic)', x0, y0 - 8);
+
+  // L2: outer cyan box (the full macro tile).
+  ctx.fillStyle = 'rgba(0,229,255,0.06)';
+  ctx.fillRect(x0, y0, macroPx, macroPx);
+  ctx.strokeStyle = colorMacro;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x0 + 0.5, y0 + 0.5, macroPx - 1, macroPx - 1);
+
+  // L1 grid INSIDE L2 (lime). Skip i=0 and i=MACRO_UNIT_TILES so the cyan
+  // L2 border drawn above is not painted over.
+  ctx.strokeStyle = colorWorld;
+  ctx.lineWidth = 2;
+  for (let i = 1; i < MACRO_UNIT_TILES; i++) {
+    ctx.beginPath();
+    ctx.moveTo(x0 + i * wuPx + 0.5, y0);
+    ctx.lineTo(x0 + i * wuPx + 0.5, y0 + macroPx);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x0,             y0 + i * wuPx + 0.5);
+    ctx.lineTo(x0 + macroPx,   y0 + i * wuPx + 0.5);
+    ctx.stroke();
+  }
+  // Re-stroke the L2 outer border to guarantee it sits ON TOP of the lime grid.
+  ctx.strokeStyle = colorMacro;
+  ctx.lineWidth = 4;
+  ctx.strokeRect(x0 + 0.5, y0 + 0.5, macroPx - 1, macroPx - 1);
+
+  // Highlight one L1 cell (centre) and expand it: draw L0 micro grid (yellow).
+  const wuX = 2, wuY = 2;
+  const wuLeft = x0 + wuX * wuPx;
+  const wuTop  = y0 + wuY * wuPx;
+  ctx.fillStyle = 'rgba(124,255,63,0.18)';
+  ctx.fillRect(wuLeft, wuTop, wuPx, wuPx);
+  ctx.strokeStyle = colorMicro;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= WORLD_UNIT_TILES; i++) {
+    ctx.beginPath();
+    ctx.moveTo(wuLeft + i * cellPx + 0.5, wuTop);
+    ctx.lineTo(wuLeft + i * cellPx + 0.5, wuTop + wuPx);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(wuLeft,         wuTop + i * cellPx + 0.5);
+    ctx.lineTo(wuLeft + wuPx,  wuTop + i * cellPx + 0.5);
+    ctx.stroke();
+  }
+
+  // Highlight one L0 cell inside the highlighted L1 and explode it
+  // into the 3×3 nano grid (magenta) with a callout box to the side.
+  const microX = 2, microY = 2;
+  const microLeft = wuLeft + microX * cellPx;
+  const microTop  = wuTop  + microY * cellPx;
+  ctx.fillStyle = 'rgba(255,212,0,0.35)';
+  ctx.fillRect(microLeft, microTop, cellPx, cellPx);
+  ctx.strokeStyle = colorMicro;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(microLeft + 0.5, microTop + 0.5, cellPx - 1, cellPx - 1);
+
+  // Nano callout box: a 3×3 grid blown up to 90×90 to the LEFT of the macro.
+  const nanoBigPx = 30; // each nano patch in callout
+  const nanoBoxSize = nanoBigPx * NANO_GRID; // 90
+  const nanoBoxX = x0 - nanoBoxSize - 30;
+  const nanoBoxY = y0 + macroPx - nanoBoxSize;
+  // Connector line from highlighted L0 cell to nano callout box.
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.setLineDash([4, 3]);
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(microLeft, microTop + cellPx / 2);
+  ctx.lineTo(nanoBoxX + nanoBoxSize, nanoBoxY + nanoBoxSize / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Nano grid cells (3×3) with patch labels.
+  ctx.fillStyle = 'rgba(255,61,240,0.10)';
+  ctx.fillRect(nanoBoxX, nanoBoxY, nanoBoxSize, nanoBoxSize);
+  ctx.strokeStyle = colorNano;
+  ctx.lineWidth = 2;
+  for (let i = 0; i <= NANO_GRID; i++) {
+    ctx.beginPath();
+    ctx.moveTo(nanoBoxX + i * nanoBigPx + 0.5, nanoBoxY);
+    ctx.lineTo(nanoBoxX + i * nanoBigPx + 0.5, nanoBoxY + nanoBoxSize);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(nanoBoxX,                 nanoBoxY + i * nanoBigPx + 0.5);
+    ctx.lineTo(nanoBoxX + nanoBoxSize,   nanoBoxY + i * nanoBigPx + 0.5);
+    ctx.stroke();
+  }
+  // Label nano patches NW/N/NE/W/C/E/SW/S/SE.
+  const patchLabels = ['NW','N','NE','W','C','E','SW','S','SE'];
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = colorNano;
+  for (let nr = 0; nr < NANO_GRID; nr++) {
+    for (let nc = 0; nc < NANO_GRID; nc++) {
+      const cx = nanoBoxX + nc * nanoBigPx + nanoBigPx / 2;
+      const cy = nanoBoxY + nr * nanoBigPx + nanoBigPx / 2;
+      ctx.fillText(patchLabels[nr * NANO_GRID + nc], cx, cy);
+    }
+  }
+  ctx.textAlign = 'left';
+
+  // Tier annotations BELOW the inset (two columns, fits inside canvas).
+  const ax = x0;
+  const ay = y0 + macroPx + 12;
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = colorMacro; ctx.fillText(`L2  Macro Tile`,                 ax,         ay);
+  ctx.fillStyle = '#ffffff';   ctx.fillText(`= ${MACRO_UNIT_TILES}\u00d7${MACRO_UNIT_TILES} World Units (= ${MACRO_UNIT_TILES * WORLD_UNIT_TILES}\u00d7${MACRO_UNIT_TILES * WORLD_UNIT_TILES} Micros)`, ax + 130, ay);
+  ctx.fillStyle = colorWorld; ctx.fillText(`L1  World Unit Tile`,            ax,         ay + 20);
+  ctx.fillStyle = '#ffffff';   ctx.fillText(`= ${WORLD_UNIT_TILES}\u00d7${WORLD_UNIT_TILES} Micro Tiles`,                 ax + 160, ay + 20);
+  ctx.fillStyle = colorMicro; ctx.fillText(`L0  Micro Tile`,                 ax,         ay + 40);
+  ctx.fillStyle = '#ffffff';   ctx.fillText(`= atomic cell (1 iso diamond)`,                                     ax + 130, ay + 40);
+  ctx.fillStyle = colorNano;  ctx.fillText(`L0.5 Nano Tile`,                 ax,         ay + 60);
+  ctx.fillStyle = '#ffffff';   ctx.fillText(`= ${NANO_GRID}\u00d7${NANO_GRID} sub-grid OVERLAY of one Micro`,    ax + 130, ay + 60);
+
   ctx.restore();
 }
 
