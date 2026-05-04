@@ -1,6 +1,6 @@
 /**
  * tile.ts — 2.0 Experiment: Tile rendering with isometric projection.
- * Renders 144×144 logical SVG tiles directly to 256×144 isometric diamonds.
+ * Renders 144×144 logical SVG tiles directly to 256×128 isometric diamonds.
  * Supports Z-height elevation with side faces and edge blend masks.
  * TODO: DOC — tile pipeline, caching, and blend mask application
  */
@@ -84,8 +84,10 @@ export function getRenderedTile(tile: MicroTile): HTMLCanvasElement | null {
 export const Z_PX_PER_LEVEL = 4;
 
 /** Half-tile dimensions for iso math. */
-const HALF_W = ISO_TILE_WIDTH / 2;  // 144
+const HALF_W = ISO_TILE_WIDTH / 2;  // 128
 const HALF_H = ISO_TILE_HEIGHT / 2; // 64
+const ISO_X_PER_SOURCE_PX = HALF_W / MICRO_TILE_SIZE;
+const ISO_Y_PER_SOURCE_PX = HALF_H / MICRO_TILE_SIZE;
 
 // ─── Diamond Clip Path ───────────────────────────────────────
 // 2.0 Experiment: Clip to diamond shape to prevent overlap bleeding.
@@ -132,8 +134,8 @@ function getSideColors(kind: string): { left: string; right: string } {
  *
  * Layout of the output canvas:
  *   - Width: ISO_TILE_WIDTH (256)
- *   - Height: ISO_TILE_HEIGHT (144) + zPx (side face height)
- *   - Top face: diamond at (144, 0) center
+ *   - Height: ISO_TILE_HEIGHT (128) + zPx (side face height)
+ *   - Top face: diamond at (128, 0) center
  *   - Left side: parallelogram from bottom-left of diamond down by zPx
  *   - Right side: parallelogram from bottom-right of diamond down by zPx
  */
@@ -187,9 +189,11 @@ function renderTileToCanvas(
   ctx.save();
   clipDiamond(ctx, HALF_W, HALF_H, HALF_W, HALF_H);
 
-  // Isometric transform: 144×144 source → 256×144 diamond
+  // Isometric transform: MICRO_TILE_SIZE×MICRO_TILE_SIZE source → 256×128 diamond.
+  // For MICRO_TILE_SIZE=144 this MUST scale by 128/144 and 64/144; the old
+  // matrix(1,0.5,-1,0.5) only works when source size is exactly 128.
   // Transform origin at (0,0), the tile occupies the clipped diamond.
-  ctx.transform(1, 0.5, -1, 0.5, HALF_W, 0);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, HALF_W, 0);
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
   ctx.restore();
 

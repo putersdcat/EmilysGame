@@ -4,8 +4,12 @@
  * Nanos overlay on base biome MicroTiles for fences, walls, rivers, etc.
  *
  * Transform reference:
- *   Base tile (flat): ctx.transform(1, 0.5, -1, 0.5, halfW, 0)
- *   Nano (upright):   ctx.transform(1, 0.5, 0, 1, 0, 0)
+ *   Base tile (flat): ctx.transform(kx, ky, -kx, ky, halfW, 0)
+ *   Nano (upright):   ctx.transform(kx, ky, 0, 1, 0, 0)
+ * where kx = (ISO_TILE_WIDTH / 2) / MICRO_TILE_SIZE and
+ * ky = (ISO_TILE_HEIGHT / 2) / MICRO_TILE_SIZE. With MICRO_TILE_SIZE=144,
+ * this keeps the projected diamond at 256×128 while source-space math uses
+ * clean 48 px nano cells.
  *
  * The upright shear pins vertical edges while the bottom edge follows the
  * iso angle (26.5°), creating a "standing billboard" aligned to the left
@@ -31,6 +35,8 @@ import { computeShadowOffset } from './renderer';
 
 const HALF_W = ISO_TILE_WIDTH / 2;   // 128
 const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
+const ISO_X_PER_SOURCE_PX = HALF_W / MICRO_TILE_SIZE;
+const ISO_Y_PER_SOURCE_PX = HALF_H / MICRO_TILE_SIZE;
 
 /**
  * Visual height multiplier for nano Z rendering.
@@ -86,9 +92,9 @@ function clipDiamond(
  *
  * Layout after transform:
  *   Top-left: (screenX, screenY + HALF_H - drawH)
- *   Top-right: (screenX + HALF_W*2, screenY + HALF_H - drawH + 64)
+ *   Top-right: (screenX + HALF_W, screenY + HALF_H - drawH + HALF_H)
  *   Bottom-left: (screenX, screenY + HALF_H) = diamond left vertex
- *   Bottom-right: (screenX + HALF_W*2, screenY + HALF_H + 64) = diamond bottom vertex
+ *   Bottom-right: (screenX + HALF_W, screenY + HALF_H + HALF_H) = diamond bottom vertex
  */
 export function drawPositiveNano(
   ctx: CanvasRenderingContext2D,
@@ -110,7 +116,7 @@ export function drawPositiveNano(
 
   // Z-pinned shear: horizontal lines slope at iso angle (0.5),
   // vertical edges remain vertical — the "standing billboard" effect.
-  ctx.transform(1, 0.5, 0, 1, 0, 0);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
 
   // Draw SVG extending upward from anchor.
   // y=0 is the ground line; negative y extends upward.
@@ -161,7 +167,7 @@ export function drawNegativeNano(
   // Flat iso projection (same as base tiles) shifted down by sink depth.
   // The shift moves the SVG content lower within the diamond, creating the
   // sunken plane effect (e.g., water surface below surrounding terrain).
-  ctx.transform(1, 0.5, -1, 0.5, cx, screenY + sinkPx);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + sinkPx);
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
   ctx.restore();
@@ -233,7 +239,7 @@ function drawFlatNano(
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
   // Flat iso transform (identical to base tile projection)
-  ctx.transform(1, 0.5, -1, 0.5, cx, screenY);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);
   ctx.globalAlpha = 0.7;
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
@@ -247,8 +253,8 @@ function drawFlatNano(
  * Wall geometry constants — must stay in sync with solver.ts wallBounds().
  *
  * In tile-local space (144×144), the wall occupies a centered strip:
- *   Horizontal wall: x=0..144 (full length), y=40..88 (48px thickness)
- *   Vertical wall:   x=40..88 (48px thickness), y=0..144 (full length)
+ *   Horizontal wall: x=0..144 (full length), y=48..96 (48px thickness)
+ *   Vertical wall:   x=48..96 (48px thickness), y=0..144 (full length)
  *
  * WALL_OFFSET = distance from tile edge to the near wall face (camera side).
  * WALL_THICKNESS = wall width perpendicular to its run direction.
@@ -259,7 +265,7 @@ function drawFlatNano(
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const WALL_THICKNESS = 48;                                    // solver.ts W
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 40
+const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 48 when MICRO_TILE_SIZE=144
 
 /**
  * Determine if a wall variant's PRIMARY run direction is vertical ("/" on screen).
@@ -267,8 +273,7 @@ const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 
  * does not call this. Kept for AiTools/game-tile-renderer.ts which still
  * mirrors the old approach.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function isVerticalWall(variant: FeatureVariant | undefined): boolean {
+export function isVerticalWall(variant: FeatureVariant | undefined): boolean {
   switch (variant) {
     case 'straight-v':
     case 'end-t':
@@ -294,16 +299,16 @@ function isVerticalWall(variant: FeatureVariant | undefined): boolean {
  *
  * ┌───────────────────────────────────┬───────────────────────────────────┐
  * │ HORIZONTAL (\\ on screen)         │ VERTICAL (/ on screen)            │
- * │ Wall strip y=40..88              │ Wall strip x=40..88              │
+ * │ Wall strip y=48..96              │ Wall strip x=48..96              │
  * │                                  │                                  │
- * │ Z-edge: tile(144, 88)            │ Z-edge: tile(88, 144)            │
- * │ screen (sX+168, sY+108)          │ screen (sX+88, sY+108)           │
+ * │ Z-edge: tile(144, 96)            │ Z-edge: tile(96, 144)            │
+ * │ screen (sX+170.7, sY+106.7)      │ screen (sX+85.3, sY+106.7)       │
  * │                                  │                                  │
- * │ Front: anchor(0, 88)             │ Front: anchor(88, 0)             │
+ * │ Front: anchor(0, 96)             │ Front: anchor(96, 0)             │
  * │   matrix(1, 0.5, 0, 1)          │   matrix(-1, 0.5, 0, 1)         │
  * │   width=144, draws RIGHT+DOWN    │   width=144, draws LEFT+DOWN     │
  * │                                  │                                  │
- * │ Cap: anchor(144, 40)             │ Cap: anchor(40, 144)             │
+ * │ Cap: anchor(144, 48)             │ Cap: anchor(48, 144)             │
  * │   matrix(-1, 0.5, 0, 1)         │   matrix(1, 0.5, 0, 1)          │
  * │   width=48, draws LEFT+DOWN      │   width=48, draws RIGHT+DOWN     │
  * │                                  │                                  │
@@ -443,8 +448,8 @@ export function drawExtrudedNano(
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
   }
-  const isoX = (tx: number, ty: number) => screenX + tx - ty + HALF_W;
-  const isoY = (tx: number, ty: number) => screenY + (tx + ty) / 2;
+  const isoX = (tx: number, ty: number) => screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W;
+  const isoY = (tx: number, ty: number) => screenY + (tx + ty) * ISO_Y_PER_SOURCE_PX;
 
   // Shared pattern anchor (screen): bottom-front corner of the full tile
   // diamond, elevated by the wall height. All face pattern transforms
@@ -494,12 +499,12 @@ export function drawExtrudedNano(
             //
             //   dx = ANCHOR_SX − ex       (canvas-local Δ for anchor)
             //   dy = (ANCHOR_SY − ey) − 0.5·dx   (canvas shear y-offset)
-            const dx = ANCHOR_SX - ex;
-            const dy = (ANCHOR_SY - ey) - 0.5 * dx;
+            const dx = (ANCHOR_SX - ex) / ISO_X_PER_SOURCE_PX;
+            const dy = (ANCHOR_SY - ey) - ISO_Y_PER_SOURCE_PX * dx;
             sPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: dx, f: dy });
             ctx.save();
             ctx.translate(ex, ey);
-            ctx.transform(1, 0.5, 0, 1, 0, 0);
+            ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.fillStyle = sPattern;
             ctx.fillRect(0, -drawH, r.w, drawH);
             // END-FACE: vertical mortar ticks descending from each course
@@ -527,14 +532,14 @@ export function drawExtrudedNano(
             // (0,0) at ANCHOR via this shear:
             //   dx = ex − ANCHOR_SX  (note: −1 sign on shear flips dx sign)
             //   dy = (ANCHOR_SY − ey) − 0.5·dx
-            const dx = ex - ANCHOR_SX;
-            const dy = (ANCHOR_SY - ey) - 0.5 * dx;
+            const dx = (ex - ANCHOR_SX) / ISO_X_PER_SOURCE_PX;
+            const dy = (ANCHOR_SY - ey) - ISO_Y_PER_SOURCE_PX * dx;
             // Pattern axes IDENTITY in canvas-local; canvas shear already
             // gives source-x → screen (-1, 0.5) and source-y → screen (0,1).
             ePattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: dx, f: dy });
             ctx.save();
             ctx.translate(ex, ey);
-            ctx.transform(-1, 0.5, 0, 1, 0, 0);
+            ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.fillStyle = ePattern;
             ctx.fillRect(0, -drawH, r.h, drawH);
             // Directional shading: east receives less light → darken.
@@ -555,7 +560,7 @@ export function drawExtrudedNano(
         }
 
         // ── TOP: fill each rect (footprint) on the elevated diamond ──
-        // The top canvas transform is matrix(1, 0.5, -1, 0.5, screenX+HALF_W,
+        // The top canvas transform is matrix(kx, ky, -kx, ky, screenX+HALF_W,
         // elevatedY). In that frame, the ANCHOR screen point lands at
         // canvas-local (0, 144) — the back-left vertex of the diamond.
         // Pattern transform IDENTITY-with-translate (0, 144) makes source
@@ -581,17 +586,15 @@ export function drawExtrudedNano(
         //   source pixel the side face samples, AND the source-y axis on
         //   top runs INTO the wall (screen direction (-1, 0.5)).
         //
-        //   Top frame: shear (1, 0.5, -1, 0.5). For source-y → screen
+        //   Top frame: scaled shear (kx, ky, -kx, ky). For source-y → screen
         //   (-1, 0.5) we need pattern d-axis = (0, 1) → linear (1,0,0,1).
         //
-        //   At the ridge corner of straight-h core (tile 40,88), top
-        //   user-space coord is (40, 88) and side samples source (80, 88)
-        //   there (from anchor math). To make top sample (80, 88) at user
-        //   (40, 88) with identity linear: e = 80 - 40 = 40 (mod 144),
-        //   f = 88 - 88 = 0.
+        //   At the ridge corner of straight-h core (tile 48,96), top
+        //   user-space coord is (48, 96). To keep the same source phase at
+        //   the ridge under the scaled transform: e = WALL_OFFSET, f = 0.
         //
         //   For V wall: transposed (a=0,b=1,c=-1,d=0) for source-x → screen
-        //   (-1, 0.5) along V wall ridge; e=88, f=80 (mirrored algebra).
+        //   (-kx, ky) along V wall ridge; e=off+W, f=off (mirrored algebra).
         // ── TOP-FACE RECT BUILDER (corner/tee winner-takes-strip) ──
         //
         // The `rects` array above describes the wall FOOTPRINT (used for
@@ -624,14 +627,14 @@ export function drawExtrudedNano(
         // wherever it meets a V wall. The V wall then butts into it on
         // the neighbor tile (the V neighbor's own straight-v top draws
         // up to the shared tile boundary, where it meets the H winner).
-        const W2 = 48; const off2 = 40;
+        const W2 = WALL_THICKNESS; const off2 = WALL_OFFSET;
         type Rect = { x:number; y:number; w:number; h:number; v:boolean };
         const tops: Rect[] = [];
         // Two pattern transforms — kept here (not hoisted) because they
         // are only used by this block. See iter14 derivation comment above
-        // for why H = (1,0,0,1, 40,0) and V = (0,1,-1,0, 88,40).
-        const setH = () => tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: 40, f: 0 });
-        const setV = () => tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: 88, f: 40 });
+        // for why H = (1,0,0,1, off,0) and V = (0,1,-1,0, off+W,off).
+        const setH = () => tPattern.setTransform({ a: 1, b: 0, c: 0, d: 1, e: off2, f: 0 });
+        const setV = () => tPattern.setTransform({ a: 0, b: 1, c: -1, d: 0, e: off2 + W2, f: off2 });
         // ── Rotation-invariant texture override ─────────────────────
         // For non-brick textures (e.g. Voronoi natural stone) the
         // 90°-rotation between H winner strip and V loser stub creates
@@ -679,7 +682,7 @@ export function drawExtrudedNano(
 
         ctx.save();
         clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
-        ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
+        ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, elevatedY);
         for (const r of tops) {
           if (r.v) setForRect(true); else setForRect(false);
           ctx.fillStyle = tPattern;

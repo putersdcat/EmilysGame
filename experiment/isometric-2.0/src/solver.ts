@@ -158,7 +158,7 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 /** Get wall footprint bounds based on variant and connection direction. */
 export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48; // wall thickness
-  const off = (144 - W) / 2; // 40
+  const off = (144 - W) / 2; // 48
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
 
   // Arm definitions: which edges the wall extends to
