@@ -339,7 +339,8 @@ export function drawExtrudedNano(
    */
   neighborWalls?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): boolean {
-  const hasExtrusion = nano.sideTextureSvg || nano.topTextureSvg;
+  const hasExtrusion = nano.sideTextureSvg || nano.topTextureSvg
+    || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg;
   if (!hasExtrusion) {
     return drawPositiveNano(ctx, nano, screenX, screenY, sun);
   }
@@ -457,27 +458,33 @@ export function drawExtrudedNano(
   const ANCHOR_SX = screenX;                       // = isoX(0, 144)
   const ANCHOR_SY = screenY + HALF_H - drawH;      // = isoY(0, 144) - drawH
 
-  if (nano.sideTextureSvg) {
+  const southTextureSvg = nano.southFaceTextureSvg ?? nano.sideTextureSvg;
+  const eastTextureSvg = nano.eastFaceTextureSvg ?? nano.sideTextureSvg;
+  const topTextureSvg = nano.topFaceTextureSvg ?? nano.topTextureSvg ?? nano.sideTextureSvg;
+
+  if (southTextureSvg || eastTextureSvg || topTextureSvg) {
     // Texture-level opt-out for brick-header-style end ticks. Default is
     // true (correct for brick textures); ancient-stone Voronoi sets false
     // because there is no regular course pitch to align the ticks to.
     const drawEndCapTicks = nano.endCapTicks !== false;
 
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
+    const southImg = southTextureSvg ? loadSvgImage(southTextureSvg) : null;
+    const eastImg = eastTextureSvg ? loadSvgImage(eastTextureSvg) : null;
+    const topImg = topTextureSvg ? loadSvgImage(topTextureSvg) : null;
+    if (southImg && eastImg && topImg) {
       // SIDE-SOUTH pattern — source axes (right=(1,0.5), down=(0,1)) match
       // the canvas shear used during south-face fill, so source-y=0 lies on
       // the wall-top sheared screen line.
-      const sPattern = ctx.createPattern(sideImg, 'repeat');
+      const sPattern = ctx.createPattern(southImg, 'repeat');
       // SIDE-EAST pattern — source axes (right=(-1,0.5), down=(0,1)) match
       // the canvas shear used during east-face fill.
-      const ePattern = ctx.createPattern(sideImg, 'repeat');
+      const ePattern = ctx.createPattern(eastImg, 'repeat');
       // TOP pattern — source axes (right=(1,0.5), down=(-1,0.5)) match the
       // canvas shear used during top fill. CRITICALLY this shares its
       // source-x axis with the SIDE-SOUTH pattern, so source-y=0 traces
       // the SAME screen line on both → mortar continuity across the
       // south-top edge.
-      const tPattern = ctx.createPattern(sideImg, 'repeat');
+      const tPattern = ctx.createPattern(topImg, 'repeat');
 
       if (sPattern && ePattern && tPattern) {
         // ── SIDE: south + east faces, per visible rect ───────────────
@@ -749,7 +756,7 @@ export function drawNanoStack(
         if (!drawFlatNano(ctx, nano, screenX, screenY)) allImagesLoaded = false;
         break;
       case 'positive':
-        if (nano.sideTextureSvg || nano.topTextureSvg) {
+        if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
           if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun, neighborWalls)) allImagesLoaded = false;
         } else {
           if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;

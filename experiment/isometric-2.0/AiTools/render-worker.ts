@@ -43,6 +43,9 @@ interface BrickTextureSpec {
   //  render_nano_scene's resolution chain below AND CanvasSceneEntry
   //  AND the NanoTile interface in src/types.ts.)
   svg(): string;
+  topSvg?: () => string;
+  southSvg?: () => string;
+  eastSvg?: () => string;
   topOutline: boolean;
   endCapTicks: boolean;
   /** True for textures whose orientation should match the wall axis
@@ -52,7 +55,15 @@ interface BrickTextureSpec {
 const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
   'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true,  topRotateWithAxis: true,  endCapTicks: true  },
   'red-clinker':    { svg: () => RedClinker.svg(),    topOutline: true,  topRotateWithAxis: true,  endCapTicks: true  },
-  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false, topRotateWithAxis: true,  endCapTicks: false },
+  'ancient-stone':  {
+    svg: () => AncientStone.svg(),
+    topSvg: () => AncientStone.svgTop(),
+    southSvg: () => AncientStone.svgSouth(),
+    eastSvg: () => AncientStone.svgEast(),
+    topOutline: false,
+    topRotateWithAxis: false,
+    endCapTicks: false,
+  },
 };
 
 // ─── Types ────────────────────────────────────────────────────
@@ -282,6 +293,9 @@ async function dispatch(): Promise<WorkerResult> {
         // override fields win if both are supplied.
         let svgOverride: string | undefined = e.svgOverride;
         let topSvgOverride: string | undefined = e.topSvgOverride;
+        let topFaceSvgOverride: string | undefined = e.topFaceSvgOverride;
+        let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride;
+        let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride;
         let topOutline: boolean | undefined = e.topOutline;
         let topRotateWithAxis: boolean | undefined = e.topRotateWithAxis;
         let endCapTicks: boolean | undefined = e.endCapTicks;
@@ -291,6 +305,9 @@ async function dispatch(): Promise<WorkerResult> {
           const tex = spec.svg();
           svgOverride       = svgOverride       ?? tex;
           topSvgOverride    = topSvgOverride    ?? tex;
+          topFaceSvgOverride   = topFaceSvgOverride   ?? spec.topSvg?.()   ?? tex;
+          southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.() ?? tex;
+          eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.()  ?? tex;
           topOutline        = topOutline        ?? spec.topOutline;
           topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
@@ -301,6 +318,9 @@ async function dispatch(): Promise<WorkerResult> {
           zOffset: e.zOffset,
           svgOverride,
           topSvgOverride,
+          topFaceSvgOverride,
+          southFaceSvgOverride,
+          eastFaceSvgOverride,
           topOutline,
           topRotateWithAxis,
           endCapTicks,

@@ -24,7 +24,7 @@ import type { SKRSContext2D } from '@napi-rs/canvas';
 import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
-import { getVariantSvg, stoneWallTopSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
+import { getVariantSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -116,6 +116,12 @@ export interface CanvasSceneEntry {
    * canonical StoneBrick top texture is used.
    */
   topSvgOverride?: string;
+  /** Optional top/XY material slice for Canvas extrusions. Falls back to topSvgOverride/svgOverride. */
+  topFaceSvgOverride?: string;
+  /** Optional south/XZ material slice for Canvas extrusions. Falls back to svgOverride. */
+  southFaceSvgOverride?: string;
+  /** Optional east/YZ material slice for Canvas extrusions. Falls back to svgOverride. */
+  eastFaceSvgOverride?: string;
   /**
    * Whether stoneWallTopSvg draws its rectangular grout outline on the
    * top face. Defaults to true (correct for brick textures). Set false
@@ -203,9 +209,13 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
 
     if (EXTRUDED_KINDS.has(e.kind)) {
       const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row);
-      const top  = stoneWallTopSvg(variant, e.topSvgOverride ?? side ?? undefined, e.topOutline);
+      const top  = e.topFaceSvgOverride ?? e.topSvgOverride ?? side;
+      const south = e.southFaceSvgOverride ?? side;
+      const east = e.eastFaceSvgOverride ?? side;
       if (side) out.add(side);
       if (top)  out.add(top);
+      if (south) out.add(south);
+      if (east) out.add(east);
     } else {
       const svg = e.svgOverride
         ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
@@ -255,12 +265,15 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
     // consistent. Falls back to canonical StoneBrick when both are
     // empty (unreachable in practice — extruded kinds always supply a
     // side via getVariantSvg).
-    const topSvg  = stoneWallTopSvg(variant, e.topSvgOverride ?? sideSvg ?? undefined, e.topOutline);
+    const topSvg  = e.topFaceSvgOverride ?? e.topSvgOverride ?? sideSvg;
     return {
       kind, zOffset, zMode, walkable, blendEdges: false,
       svg:            sideSvg,
       sideTextureSvg: sideSvg,
       topTextureSvg:  topSvg,
+      topFaceTextureSvg: topSvg,
+      southFaceTextureSvg: e.southFaceSvgOverride ?? sideSvg,
+      eastFaceTextureSvg: e.eastFaceSvgOverride ?? sideSvg,
       variant,
       connections: conn,
       topRotateWithAxis: e.topRotateWithAxis,

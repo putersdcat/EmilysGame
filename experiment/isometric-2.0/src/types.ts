@@ -210,6 +210,12 @@ export interface NanoTile {
   readonly topTextureSvg?: string;
   /** Optional vertical fill SVG for extrusion side face. */
   readonly sideTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for the top/XY face. */
+  readonly topFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for the south/XZ face. */
+  readonly southFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for the east/YZ face. */
+  readonly eastFaceTextureSvg?: string;
   /** Feature variants this SVG covers (for solver). */
   readonly variants?: readonly FeatureVariant[];
   /** SVG path data for shadow silhouette. */
