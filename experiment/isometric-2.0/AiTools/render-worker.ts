@@ -52,7 +52,7 @@ interface BrickTextureSpec {
 const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
   'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true,  topRotateWithAxis: true,  endCapTicks: true  },
   'red-clinker':    { svg: () => RedClinker.svg(),    topOutline: true,  topRotateWithAxis: true,  endCapTicks: true  },
-  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false, topRotateWithAxis: false, endCapTicks: false },
+  'ancient-stone':  { svg: () => AncientStone.svg(),  topOutline: false, topRotateWithAxis: true,  endCapTicks: false },
 };
 
 // ─── Types ────────────────────────────────────────────────────
