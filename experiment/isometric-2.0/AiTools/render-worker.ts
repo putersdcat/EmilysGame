@@ -46,6 +46,8 @@ interface BrickTextureSpec {
   topSvg?: () => string;
   southSvg?: () => string;
   eastSvg?: () => string;
+  southSvgByPlane?: () => Readonly<Record<number, string>>;
+  eastSvgByPlane?: () => Readonly<Record<number, string>>;
   topOutline: boolean;
   endCapTicks: boolean;
   /** True for textures whose orientation should match the wall axis
@@ -60,6 +62,8 @@ const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
     topSvg: () => AncientStone.svgTop(),
     southSvg: () => AncientStone.svgSouth(),
     eastSvg: () => AncientStone.svgEast(),
+    southSvgByPlane: () => ({ 0: AncientStone.svgSouth(0), 48: AncientStone.svgSouth(48), 96: AncientStone.svgSouth(96), 144: AncientStone.svgSouth(144) }),
+    eastSvgByPlane: () => ({ 0: AncientStone.svgEast(0), 48: AncientStone.svgEast(48), 96: AncientStone.svgEast(96), 144: AncientStone.svgEast(144) }),
     topOutline: false,
     topRotateWithAxis: false,
     endCapTicks: false,
@@ -296,6 +300,8 @@ async function dispatch(): Promise<WorkerResult> {
         let topFaceSvgOverride: string | undefined = e.topFaceSvgOverride;
         let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride;
         let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride;
+        let southFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.southFaceSvgByPlane;
+        let eastFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.eastFaceSvgByPlane;
         let topOutline: boolean | undefined = e.topOutline;
         let topRotateWithAxis: boolean | undefined = e.topRotateWithAxis;
         let endCapTicks: boolean | undefined = e.endCapTicks;
@@ -308,6 +314,8 @@ async function dispatch(): Promise<WorkerResult> {
           topFaceSvgOverride   = topFaceSvgOverride   ?? spec.topSvg?.()   ?? tex;
           southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.() ?? tex;
           eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.()  ?? tex;
+          southFaceSvgByPlane  = southFaceSvgByPlane  ?? spec.southSvgByPlane?.();
+          eastFaceSvgByPlane   = eastFaceSvgByPlane   ?? spec.eastSvgByPlane?.();
           topOutline        = topOutline        ?? spec.topOutline;
           topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
@@ -321,6 +329,8 @@ async function dispatch(): Promise<WorkerResult> {
           topFaceSvgOverride,
           southFaceSvgOverride,
           eastFaceSvgOverride,
+          southFaceSvgByPlane,
+          eastFaceSvgByPlane,
           topOutline,
           topRotateWithAxis,
           endCapTicks,
