@@ -7,11 +7,8 @@
  *   - south: XZ at the wall's front/south plane, with image-v = TOP_Z - worldZ
  *   - east:  YZ at the wall's right/east plane, with image-v = TOP_Z - worldZ
  *
- * All slices come from the same surface-coherent 3D seed set: stones are laid
- * out in periodic X/Y and given only shallow Z jitter near the wall top. That
- * makes a stone visible on the top face remain the same nearest seed as you
- * move down the adjacent side face, so ridges read as one rock wrapping around
- * the corner instead of unrelated interior stones taking over immediately.
+ * All slices come from the same 3D seed volume, so future procedural materials
+ * can use this same top/south/east pattern instead of hand-pairing 2D borders.
  */
 
 export const IMAGE_SIZE = 144;
@@ -19,7 +16,7 @@ export const IMAGE_SIZE = 144;
 const SIZE = IMAGE_SIZE;
 const EPS = 1e-7;
 const INSET = 0.54;
-const GRID = 6;
+const GRID = 5;
 const STEP = SIZE / GRID;
 
 const TOP_Z = 48;
@@ -28,7 +25,6 @@ const EAST_X = 96;
 
 const MORTAR = '#625848';
 const JOINT = 'rgba(47,42,35,0.32)';
-const SIDE_JOINT = 'rgba(52,46,38,0.20)';
 const RIM_LIGHT = 'rgba(255,248,226,0.10)';
 const PIT = 'rgba(73,64,53,0.14)';
 
@@ -61,20 +57,22 @@ function wrappedDelta(a: number, b: number): number {
 function volumeSeeds(): readonly Seed3[] {
   const out: Seed3[] = [];
   let id = 1;
-  for (let y = 0; y < GRID; y++) {
-    for (let x = 0; x < GRID; x++) {
-      const staggerX = y % 2 === 0 ? 0 : STEP * 0.34;
-      const staggerY = x % 2 === 0 ? 0 : STEP * 0.18;
-      const jx = (hash01(x, y, 41) * 2 - 1) * 5.2;
-      const jy = (hash01(x, y, 43) * 2 - 1) * 5.2;
-      const jz = (hash01(x, y, 47) * 2 - 1) * 7.0;
-      out.push({
-        id,
-        x: (x * STEP + STEP / 2 + staggerX + jx + SIZE) % SIZE,
-        y: (y * STEP + STEP / 2 + staggerY + jy + SIZE) % SIZE,
-        z: (TOP_Z + jz + SIZE) % SIZE,
-      });
-      id++;
+  for (let z = 0; z < GRID; z++) {
+    for (let y = 0; y < GRID; y++) {
+      for (let x = 0; x < GRID; x++) {
+        const staggerX = (y + z) % 2 === 0 ? 0 : STEP * 0.34;
+        const staggerY = (x + z) % 2 === 0 ? 0 : STEP * 0.22;
+        const jx = (hash01(x + z * 17, y, 41) * 2 - 1) * 5.8;
+        const jy = (hash01(x, y + z * 19, 43) * 2 - 1) * 5.8;
+        const jz = (hash01(x + y * 13, z, 47) * 2 - 1) * 5.8;
+        out.push({
+          id,
+          x: (x * STEP + STEP / 2 + staggerX + jx + SIZE) % SIZE,
+          y: (y * STEP + STEP / 2 + staggerY + jy + SIZE) % SIZE,
+          z: (z * STEP + STEP / 2 + jz + SIZE) % SIZE,
+        });
+        id++;
+      }
     }
   }
   return out;
@@ -96,12 +94,6 @@ function projectSeed(seed: Seed3, plane: SlicePlane, planeCoord: number): SliceS
 function fill(id: number): string {
   const d = (hash01(id, 0, 17) * 2 - 1) * 18;
   return `rgb(${clamp255(171 + d)},${clamp255(161 + d)},${clamp255(140 + d)})`;
-}
-
-function sideFill(id: number, course: number): string {
-  const d = (hash01(id, course, 37) * 2 - 1) * (course === 0 ? 14 : 8);
-  const shade = course === 0 ? 0 : -4;
-  return `rgb(${clamp255(168 + shade + d)},${clamp255(158 + shade + d)},${clamp255(138 + shade + d)})`;
 }
 
 function clip(poly: readonly Pt[], nx: number, ny: number, c: number): Pt[] {
@@ -182,99 +174,6 @@ function weathering(seed: SliceSeed, wrapX: number, wrapY: number): string {
   return out.join('\n    ');
 }
 
-function nearestTopSeedId(u: number, plane: SlicePlane, planeCoord: number): number {
-  const x = plane === 'xz' ? u : planeCoord;
-  const y = plane === 'xz' ? planeCoord : u;
-  let bestId = 1;
-  let best = Number.POSITIVE_INFINITY;
-  for (const seed of volumeSeeds()) {
-    const dx = wrappedDelta(seed.x, x);
-    const dy = wrappedDelta(seed.y, y);
-    const dz = wrappedDelta(seed.z, TOP_Z);
-    const d = dx * dx + dy * dy + dz * dz;
-    if (d < best) { best = d; bestId = seed.id; }
-  }
-  return bestId;
-}
-
-interface Run { readonly id: number; readonly a: number; readonly b: number; }
-
-function ridgeRuns(plane: SlicePlane, planeCoord: number): readonly Run[] {
-  const raw: Run[] = [];
-  let start = 0;
-  let id = nearestTopSeedId(0, plane, planeCoord);
-  for (let u = 1; u <= SIZE; u++) {
-    const next = u === SIZE ? id : nearestTopSeedId(u, plane, planeCoord);
-    if (next !== id || u === SIZE) {
-      raw.push({ id, a: start, b: u });
-      start = u;
-      id = next;
-    }
-  }
-
-  const merged: Run[] = [];
-  for (const run of raw) {
-    const prev = merged[merged.length - 1];
-    if (prev && run.b - run.a < 7) {
-      merged[merged.length - 1] = { id: prev.id, a: prev.a, b: run.b };
-    } else {
-      merged.push(run);
-    }
-  }
-  return merged;
-}
-
-function blockPath(a: number, b: number, top: number, bottom: number, id: number, course: number): string {
-  const jag = course === 0 ? 1.8 : 1.0;
-  const n1 = (hash01(id, course, 401) * 2 - 1) * jag;
-  const n2 = (hash01(id, course, 409) * 2 - 1) * jag;
-  const n3 = (hash01(id, course, 419) * 2 - 1) * 1.4;
-  const n4 = (hash01(id, course, 421) * 2 - 1) * 1.4;
-  const mid = (a + b) / 2 + (hash01(id, course, 423) * 2 - 1) * Math.min(4.5, (b - a) * 0.18);
-  if (course === 0 && b - a > 14) {
-    return `M${fmt(a)},${fmt(top + n1)} L${fmt(mid)},${fmt(top + (hash01(id, course, 425) * 2 - 1) * jag)} L${fmt(b)},${fmt(top + n2)} L${fmt(b - 1.5)},${fmt(bottom + n3)} L${fmt(a + 1.2)},${fmt(bottom + n4)} Z`;
-  }
-  return `M${fmt(a)},${fmt(top + n1)} L${fmt(b)},${fmt(top + n2)} L${fmt(b - 1.2)},${fmt(bottom + n3)} L${fmt(a + 1.0)},${fmt(bottom + n4)} Z`;
-}
-
-function rubbleSideBlocks(planeCoord: number): readonly { id: number; a: number; b: number; top: number; bottom: number; course: number }[] {
-  const out: { id: number; a: number; b: number; top: number; bottom: number; course: number }[] = [];
-  const bands = [
-    { course: 1, nominalTop: 18, nominalBottom: 33, widthSalt: 431 },
-    { course: 2, nominalTop: 32, nominalBottom: 49, widthSalt: 457 },
-  ];
-  for (const band of bands) {
-    let cursor = -((band.course * 17 + Math.round(planeCoord / 5)) % 29);
-    let id = 700 + band.course * 100 + Math.round(planeCoord);
-    while (cursor < SIZE) {
-      const width = 15 + Math.floor(hash01(id, band.course, band.widthSalt) * 22);
-      const a = Math.max(0, cursor + (hash01(id, band.course, 461) * 2 - 1) * 2.4);
-      const b = Math.min(SIZE, cursor + width + (hash01(id, band.course, 463) * 2 - 1) * 2.4);
-      const top = band.nominalTop + (hash01(id, band.course, 467) * 2 - 1) * 5.2;
-      const bottom = band.nominalBottom + (hash01(id, band.course, 479) * 2 - 1) * 5.0;
-      if (b - a > 7 && bottom - top > 8) out.push({ id, a, b, top, bottom, course: band.course });
-      cursor += width * (0.80 + hash01(id, band.course, 487) * 0.22);
-      id++;
-    }
-  }
-  return out;
-}
-
-function sideSliceMarkup(plane: SlicePlane, planeCoord: number): string {
-  const out: string[] = [];
-  const topRuns = ridgeRuns(plane, planeCoord);
-  for (const run of topRuns) {
-    const bottom = 18 + hash01(run.id, 0, 443) * 8;
-    out.push(`<path d="${blockPath(run.a, run.b, 0, bottom, run.id, 0)}" fill="${sideFill(run.id, 0)}" stroke="${JOINT}" stroke-width="0.34" stroke-linejoin="round" />`);
-  }
-
-  for (const block of rubbleSideBlocks(planeCoord)) {
-    out.push(`<path d="${blockPath(block.a, block.b, block.top, block.bottom, block.id, block.course)}" fill="${sideFill(block.id, block.course)}" stroke="${SIDE_JOINT}" stroke-width="0.22" stroke-linejoin="round" />`);
-  }
-
-  return out.join('\n    ');
-}
-
 function rim(poly: readonly Pt[]): string {
   if (poly.length < 4) return '';
   let a = poly[0];
@@ -302,17 +201,6 @@ function svgSlice(plane: SlicePlane, planeCoord: number): string {
 
   const seeds = volumeSeeds().map((s) => projectSeed(s, plane, planeCoord));
   const out: string[] = [];
-
-  if (plane !== 'xy') {
-    out.push(sideSliceMarkup(plane, planeCoord));
-
-    const sideSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
-    <rect width="${SIZE}" height="${SIZE}" fill="${MORTAR}" />
-    ${out.join('\n    ')}
-  </svg>`;
-    _cache.set(key, sideSvg);
-    return sideSvg;
-  }
 
   for (let wy = -1; wy <= 1; wy++) {
     for (let wx = -1; wx <= 1; wx++) {
@@ -343,14 +231,14 @@ export function svgTop(): string {
   return svgSlice('xy', TOP_Z);
 }
 
-/** South/front vertical face: world X/Z slice at a wall-y plane. */
-export function svgSouth(planeY: number = SOUTH_Y): string {
-  return svgSlice('xz', planeY);
+/** South/front vertical face: world X/Z slice at the nominal south wall plane. */
+export function svgSouth(): string {
+  return svgSlice('xz', SOUTH_Y);
 }
 
-/** East/right vertical face: world Y/Z slice at a wall-x plane. */
-export function svgEast(planeX: number = EAST_X): string {
-  return svgSlice('yz', planeX);
+/** East/right vertical face: world Y/Z slice at the nominal east wall plane. */
+export function svgEast(): string {
+  return svgSlice('yz', EAST_X);
 }
 
 /** Legacy/default texture entrypoint: top slice. */
