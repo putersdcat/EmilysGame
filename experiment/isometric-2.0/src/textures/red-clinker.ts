@@ -51,12 +51,14 @@ const COURSE_PITCH  = BRICK_H + MORTAR; // 8
 const BRICK_PITCH   = BRICK_W + MORTAR; // 36
 const COURSE_COUNT  = IMAGE_SIZE / COURSE_PITCH; // 18
 const MORTAR_FILL   = '#2a201c';
+const TOP_BRICK_H      = 14;
+const TOP_COURSE_PITCH = TOP_BRICK_H + MORTAR; // 16
 
 // Channel base + per-channel variance. R is widest because clinker
 // bricks vary most strongly in red intensity (cool plum → hot orange).
-const R_BASE = 130, R_VAR = 45;
-const G_BASE = 50,  G_VAR = 25;
-const B_BASE = 35,  B_VAR = 20;
+const R_BASE = 136, R_VAR = 26;
+const G_BASE = 56,  G_VAR = 14;
+const B_BASE = 28,  B_VAR = 8;
 
 interface Brick { x: number; w: number; idx: number; }
 
@@ -85,9 +87,9 @@ function brickShade(course: number, idx: number): { fill: string; hi: string; lo
   const fr = ((hash      ) & 0xff) / 255 * 2 - 1; // -1..+1
   const fg = ((hash >>  8) & 0xff) / 255 * 2 - 1;
   const fb = ((hash >> 16) & 0xff) / 255 * 2 - 1;
-  const r = Math.max(0, Math.min(255, R_BASE + Math.round(fr * R_VAR)));
-  const g = Math.max(0, Math.min(255, G_BASE + Math.round(fg * G_VAR)));
-  const b = Math.max(0, Math.min(255, B_BASE + Math.round(fb * B_VAR)));
+  const r = Math.max(80, Math.min(190, R_BASE + Math.round(fr * R_VAR)));
+  const g = Math.max(28, Math.min(90,  G_BASE + Math.round(fg * G_VAR)));
+  const b = Math.max(16, Math.min(52,  B_BASE + Math.round(fb * B_VAR)));
   return {
     fill: `rgb(${r},${g},${b})`,
     // Highlight: warm-shifted brighter (more orange — fired-clay catches
@@ -117,6 +119,9 @@ function brickRects(): string {
 }
 
 let _cached: string | null = null;
+let _cachedTop: string | null = null;
+const _cachedSouth = new Map<number, string>();
+const _cachedEast = new Map<number, string>();
 
 /** The full 128×128 SVG string. Cached — same reference every call. */
 export function svg(): string {
@@ -125,4 +130,113 @@ export function svg(): string {
     ${brickRects()}
   </svg>`;
   return _cached;
+}
+
+function brickRunsForPitch(axis: 'x' | 'y', coord: number, pitch: number): Brick[] {
+  const course = Math.floor(coord / pitch);
+  const rowOffset = (course % 2) === 1 ? BRICK_PITCH / 2 : 0;
+  const out: Brick[] = [];
+  let idx = -2;
+  for (let x = -BRICK_PITCH * 2 + rowOffset; x < IMAGE_SIZE + BRICK_PITCH * 2; x += BRICK_PITCH) {
+    const a = x + MORTAR / 2;
+    const b = x + BRICK_W + MORTAR / 2;
+    const left = Math.max(0, a);
+    const right = Math.min(IMAGE_SIZE, b);
+    if (right > left) out.push({ x: left, w: right - left, idx: axis === 'x' ? idx : idx + 17 });
+    idx++;
+  }
+  return out;
+}
+
+function worldBrickRuns(axis: 'x' | 'y', coord: number): Brick[] {
+  return brickRunsForPitch(axis, coord, COURSE_PITCH);
+}
+
+function topBrickRuns(axis: 'x' | 'y', coord: number): Brick[] {
+  return brickRunsForPitch(axis, coord, TOP_COURSE_PITCH);
+}
+
+function faceBrickShade(coord: number, idx: number): { fill: string; hi: string; lo: string } {
+  const course = Math.floor(coord / COURSE_PITCH);
+  // Face slices must agree at top/side ridges. Use the same deterministic
+  // colour family for both axes so a brick that crosses an edge keeps its
+  // visible fired-clay colour instead of becoming a different random brick.
+  return brickShade(course % 2, idx);
+}
+
+function topBrickShade(coord: number, idx: number): { fill: string; hi: string; lo: string } {
+  return brickShade(Math.floor(coord / TOP_COURSE_PITCH) % 2, idx);
+}
+
+function topRects(): string {
+  const out: string[] = [`<rect width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" fill="${MORTAR_FILL}" />`];
+  for (let y = 0; y < IMAGE_SIZE; y += TOP_COURSE_PITCH) {
+    const cy = y + 1;
+    for (const b of topBrickRuns('x', y)) {
+      const sh = topBrickShade(y, b.idx);
+      out.push(`<rect x="${b.x}" y="${cy}" width="${b.w}" height="${TOP_BRICK_H}" fill="${sh.fill}" />`);
+      out.push(`<rect x="${b.x}" y="${cy}" width="${b.w}" height="1" fill="${sh.hi}" opacity="0.65" />`);
+      out.push(`<rect x="${b.x}" y="${cy + TOP_BRICK_H - 1}" width="${b.w}" height="1" fill="${sh.lo}" opacity="0.45" />`);
+    }
+  }
+  return out.join('\n    ');
+}
+
+function sideRects(axis: 'x' | 'y', edgeCoord: number): string {
+  const out: string[] = [`<rect width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" fill="${MORTAR_FILL}" />`];
+  const topEdgeCoord = Math.max(0, edgeCoord - TOP_COURSE_PITCH);
+
+  // Top cap course: same brick run IDs/colors as the top face along the
+  // shared edge. This is the critical edge-continuity contract.
+  for (const b of topBrickRuns(axis, topEdgeCoord)) {
+    const sh = topBrickShade(topEdgeCoord, b.idx);
+    out.push(`<rect x="${b.x}" y="1" width="${b.w}" height="${BRICK_H}" fill="${sh.fill}" />`);
+    out.push(`<rect x="${b.x}" y="1" width="${b.w}" height="1" fill="${sh.hi}" />`);
+    out.push(`<rect x="${b.x}" y="${BRICK_H}" width="${b.w}" height="1" fill="${sh.lo}" />`);
+  }
+
+  // Lower courses: normal horizontal courses, offset by depth but using
+  // the same axis palette so exposed end/course lines stay horizontal.
+  for (let y = COURSE_PITCH; y < IMAGE_SIZE; y += COURSE_PITCH) {
+    const coord = topEdgeCoord + y;
+    const cy = y + 1;
+    for (const b of worldBrickRuns(axis, coord)) {
+      const sh = faceBrickShade(coord, b.idx);
+      out.push(`<rect x="${b.x}" y="${cy}" width="${b.w}" height="${BRICK_H}" fill="${sh.fill}" />`);
+      out.push(`<rect x="${b.x}" y="${cy}" width="${b.w}" height="1" fill="${sh.hi}" />`);
+      out.push(`<rect x="${b.x}" y="${cy + BRICK_H - 1}" width="${b.w}" height="1" fill="${sh.lo}" />`);
+    }
+  }
+  return out.join('\n    ');
+}
+
+/** Top/XY face slice for extrusion rendering. */
+export function svgTop(): string {
+  if (_cachedTop) return _cachedTop;
+  _cachedTop = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" viewBox="0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}" shape-rendering="crispEdges">
+    ${topRects()}
+  </svg>`;
+  return _cachedTop;
+}
+
+/** South/front XZ side slice. y=0 is the top edge of the side face. */
+export function svgSouth(edgeCoord = 96): string {
+  const cached = _cachedSouth.get(edgeCoord);
+  if (cached) return cached;
+  const out = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" viewBox="0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}" shape-rendering="crispEdges">
+    ${sideRects('x', edgeCoord)}
+  </svg>`;
+  _cachedSouth.set(edgeCoord, out);
+  return out;
+}
+
+/** East/right YZ side slice. y=0 is the top edge of the side face. */
+export function svgEast(edgeCoord = 96): string {
+  const cached = _cachedEast.get(edgeCoord);
+  if (cached) return cached;
+  const out = `<svg xmlns="http://www.w3.org/2000/svg" width="${IMAGE_SIZE}" height="${IMAGE_SIZE}" viewBox="0 0 ${IMAGE_SIZE} ${IMAGE_SIZE}" shape-rendering="crispEdges">
+    ${sideRects('y', edgeCoord)}
+  </svg>`;
+  _cachedEast.set(edgeCoord, out);
+  return out;
 }

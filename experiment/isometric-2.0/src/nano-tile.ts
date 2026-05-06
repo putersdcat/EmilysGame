@@ -494,10 +494,13 @@ export function drawExtrudedNano(
           if (!southOccluded(r)) {
             const ex = isoX(r.x, r.y + r.h);
             const ey = isoY(r.x, r.y + r.h);
+            const southPlane = r.y + r.h;
+            const southPlaneSvg = nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg;
+            const southPlaneImg = southPlaneSvg ? loadSvgImage(southPlaneSvg) ?? southImg : southImg;
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
-            ctx.drawImage(southImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
+            ctx.drawImage(southPlaneImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
             if (drawEndCapTicks && southIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;
@@ -512,12 +515,17 @@ export function drawExtrudedNano(
           if (!eastOccluded(r)) {
             const ex = isoX(r.x + r.w, r.y);
             const ey = isoY(r.x + r.w, r.y);
+            const eastPlane = r.x + r.w;
+            const eastPlaneSvg = nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg;
+            const eastPlaneImg = eastPlaneSvg ? loadSvgImage(eastPlaneSvg) ?? eastImg : eastImg;
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
-            ctx.drawImage(eastImg, r.y, 0, r.h, drawH, 0, -drawH, r.h, drawH);
-            ctx.fillStyle = 'rgba(0,0,0,0.18)';
-            ctx.fillRect(0, -drawH, r.h, drawH);
+            ctx.drawImage(eastPlaneImg, r.y, 0, r.h, drawH, 0, -drawH, r.h, drawH);
+            if (!nano.faceSliceEqualLighting) {
+              ctx.fillStyle = 'rgba(0,0,0,0.18)';
+              ctx.fillRect(0, -drawH, r.h, drawH);
+            }
             if (drawEndCapTicks && eastIsEnd(r)) {
               ctx.fillStyle = '#1c1a17';
               const COURSE_PITCH = 8;

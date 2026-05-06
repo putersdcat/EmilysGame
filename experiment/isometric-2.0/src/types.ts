@@ -216,6 +216,12 @@ export interface NanoTile {
   readonly southFaceTextureSvg?: string;
   /** Optional Canvas extrusion material slice for the east/YZ face. */
   readonly eastFaceTextureSvg?: string;
+  /** Optional south/XZ slices keyed by world-y plane (0,48,96,144). */
+  readonly southFaceTextureByPlane?: Readonly<Record<number, string>>;
+  /** Optional east/YZ slices keyed by world-x plane (0,48,96,144). */
+  readonly eastFaceTextureByPlane?: Readonly<Record<number, string>>;
+  /** When true, do not darken one face after drawing explicit face slices. */
+  readonly faceSliceEqualLighting?: boolean;
   /** Feature variants this SVG covers (for solver). */
   readonly variants?: readonly FeatureVariant[];
   /** SVG path data for shadow silhouette. */

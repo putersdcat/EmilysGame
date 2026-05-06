@@ -122,6 +122,12 @@ export interface CanvasSceneEntry {
   southFaceSvgOverride?: string;
   /** Optional east/YZ material slice for Canvas extrusions. Falls back to svgOverride. */
   eastFaceSvgOverride?: string;
+  /** Optional south/XZ material slices keyed by wall-y plane. */
+  southFaceSvgByPlane?: Readonly<Record<number, string>>;
+  /** Optional east/YZ material slices keyed by wall-x plane. */
+  eastFaceSvgByPlane?: Readonly<Record<number, string>>;
+  /** Keep explicit face-slice colors equal across top/side edges. */
+  faceSliceEqualLighting?: boolean;
   /**
    * Whether stoneWallTopSvg draws its rectangular grout outline on the
    * top face. Defaults to true (correct for brick textures). Set false
@@ -216,6 +222,8 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
       if (top)  out.add(top);
       if (south) out.add(south);
       if (east) out.add(east);
+      for (const svg of Object.values(e.southFaceSvgByPlane ?? {})) out.add(svg);
+      for (const svg of Object.values(e.eastFaceSvgByPlane ?? {})) out.add(svg);
     } else {
       const svg = e.svgOverride
         ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
@@ -274,6 +282,9 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       topFaceTextureSvg: e.topFaceSvgOverride,
       southFaceTextureSvg: e.southFaceSvgOverride,
       eastFaceTextureSvg: e.eastFaceSvgOverride,
+      southFaceTextureByPlane: e.southFaceSvgByPlane,
+      eastFaceTextureByPlane: e.eastFaceSvgByPlane,
+      faceSliceEqualLighting: e.faceSliceEqualLighting,
       variant,
       connections: conn,
       topRotateWithAxis: e.topRotateWithAxis,
