@@ -472,6 +472,115 @@ export function drawExtrudedNano(
     const eastImg = eastTextureSvg ? loadSvgImage(eastTextureSvg) : null;
     const topImg = topTextureSvg ? loadSvgImage(topTextureSvg) : null;
     if (southImg && eastImg && topImg) {
+      const useFaceSlices = !!(nano.topFaceTextureSvg && nano.southFaceTextureSvg && nano.eastFaceTextureSvg);
+
+      if (useFaceSlices) {
+        // ── 3D material slice path ────────────────────────────────
+        // Face-specific procedural materials (e.g. ancient-stone)
+        // export three 144×144 slices from a shared periodic 3D source:
+        //   top   = XY at wall-top height
+        //   south = XZ at the south/front wall plane
+        //   east  = YZ at the east/right wall plane
+        //
+        // Do NOT use CanvasPattern phase transforms here. Those project
+        // independent 2D images onto each face and can drift at ridges.
+        // Instead, crop by world-coordinate source rects:
+        //   top:   src(x,y)       == world (x,y)
+        //   south: src(x, zDown)  == world (x, TOP_Z - z)
+        //   east:  src(y, zDown)  == world (y, TOP_Z - z)
+        // This makes the top/south ridge at y=r.y+r.h and the top/east
+        // ridge at x=r.x+r.w sample the same material line.
+        for (const r of rects) {
+          if (!southOccluded(r)) {
+            const ex = isoX(r.x, r.y + r.h);
+            const ey = isoY(r.x, r.y + r.h);
+            const southPlane = r.y + r.h;
+            const southPlaneSvg = nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg;
+            const southPlaneImg = southPlaneSvg ? loadSvgImage(southPlaneSvg) ?? southImg : southImg;
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
+            ctx.drawImage(southPlaneImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
+            if (drawEndCapTicks && southIsEnd(r)) {
+              ctx.fillStyle = '#1c1a17';
+              const COURSE_PITCH = 8;
+              const TICK_DEPTH = 7;
+              const TICK_W = 2;
+              for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
+                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
+              }
+            }
+            ctx.restore();
+          }
+          if (!eastOccluded(r)) {
+            const ex = isoX(r.x + r.w, r.y);
+            const ey = isoY(r.x + r.w, r.y);
+            const eastPlane = r.x + r.w;
+            const eastPlaneSvg = nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg;
+            const eastPlaneImg = eastPlaneSvg ? loadSvgImage(eastPlaneSvg) ?? eastImg : eastImg;
+            ctx.save();
+            ctx.translate(ex, ey);
+            ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
+            ctx.drawImage(eastPlaneImg, r.y, 0, r.h, drawH, 0, -drawH, r.h, drawH);
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
+            ctx.fillRect(0, -drawH, r.h, drawH);
+            if (drawEndCapTicks && eastIsEnd(r)) {
+              ctx.fillStyle = '#1c1a17';
+              const COURSE_PITCH = 8;
+              const TICK_DEPTH = 7;
+              const TICK_W = 2;
+              for (let x = COURSE_PITCH; x < r.h; x += COURSE_PITCH) {
+                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
+              }
+            }
+            ctx.restore();
+          }
+        }
+
+        const elevatedY = screenY - drawH;
+        const cx = screenX + HALF_W;
+        const W2 = WALL_THICKNESS; const off2 = WALL_OFFSET;
+        type Rect = { x:number; y:number; w:number; h:number; v:boolean };
+        const tops: Rect[] = [];
+        if (variant === 'straight-h') {
+          tops.push({ x: 0, y: off2, w: 144, h: W2, v: false });
+        } else if (variant === 'straight-v') {
+          tops.push({ x: off2, y: 0, w: W2, h: 144, v: true });
+        } else if (variant === 'corner-br') {
+          tops.push({ x: off2, y: off2, w: 144 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-bl') {
+          tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
+          tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-tr') {
+          tops.push({ x: off2, y: off2, w: 144 - off2, h: W2, v: false });
+          tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+        } else if (variant === 'corner-tl') {
+          tops.push({ x: 0, y: off2, w: off2 + W2, h: W2, v: false });
+          tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+        } else if (variant === 'tee-t' || variant === 'tee-b' || variant === 'cross') {
+          tops.push({ x: 0, y: off2, w: 144, h: W2, v: false });
+          if (variant === 'tee-b' || variant === 'cross') tops.push({ x: off2, y: 0, w: W2, h: off2, v: true });
+          if (variant === 'tee-t' || variant === 'cross') tops.push({ x: off2, y: off2 + W2, w: W2, h: off2, v: true });
+        } else if (variant === 'tee-l' || variant === 'tee-r') {
+          tops.push({ x: off2, y: 0, w: W2, h: 144, v: true });
+          if (variant === 'tee-l') tops.push({ x: off2 + W2, y: off2, w: off2, h: W2, v: false });
+          else                     tops.push({ x: 0,         y: off2, w: off2, h: W2, v: false });
+        } else {
+          for (const r of rects) tops.push({ ...r, v: (variant === 'end-t' || variant === 'end-b') });
+        }
+
+        ctx.save();
+        clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
+        ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, elevatedY);
+        for (const r of tops) {
+          ctx.drawImage(topImg, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+        }
+        ctx.restore();
+
+        return loaded;
+      }
+
       // SIDE-SOUTH pattern — source axes (right=(1,0.5), down=(0,1)) match
       // the canvas shear used during south-face fill, so source-y=0 lies on
       // the wall-top sheared screen line.
