@@ -305,9 +305,9 @@ async function dispatch(): Promise<WorkerResult> {
           const tex = spec.svg();
           svgOverride       = svgOverride       ?? tex;
           topSvgOverride    = topSvgOverride    ?? tex;
-          topFaceSvgOverride   = topFaceSvgOverride   ?? spec.topSvg?.()   ?? tex;
-          southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.() ?? tex;
-          eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.()  ?? tex;
+          topFaceSvgOverride   = topFaceSvgOverride   ?? spec.topSvg?.();
+          southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.();
+          eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.();
           topOutline        = topOutline        ?? spec.topOutline;
           topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
