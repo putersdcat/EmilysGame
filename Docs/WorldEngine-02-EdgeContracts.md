@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-Every tile in the world — micro, world unit, or macro — must sit next to its neighbors without producing visual seams, logical contradictions, or gameplay impossibilities. The **edge contract system** is the formal mechanism that governs these adjacency relationships across all three tiers of the spatial hierarchy.
+Every tile in the world — micro, nano, world unit, or macro — must sit next to its neighbors without producing visual seams, logical contradictions, or gameplay impossibilities. The **edge contract system** is the formal mechanism that governs these adjacency relationships across all four tiers of the spatial hierarchy.
 
 This document defines the contract system in full: what contracts are, how they are declared and checked, how constraint propagation reduces the search space during generation, how corners and junctions are handled, what happens when no valid placement exists, and how all of this works in a streaming infinite world where only one side of a boundary may exist when a tile is being placed.
 
@@ -76,6 +76,33 @@ Semantic continuity is checked at the world unit level and validated at the macr
 - *Chain entry/exit pairs* — Which borders have chain edges and what chain type they carry. A "river straight north-south" has chain entries on north and south.
 - *Terminal flag* — Whether this tile terminates a chain (no chain exits despite having a chain entry).
 - *Chain type* — The semantic identity of the chain (river, wall, fence, path). Only same-type chains can connect.
+
+### 3.5 Nano Overlay Continuity
+
+Nano tiles sit inside the same 1×1 outer footprint as their parent micro tile, but internally they resolve against a **3×3 nano grid**. Their contracts supplement rather than replace the parent terrain contract.
+
+That 3×3 structure matters because it lets the engine reason about where, inside one micro tile, a feature actually lives. A wall can occupy a center strip, a fence can hug an edge, a bridge can span a river carve-out, and a tall-grass tuft can live in a corner patch without claiming the whole cell.
+
+**Positive-Z billboard continuity**
+- Fence, gate, bridge, troll-bridge, and similar upright nanos must align to the same cardinal connectivity logic as the chain they represent.
+- Billboard nanos may be visually thin, but their passability and edge presence must still be explicit. A fence gap is not the same thing as an open meadow cell.
+- Their occupancy should be representable in terms of border-facing nano patches, not only whole-cell tags.
+
+**Positive-Z extruded continuity**
+- Wall-class nanos must preserve barrier continuity through their resolved variants (`straight`, `corner`, `tee`, `cross`, `end`, `isolated`).
+- End caps should appear only on open ends, not where the chain continues through a neighboring cell.
+- Camera-facing seams at corners are part of the contract. A wall corner that leaves a visual or logical gap is a contract failure, not a rendering detail.
+- Their solid footprint should be derivable from 3×3 patch occupancy so future per-nano walkability and placement rules can reason about which parts of the tile are actually blocked.
+
+**Negative-Z continuity**
+- River and river-bank nanos must preserve depressed footprint continuity from one cell to the next.
+- Negative nanos may connect to bridge adapters and river-bank adapters, but not directly to unrelated barrier nanos without an authored transition.
+
+**Stack compatibility**
+- Some nano combinations are legal because they occupy compatible z modes (river + bridge, grass + tall-grass).
+- Some are illegal by default (wall + river in the same cell, fence + gate + unrelated decoration stack) unless a dedicated adapter or special-case template defines the combination.
+
+Nano continuity matters at every larger scale: world unit edge signatures must incorporate nano-presented borders, and macro-level chain propagation must treat nano chains as first-class constraints.
 
 ---
 
@@ -275,7 +302,7 @@ To prevent generation from hanging, the solver should enforce time and iteration
 - Maximum backtrack events per macro tile: a configurable limit (suggested: 5 targeted replacements, then 2 local restarts, then 1 full restart, then degrade)
 - Maximum total generation time per macro tile: a wall-clock timeout (suggested: 50ms, matching one visual frame at 20 FPS)
 
-These budgets are debug-tunable and should be reported in the solver confidence metadata (Document 01, section 3.3.2).
+These budgets are debug-tunable and should be reported in the solver confidence metadata (Document 01, section 3.4.2).
 
 ---
 
@@ -367,6 +394,7 @@ Auto-tiling does not change any metadata — it is a purely visual post-processi
 The edge contract system is the connective tissue of the world engine. It operates at every scale:
 
 - **Micro tiles** declare edge connector signatures that govern terrain transitions and auto-tiling
+- **Nano tiles** declare overlay continuity, z-aware occupancy, and chain-facing feature edges on top of micro terrain
 - **World unit tiles** declare border edge signatures that govern structural adjacency and chain continuity
 - **Macro tiles** declare edge contracts that govern regional coherence and streaming-world stitching
 

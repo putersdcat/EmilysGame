@@ -6,7 +6,9 @@ The previous documents describe how the world's physical structure is generated 
 
 Population and progression logic is the layer that bridges world generation and gameplay mechanics. It answers questions like: Where should the merchant NPC stand? Should the locked door appear before or after the key? How many coins should this meadow contain? Where should flowers be placed so they look natural without obscuring a treasure chest?
 
-This is the most gameplay-sensitive part of the world engine. Mistakes in terrain generation produce visual ugliness; mistakes in population logic produce unwinnable levels, empty-feeling worlds, or frustrating dead ends.
+This is the most gameplay-sensitive part of the world engine. Mistakes in terrain generation produce visual ugliness; mistakes in population logic produce unwinnable levels, empty-feeling worlds, or frustrating dead ends. In the nano-aware architecture, population also has to respect cell-scale overlay occupancy — gates, bridges, fences, rivers, tall grass, and wall faces are not just art, they change where entities may stand and how the player reads the scene.
+
+The key refinement is that nano occupancy is not just "some overlay on this cell" — it is a **3×3 sub-grid inside the micro tile**. That finer grid is what allows future placement systems to target sub-micro positions intentionally: hugging a wall, centering an NPC in an opening, keeping items off a fence strip, placing detail clusters in a free corner patch, or anchoring tall structures so their Z-axis silhouette reads correctly.
 
 ---
 
@@ -19,7 +21,7 @@ Every non-terrain element in the world falls into one of these categories. The c
 These entities are integral to the player's ability to complete the level. Their placement must satisfy strict ordering and reachability constraints.
 
 **Locks:**
-- *Locked doors* — Block movement until a key is used. Always paired with a key somewhere reachable.
+- *Locked doors* — Block movement until a key is used. Always paired with a key somewhere reachable. In practice these are often expressed as gate/door nanos anchored to a parent micro tile.
 - *Barricades* — Block movement until a crowbar is used. Always paired with a crowbar somewhere reachable.
 - *Toll gates* — Block movement until coins are paid. The player must have earned enough coins through exploration and quizzes before encountering the toll.
 - *Quiz gates* — Block movement until a quiz is answered correctly. The player may optionally consult the Book of Knowledge before answering. No physical item required, but correct knowledge required.
@@ -33,6 +35,7 @@ These entities are integral to the player's ability to complete the level. Their
 **Progression markers:**
 - *Treasure chests* — End-of-sequence rewards that signal the player has completed a section. May contain valuable items, large coin payouts, or progression-critical items.
 - *Signs and waymarks* — Provide directional hints to guide the player toward objectives, especially useful after completing a challenge to signal "you're going the right way."
+- *Bridge and crossing states* — Some progression routes are embodied as nanos (bridge, troll-bridge, gate) rather than free-standing entities. Population logic must still treat them as progression-bearing constructs.
 
 ### 2.2 Knowledge Entities (Solver E with Educational Logic)
 
@@ -206,6 +209,10 @@ Each biome x difficulty level defines a target density for each collectible type
 
 Collectibles can only be placed on cells whose decoration eligibility tags include "can host item." This prevents items from appearing inside walls, on water, or on non-walkable obstacles. The eligibility tags are set during micro tile metadata definition and composed into the decoration eligibility map during Phase 5 of the solver pipeline.
 
+The nano tier adds a second filter: even if the underlying micro terrain is item-eligible, the resolved nano overlay may forbid placement. A fence segment, closed gate, wall face, deep river, or bridge support footprint may override the base terrain's eligibility. Population must check both layers.
+
+In the full target architecture, that check should happen at the 3×3 nano-patch level, not just the whole-cell level. A micro tile might be globally eligible for decoration while only 4 of its 9 nano patches are actually free after a wall strip, gate frame, or bridge support has been placed.
+
 ---
 
 ## 6. Decoration Placement
@@ -230,7 +237,7 @@ Decorations should be placed in clusters that mimic natural distribution pattern
 
 Each biome has its own decoration palette:
 
-- **Meadow:** Wildflowers (🌼, 🌸, 🌺), tall grass, butterflies (future), small stones
+- **Meadow:** Wildflowers (🌼, 🌸, 🌺), tall grass nanos, butterflies (future), small stones
 - **Forest:** Mushrooms (🍄), fallen leaves, moss, small logs, fern fronds
 - **Cave:** Crystals, stalactites (on walls), small pebble piles, glowing fungi
 - **Castle:** Banners, broken pottery, cobwebs, candle sconces (on walls), cracked tiles
@@ -282,7 +289,7 @@ Every quiz question has educational value. The Book of Knowledge contains the in
 
 Population solvers (D and E) run as Phases 7 and 8 of the generation pipeline (Document 03). They receive the validated cell grid from the chain integrity check (Phase 6) and output a fully populated cell grid for the playability validator (Phase 9).
 
-Population results are stored in the cell data structure: `itemId` for collectibles, `npcId` for NPCs, `resolved` for gates, and `interactable` for interactive elements. This data structure is shared with the mechanics system for runtime interactions.
+Population results are stored in the cell data structure: `itemId` for collectibles, `npcId` for NPCs, `resolved` for gates, and `interactable` for interactive elements. In the nano-aware target architecture, population also consumes the resolved nano stack for each cell when deciding what can be occupied, decorated, or used as an anchor. This data structure is shared with the mechanics system for runtime interactions.
 
 ### 8.2 Integration with the Mechanics System
 

@@ -12,7 +12,7 @@ These documents are **design-only** — they describe what must be built, why ea
 
 | Document | Covers |
 |----------|--------|
-| [01 — Spatial Hierarchy and Tile Grammar](WorldEngine-01-SpatialHierarchy.md) | The three-tier spatial model (Micro → World Unit → Macro), metadata contracts at each level, construction rules, variation families, and how the tiers compose into a coherent world grammar. |
+| [01 — Spatial Hierarchy and Tile Grammar](WorldEngine-01-SpatialHierarchy.md) | The four-tier spatial model (Micro → Nano → World Unit → Macro), metadata contracts at each level, construction rules, variation families, and how the tiers compose into a coherent world grammar. |
 | [02 — Edge Contracts and Constraint Propagation](WorldEngine-02-EdgeContracts.md) | The edge matching system at every scale, contract dimensions, compatibility logic, corner and junction governance, propagation mechanics, backtracking strategies, and streaming-world compatibility. |
 | [03 — Multi-Solver Generation Pipeline](WorldEngine-03-SolverPipeline.md) | The complete generation pipeline from LLM entropy input through macro assembly, world unit construction, micro fill, and post-processing. Describes each solver phase, their ordering dependencies, inputs, outputs, and failure recovery strategies. |
 | [04 — Rendering Pipeline, Caching, and WASM Delivery](WorldEngine-04-RenderingPipeline.md) | The layered rendering architecture, cache hierarchy (micro atlas → world unit composite → macro terrain → viewport projection), invalidation rules, WASM acceleration targets, and how the renderer consumes world data. |
@@ -25,6 +25,7 @@ These documents are **design-only** — they describe what must be built, why ea
 The current engine already implements early versions of several concepts described here:
 
 - **Micro Tiles** exist as 32×32 SVG tiles in `src/tiles.ts` with 8 visual types
+- **Nano Tiles / Nano Stacks** already exist in the `experiment/isometric-2.0/` work as a 3×3 sub-grid overlay on top of base biome micro tiles, with positive-Z, negative-Z, and flat behavior
 - **World Unit Templates** exist as 5×5 stamp patterns in `src/config/tiles.config.ts` with basic edge tags
 - **Perlin noise generation** exists in `src/gen.ts` with density-based cell assignment
 - **Template stamping** exists in `src/gen.ts` (0–3 random stamps per chunk, no edge enforcement)

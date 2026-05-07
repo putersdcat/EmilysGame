@@ -4,13 +4,13 @@
 
 Generating a playable chunk of world in Emily's Game is not a single step — it is a pipeline of distinct solver phases, each responsible for a different layer of the world's integrity. Each solver phase takes the output of the previous phase as input, adds its own logic, and passes a more complete world to the next phase.
 
-This document describes the complete generation pipeline from the initial LLM entropy input through to a fully populated, validated, renderable chunk of world. It defines the responsibility of each solver phase, the ordering constraints between phases, the inputs and outputs of each, and the failure recovery strategies at each stage.
+This document describes the complete generation pipeline from the initial LLM entropy input through to a fully populated, validated, renderable chunk of world. It defines the responsibility of each solver phase, the ordering constraints between phases, the inputs and outputs of each, and the failure recovery strategies at each stage. In the nano-aware target architecture, the pipeline produces both base micro terrain and the resolved nano overlay stacks that sit on top of that terrain, including their 3×3 patch occupancy inside each parent micro tile.
 
 ---
 
 ## 2. Pipeline Overview
 
-The full generation pipeline runs when the player approaches ungenerated territory. The pipeline produces one macro tile (25×25 micro cells, organized as a 5×5 grid of world unit tiles) per invocation.
+The full generation pipeline runs when the player approaches ungenerated territory. The pipeline produces one macro tile (25×25 micro cells, organized as a 5×5 grid of world unit tiles) plus the nano overlay plan resolved for those cells per invocation.
 
 The phases are:
 
@@ -18,7 +18,7 @@ The phases are:
 2. **Theme Selection** — Determine biome, difficulty, and mood for this macro tile
 3. **Boundary Collection** — Gather edge constraints from already-generated neighbors
 4. **Macro Assembly (Solver C)** — Fill the 5×5 world unit grid using constraint-driven selection
-5. **Micro Fill and Auto-Tiling** — Fill individual cells and compute terrain transitions
+5. **Micro Fill, Nano Resolution, and Auto-Tiling** — Fill individual cells, resolve nano overlays, and compute terrain transitions
 6. **Chain Integrity Check (Solver A/B)** — Verify micro-level adjacency and world-unit-level construction
 7. **Progression Placement (Solver D)** — Place keys, doors, gates, and challenge chokepoints
 8. **Population (Solver E)** — Place decorations, NPCs, and interactables
@@ -215,17 +215,20 @@ No macro assembly solver exists. The current engine generates chunks cell-by-cel
 
 ### 7.1 Purpose
 
-After the macro assembly determines the world unit tile at each position, the individual micro tile cells are populated. This phase also handles terrain transitions (auto-tiling) to produce visually smooth boundaries between different surface types.
+After the macro assembly determines the world unit tile at each position, the individual micro tile cells are populated and any nano overlays attached to those templates are resolved. This phase also handles terrain transitions (auto-tiling) to produce visually smooth boundaries between different surface types.
 
 ### 7.2 Inputs
 
 - The 25×25 micro tile grid from Phase 4
+- The world units' nano overlay plans from Phase 4
 - The biome's terrain weight table (for variation selection)
 - Noise seed for deterministic visual variation
 
 ### 7.3 Process
 
 **Cell population:** For world unit templates that use explicit cell definitions (like a river template that specifies "water" cells in specific positions), the cells are already determined. For templates that use `null` cells ("keep existing" / "fill with biome default"), the Perlin noise system generates appropriate terrain cells using the biome's terrain weights.
+
+**Nano overlay resolution:** For each cell flagged by the world unit tile's nano overlay plan, instantiate the corresponding nano tile or legal nano stack. Connectivity-driven features resolve their variants from neighborhood state (`straight`, `corner`, `tee`, `cross`, `end`, `isolated`). The result is not just a kind and variant, but a concrete **3×3 patch occupancy map** inside the parent micro tile. Stacked compositions such as a bridge over a river remain separate constructs rather than collapsing into a bespoke terrain tile.
 
 **Variation assignment:** For each cell, a deterministic hash of the cell's world-space coordinates selects a visual variant from the cell's variation family. Cell (100, 200) with type "grass" might get variant "grass_c" while cell (101, 200) gets "grass_a". This produces visual diversity without affecting gameplay logic.
 
@@ -236,12 +239,13 @@ After the macro assembly determines the world unit tile at each position, the in
 ### 7.4 Outputs
 
 - **Fully populated 25×25 micro cell grid** — Every cell has an assigned asset key, traversal class, height profile, and visual variant
+- **Resolved nano overlay stacks** — Every nano-bearing cell has its overlay kind(s), z-mode, walkability rule, resolved variant, and 3×3 patch occupancy assigned
 - **Auto-tiling bitmasks** — Per-cell bitmasks for terrain transition rendering
 - **Decoration eligibility map** — Per-cell flags indicating what can be placed on top (derived from micro tile metadata)
 
 ### 7.5 Current Implementation Status
 
-Cell population from Perlin noise exists (`buildChunkCells` in `src/gen.ts`). Template stamping overwrites cells (`stampTemplates`). Variation assignment does not exist (each tile type has one visual). Auto-tiling does not exist (cells are rendered as flat-filled tile types without transition blending).
+Cell population from Perlin noise exists (`buildChunkCells` in `src/gen.ts`). Template stamping overwrites cells (`stampTemplates`). Variation assignment does not exist (each tile type has one visual). Auto-tiling does not exist (cells are rendered as flat-filled tile types without transition blending). The dedicated nano-overlay resolution phase exists today mainly in `experiment/isometric-2.0/`, not in the main world-generation pipeline.
 
 ---
 
@@ -251,7 +255,7 @@ Cell population from Perlin noise exists (`buildChunkCells` in `src/gen.ts`). Te
 
 After the macro assembly and micro fill, verify that all chain features (rivers, walls, fences, paths) are internally coherent at the micro level and structurally sound at the world unit level. This is a validation step, not a generation step — it catches errors rather than creating content.
 
-### 8.2 Solver A: Micro Adjacency Verification
+### 8.2 Solver A: Micro and Nano Adjacency Verification
 
 Scan the 25×25 micro grid and verify that every pair of adjacent cells has compatible edge connectors. Specifically:
 
@@ -259,6 +263,7 @@ Scan the 25×25 micro grid and verify that every pair of adjacent cells has comp
 - No wall cell adjacent to an open cell without a wall-cap or transition
 - No fence cell adjacent to open without a fence-post
 - Chain cells (water, wall, fence) that connect based on their connectable flag actually form continuous chains, not isolated fragments
+- Legal nano stacks remain legal after resolution (bridge over river allowed; contradictory wall/river overlap rejected unless a special adapter template authored it)
 
 If violations are found, the repair logic performs minimal edits:
 - Insert shore transition cells between water and grass
@@ -464,9 +469,9 @@ After the generation pipeline produces a validated cell grid, the rendering pipe
 
 ### 12.2 Process
 
-- **Terrain cache build:** Render all base-layer micro tiles (terrain, auto-tiling transitions) to an offscreen canvas for this chunk. The renderer will blit this entire canvas in a single `drawImage` call per frame instead of hundreds of individual tile draws.
+- **Terrain cache build:** Render all base-layer micro tiles (terrain, auto-tiling transitions, and any static flat / negative-Z nanos that belong in the terrain composite) to an offscreen canvas for this chunk. The renderer will blit this entire canvas in a single `drawImage` call per frame instead of hundreds of individual tile draws.
 
-- **Object cell list build:** Scan the cell grid and create a sparse list of non-base cells (obstacles, NPCs, items, decorations, features). The renderer iterates only this list for dynamic/elevated object drawing, avoiding the cost of scanning all cells.
+- **Object cell list build:** Scan the cell grid and create a sparse list of non-base cells (positive-Z nanos, obstacles, NPCs, items, decorations, features). The renderer iterates only this list for dynamic/elevated object drawing, avoiding the cost of scanning all cells.
 
 - **Auto-tiling sprite selection:** For each cell with an auto-tiling bitmask, look up and pre-cache the appropriate transition tile sprite.
 

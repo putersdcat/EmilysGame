@@ -6,7 +6,7 @@ The rendering pipeline transforms the world engine's generated cell data into th
 
 The rendering pipeline must be fast enough to sustain 60 FPS on target hardware (8th Gen Intel i7, GTX 1050, 16GB RAM) while drawing a viewport of isometric terrain, obstacles, NPCs, collectibles, decorative sprites, the player character, shadows, and UI overlays. This means the renderer must be aggressive about skipping unnecessary work: pre-rendering stable content, caching at multiple levels, culling off-screen elements, and optionally accelerating batch operations through WASM.
 
-This document describes the complete rendering pipeline from world data to screen pixels: the layer architecture, the cache hierarchy, the invalidation rules, the WASM acceleration targets, and the performance contracts that each subsystem must honor.
+This document describes the complete rendering pipeline from world data to screen pixels: the layer architecture, the cache hierarchy, the invalidation rules, the WASM acceleration targets, and the performance contracts that each subsystem must honor. In the nano-aware model, the renderer also consumes a 3×3 nano-grid addressing scheme inside each micro tile so sub-micro elements can be placed precisely and built upward or downward in the Z axis without faking everything as full-tile art.
 
 ---
 
@@ -22,20 +22,23 @@ Update frequency: Changes only when the player crosses a biome boundary (rare). 
 
 ### 2.2 Layer 1: Pre-Rendered Base Terrain
 
-The core terrain layer: grass, dirt, water, stone floor, and all terrain auto-tiling transitions. This layer is drawn from **pre-rendered chunk canvases** — one offscreen canvas per chunk, blitted to the main canvas with a single `drawImage` call per visible chunk.
+The core terrain layer: grass, dirt, water, stone floor, all terrain auto-tiling transitions, and any static flat or negative-Z nanos that should be baked into the ground composite. This layer is drawn from **pre-rendered chunk canvases** — one offscreen canvas per chunk, blitted to the main canvas with a single `drawImage` call per visible chunk.
 
 This is where the terrain cache system does its heavy lifting. Instead of drawing hundreds of individual 64×32 isometric tile diamonds per chunk per frame, the system draws 3–9 chunk canvases (depending on viewport buffer size) per frame. The per-chunk cost drops from hundreds of draw calls to one.
 
 Update frequency: Never changes after initial generation. The terrain cache is generated once when the chunk is first created and reused for the lifetime of the chunk in memory. Invalidation occurs only if the chunk's terrain is structurally modified (which does not happen during normal gameplay — obstacles are resolved by changing cell properties, not terrain).
 
-### 2.3 Layer 2: Non-Base Objects (Depth-Sorted)
+### 2.3 Layer 2: Positive-Z and Non-Base Objects (Depth-Sorted)
 
-Obstacles (rocks, walls, fences, doors), NPCs, collectible items, decorative sprites on elevated layers, and the player character. These elements are drawn individually, sorted by depth (Y-coordinate + height fraction), so that southern and taller objects draw on top of northern and shorter ones, producing correct occlusion.
+Positive-Z nanos (fences, gates, bridges, walls), obstacles, NPCs, collectible items, decorative sprites on elevated layers, and the player character. These elements are drawn individually, sorted by depth (Y-coordinate + height fraction), so that southern and taller objects draw on top of northern and shorter ones, producing correct occlusion.
+
+The 3×3 nano grid is what makes their placement believable. It lets a fence sit on the west strip of a tile instead of vaguely in the middle, a bridge align to the center run of a river, a wall occupy only the patches it truly fills, and future entity anchors snap to specific sub-micro positions rather than whole-cell approximations.
 
 This layer uses a **sparse object cell list** per chunk. Instead of iterating all cells in visible chunks (potentially thousands), the renderer iterates only those cells that have non-base content — typically 50–200 per chunk. This list is pre-computed when the chunk is generated and cached alongside the chunk data.
 
 Each object is drawn as either:
 - A pre-rendered isometric SVG tile (for tile-type objects like elevated walls, bridges, door gates)
+- A nano-aware draw primitive (for billboard or extruded nano geometry that composes from side/top textures and z-mode rules)
 - A cached emoji sprite (for emoji-based objects like trees, bushes, NPCs, items)
 - A cached SVG character sprite (for the player character)
 
@@ -65,7 +68,7 @@ Caching exists at four levels, forming a pyramid from small/numerous (micro tile
 
 The bottom of the cache pyramid. Every micro tile SVG source is pre-rendered to a 64×32 isometric diamond offscreen canvas during game initialization. These canvases are stored in a tile type-keyed cache map.
 
-When terrain or object layers need to draw a micro tile, they look up the pre-rendered canvas by tile type and blit it with `drawImage`. The SVG parsing and isometric transform math happens once at startup, never during gameplay.
+When terrain or object layers need to draw a micro tile, they look up the pre-rendered canvas by tile type and blit it with `drawImage`. The SVG parsing and isometric transform math happens once at startup, never during gameplay. In the nano-aware target architecture, this level also includes reusable nano textures (for example top and side textures for extruded walls) and any flat/negative nano atlases that can be safely baked.
 
 **Size budget:** 8 tile types × 1 variant each × (64×32×4 bytes) = ~64KB. With auto-tiling variants (13 per type), this grows to ~830KB. With visual variation families (4 variants × 8 types × 13 transitions = 416 sprites), approximately 3.3MB. Well within memory budget.
 
@@ -207,6 +210,7 @@ The WASM path's overhead is fixed per frame (buffer setup, pointer management, r
 ### 7.1 What Gets Pre-Rendered
 
 - All micro tile SVGs → isometric diamond canvases (at startup)
+- Static flat / negative-Z nano visuals → terrain-compatible cached assets or composited chunk terrain
 - All emoji characters → cached sprite canvases (on first use)
 - All character sprite frames → cached Image elements (on first use)
 - All shadow ellipses → cached canvases (on first use, by quantized scale)
@@ -215,7 +219,7 @@ The WASM path's overhead is fixed per frame (buffer setup, pointer management, r
 
 ### 7.2 What Gets Drawn Live
 
-- Non-base objects (obstacles, NPCs, items, decorations) — drawn from cached sprites/emoji caches but positioned and depth-sorted live each frame
+- Positive-Z nanos and other non-base objects (obstacles, NPCs, items, decorations) — drawn from cached sprites/emoji caches or nano geometry helpers, but positioned and depth-sorted live each frame
 - Player character — drawn from cached sprite frames but positioned, flipped, and animated live
 - Shadows — drawn from cached shadow sprites but positioned live
 - UI/HUD — DOM elements, updated on throttled schedule
@@ -330,13 +334,15 @@ The camera follows the player with the player centered on screen (with Y offset 
 
 The rendering pipeline is a performance-critical system that consumes world data and produces 60 FPS screen output. Its architecture relies on:
 
-1. **Layered drawing** — Ground fill → cached terrain → depth-sorted objects → UI
-2. **Aggressive caching** — Pre-rendered tile atlases, chunk terrain canvases, emoji sprites, shadow sprites, character sprites
+1. **Layered drawing** — Ground fill → cached terrain (including flat/negative nanos) → depth-sorted positive nanos and objects → UI
+2. **Aggressive caching** — Pre-rendered tile atlases, nano textures, chunk terrain canvases, emoji sprites, shadow sprites, character sprites
 3. **Sparse iteration** — Object cell lists avoid processing thousands of base terrain cells
 4. **Pool-based draw commands** — Pre-allocated structs with insertion sort avoid per-frame GC pressure
 5. **Viewport culling** — At chunk level, cell level, and terrain cache level
 6. **Optional WASM acceleration** — For batch transforms, auto-tiling computation, and solver operations when scale justifies the marshalling overhead
 7. **Throttled UI updates** — DOM sync every Nth frame, not every frame
+
+The renderer does not invent nano behavior on its own. It consumes nano stacks and z-mode decisions made by the generation pipeline and renders them consistently.
 
 The rendering pipeline does not generate content — it only visualizes content produced by the generation pipeline (Document 03). The interface between them is the chunk data structure containing cell grids, asset keys, and cache metadata.
 
