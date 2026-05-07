@@ -47,8 +47,10 @@ interface BrickTextureSpec {
   topSvgV?: () => string;
   southSvg?: () => string;
   eastSvg?: () => string;
+  endSvg?: () => string;
   southSvgByPlane?: () => Readonly<Record<number, string>>;
   eastSvgByPlane?: () => Readonly<Record<number, string>>;
+  endSvgByPlane?: () => Readonly<Record<number, string>>;
   topOutline: boolean;
   endCapTicks: boolean;
   faceSliceEqualLighting?: boolean;
@@ -65,11 +67,13 @@ const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
     topSvgV: () => RedClinker.svgTopV(),
     southSvg: () => RedClinker.svgSouth(),
     eastSvg: () => RedClinker.svgEast(),
+    endSvg: () => RedClinker.svgEnd(),
     southSvgByPlane: () => ({ 0: RedClinker.svgSouth(0), 48: RedClinker.svgSouth(48), 96: RedClinker.svgSouth(96), 144: RedClinker.svgSouth(144) }),
     eastSvgByPlane: () => ({ 0: RedClinker.svgEast(0), 48: RedClinker.svgEast(48), 96: RedClinker.svgEast(96), 144: RedClinker.svgEast(144) }),
+    endSvgByPlane: () => ({ 0: RedClinker.svgEnd(0), 48: RedClinker.svgEnd(48), 96: RedClinker.svgEnd(96), 144: RedClinker.svgEnd(144) }),
     topOutline: true,
     topRotateWithAxis: true,
-    endCapTicks: true,
+    endCapTicks: false,
     faceSliceEqualLighting: true,
     endCapTickColor: '#2a201c',
   },
@@ -315,8 +319,10 @@ async function dispatch(): Promise<WorkerResult> {
         let topFaceSvgVOverride: string | undefined = e.topFaceSvgVOverride;
         let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride;
         let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride;
+        let endFaceSvgOverride: string | undefined = e.endFaceSvgOverride;
         let southFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.southFaceSvgByPlane;
         let eastFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.eastFaceSvgByPlane;
+        let endFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.endFaceSvgByPlane;
         let topOutline: boolean | undefined = e.topOutline;
         let topRotateWithAxis: boolean | undefined = e.topRotateWithAxis;
         let endCapTicks: boolean | undefined = e.endCapTicks;
@@ -332,8 +338,10 @@ async function dispatch(): Promise<WorkerResult> {
           topFaceSvgVOverride  = topFaceSvgVOverride  ?? spec.topSvgV?.();
           southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.();
           eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.();
+          endFaceSvgOverride   = endFaceSvgOverride   ?? spec.endSvg?.();
           southFaceSvgByPlane  = southFaceSvgByPlane  ?? spec.southSvgByPlane?.();
           eastFaceSvgByPlane   = eastFaceSvgByPlane   ?? spec.eastSvgByPlane?.();
+          endFaceSvgByPlane    = endFaceSvgByPlane    ?? spec.endSvgByPlane?.();
           topOutline        = topOutline        ?? spec.topOutline;
           topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
@@ -350,8 +358,10 @@ async function dispatch(): Promise<WorkerResult> {
           topFaceSvgVOverride,
           southFaceSvgOverride,
           eastFaceSvgOverride,
+          endFaceSvgOverride,
           southFaceSvgByPlane,
           eastFaceSvgByPlane,
+          endFaceSvgByPlane,
           topOutline,
           topRotateWithAxis,
           endCapTicks,

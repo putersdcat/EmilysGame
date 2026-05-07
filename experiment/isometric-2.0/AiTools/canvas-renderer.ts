@@ -124,10 +124,14 @@ export interface CanvasSceneEntry {
   southFaceSvgOverride?: string;
   /** Optional east/YZ material slice for Canvas extrusions. Falls back to svgOverride. */
   eastFaceSvgOverride?: string;
+  /** Optional exposed end-face material slice for Canvas extrusions. */
+  endFaceSvgOverride?: string;
   /** Optional south/XZ material slices keyed by wall-y plane. */
   southFaceSvgByPlane?: Readonly<Record<number, string>>;
   /** Optional east/YZ material slices keyed by wall-x plane. */
   eastFaceSvgByPlane?: Readonly<Record<number, string>>;
+  /** Optional exposed end-face material slices keyed by wall plane. */
+  endFaceSvgByPlane?: Readonly<Record<number, string>>;
   /** Keep explicit face-slice colors equal across top/side edges. */
   faceSliceEqualLighting?: boolean;
   /** Optional color for exposed end-cap/header grout ticks. */
@@ -223,13 +227,16 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
       const topV = e.topFaceSvgVOverride;
       const south = e.southFaceSvgOverride ?? side;
       const east = e.eastFaceSvgOverride ?? side;
+      const end = e.endFaceSvgOverride;
       if (side) out.add(side);
       if (top)  out.add(top);
       if (topV) out.add(topV);
       if (south) out.add(south);
       if (east) out.add(east);
+      if (end) out.add(end);
       for (const svg of Object.values(e.southFaceSvgByPlane ?? {})) out.add(svg);
       for (const svg of Object.values(e.eastFaceSvgByPlane ?? {})) out.add(svg);
+      for (const svg of Object.values(e.endFaceSvgByPlane ?? {})) out.add(svg);
     } else {
       const svg = e.svgOverride
         ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
@@ -289,8 +296,10 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       topFaceTextureSvgV: e.topFaceSvgVOverride,
       southFaceTextureSvg: e.southFaceSvgOverride,
       eastFaceTextureSvg: e.eastFaceSvgOverride,
+      endFaceTextureSvg: e.endFaceSvgOverride,
       southFaceTextureByPlane: e.southFaceSvgByPlane,
       eastFaceTextureByPlane: e.eastFaceSvgByPlane,
+      endFaceTextureByPlane: e.endFaceSvgByPlane,
       faceSliceEqualLighting: e.faceSliceEqualLighting,
       endCapTickColor: e.endCapTickColor,
       variant,

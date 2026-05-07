@@ -462,20 +462,23 @@ export function drawExtrudedNano(
   const eastTextureSvg = nano.eastFaceTextureSvg ?? nano.sideTextureSvg;
   const topTextureSvg = nano.topFaceTextureSvg ?? nano.topTextureSvg ?? nano.sideTextureSvg;
   const topVTextureSvg = nano.topFaceTextureSvgV ?? topTextureSvg;
+  const endTextureSvg = nano.endFaceTextureSvg;
 
-  function drawHeaderJoints(width: number, height: number, color: string): void {
-    // Physical exposed brick end: per-course vertical joints, staggered on
-    // alternate courses. Do not draw uninterrupted vertical columns.
+  function drawHeaderJoints(width: number, height: number, color: string, edgeCoord: number): void {
+    // Physical exposed brick end: preserve the side face's existing
+    // horizontal courses, then add only the header joint(s) in the first
+    // top course. Phase comes from the same edge coordinate used to build
+    // the side slice, so the added vertical grout aligns with the top row.
     const COURSE_PITCH = 8;
     const BRICK_PITCH = 24;
     const TICK_W = 2;
-    for (let y = -height + 1; y < -1; y += COURSE_PITCH) {
-      const course = Math.floor((y + height - 1) / COURSE_PITCH);
-      const offset = (course & 1) ? BRICK_PITCH / 2 : 0;
-      for (let x = offset + BRICK_PITCH; x < width; x += BRICK_PITCH) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x - TICK_W / 2, y, TICK_W, COURSE_PITCH - 2);
-      }
+    const topEdgeCoord = Math.max(0, edgeCoord - COURSE_PITCH);
+    const course = Math.floor(topEdgeCoord / COURSE_PITCH);
+    const offset = (course & 1) ? BRICK_PITCH / 2 : 0;
+    const y = -height + 1;
+    for (let x = offset + BRICK_PITCH; x < width; x += BRICK_PITCH) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x - TICK_W / 2, y, TICK_W, COURSE_PITCH - 2);
     }
   }
 
@@ -490,6 +493,7 @@ export function drawExtrudedNano(
     const eastImg = eastTextureSvg ? loadSvgImage(eastTextureSvg) : null;
     const topImg = topTextureSvg ? loadSvgImage(topTextureSvg) : null;
     const topVImg = topVTextureSvg ? loadSvgImage(topVTextureSvg) : topImg;
+    const endImg = endTextureSvg ? loadSvgImage(endTextureSvg) : null;
     if (southImg && eastImg && topImg && topVImg) {
       const useFaceSlices = !!(nano.topFaceTextureSvg && nano.southFaceTextureSvg && nano.eastFaceTextureSvg);
 
@@ -514,14 +518,17 @@ export function drawExtrudedNano(
             const ex = isoX(r.x, r.y + r.h);
             const ey = isoY(r.x, r.y + r.h);
             const southPlane = r.y + r.h;
-            const southPlaneSvg = nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg;
-            const southPlaneImg = southPlaneSvg ? loadSvgImage(southPlaneSvg) ?? southImg : southImg;
+            const isEnd = southIsEnd(r);
+            const southPlaneSvg = isEnd
+              ? (nano.endFaceTextureByPlane?.[southPlane] ?? endTextureSvg ?? nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg)
+              : (nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg);
+            const southPlaneImg = southPlaneSvg ? loadSvgImage(southPlaneSvg) ?? (isEnd ? endImg ?? southImg : southImg) : southImg;
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.drawImage(southPlaneImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
-            if (drawEndCapTicks && southIsEnd(r)) {
-              drawHeaderJoints(r.w, drawH, endCapTickColor);
+            if (drawEndCapTicks && isEnd && !endTextureSvg) {
+              drawHeaderJoints(r.w, drawH, endCapTickColor, southPlane);
             }
             ctx.restore();
           }
@@ -529,8 +536,11 @@ export function drawExtrudedNano(
             const ex = isoX(r.x + r.w, r.y);
             const ey = isoY(r.x + r.w, r.y);
             const eastPlane = r.x + r.w;
-            const eastPlaneSvg = nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg;
-            const eastPlaneImg = eastPlaneSvg ? loadSvgImage(eastPlaneSvg) ?? eastImg : eastImg;
+            const isEnd = eastIsEnd(r);
+            const eastPlaneSvg = isEnd
+              ? (nano.endFaceTextureByPlane?.[eastPlane] ?? endTextureSvg ?? nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg)
+              : (nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg);
+            const eastPlaneImg = eastPlaneSvg ? loadSvgImage(eastPlaneSvg) ?? (isEnd ? endImg ?? eastImg : eastImg) : eastImg;
             ctx.save();
             ctx.translate(ex, ey);
             ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
@@ -539,8 +549,8 @@ export function drawExtrudedNano(
               ctx.fillStyle = 'rgba(0,0,0,0.18)';
               ctx.fillRect(0, -drawH, r.h, drawH);
             }
-            if (drawEndCapTicks && eastIsEnd(r)) {
-              drawHeaderJoints(r.h, drawH, endCapTickColor);
+            if (drawEndCapTicks && isEnd && !endTextureSvg) {
+              drawHeaderJoints(r.h, drawH, endCapTickColor, eastPlane);
             }
             ctx.restore();
           }

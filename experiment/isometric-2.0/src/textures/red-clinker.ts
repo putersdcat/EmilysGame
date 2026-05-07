@@ -95,6 +95,29 @@ function faceRows(startCoord: number, topCap = false): string {
   return out.join('\n    ');
 }
 
+function drawEndTopCourse(out: string[], courseCoord: number): void {
+  // Exposed end-cap top row: header bricks are short in the run direction,
+  // so vertical grout spacing must match the 8px top-surface course rhythm,
+  // not the side-face 24px stretcher rhythm.
+  const course = Math.floor(courseCoord / COURSE_PITCH);
+  for (let x = 1, idx = 0; x < SIZE; x += COURSE_PITCH, idx++) {
+    const w = Math.min(BRICK_H, SIZE - x);
+    const sh = brickShade(course, idx);
+    out.push(`<rect x="${x}" y="1" width="${w}" height="${BRICK_H}" fill="${sh.fill}" />`);
+    out.push(`<rect x="${x}" y="1" width="${w}" height="1" fill="${sh.hi}" />`);
+    out.push(`<rect x="${x}" y="${BRICK_H}" width="${w}" height="1" fill="${sh.lo}" />`);
+  }
+}
+
+function endRows(startCoord: number): string {
+  const out: string[] = [`<rect width="${SIZE}" height="${SIZE}" fill="${MORTAR_FILL}" />`];
+  drawEndTopCourse(out, startCoord);
+  for (let y = COURSE_PITCH; y < SIZE; y += COURSE_PITCH) {
+    drawCourse(out, y, startCoord + y);
+  }
+  return out.join('\n    ');
+}
+
 function drawCourseV(out: string[], x: number, courseCoord: number, opacity = 1): void {
   const cx = x + 1;
   const course = Math.floor(courseCoord / COURSE_PITCH);
@@ -120,6 +143,7 @@ let _cachedTop: string | null = null;
 let _cachedTopV: string | null = null;
 const _cachedSouth = new Map<number, string>();
 const _cachedEast = new Map<number, string>();
+const _cachedEnd = new Map<number, string>();
 
 /** Legacy/default 144px running-bond tile. */
 export function svg(): string {
@@ -171,5 +195,17 @@ export function svgEast(edgeCoord = 96): string {
     ${faceRows(startCoord)}
   </svg>`;
   _cachedEast.set(edgeCoord, out);
+  return out;
+}
+
+/** Exposed end-cap slice with a purpose-authored top/header row. */
+export function svgEnd(edgeCoord = 96): string {
+  const cached = _cachedEnd.get(edgeCoord);
+  if (cached) return cached;
+  const startCoord = Math.max(0, edgeCoord - COURSE_PITCH);
+  const out = `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}" shape-rendering="crispEdges">
+    ${endRows(startCoord)}
+  </svg>`;
+  _cachedEnd.set(edgeCoord, out);
   return out;
 }

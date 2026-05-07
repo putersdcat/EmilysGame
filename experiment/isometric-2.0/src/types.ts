@@ -218,10 +218,14 @@ export interface NanoTile {
   readonly southFaceTextureSvg?: string;
   /** Optional Canvas extrusion material slice for the east/YZ face. */
   readonly eastFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for exposed wall end faces. */
+  readonly endFaceTextureSvg?: string;
   /** Optional south/XZ slices keyed by world-y plane (0,48,96,144). */
   readonly southFaceTextureByPlane?: Readonly<Record<number, string>>;
   /** Optional east/YZ slices keyed by world-x plane (0,48,96,144). */
   readonly eastFaceTextureByPlane?: Readonly<Record<number, string>>;
+  /** Optional exposed end-face slices keyed by wall plane (0,48,96,144). */
+  readonly endFaceTextureByPlane?: Readonly<Record<number, string>>;
   /** When true, do not darken one face after drawing explicit face slices. */
   readonly faceSliceEqualLighting?: boolean;
   /** Optional color for exposed end-cap/header grout ticks. */
