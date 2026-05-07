@@ -461,17 +461,36 @@ export function drawExtrudedNano(
   const southTextureSvg = nano.southFaceTextureSvg ?? nano.sideTextureSvg;
   const eastTextureSvg = nano.eastFaceTextureSvg ?? nano.sideTextureSvg;
   const topTextureSvg = nano.topFaceTextureSvg ?? nano.topTextureSvg ?? nano.sideTextureSvg;
+  const topVTextureSvg = nano.topFaceTextureSvgV ?? topTextureSvg;
+
+  function drawHeaderJoints(width: number, height: number, color: string): void {
+    // Physical exposed brick end: per-course vertical joints, staggered on
+    // alternate courses. Do not draw uninterrupted vertical columns.
+    const COURSE_PITCH = 8;
+    const BRICK_PITCH = 24;
+    const TICK_W = 2;
+    for (let y = -height + 1; y < -1; y += COURSE_PITCH) {
+      const course = Math.floor((y + height - 1) / COURSE_PITCH);
+      const offset = (course & 1) ? BRICK_PITCH / 2 : 0;
+      for (let x = offset + BRICK_PITCH; x < width; x += BRICK_PITCH) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x - TICK_W / 2, y, TICK_W, COURSE_PITCH - 2);
+      }
+    }
+  }
 
   if (southTextureSvg || eastTextureSvg || topTextureSvg) {
     // Texture-level opt-out for brick-header-style end ticks. Default is
     // true (correct for brick textures); ancient-stone Voronoi sets false
     // because there is no regular course pitch to align the ticks to.
     const drawEndCapTicks = nano.endCapTicks !== false;
+    const endCapTickColor = nano.endCapTickColor ?? '#1c1a17';
 
     const southImg = southTextureSvg ? loadSvgImage(southTextureSvg) : null;
     const eastImg = eastTextureSvg ? loadSvgImage(eastTextureSvg) : null;
     const topImg = topTextureSvg ? loadSvgImage(topTextureSvg) : null;
-    if (southImg && eastImg && topImg) {
+    const topVImg = topVTextureSvg ? loadSvgImage(topVTextureSvg) : topImg;
+    if (southImg && eastImg && topImg && topVImg) {
       const useFaceSlices = !!(nano.topFaceTextureSvg && nano.southFaceTextureSvg && nano.eastFaceTextureSvg);
 
       if (useFaceSlices) {
@@ -502,13 +521,7 @@ export function drawExtrudedNano(
             ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.drawImage(southPlaneImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
             if (drawEndCapTicks && southIsEnd(r)) {
-              ctx.fillStyle = '#1c1a17';
-              const COURSE_PITCH = 8;
-              const TICK_DEPTH = 7;
-              const TICK_W = 2;
-              for (let x = COURSE_PITCH; x < r.w; x += COURSE_PITCH) {
-                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
-              }
+              drawHeaderJoints(r.w, drawH, endCapTickColor);
             }
             ctx.restore();
           }
@@ -527,13 +540,7 @@ export function drawExtrudedNano(
               ctx.fillRect(0, -drawH, r.h, drawH);
             }
             if (drawEndCapTicks && eastIsEnd(r)) {
-              ctx.fillStyle = '#1c1a17';
-              const COURSE_PITCH = 8;
-              const TICK_DEPTH = 7;
-              const TICK_W = 2;
-              for (let x = COURSE_PITCH; x < r.h; x += COURSE_PITCH) {
-                ctx.fillRect(x - TICK_W / 2, -drawH + 1, TICK_W, TICK_DEPTH);
-              }
+              drawHeaderJoints(r.h, drawH, endCapTickColor);
             }
             ctx.restore();
           }
@@ -576,7 +583,8 @@ export function drawExtrudedNano(
         clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
         ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, elevatedY);
         for (const r of tops) {
-          ctx.drawImage(topImg, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+          const img = r.v ? topVImg : topImg;
+          ctx.drawImage(img, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
         }
         ctx.restore();
 
@@ -633,7 +641,7 @@ export function drawExtrudedNano(
             // false because there is no regular course pitch and the ticks
             // read as black streaks instead of joints.
             if (drawEndCapTicks && southIsEnd(r)) {
-              ctx.fillStyle = '#1c1a17';
+              ctx.fillStyle = endCapTickColor;
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
               const TICK_W = 2;
@@ -665,7 +673,7 @@ export function drawExtrudedNano(
             ctx.fillRect(0, -drawH, r.h, drawH);
             // END-FACE: course-aligned vertical mortar ticks (mirror).
             if (drawEndCapTicks && eastIsEnd(r)) {
-              ctx.fillStyle = '#1c1a17';
+              ctx.fillStyle = endCapTickColor;
               const COURSE_PITCH = 8;
               const TICK_DEPTH = 7;
               const TICK_W = 2;

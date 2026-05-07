@@ -212,6 +212,8 @@ export interface NanoTile {
   readonly sideTextureSvg?: string;
   /** Optional Canvas extrusion material slice for the top/XY face. */
   readonly topFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for V-axis top strips. */
+  readonly topFaceTextureSvgV?: string;
   /** Optional Canvas extrusion material slice for the south/XZ face. */
   readonly southFaceTextureSvg?: string;
   /** Optional Canvas extrusion material slice for the east/YZ face. */
@@ -222,6 +224,8 @@ export interface NanoTile {
   readonly eastFaceTextureByPlane?: Readonly<Record<number, string>>;
   /** When true, do not darken one face after drawing explicit face slices. */
   readonly faceSliceEqualLighting?: boolean;
+  /** Optional color for exposed end-cap/header grout ticks. */
+  readonly endCapTickColor?: string;
   /** Feature variants this SVG covers (for solver). */
   readonly variants?: readonly FeatureVariant[];
   /** SVG path data for shadow silhouette. */

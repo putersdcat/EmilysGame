@@ -118,6 +118,8 @@ export interface CanvasSceneEntry {
   topSvgOverride?: string;
   /** Optional top/XY material slice for Canvas extrusions. Falls back to topSvgOverride/svgOverride. */
   topFaceSvgOverride?: string;
+  /** Optional top/XY material slice for V-axis top strips. */
+  topFaceSvgVOverride?: string;
   /** Optional south/XZ material slice for Canvas extrusions. Falls back to svgOverride. */
   southFaceSvgOverride?: string;
   /** Optional east/YZ material slice for Canvas extrusions. Falls back to svgOverride. */
@@ -128,6 +130,8 @@ export interface CanvasSceneEntry {
   eastFaceSvgByPlane?: Readonly<Record<number, string>>;
   /** Keep explicit face-slice colors equal across top/side edges. */
   faceSliceEqualLighting?: boolean;
+  /** Optional color for exposed end-cap/header grout ticks. */
+  endCapTickColor?: string;
   /**
    * Whether stoneWallTopSvg draws its rectangular grout outline on the
    * top face. Defaults to true (correct for brick textures). Set false
@@ -216,10 +220,12 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
     if (EXTRUDED_KINDS.has(e.kind)) {
       const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row);
       const top  = e.topFaceSvgOverride ?? e.topSvgOverride ?? side;
+      const topV = e.topFaceSvgVOverride;
       const south = e.southFaceSvgOverride ?? side;
       const east = e.eastFaceSvgOverride ?? side;
       if (side) out.add(side);
       if (top)  out.add(top);
+      if (topV) out.add(topV);
       if (south) out.add(south);
       if (east) out.add(east);
       for (const svg of Object.values(e.southFaceSvgByPlane ?? {})) out.add(svg);
@@ -280,11 +286,13 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       sideTextureSvg: sideSvg,
       topTextureSvg:  topSvg,
       topFaceTextureSvg: e.topFaceSvgOverride,
+      topFaceTextureSvgV: e.topFaceSvgVOverride,
       southFaceTextureSvg: e.southFaceSvgOverride,
       eastFaceTextureSvg: e.eastFaceSvgOverride,
       southFaceTextureByPlane: e.southFaceSvgByPlane,
       eastFaceTextureByPlane: e.eastFaceSvgByPlane,
       faceSliceEqualLighting: e.faceSliceEqualLighting,
+      endCapTickColor: e.endCapTickColor,
       variant,
       connections: conn,
       topRotateWithAxis: e.topRotateWithAxis,

@@ -44,6 +44,7 @@ interface BrickTextureSpec {
   //  AND the NanoTile interface in src/types.ts.)
   svg(): string;
   topSvg?: () => string;
+  topSvgV?: () => string;
   southSvg?: () => string;
   eastSvg?: () => string;
   southSvgByPlane?: () => Readonly<Record<number, string>>;
@@ -51,6 +52,7 @@ interface BrickTextureSpec {
   topOutline: boolean;
   endCapTicks: boolean;
   faceSliceEqualLighting?: boolean;
+  endCapTickColor?: string;
   /** True for textures whose orientation should match the wall axis
    *  (bricks). False for rotation-invariant textures (Voronoi). */
   topRotateWithAxis: boolean;
@@ -60,14 +62,16 @@ const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
   'red-clinker':    {
     svg: () => RedClinker.svg(),
     topSvg: () => RedClinker.svgTop(),
+    topSvgV: () => RedClinker.svgTopV(),
     southSvg: () => RedClinker.svgSouth(),
     eastSvg: () => RedClinker.svgEast(),
     southSvgByPlane: () => ({ 0: RedClinker.svgSouth(0), 48: RedClinker.svgSouth(48), 96: RedClinker.svgSouth(96), 144: RedClinker.svgSouth(144) }),
     eastSvgByPlane: () => ({ 0: RedClinker.svgEast(0), 48: RedClinker.svgEast(48), 96: RedClinker.svgEast(96), 144: RedClinker.svgEast(144) }),
     topOutline: true,
     topRotateWithAxis: true,
-    endCapTicks: false,
+    endCapTicks: true,
     faceSliceEqualLighting: true,
+    endCapTickColor: '#2a201c',
   },
   'ancient-stone':  {
     svg: () => AncientStone.svg(),
@@ -308,6 +312,7 @@ async function dispatch(): Promise<WorkerResult> {
         let svgOverride: string | undefined = e.svgOverride;
         let topSvgOverride: string | undefined = e.topSvgOverride;
         let topFaceSvgOverride: string | undefined = e.topFaceSvgOverride;
+        let topFaceSvgVOverride: string | undefined = e.topFaceSvgVOverride;
         let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride;
         let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride;
         let southFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.southFaceSvgByPlane;
@@ -316,6 +321,7 @@ async function dispatch(): Promise<WorkerResult> {
         let topRotateWithAxis: boolean | undefined = e.topRotateWithAxis;
         let endCapTicks: boolean | undefined = e.endCapTicks;
         let faceSliceEqualLighting: boolean | undefined = e.faceSliceEqualLighting;
+        let endCapTickColor: string | undefined = e.endCapTickColor;
         if (typeof e.texture === 'string') {
           const spec = BRICK_TEXTURES[e.texture];
           if (!spec) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
@@ -323,6 +329,7 @@ async function dispatch(): Promise<WorkerResult> {
           svgOverride       = svgOverride       ?? tex;
           topSvgOverride    = topSvgOverride    ?? tex;
           topFaceSvgOverride   = topFaceSvgOverride   ?? spec.topSvg?.();
+          topFaceSvgVOverride  = topFaceSvgVOverride  ?? spec.topSvgV?.();
           southFaceSvgOverride = southFaceSvgOverride ?? spec.southSvg?.();
           eastFaceSvgOverride  = eastFaceSvgOverride  ?? spec.eastSvg?.();
           southFaceSvgByPlane  = southFaceSvgByPlane  ?? spec.southSvgByPlane?.();
@@ -331,6 +338,7 @@ async function dispatch(): Promise<WorkerResult> {
           topRotateWithAxis = topRotateWithAxis ?? spec.topRotateWithAxis;
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
           faceSliceEqualLighting = faceSliceEqualLighting ?? spec.faceSliceEqualLighting;
+          endCapTickColor = endCapTickColor ?? spec.endCapTickColor;
         }
         return {
           kind: e.kind, col: e.col, row: e.row,
@@ -339,6 +347,7 @@ async function dispatch(): Promise<WorkerResult> {
           svgOverride,
           topSvgOverride,
           topFaceSvgOverride,
+          topFaceSvgVOverride,
           southFaceSvgOverride,
           eastFaceSvgOverride,
           southFaceSvgByPlane,
@@ -347,6 +356,7 @@ async function dispatch(): Promise<WorkerResult> {
           topRotateWithAxis,
           endCapTicks,
           faceSliceEqualLighting,
+          endCapTickColor,
         };
       });
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
