@@ -449,6 +449,12 @@ export function drawExtrudedNano(
     const hasWest = rects.some(o => o.x + o.w <= r.x && o.y < r.y + r.h && o.y + o.h > r.y);
     return noEast && hasWest;
   }
+  function southUsesEndTexture(r: { x: number; y: number; w: number; h: number }): boolean {
+    return !!endTextureSvg && (southIsEnd(r) || (nano.variant === 'isolated' && topIsV(r)));
+  }
+  function eastUsesEndTexture(r: { x: number; y: number; w: number; h: number }): boolean {
+    return !!endTextureSvg && (eastIsEnd(r) || (nano.variant === 'isolated' && !topIsV(r)));
+  }
   const isoX = (tx: number, ty: number) => screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) * ISO_Y_PER_SOURCE_PX;
 
@@ -518,7 +524,7 @@ export function drawExtrudedNano(
             const ex = isoX(r.x, r.y + r.h);
             const ey = isoY(r.x, r.y + r.h);
             const southPlane = r.y + r.h;
-            const isEnd = southIsEnd(r);
+            const isEnd = southUsesEndTexture(r);
             const southPlaneSvg = isEnd
               ? (nano.endFaceTextureByPlane?.[southPlane] ?? endTextureSvg ?? nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg)
               : (nano.southFaceTextureByPlane?.[southPlane] ?? southTextureSvg);
@@ -536,7 +542,7 @@ export function drawExtrudedNano(
             const ex = isoX(r.x + r.w, r.y);
             const ey = isoY(r.x + r.w, r.y);
             const eastPlane = r.x + r.w;
-            const isEnd = eastIsEnd(r);
+            const isEnd = eastUsesEndTexture(r);
             const eastPlaneSvg = isEnd
               ? (nano.endFaceTextureByPlane?.[eastPlane] ?? endTextureSvg ?? nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg)
               : (nano.eastFaceTextureByPlane?.[eastPlane] ?? eastTextureSvg);
