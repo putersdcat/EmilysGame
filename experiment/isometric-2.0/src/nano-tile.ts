@@ -463,7 +463,6 @@ export function drawExtrudedNano(
   const topTextureSvg = nano.topFaceTextureSvg ?? nano.topTextureSvg ?? nano.sideTextureSvg;
   const topVTextureSvg = nano.topFaceTextureSvgV ?? topTextureSvg;
   const endTextureSvg = nano.endFaceTextureSvg;
-  const END_TOP_STRIP_H = 8;
 
   function drawHeaderJoints(width: number, height: number, color: string, edgeCoord: number): void {
     // Physical exposed brick end: preserve the side face's existing
@@ -596,9 +595,6 @@ export function drawExtrudedNano(
         for (const r of tops) {
           const img = r.v ? topVImg : topImg;
           ctx.drawImage(img, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
-          if (endImg && nano.variant === 'isolated') {
-            ctx.drawImage(endImg, r.y, 0, r.h, END_TOP_STRIP_H, r.x + r.w - END_TOP_STRIP_H, r.y, END_TOP_STRIP_H, r.h);
-          }
         }
         ctx.restore();
 
