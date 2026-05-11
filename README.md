@@ -1,44 +1,18 @@
-# ✨ Emily & Amy's Sparkle Quest ✨
+**Project Vision**  
+Emily's Game is an isometric, procedural world adventure designed for educational exploration and discovery. Players navigate a vast 1024×1024 cell world generated using novel LLM entropy mechanics, where language model outputs are mathematically processed into deterministic world seeds. The game incorporates educational elements through dynamic quizzes, a searchable in-game encyclopedia ("Book of Knowledge"), and subject-biased learning paths. Key features include biome progression (Forest → Cave → Castle), LLM entropy via SHA-256 hashed verb/noun pairs, 100-500 Q&A pairs per subject rewritten for 12-year-olds, isometric Canvas 2D rendering with occlusion, and hierarchical tile-based procedural generation.
 
-**Fresh AI-Powered Start on the `experiment/isometric-2.0` branch!**
+**How to Run**  
+- **Prerequisites**: Node.js 16+, npm 8+, optional local LLM server (BitNet) on `http://127.0.0.1:8002`.  
+- **Installation**: Run `npm install`.  
+- **Development**: Start dev server with `npm run dev` (opens at `http://localhost:5173`).  
+- **Build**: Use `npm run build` for production.  
+- **Controls**: Move with arrow keys/WASD, interact with Space (when implemented), answer quizzes to progress, explore biomes and collect items.
 
-Completely reimagined from scratch for your two amazing daughters, Emily and Amy. 
+**Current Status**  
+- PoC complete: isometric rendering with occlusion, player movement, collision, character sprites/animations, UI sidebar.  
+- Core gameplay implemented: tile/world generation, LLM entropy integration, save/load.  
+- Educational features: Book of Knowledge encyclopedia, subject selection (Math, Language, History, Science, Technology), quiz biasing.  
+- In progress: obstacle templates, knowledge capture pipeline, sound effects, polish.  
+- Infrastructure: performance optimizations, CI/CD via GitHub Actions; GitHub Pages disabled due to local LLM requirement.
 
-**Everything is 100% AI-generated** — the entire game code, every story, every quiz question, every encouraging message, every visual concept — crafted lovingly by Grok specifically for them.
-
-We threw out the complex isometric world, local LLM dependencies, WASM, and heavy procedural systems. This new version is simple, magical, instantly playable in any browser, and focused purely on joy + gentle learning.
-
-## The Vision
-Emily (the brave explorer with a heart full of courage) and Amy (the creative artist who sees magic everywhere) team up in the Enchanted Garden to bring back the lost sparkles! Along the way they learn numbers, letters, nature facts, and the magic of kindness — all while having the best time.
-
-## Key Features (All AI Crafted)
-- **Interactive Storybook**: Short, personalized choose-your-own-adventure tales with Emily & Amy as the stars. Choices lead to fun learning moments.
-- **3 Delightful Mini-Games**:
-  - Number Garden: Help the flowers grow by solving sweet addition problems (visual counting with butterflies & ladybugs).
-  - Letter Bug Hunt: Match letters to magical creatures and simple words.
-  - Kindness Quest: Make choices that teach empathy and earn extra sparkles.
-- **Sparkle Collection**: Earn stars, unlock new garden areas (Rainbow Meadow, Crystal Cave, Starry Castle).
-- **Personalized Praise**: "Emily, you're so brave!" "Amy, your ideas are pure magic!"
-- **Progress & Rewards**: Simple star tracker, confetti celebrations, and a growing garden.
-
-## Tech (Kept Super Simple)
-- Single self-contained HTML file (Tailwind via CDN + vanilla JS)
-- No servers, no installs, no local LLM
-- Works offline, touch-friendly, perfect for tablets/phones
-- Easy to expand later with the existing Vite setup if we want more power
-
-## How to Play Right Now
-1. Open `public/emily-amy-sparkle-quest.html` in any modern browser (Chrome, Safari, Firefox, Edge).
-2. Or run `npm run dev` and visit the new page.
-3. Let Emily and Amy guide the fun!
-
-## Why This Fresh Start?
-The old experiment was impressive tech, but too complex for quick play sessions with the girls. This version is pure delight: 5-10 minutes of magical learning per session, designed so they beg for "just one more story!"
-
-All content and code generated fresh today by AI, tailored to spark curiosity, confidence, and love of learning in Emily and Amy.
-
-Let's make this their favorite game — and keep iterating with more AI magic!
-
-**Next up**: I'll add the actual Grok Imagine-generated PNG assets (princess portraits, garden scenes, cute animals) and push them as image files. Then we can deploy to GitHub Pages easily.
-
-Made with love for Emily & Amy ♥
+The original file has been saved to: /home/workdir/artifacts/browsed_files/578fbffaf4b3a91c.text
