@@ -251,7 +251,9 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
       const svg = e.svgOverride
         ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
         ?? ((e.kind === 'fence' || e.kind === 'gate') ? woodenFenceSvg(variant) : null);
+      const side = e.southFaceSvgOverride ?? e.endFaceSvgOverride;
       if (svg) out.add(svg);
+      if (side) out.add(side);
     }
   }
   return out;
@@ -327,6 +329,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
   return {
     kind, zOffset, zMode, walkable, blendEdges: false,
     svg: svg ?? '',
+    sideTextureSvg: e.southFaceSvgOverride ?? e.endFaceSvgOverride,
     variant,
     connections: conn,
   };

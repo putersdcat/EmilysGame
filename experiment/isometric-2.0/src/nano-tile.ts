@@ -296,14 +296,15 @@ function drawRoofNano(
 ): boolean {
   const img = loadSvgImage(nano.svg);
   if (!img) return false;
+  const gableImg = nano.sideTextureSvg ? loadSvgImage(nano.sideTextureSvg) : null;
 
   const baseZ = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
-  const roofH = baseZ;
+  const roofH = MIN_NANO_HEIGHT;
   const x0 = WALL_OFFSET;
   const x1 = WALL_OFFSET + WALL_THICKNESS;
   const y0 = WALL_OFFSET;
   const y1 = WALL_OFFSET + WALL_THICKNESS;
-  const shadeFace = 'rgba(73,48,17,0.22)';
+  const gableFallback = '#d8c7a5';
 
   const p = (tx: number, ty: number, z: number): { x: number; y: number } => ({
     x: screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W,
@@ -358,14 +359,32 @@ function drawRoofNano(
   // Visible vertical triangular end faces of the cut cube.
   const westTri = highNorth ? [nwBase, nw, swBase] : [nwBase, sw, swBase];
   const eastTri = highNorth ? [neBase, seBase, ne] : [neBase, ne, seBase];
-  for (const tri of [westTri, eastTri]) {
+  const roofVariant = nano.variant ?? 'isolated';
+  const drawWestGable = roofVariant === 'isolated' || roofVariant === 'end-l';
+  const drawEastGable = roofVariant === 'isolated' || roofVariant === 'end-r';
+  const gableFaces = [
+    ...(drawWestGable ? [westTri] : []),
+    ...(drawEastGable ? [eastTri] : []),
+  ];
+  for (const tri of gableFaces) {
     ctx.beginPath();
     ctx.moveTo(tri[0].x, tri[0].y);
     ctx.lineTo(tri[1].x, tri[1].y);
     ctx.lineTo(tri[2].x, tri[2].y);
     ctx.closePath();
-    ctx.fillStyle = shadeFace;
-    ctx.fill();
+    if (gableImg) {
+      ctx.save();
+      ctx.clip();
+      const minX = Math.min(tri[0].x, tri[1].x, tri[2].x);
+      const minY = Math.min(tri[0].y, tri[1].y, tri[2].y);
+      const maxX = Math.max(tri[0].x, tri[1].x, tri[2].x);
+      const maxY = Math.max(tri[0].y, tri[1].y, tri[2].y);
+      ctx.drawImage(gableImg, minX, minY, Math.max(1, maxX - minX), Math.max(1, maxY - minY));
+      ctx.restore();
+    } else {
+      ctx.fillStyle = gableFallback;
+      ctx.fill();
+    }
     ctx.strokeStyle = 'rgba(66,49,20,0.55)';
     ctx.lineWidth = 1;
     ctx.stroke();

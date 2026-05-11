@@ -19,6 +19,9 @@ export interface RoofPaletteSpec {
   readonly straw: readonly string[];
   readonly ridge: string;
   readonly ridgeDark: string;
+  readonly gableBase: string;
+  readonly gableTrim: string;
+  readonly gableShadow: string;
   readonly salt: number;
 }
 
@@ -27,6 +30,7 @@ export interface RoofMaterial {
   svgSlopeLeft(): string;
   svgSlopeRight(): string;
   svgRidge(): string;
+  svgGable(): string;
   svgFor(kind: RoofPrimitiveKind): string;
 }
 
@@ -80,10 +84,25 @@ function ridgeField(spec: RoofPaletteSpec): string {
   return parts.join('\n    ');
 }
 
+function gableField(spec: RoofPaletteSpec): string {
+  const parts: string[] = [`<rect width="${SIZE}" height="${SIZE}" fill="${spec.gableBase}" />`];
+  parts.push(`<path d="M 0 0 L ${SIZE} ${SIZE}" stroke="${spec.gableTrim}" stroke-width="8" opacity="0.92" />`);
+  parts.push(`<path d="M ${SIZE} 0 L 0 ${SIZE}" stroke="${spec.gableTrim}" stroke-width="5" opacity="0.62" />`);
+  for (let y = 10; y < SIZE; y += 18) {
+    parts.push(`<path d="M 0 ${y} H ${SIZE}" stroke="${spec.gableShadow}" stroke-width="2" opacity="0.18" />`);
+  }
+  for (let x = 12; x < SIZE; x += 24) {
+    const wobble = (hash01(x, spec.salt, 71) - 0.5) * 5;
+    parts.push(`<path d="M ${(x + wobble).toFixed(1)} 0 V ${SIZE}" stroke="${spec.gableTrim}" stroke-width="2.4" opacity="0.22" />`);
+  }
+  return parts.join('\n    ');
+}
+
 export function createRoofMaterial(spec: RoofPaletteSpec): RoofMaterial {
   let left: string | null = null;
   let right: string | null = null;
   let ridge: string | null = null;
+  let gable: string | null = null;
 
   return {
     IMAGE_SIZE: ROOF_IMAGE_SIZE,
@@ -98,6 +117,10 @@ export function createRoofMaterial(spec: RoofPaletteSpec): RoofMaterial {
     svgRidge(): string {
       ridge ??= wrap(ridgeField(spec));
       return ridge;
+    },
+    svgGable(): string {
+      gable ??= wrap(gableField(spec));
+      return gable;
     },
     svgFor(kind: RoofPrimitiveKind): string {
       if (kind === 'roof-slope-left') return this.svgSlopeLeft();

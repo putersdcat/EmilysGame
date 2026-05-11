@@ -251,6 +251,12 @@ function roofTextureSvg(kind: string, texture: string): string | undefined {
   return undefined;
 }
 
+function roofGableTextureSvg(kind: string, texture: string): string | undefined {
+  if (texture !== 'thatch-roof') return undefined;
+  if (kind === 'roof-slope-left' || kind === 'roof-slope-right') return ThatchRoof.svgGable();
+  return undefined;
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 type ImgContent = { type: 'image'; data: string; mimeType: 'image/png' };
@@ -498,6 +504,8 @@ async function dispatch(): Promise<WorkerResult> {
         if (textureName) {
           const roofSvg = roofTextureSvg(e.kind, textureName);
           if (roofSvg) svgOverride = svgOverride ?? roofSvg;
+          const roofGableSvg = roofGableTextureSvg(e.kind, textureName);
+          if (roofGableSvg) southFaceSvgOverride = southFaceSvgOverride ?? roofGableSvg;
         }
         if (textureName) {
           const spec = BRICK_TEXTURES[textureName];

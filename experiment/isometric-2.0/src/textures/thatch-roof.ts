@@ -11,6 +11,9 @@ export const PALETTE: RoofPaletteSpec = {
   straw: ['#c7aa4f', '#b9963d', '#d4b95b', '#9d7f33', '#e0c66a'],
   ridge: '#80652d',
   ridgeDark: '#493515',
+  gableBase: '#ded0b1',
+  gableTrim: '#76512d',
+  gableShadow: '#6b563d',
   salt: 12011,
 };
 
@@ -19,4 +22,5 @@ const material = createRoofMaterial(PALETTE);
 export const svgSlopeLeft = material.svgSlopeLeft;
 export const svgSlopeRight = material.svgSlopeRight;
 export const svgRidge = material.svgRidge;
+export const svgGable = material.svgGable;
 export const svgFor = (kind: RoofPrimitiveKind): string => material.svgFor(kind);
