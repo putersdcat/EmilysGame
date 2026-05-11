@@ -1,32 +1,26 @@
-/**
- * stone-brick.ts — factory-backed gray masonry brick material.
- *
- * First consumer of brick-family.ts. It reuses the same 48×48 modular
- * running-bond geometry and top/south/east/end face-slice contract proven by
- * red-clinker, but swaps in a neutral stone palette.
- */
+/** sandstone-brick.ts — factory-backed pale desert sandstone brick material. */
 
 import { BRICK_IMAGE_SIZE, createBrickMaterial, type BrickPaletteSpec } from './brick-family';
 
 export const IMAGE_SIZE = BRICK_IMAGE_SIZE;
 
 export const PALETTE: BrickPaletteSpec = {
-  mortar: '#3a3835',
-  rBase: 158,
-  gBase: 158,
-  bBase: 154,
-  rVar: 18,
+  mortar: '#6f5d3a',
+  rBase: 188,
+  gBase: 151,
+  bBase: 86,
+  rVar: 20,
   gVar: 18,
-  bVar: 16,
-  rMin: 104,
+  bVar: 14,
+  rMin: 132,
   gMin: 104,
-  bMin: 100,
-  rMax: 204,
-  gMax: 204,
-  bMax: 200,
-  hi: [22, 22, 22],
-  lo: [26, 26, 26],
-  salt: 0x570A3,
+  bMin: 58,
+  rMax: 226,
+  gMax: 196,
+  bMax: 126,
+  hi: [28, 24, 16],
+  lo: [24, 22, 16],
+  salt: 0x5A9D51,
 };
 
 const material = createBrickMaterial(PALETTE);

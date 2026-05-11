@@ -37,6 +37,7 @@ import {
   NANO_GRID,
   MICRO_TILE_SIZE,
   type NanoTile,
+  type NanoWeatheringOverlay,
   type NanoTileKind,
   type NanoZMode,
   type FeatureVariant,
@@ -56,6 +57,9 @@ const NANO_Z: Partial<Record<string, number>> = {
   'stone-wall':     4,
   'cathedral-wall': 6,
   'homestead-wall': 3,
+  'roof-slope-left': 4,
+  'roof-slope-right': 4,
+  'roof-ridge': 4,
   'fence':          2,
   'gate':           2,
   'troll-bridge':   1,
@@ -69,6 +73,9 @@ const NANO_ZMODE: Partial<Record<string, NanoZMode>> = {
   'stone-wall':     'positive',
   'cathedral-wall': 'positive',
   'homestead-wall': 'positive',
+  'roof-slope-left': 'positive',
+  'roof-slope-right': 'positive',
+  'roof-ridge': 'positive',
   'fence':          'positive',
   'gate':           'positive',
   'troll-bridge':   'positive',
@@ -80,6 +87,7 @@ const NANO_ZMODE: Partial<Record<string, NanoZMode>> = {
 
 const NANO_WALKABLE: Partial<Record<string, boolean>> = {
   'stone-wall': false, 'cathedral-wall': false, 'homestead-wall': false,
+  'roof-slope-left': false, 'roof-slope-right': false, 'roof-ridge': false,
   'fence': false, 'gate': true, 'troll-bridge': true, 'bridge': true,
   'river': false, 'river-bank': true, 'tall-grass': true,
 };
@@ -132,6 +140,8 @@ export interface CanvasSceneEntry {
   eastFaceSvgByPlane?: Readonly<Record<number, string>>;
   /** Optional exposed end-face material slices keyed by wall plane. */
   endFaceSvgByPlane?: Readonly<Record<number, string>>;
+  /** Optional render-time weathering overlays applied by the Nano renderer. */
+  weatheringOverlays?: readonly NanoWeatheringOverlay[];
   /** Keep explicit face-slice colors equal across top/side edges. */
   faceSliceEqualLighting?: boolean;
   /** Optional color for exposed end-cap/header grout ticks. */
@@ -300,6 +310,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       southFaceTextureByPlane: e.southFaceSvgByPlane,
       eastFaceTextureByPlane: e.eastFaceSvgByPlane,
       endFaceTextureByPlane: e.endFaceSvgByPlane,
+      weatheringOverlays: e.weatheringOverlays,
       faceSliceEqualLighting: e.faceSliceEqualLighting,
       endCapTickColor: e.endCapTickColor,
       variant,

@@ -11,7 +11,8 @@ import type {
   NanoTile,
   FeatureVariant,
 } from './types';
-import { woodenFenceSvg, gateSvg, homesteadWallSvg, cathedralWallSvg } from './solver';
+import { woodenFenceSvg, gateSvg } from './solver';
+import { TimberFrameWall, DarkCathedralStone } from './textures';
 
 // ─── Inline SVGs ─────────────────────────────────────────────
 // These SVGs are generated from solver.ts functions (shared source of truth).
@@ -36,6 +37,42 @@ function makeFenceNano(variant: FeatureVariant): NanoTile {
     walkable: { type: 'never' },
     blendEdges: false,
     variant,
+  };
+}
+
+type FaceSliceMaterial = {
+  svg(): string;
+  svgTop(): string;
+  svgSouth(): string;
+  svgEast(): string;
+  svgTopV?: () => string;
+  svgEnd?: () => string;
+};
+
+function makeExtrudedWallNano(
+  kind: 'homestead-wall' | 'cathedral-wall',
+  zOffset: number,
+  material: FaceSliceMaterial,
+  walkable: NanoTile['walkable'],
+  variant?: FeatureVariant,
+): NanoTile {
+  return {
+    kind,
+    zOffset,
+    zMode: 'positive',
+    svg: material.svg(),
+    sideTextureSvg: material.svg(),
+    topTextureSvg: material.svgTop(),
+    topFaceTextureSvg: material.svgTop(),
+    topFaceTextureSvgV: material.svgTopV?.(),
+    southFaceTextureSvg: material.svgSouth(),
+    eastFaceTextureSvg: material.svgEast(),
+    endFaceTextureSvg: material.svgEnd?.(),
+    walkable,
+    blendEdges: false,
+    variant,
+    topRotateWithAxis: !!material.svgTopV,
+    endCapTicks: false,
   };
 }
 
@@ -90,14 +127,7 @@ function createHomesteadSmall(): MacroAssembly {
   // ── Center hut (2,2) ────────────────────────────────────────
   placements.push({
     col: 2, row: 2,
-    nanos: [{
-      kind: 'homestead-wall',
-      zOffset: 10,
-      zMode: 'positive',
-      svg: homesteadWallSvg(),
-      walkable: { type: 'always' },
-      blendEdges: false,
-    }],
+    nanos: [makeExtrudedWallNano('homestead-wall', 10, TimberFrameWall, { type: 'always' })],
   });
 
   return {
@@ -120,14 +150,7 @@ function createRuinedCathedral(): MacroAssembly {
   for (let r = 0; r < 5; r++) {
     placements.push({
       col: 0, row: r,
-      nanos: [{
-        kind: 'cathedral-wall',
-        zOffset: 16,
-        zMode: 'positive',
-        svg: cathedralWallSvg(),
-        walkable: { type: 'never' },
-        blendEdges: false,
-      }],
+      nanos: [makeExtrudedWallNano('cathedral-wall', 16, DarkCathedralStone, { type: 'never' }, 'straight-h')],
     });
   }
 
@@ -135,28 +158,14 @@ function createRuinedCathedral(): MacroAssembly {
   for (let r = 0; r < 5; r++) {
     placements.push({
       col: 2, row: r,
-      nanos: [{
-        kind: 'cathedral-wall',
-        zOffset: 12,
-        zMode: 'positive',
-        svg: cathedralWallSvg('end-b'),
-        walkable: { type: 'never' },
-        blendEdges: false,
-      }],
+      nanos: [makeExtrudedWallNano('cathedral-wall', 12, DarkCathedralStone, { type: 'never' }, 'end-b')],
     });
   }
 
   // ── Spire (col=1, row=0): towering central spire ─────────────
   placements.push({
     col: 1, row: 0,
-    nanos: [{
-      kind: 'cathedral-wall',
-      zOffset: 26,
-      zMode: 'positive',
-      svg: cathedralWallSvg('isolated'),
-      walkable: { type: 'never' },
-      blendEdges: false,
-    }],
+    nanos: [makeExtrudedWallNano('cathedral-wall', 26, DarkCathedralStone, { type: 'never' }, 'isolated')],
   });
 
   // ── Rubble patches (walkable, lower z) ────────────────────────

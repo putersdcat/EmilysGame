@@ -138,7 +138,10 @@ export type NanoTileKind =
   | 'gate'
   | 'troll-bridge'
   | 'cathedral-wall'
-  | 'homestead-wall';
+  | 'homestead-wall'
+  | 'roof-slope-left'
+  | 'roof-slope-right'
+  | 'roof-ridge';
 
 /**
  * MicroTile: The fundamental rendering unit.
@@ -226,6 +229,8 @@ export interface NanoTile {
   readonly eastFaceTextureByPlane?: Readonly<Record<number, string>>;
   /** Optional exposed end-face slices keyed by wall plane (0,48,96,144). */
   readonly endFaceTextureByPlane?: Readonly<Record<number, string>>;
+  /** Optional render-time weathering overlays applied with actual face dimensions. */
+  readonly weatheringOverlays?: readonly NanoWeatheringOverlay[];
   /** When true, do not darken one face after drawing explicit face slices. */
   readonly faceSliceEqualLighting?: boolean;
   /** Optional color for exposed end-cap/header grout ticks. */
@@ -264,6 +269,19 @@ export interface NanoTile {
    * stone joints.
    */
   readonly endCapTicks?: boolean;
+}
+
+export interface NanoWeatheringOverlay {
+  readonly kind: 'moss' | 'dirt' | 'dust' | 'mud' | 'soot' | 'edge-wear' | 'snow' | 'cracks';
+  readonly color: string;
+  readonly intensity: number;
+  readonly opacity: number;
+  readonly seed: number;
+  readonly faces?: readonly ('south' | 'east' | 'top')[];
+  /** 0..1 y-range over the actual rendered face. Vertical faces: top→bottom. Top faces: local north→south. */
+  readonly yRange?: readonly [number, number];
+  /** 0..1 x-range over the actual rendered face. */
+  readonly xRange?: readonly [number, number];
 }
 
 /**

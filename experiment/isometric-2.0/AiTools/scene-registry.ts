@@ -30,8 +30,7 @@ import type { FeatureVariant, FeatureConnections } from '../src/types.js';
 import { buildExtrudedFaceMarkup } from './game-tile-renderer.js';
 
 /** Nano kinds that use 3-face extruded box rendering via buildExtrudedFaceMarkup(). */
-const EXTRUDED_NANO_KINDS = new Set<NanoKind>(['stone-wall']);
-// TODO: cathedral-wall, homestead-wall once top-face SVGs are available for those kinds
+const EXTRUDED_NANO_KINDS = new Set<NanoKind>(['stone-wall', 'cathedral-wall', 'homestead-wall']);
 
 // ─── Types ───────────────────────────────────────────────────
 

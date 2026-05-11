@@ -1,32 +1,26 @@
-/**
- * red-clinker.ts — factory-backed red clinker brick material.
- *
- * Keeps the proven 48×48 modular brick geometry / face-slice contract, now
- * supplied by brick-family.ts so sibling palettes share the exact same rules.
- */
+/** mud-brick.ts — factory-backed warm adobe / packed mud brick material. */
 
 import { BRICK_IMAGE_SIZE, createBrickMaterial, type BrickPaletteSpec } from './brick-family';
 
 export const IMAGE_SIZE = BRICK_IMAGE_SIZE;
 
 export const PALETTE: BrickPaletteSpec = {
-  mortar: '#2a201c',
-  rBase: 136,
-  gBase: 55,
-  bBase: 29,
-  rVar: 24,
-  gVar: 14,
-  bVar: 9,
-  rMin: 84,
-  gMin: 30,
-  bMin: 16,
+  mortar: '#4a3325',
+  rBase: 142,
+  gBase: 92,
+  bBase: 58,
+  rVar: 22,
+  gVar: 16,
+  bVar: 12,
+  rMin: 88,
+  gMin: 54,
+  bMin: 34,
   rMax: 188,
-  gMax: 88,
-  bMax: 52,
-  hi: [28, 20, 12],
-  lo: [28, 20, 14],
-  salt: 0xC11A,
-  topOpacity: 0.92,
+  gMax: 130,
+  bMax: 88,
+  hi: [24, 18, 12],
+  lo: [24, 18, 12],
+  salt: 0xAD0BE,
 };
 
 const material = createBrickMaterial(PALETTE);

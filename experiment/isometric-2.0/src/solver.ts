@@ -17,7 +17,7 @@ import {
   type MacroAssembly,
   WORLD_UNIT_TILES,
 } from './types';
-import { StoneBrick } from './textures';
+import { StoneBrick, TimberFrameWall, DarkCathedralStone } from './textures';
 
 // ─── Feature Configuration ───────────────────────────────────
 
@@ -202,6 +202,16 @@ export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:
  */
 export function stoneWallSvg(_variant: FeatureVariant): string {
   return StoneBrick.svg();
+}
+
+/** Default homestead wall side material. */
+export function homesteadWallSvg(_variant: FeatureVariant = 'straight-h'): string {
+  return TimberFrameWall.svg();
+}
+
+/** Default cathedral wall side material. */
+export function cathedralWallSvg(_variant: FeatureVariant = 'straight-h'): string {
+  return DarkCathedralStone.svg();
 }
 
 /**
@@ -636,6 +646,18 @@ export function getVariantSvg(
       return riverSvg(variant, connections);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
+    case 'gate':
+      return gateSvg(false);
+    case 'bridge':
+      return bridgeSvg();
+    case 'troll-bridge':
+      return trollBridgeSvg(false);
+    case 'homestead-wall':
+      return homesteadWallSvg(variant);
+    case 'cathedral-wall':
+      return cathedralWallSvg(variant);
+    case 'river-bank':
+      return riverSvg(variant, connections);
     default:
       return null;
   }
@@ -892,7 +914,7 @@ export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind
 // ─── Gate SVG Generator ───────────────────────────────────────
 
 /** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
-function gateSvg(unlocked: boolean): string {
+export function gateSvg(unlocked = false): string {
   const parts: string[] = [];
   parts.push(`<rect width="144" height="144" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
@@ -940,7 +962,7 @@ function gateSvg(unlocked: boolean): string {
 // ─── Bridge SVG Generator ─────────────────────────────────────
 
 /** Free bridge — wooden planks over water. No lock. */
-function bridgeSvg(): string {
+export function bridgeSvg(): string {
   const parts: string[] = [];
   // River base
   parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
@@ -970,7 +992,7 @@ function bridgeSvg(): string {
 }
 
 /** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
-function trollBridgeSvg(unlocked: boolean): string {
+export function trollBridgeSvg(unlocked = false): string {
   const parts: string[] = [];
   // River base
   parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
@@ -1255,6 +1277,50 @@ export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
   }
 
   return map;
+}
+
+/**
+ * Conservative point-walkability helper used by player movement.
+ *
+ * The current experiment stores a chunk-level boolean walkable map per micro tile,
+ * not a richer per-pixel/per-nano occupancy mask, so this helper resolves the
+ * effective walkability for the containing tile while still honoring conditional
+ * gates / bridges against the live condition state.
+ */
+export function isPointWalkableInTile(
+  tile: MicroTile,
+  activeConditions: ReadonlyMap<string, 'locked' | 'unlocked'>,
+  _localColFrac: number,
+  _localRowFrac: number,
+): boolean {
+  if (!tile.nanos || tile.nanos.length === 0) return true;
+
+  let hasNeverBlock = false;
+  let hasAlwaysPass = false;
+  let hasConditionalUnlocked = false;
+  let hasConditionalLocked = false;
+
+  for (const nano of tile.nanos) {
+    switch (nano.walkable.type) {
+      case 'never':
+        hasNeverBlock = true;
+        break;
+      case 'always':
+        hasAlwaysPass = true;
+        break;
+      case 'conditional': {
+        const state = activeConditions.get(nano.walkable.conditionId);
+        if (state === 'unlocked') hasConditionalUnlocked = true;
+        else hasConditionalLocked = true;
+        break;
+      }
+    }
+  }
+
+  if (hasConditionalLocked) return false;
+  if (hasConditionalUnlocked || hasAlwaysPass) return true;
+  if (hasNeverBlock) return false;
+  return true;
 }
 
 // ─── BFS Traversability ───────────────────────────────────────

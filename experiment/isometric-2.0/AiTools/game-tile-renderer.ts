@@ -31,9 +31,10 @@
  * TODO: DOC — extend for animated tiles, custom assembly scenes
  */
 
-import { getVariantSvg, woodenFenceSvg, stoneWallTopSvg, wallBounds, stoneWallSvg } from '../src/solver.js';
+import { getVariantSvg, woodenFenceSvg, stoneWallTopSvg, wallBounds } from '../src/solver.js';
 import type { FeatureVariant, FeatureConnections, NanoTileKind } from '../src/types.js';
 import { renderSvg, type RenderResult } from './svg-renderer-tool.js';
+import { DarkCathedralStone, TimberFrameWall } from '../src/textures/index.js';
 
 // ─── Game engine constants ────────────────────────────────────
 // Keep in sync with: nano-tile.ts (NANO_Z_SCALE, MIN_NANO_HEIGHT, WALL_OFFSET, WALL_THICKNESS)
@@ -296,7 +297,7 @@ function buildExtrudedFacesAt(
  * extend above y=0). Mark the AssemblyChainItem with renderMode: 'extruded' so the
  * assembly renderer knows to skip the z-pin transform and embed markup directly.
  *
- * @param kind      - NanoTileKind (stone-wall). cathedral-wall/homestead-wall: TODO
+ * @param kind      - NanoTileKind (stone-wall / cathedral-wall / homestead-wall)
  * @param variant   - Feature variant. Default: 'straight-h'
  * @param zOffset   - Z height (used with NANO_Z_SCALE). Default: 4
  * @param connections - Optional explicit connections (inferred from variant if omitted)
@@ -448,9 +449,9 @@ function buildFlatSvg(
 // ─── Public API ───────────────────────────────────────────────
 
 /** Kinds that use 3-face extruded box rendering (sideTextureSvg + topTextureSvg path). */
-const EXTRUDED_KINDS = new Set<string>(['stone-wall']);
+const EXTRUDED_KINDS = new Set<string>(['stone-wall', 'cathedral-wall', 'homestead-wall']);
 /** Kinds that use standing Z-pinned billboard rendering (drawPositiveNano path, flat SVG panel). */
-const BILLBOARD_KINDS = new Set<string>(['fence', 'gate', 'troll-bridge', 'bridge', 'cathedral-wall', 'homestead-wall']);
+const BILLBOARD_KINDS = new Set<string>(['fence', 'gate', 'troll-bridge', 'bridge']);
 /** Kinds that use sunken flat iso rendering. */
 const NEGATIVE_KINDS = new Set<string>(['river', 'river-bank']);
 /** Kinds that use flat semi-transparent overlay rendering. */
@@ -502,7 +503,11 @@ export function buildGameTileSvg(
   if (EXTRUDED_KINDS.has(kind)) {
     const sideSvg = getVariantSvg(kind as NanoTileKind, variant, connections, zOffset, worldCol, worldRow);
     if (!sideSvg) throw new Error(`getVariantSvg returned null for ${kind}/${variant}`);
-    const topSvg = stoneWallTopSvg(variant);
+    const topSvg = kind === 'stone-wall'
+      ? stoneWallTopSvg(variant)
+      : kind === 'cathedral-wall'
+        ? DarkCathedralStone.svgTop()
+        : TimberFrameWall.svgTop();
     return buildExtrudedSvg(sideSvg, topSvg, variant, zOffset, sX, sY, canvasW, canvasH, bg);
   }
 

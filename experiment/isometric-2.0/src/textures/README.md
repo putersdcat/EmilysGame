@@ -1,30 +1,67 @@
 # Textures
 
-Source-of-truth SVG texture modules for stone-wall, fence, river, etc.
+Source-of-truth procedural SVG material modules for Iso 2.0 structural Nano tiles.
 
-## Contract
+## Current direction: material families
 
-Every texture module exports:
+Do not add one-off wall texture primitives when a palette or render-time overlay can express the variation. Prefer reusable material factories:
 
-- `IMAGE_SIZE` — the canonical pixel size of one tile of the image (always 128 here, divides evenly into the 128 px game tile).
-- `svg(): string` — the full SVG string for one 128×128 tile.
+- `brick-family.ts`
+  - 48×48 modular running-bond brick geometry
+  - palettes: `red-clinker`, `stone-brick`, `mud-brick`, `sandstone-brick`
+- `ancient-stone-family.ts`
+  - periodic 3D Voronoi/rubble-stone volume
+  - palettes: `ancient-stone`, `limestone`, `dark-cathedral-stone`
+- `homestead-family.ts`
+  - rural dwelling wall-material family for huts / cottages / homesteads
+  - palettes: `timber-frame-wall`, `plaster-whitewash-wall`, `rough-wood-plank-wall`
+  - companion foundation palette: `cottage-stone-foundation` (via `ancient-stone-family.ts`)
+- `roof-family.ts`
+  - clipped roof nano primitive textures for sloped cottage roofs
+  - primitives: `roof-slope-left`, `roof-slope-right`, `roof-ridge`
+  - first palette: `thatch-roof`
 
-The image MUST be **self-tileable** when laid edge-to-edge in both axes:
-its right edge must match its left, and its bottom must match its top,
-so a single rasterized image can be fed to `ctx.createPattern(img, 'repeat')`
-and tile seamlessly across any sized fill rect.
+## Face-slice contract
 
-Patterns must use **solid backgrounds** (no transparency through mortar /
-gap pixels) so biome tiles do not bleed through wall faces.
+Extruded wall materials should expose the face slices that the Canvas renderer understands:
 
-## Renderer contract
+- `svg(): string` — legacy/default entry point, usually same as top
+- `svgTop(): string` — top / XY face
+- `svgSouth(edgeCoord?): string` — south/front XZ face when the family needs plane-specific slices
+- `svgEast(edgeCoord?): string` — east/right YZ face when the family needs plane-specific slices
+- `svgTopV?(): string` — optional V-axis top slice for directional brick materials
+- `svgEnd?(edgeCoord?): string` — optional authored end-cap slice for brick/header ends
 
-The canvas renderer (nano-tile.ts) uses `createPattern` on this single
-image for BOTH the side faces AND the top face of stone walls. This
-guarantees identical brick scale on every face, and aligned mortar lines
-where the top meets each side.
+The renderer consumes these through `render-worker.ts` texture shorthands and forwards them to `nano-tile.ts` as `topFaceTextureSvg`, `southFaceTextureSvg`, `eastFaceTextureSvg`, etc.
 
-Pattern phase is anchored relative to the **wall-top screen line** (so
-the top edge of the side face starts at the same pattern y the front
-edge of the top face starts at) and the **game-tile world origin** (so
-adjacent tiles share grout phase).
+## Tiling and backgrounds
+
+Base material slices must remain self-contained and repeatable:
+
+- use solid backgrounds; no transparency through mortar/gaps
+- preserve 48×48 modular alignment for brick-family materials
+- avoid baking contextual weathering into base repeating textures
+
+## Weathering overlays
+
+Weathering is render-time context, not a baked texture primitive.
+
+Examples:
+
+- muddy lower vertical faces only where a wall touches ground
+- moss on damp lower vertical faces or shaded tops
+- snow on top faces only
+- cracks/edge wear on selected elements
+
+Render-time weathering uses `NanoWeatheringOverlay` via `NanoTile.weatheringOverlays`, so a lower grime band is computed against the actual rendered face height and does **not** repeat every 48px up a tall pillar.
+
+## Roof primitives
+
+Roofs are not wall-face textures. `roof-family.ts` provides SVG source textures
+that `nano-tile.ts` clips into custom sloped roof geometry for the roof nano
+kinds. This keeps the cottage roof shape engine-backed while allowing material
+palettes like thatch/shingle/slate to evolve separately.
+
+## Removed legacy fallback
+
+`stone-stub.ts` was removed. Demo/fallback stone-wall paths now use the factory-backed `StoneBrick` material instead of a separate stub texture path.

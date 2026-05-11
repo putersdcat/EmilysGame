@@ -79,6 +79,12 @@ function clipDiamond(
   ctx.clip();
 }
 
+function hash01(a: number, b: number, c: number): number {
+  let h = (a * 374761393 + b * 668265263 + c * 2246822519) >>> 0;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  return ((h ^ (h >>> 16)) >>> 0) / 0xffffffff;
+}
+
 // ─── Positive Z Rendering ────────────────────────────────────
 
 /**
@@ -242,6 +248,147 @@ function drawFlatNano(
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);
   ctx.globalAlpha = 0.7;
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
+
+  ctx.restore();
+  return true;
+}
+
+function isRoofNanoKind(kind: NanoTile['kind']): boolean {
+  return kind === 'roof-slope-left' || kind === 'roof-slope-right' || kind === 'roof-ridge';
+}
+
+function drawClippedImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  pts: ReadonlyArray<{ x: number; y: number }>,
+  alpha = 1,
+): void {
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  for (const p of pts) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  const w = Math.max(1, maxX - minX);
+  const h = Math.max(1, maxY - minY);
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.closePath();
+  ctx.clip();
+  ctx.globalAlpha *= alpha;
+  ctx.drawImage(img, minX, minY, w, h);
+  ctx.restore();
+}
+
+/** Draw a 48×48×48 wedge roof nano on the central 48×48 wall footprint. */
+function drawRoofNano(
+  ctx: CanvasRenderingContext2D,
+  nano: NanoTile,
+  screenX: number,
+  screenY: number,
+): boolean {
+  const img = loadSvgImage(nano.svg);
+  if (!img) return false;
+
+  const baseZ = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
+  const roofH = baseZ;
+  const x0 = WALL_OFFSET;
+  const x1 = WALL_OFFSET + WALL_THICKNESS;
+  const y0 = WALL_OFFSET;
+  const y1 = WALL_OFFSET + WALL_THICKNESS;
+  const shadeFace = 'rgba(73,48,17,0.22)';
+
+  const p = (tx: number, ty: number, z: number): { x: number; y: number } => ({
+    x: screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W,
+    y: screenY + (tx + ty) * ISO_Y_PER_SOURCE_PX - z,
+  });
+
+  // A roof slope is a cube-sized triangular prism over the centered nano wall
+  // block: low edge at wall-top height, high edge one 48px cube higher.
+  // Slope across Y so the hypotenuse face is visible from the current camera;
+  // an X-axis slope projects nearly edge-on and reads as a thin sail.
+  const highNorth = nano.kind !== 'roof-slope-right';
+  const zNorth = highNorth ? baseZ + roofH : baseZ;
+  const zSouth = highNorth ? baseZ : baseZ + roofH;
+
+  const nw = p(x0, y0, zNorth);
+  const sw = p(x0, y1, zSouth);
+  const se = p(x1, y1, zSouth);
+  const ne = p(x1, y0, zNorth);
+  const nwBase = p(x0, y0, baseZ);
+  const swBase = p(x0, y1, baseZ);
+  const seBase = p(x1, y1, baseZ);
+  const neBase = p(x1, y0, baseZ);
+
+  ctx.save();
+  ctx.lineJoin = 'round';
+
+  if (nano.kind === 'roof-ridge') {
+    const highA = highNorth ? nw : sw;
+    const highB = highNorth ? ne : se;
+    const dx = highB.x - highA.x;
+    const dy = highB.y - highA.y;
+    const len = Math.max(1, Math.hypot(dx, dy));
+    const ox = -dy / len * 4;
+    const oy = dx / len * 4;
+    const pts = [
+      { x: highA.x + ox, y: highA.y + oy },
+      { x: highA.x - ox, y: highA.y - oy },
+      { x: highB.x - ox, y: highB.y - oy },
+      { x: highB.x + ox, y: highB.y + oy },
+    ];
+    drawClippedImage(ctx, img, pts);
+    ctx.strokeStyle = 'rgba(52,38,14,0.84)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(highA.x, highA.y);
+    ctx.lineTo(highB.x, highB.y);
+    ctx.stroke();
+    ctx.restore();
+    return true;
+  }
+
+  // Visible vertical triangular end faces of the cut cube.
+  const westTri = highNorth ? [nwBase, nw, swBase] : [nwBase, sw, swBase];
+  const eastTri = highNorth ? [neBase, seBase, ne] : [neBase, ne, seBase];
+  for (const tri of [westTri, eastTri]) {
+    ctx.beginPath();
+    ctx.moveTo(tri[0].x, tri[0].y);
+    ctx.lineTo(tri[1].x, tri[1].y);
+    ctx.lineTo(tri[2].x, tri[2].y);
+    ctx.closePath();
+    ctx.fillStyle = shadeFace;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(66,49,20,0.55)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Hypotenuse/sloped roof face — this is the actual roof-textured cut face.
+  const slopeFace = [nw, ne, se, sw];
+  drawClippedImage(ctx, img, slopeFace);
+  if (nano.kind === 'roof-slope-right') {
+    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+    ctx.beginPath();
+    ctx.moveTo(slopeFace[0].x, slopeFace[0].y);
+    for (let i = 1; i < slopeFace.length; i++) ctx.lineTo(slopeFace[i].x, slopeFace[i].y);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.moveTo(slopeFace[0].x, slopeFace[0].y);
+  for (let i = 1; i < slopeFace.length; i++) ctx.lineTo(slopeFace[i].x, slopeFace[i].y);
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(66,49,20,0.82)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
   ctx.restore();
   return true;
@@ -488,6 +635,48 @@ export function drawExtrudedNano(
     }
   }
 
+  function drawWeathering(face: 'south' | 'east' | 'top', width: number, height: number, x0: number, y0: number): void {
+    const overlays = nano.weatheringOverlays;
+    if (!overlays?.length) return;
+
+    for (const overlay of overlays) {
+      if (overlay.faces && !overlay.faces.includes(face)) continue;
+      if (overlay.kind === 'snow' && face !== 'top') continue;
+      if (overlay.intensity <= 0 || overlay.opacity <= 0) continue;
+
+      const xMin = Math.floor(width * Math.max(0, Math.min(1, overlay.xRange?.[0] ?? 0)));
+      const xMax = Math.ceil(width * Math.max(0, Math.min(1, overlay.xRange?.[1] ?? 1)));
+      const yMin = Math.floor(height * Math.max(0, Math.min(1, overlay.yRange?.[0] ?? 0)));
+      const yMax = Math.ceil(height * Math.max(0, Math.min(1, overlay.yRange?.[1] ?? 1)));
+      const cell = overlay.kind === 'edge-wear' ? 6 : overlay.kind === 'snow' || overlay.kind === 'mud' ? 3 : 4;
+      const maxSize = overlay.kind === 'snow' || overlay.kind === 'mud' ? 5 : overlay.kind === 'moss' ? 4 : 2;
+      const threshold = Math.max(0, Math.min(1, overlay.intensity));
+      const alpha = Math.max(0, Math.min(1, overlay.opacity));
+
+      ctx.fillStyle = overlay.color;
+      ctx.globalAlpha *= alpha;
+      for (let y = yMin; y < yMax; y += cell) {
+        for (let x = xMin; x < xMax; x += cell) {
+          if (hash01(x + overlay.seed, y + overlay.seed * 3, overlay.seed ^ (face === 'top' ? 17 : face === 'south' ? 29 : 41)) > threshold) continue;
+          if (overlay.kind === 'cracks') {
+            if (hash01(x, y, overlay.seed + 101) > 0.34) continue;
+            const len = 4 + Math.floor(hash01(x, overlay.seed + 103, y) * 8);
+            const horizontal = hash01(y, overlay.seed + 107, x) > 0.38;
+            ctx.fillRect(x0 + x, y0 + y, horizontal ? len : 1, horizontal ? 1 : len);
+            if (hash01(x, y, overlay.seed + 109) > 0.55) ctx.fillRect(x0 + x + Math.floor(len / 2), y0 + y, 1, Math.max(2, Math.floor(len / 2)));
+            continue;
+          }
+          const ox = Math.floor(hash01(x, y, overlay.seed + 11) * 2);
+          const oy = Math.floor(hash01(y, x, overlay.seed + 23) * 2);
+          const w = 1 + Math.floor(hash01(x, overlay.seed, y + 31) * maxSize);
+          const h = 1 + Math.floor(hash01(y, overlay.seed, x + 43) * maxSize);
+          ctx.fillRect(x0 + x + ox, y0 + y + oy, w, h);
+        }
+      }
+      ctx.globalAlpha /= alpha;
+    }
+  }
+
   if (southTextureSvg || eastTextureSvg || topTextureSvg) {
     // Texture-level opt-out for brick-header-style end ticks. Default is
     // true (correct for brick textures); ancient-stone Voronoi sets false
@@ -533,6 +722,7 @@ export function drawExtrudedNano(
             ctx.translate(ex, ey);
             ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.drawImage(southPlaneImg, r.x, 0, r.w, drawH, 0, -drawH, r.w, drawH);
+            drawWeathering('south', r.w, drawH, 0, -drawH);
             if (drawEndCapTicks && isEnd && !endTextureSvg) {
               drawHeaderJoints(r.w, drawH, endCapTickColor, southPlane);
             }
@@ -551,6 +741,7 @@ export function drawExtrudedNano(
             ctx.translate(ex, ey);
             ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
             ctx.drawImage(eastPlaneImg, r.y, 0, r.h, drawH, 0, -drawH, r.h, drawH);
+            drawWeathering('east', r.h, drawH, 0, -drawH);
             if (!nano.faceSliceEqualLighting) {
               ctx.fillStyle = 'rgba(0,0,0,0.18)';
               ctx.fillRect(0, -drawH, r.h, drawH);
@@ -601,6 +792,7 @@ export function drawExtrudedNano(
         for (const r of tops) {
           const img = r.v ? topVImg : topImg;
           ctx.drawImage(img, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+          drawWeathering('top', r.w, r.h, r.x, r.y);
         }
         ctx.restore();
 
@@ -891,7 +1083,9 @@ export function drawNanoStack(
         if (!drawFlatNano(ctx, nano, screenX, screenY)) allImagesLoaded = false;
         break;
       case 'positive':
-        if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
+        if (isRoofNanoKind(nano.kind)) {
+          if (!drawRoofNano(ctx, nano, screenX, screenY)) allImagesLoaded = false;
+        } else if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
           if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun, neighborWalls)) allImagesLoaded = false;
         } else {
           if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;

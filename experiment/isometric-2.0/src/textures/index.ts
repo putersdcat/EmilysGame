@@ -10,5 +10,17 @@
 
 export * as StoneBrick   from './stone-brick';
 export * as RedClinker   from './red-clinker';
+export * as MudBrick     from './mud-brick';
+export * as SandstoneBrick from './sandstone-brick';
 export * as AncientStone from './ancient-stone';
-export * as StoneStub    from './stone-stub';
+export * as BrickFamily  from './brick-family';
+export * as AncientStoneFamily from './ancient-stone-family';
+export * as Limestone from './limestone';
+export * as DarkCathedralStone from './dark-cathedral-stone';
+export * as HomesteadFamily from './homestead-family';
+export * as TimberFrameWall from './timber-frame-wall';
+export * as PlasterWhitewashWall from './plaster-whitewash-wall';
+export * as RoughWoodPlankWall from './rough-wood-plank-wall';
+export * as CottageStoneFoundation from './cottage-stone-foundation';
+export * as RoofFamily from './roof-family';
+export * as ThatchRoof from './thatch-roof';

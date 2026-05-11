@@ -24,7 +24,21 @@ import type { SceneEntry } from './scene-registry.js';
 import { renderGameTile, buildGameTileSvg } from './game-tile-renderer.js';
 import { renderNanoTile, renderNanoScene } from './canvas-renderer.js';
 import type { CanvasSceneEntry, CanvasPlayerEntry } from './canvas-renderer.js';
-import { StoneBrick, RedClinker, AncientStone } from '../src/textures/index.js';
+import {
+  StoneBrick,
+  RedClinker,
+  MudBrick,
+  SandstoneBrick,
+  AncientStone,
+  Limestone,
+  DarkCathedralStone,
+  TimberFrameWall,
+  PlasterWhitewashWall,
+  RoughWoodPlankWall,
+  CottageStoneFoundation,
+  ThatchRoof,
+} from '../src/textures/index.js';
+import type { RoofPrimitiveKind } from '../src/textures/roof-family.js';
 
 /**
  * Named brick textures available to scene entries via `texture: '<name>'`.
@@ -55,38 +69,187 @@ interface BrickTextureSpec {
   endCapTicks: boolean;
   faceSliceEqualLighting?: boolean;
   endCapTickColor?: string;
+  weatheringOverlays?: CanvasSceneEntry['weatheringOverlays'];
   /** True for textures whose orientation should match the wall axis
    *  (bricks). False for rotation-invariant textures (Voronoi). */
   topRotateWithAxis: boolean;
 }
-const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
-  'stone-brick':    { svg: () => StoneBrick.svg(),    topOutline: true,  topRotateWithAxis: true,  endCapTicks: true  },
-  'red-clinker':    {
-    svg: () => RedClinker.svg(),
-    topSvg: () => RedClinker.svgTop(),
-    topSvgV: () => RedClinker.svgTopV(),
-    southSvg: () => RedClinker.svgSouth(),
-    eastSvg: () => RedClinker.svgEast(),
-    endSvg: () => RedClinker.svgEnd(),
-    southSvgByPlane: () => ({ 0: RedClinker.svgSouth(0), 48: RedClinker.svgSouth(48), 96: RedClinker.svgSouth(96), 144: RedClinker.svgSouth(144) }),
-    eastSvgByPlane: () => ({ 0: RedClinker.svgEast(0), 48: RedClinker.svgEast(48), 96: RedClinker.svgEast(96), 144: RedClinker.svgEast(144) }),
-    endSvgByPlane: () => ({ 0: RedClinker.svgEnd(0), 48: RedClinker.svgEnd(48), 96: RedClinker.svgEnd(96), 144: RedClinker.svgEnd(144) }),
+type BrickFamilyModule = {
+  svg(): string;
+  svgTop(): string;
+  svgTopV(): string;
+  svgSouth(edgeCoord?: number): string;
+  svgEast(edgeCoord?: number): string;
+  svgEnd(edgeCoord?: number): string;
+};
+
+type AncientStoneFamilyModule = {
+  svg(): string;
+  svgTop(): string;
+  svgSouth(): string;
+  svgEast(): string;
+};
+
+type FaceSliceMaterialModule = {
+  svg(): string;
+  svgTop(): string;
+  svgSouth(): string;
+  svgEast(): string;
+  svgTopV?(): string;
+  svgEnd?(): string;
+};
+
+function brickFamilySpec(material: BrickFamilyModule, endCapTickColor: string, weatheringOverlays?: CanvasSceneEntry['weatheringOverlays']): BrickTextureSpec {
+  return {
+    svg: () => material.svg(),
+    topSvg: () => material.svgTop(),
+    topSvgV: () => material.svgTopV(),
+    southSvg: () => material.svgSouth(),
+    eastSvg: () => material.svgEast(),
+    endSvg: () => material.svgEnd(),
+    southSvgByPlane: () => ({ 0: material.svgSouth(0), 48: material.svgSouth(48), 96: material.svgSouth(96), 144: material.svgSouth(144) }),
+    eastSvgByPlane: () => ({ 0: material.svgEast(0), 48: material.svgEast(48), 96: material.svgEast(96), 144: material.svgEast(144) }),
+    endSvgByPlane: () => ({ 0: material.svgEnd(0), 48: material.svgEnd(48), 96: material.svgEnd(96), 144: material.svgEnd(144) }),
     topOutline: true,
     topRotateWithAxis: true,
     endCapTicks: false,
     faceSliceEqualLighting: true,
-    endCapTickColor: '#2a201c',
-  },
-  'ancient-stone':  {
-    svg: () => AncientStone.svg(),
-    topSvg: () => AncientStone.svgTop(),
-    southSvg: () => AncientStone.svgSouth(),
-    eastSvg: () => AncientStone.svgEast(),
+    endCapTickColor,
+    weatheringOverlays,
+  };
+}
+
+function ancientStoneFamilySpec(material: AncientStoneFamilyModule, weatheringOverlays?: CanvasSceneEntry['weatheringOverlays']): BrickTextureSpec {
+  return {
+    svg: () => material.svg(),
+    topSvg: () => material.svgTop(),
+    southSvg: () => material.svgSouth(),
+    eastSvg: () => material.svgEast(),
     topOutline: false,
     topRotateWithAxis: false,
     endCapTicks: false,
+    weatheringOverlays,
+  };
+}
+
+function faceSliceTextureSpec(
+  material: FaceSliceMaterialModule,
+  options: {
+    topOutline: boolean;
+    topRotateWithAxis: boolean;
+    endCapTicks: boolean;
+    faceSliceEqualLighting?: boolean;
+    endCapTickColor?: string;
+    weatheringOverlays?: CanvasSceneEntry['weatheringOverlays'];
   },
+): BrickTextureSpec {
+  return {
+    svg: () => material.svg(),
+    topSvg: () => material.svgTop(),
+    topSvgV: material.svgTopV ? () => material.svgTopV!() : undefined,
+    southSvg: () => material.svgSouth(),
+    eastSvg: () => material.svgEast(),
+    endSvg: material.svgEnd ? () => material.svgEnd!() : undefined,
+    topOutline: options.topOutline,
+    topRotateWithAxis: options.topRotateWithAxis,
+    endCapTicks: options.endCapTicks,
+    faceSliceEqualLighting: options.faceSliceEqualLighting,
+    endCapTickColor: options.endCapTickColor,
+    weatheringOverlays: options.weatheringOverlays,
+  };
+}
+
+const weatheredRedClinkerOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'soot', color: '#17120f', intensity: 0.38, opacity: 0.34, seed: 101, faces: ['south', 'east'], yRange: [0.60, 0.98] },
+  { kind: 'edge-wear', color: '#f0a36a', intensity: 0.18, opacity: 0.24, seed: 102, faces: ['top'], yRange: [0.04, 0.36] },
+];
+const mossyStoneBrickOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'moss', color: '#154d20', intensity: 0.78, opacity: 0.62, seed: 201, faces: ['south', 'east'], yRange: [0.48, 0.98] },
+  { kind: 'moss', color: '#347a31', intensity: 0.44, opacity: 0.48, seed: 203, faces: ['top'], yRange: [0.04, 0.48] },
+  { kind: 'dirt', color: '#4f3f2d', intensity: 0.26, opacity: 0.26, seed: 202, faces: ['south', 'east'], yRange: [0.72, 0.98] },
+];
+const dirtyMudBrickOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'dirt', color: '#231914', intensity: 0.50, opacity: 0.34, seed: 301, faces: ['south', 'east'], yRange: [0.58, 0.98] },
+  { kind: 'edge-wear', color: '#d6a777', intensity: 0.18, opacity: 0.22, seed: 302, faces: ['top'], yRange: [0.10, 0.52] },
+];
+const snowySandstoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'snow', color: '#d4dde0', intensity: 0.94, opacity: 0.76, seed: 401, faces: ['top'], yRange: [0.00, 0.56] },
+  { kind: 'snow', color: '#f8fbf2', intensity: 0.52, opacity: 0.55, seed: 403, faces: ['top'], yRange: [0.00, 0.34] },
+  { kind: 'dirt', color: '#8a6f42', intensity: 0.28, opacity: 0.22, seed: 402, faces: ['south', 'east'], yRange: [0.68, 0.98] },
+];
+const dustySandstoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'dust', color: '#ead38f', intensity: 0.62, opacity: 0.42, seed: 501, faces: ['south', 'east', 'top'], yRange: [0.08, 0.78] },
+  { kind: 'dirt', color: '#725737', intensity: 0.20, opacity: 0.20, seed: 502, faces: ['south', 'east'], yRange: [0.72, 0.98] },
+];
+const muddyStoneBrickOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'mud', color: '#2b2017', intensity: 0.80, opacity: 0.56, seed: 601, faces: ['south', 'east'], yRange: [0.54, 0.99] },
+  { kind: 'mud', color: '#5b3d25', intensity: 0.28, opacity: 0.36, seed: 602, faces: ['top'], yRange: [0.40, 0.96] },
+];
+const crackedRedClinkerOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'cracks', color: '#160f0d', intensity: 0.62, opacity: 0.72, seed: 701, faces: ['south', 'east', 'top'], yRange: [0.08, 0.92] },
+  { kind: 'edge-wear', color: '#f0a36a', intensity: 0.16, opacity: 0.24, seed: 702, faces: ['top'], yRange: [0.08, 0.42] },
+];
+const mossyAncientStoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'moss', color: '#244f2f', intensity: 0.74, opacity: 0.52, seed: 801, faces: ['south', 'east'], yRange: [0.52, 0.98] },
+  { kind: 'moss', color: '#567e48', intensity: 0.34, opacity: 0.32, seed: 802, faces: ['top'], yRange: [0.10, 0.52] },
+];
+const snowyLimestoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'snow', color: '#d8dfe2', intensity: 0.92, opacity: 0.70, seed: 811, faces: ['top'], yRange: [0.00, 0.60] },
+  { kind: 'snow', color: '#f6f8f3', intensity: 0.48, opacity: 0.50, seed: 812, faces: ['top'], yRange: [0.00, 0.34] },
+];
+const sootyCathedralStoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'soot', color: '#131214', intensity: 0.50, opacity: 0.34, seed: 821, faces: ['south', 'east'], yRange: [0.10, 0.92] },
+  { kind: 'edge-wear', color: '#a79d92', intensity: 0.16, opacity: 0.18, seed: 822, faces: ['top'], yRange: [0.08, 0.34] },
+];
+const crackedAncientStoneOverlays: CanvasSceneEntry['weatheringOverlays'] = [
+  { kind: 'cracks', color: '#2d2620', intensity: 0.68, opacity: 0.62, seed: 831, faces: ['south', 'east', 'top'], yRange: [0.08, 0.94] },
+  { kind: 'dirt', color: '#5e5443', intensity: 0.20, opacity: 0.18, seed: 832, faces: ['south', 'east'], yRange: [0.72, 0.98] },
+];
+
+const BRICK_TEXTURES: Record<string, BrickTextureSpec> = {
+  'stone-brick': brickFamilySpec(StoneBrick, '#3a3835'),
+  'red-clinker': brickFamilySpec(RedClinker, '#2a201c'),
+  'mud-brick': brickFamilySpec(MudBrick, '#4a3325'),
+  'sandstone-brick': brickFamilySpec(SandstoneBrick, '#6f5d3a'),
+  'weathered-red-clinker': brickFamilySpec(RedClinker, '#2a201c', weatheredRedClinkerOverlays),
+  'mossy-stone-brick': brickFamilySpec(StoneBrick, '#3a3835', mossyStoneBrickOverlays),
+  'dirty-mud-brick': brickFamilySpec(MudBrick, '#4a3325', dirtyMudBrickOverlays),
+  'snowy-sandstone-brick': brickFamilySpec(SandstoneBrick, '#6f5d3a', snowySandstoneOverlays),
+  'dusty-sandstone-brick': brickFamilySpec(SandstoneBrick, '#6f5d3a', dustySandstoneOverlays),
+  'muddy-stone-brick': brickFamilySpec(StoneBrick, '#3a3835', muddyStoneBrickOverlays),
+  'cracked-red-clinker': brickFamilySpec(RedClinker, '#2a201c', crackedRedClinkerOverlays),
+  'ancient-stone': ancientStoneFamilySpec(AncientStone),
+  'limestone': ancientStoneFamilySpec(Limestone),
+  'dark-cathedral-stone': ancientStoneFamilySpec(DarkCathedralStone),
+  'mossy-ancient-stone': ancientStoneFamilySpec(AncientStone, mossyAncientStoneOverlays),
+  'snowy-limestone': ancientStoneFamilySpec(Limestone, snowyLimestoneOverlays),
+  'sooty-dark-cathedral-stone': ancientStoneFamilySpec(DarkCathedralStone, sootyCathedralStoneOverlays),
+  'cracked-ancient-stone': ancientStoneFamilySpec(AncientStone, crackedAncientStoneOverlays),
+  'timber-frame-wall': faceSliceTextureSpec(TimberFrameWall, {
+    topOutline: false,
+    topRotateWithAxis: true,
+    endCapTicks: false,
+  }),
+  'plaster-whitewash-wall': faceSliceTextureSpec(PlasterWhitewashWall, {
+    topOutline: false,
+    topRotateWithAxis: true,
+    endCapTicks: false,
+  }),
+  'rough-wood-plank-wall': faceSliceTextureSpec(RoughWoodPlankWall, {
+    topOutline: false,
+    topRotateWithAxis: true,
+    endCapTicks: false,
+  }),
+  'cottage-stone-foundation': ancientStoneFamilySpec(CottageStoneFoundation),
 };
+
+function roofTextureSvg(kind: string, texture: string): string | undefined {
+  if (texture !== 'thatch-roof') return undefined;
+  if (kind === 'roof-slope-left' || kind === 'roof-slope-right' || kind === 'roof-ridge') {
+    return ThatchRoof.svgFor(kind as RoofPrimitiveKind);
+  }
+  return undefined;
+}
 
 // ─── Types ────────────────────────────────────────────────────
 
@@ -313,13 +476,13 @@ async function dispatch(): Promise<WorkerResult> {
         // Resolve the optional `texture` shorthand (e.g. 'red-clinker')
         // into svgOverride + topSvgOverride + topOutline. Explicit
         // override fields win if both are supplied.
-        let svgOverride: string | undefined = e.svgOverride;
-        let topSvgOverride: string | undefined = e.topSvgOverride;
-        let topFaceSvgOverride: string | undefined = e.topFaceSvgOverride;
-        let topFaceSvgVOverride: string | undefined = e.topFaceSvgVOverride;
-        let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride;
-        let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride;
-        let endFaceSvgOverride: string | undefined = e.endFaceSvgOverride;
+        let svgOverride: string | undefined = e.svgOverride || undefined;
+        let topSvgOverride: string | undefined = e.topSvgOverride || undefined;
+        let topFaceSvgOverride: string | undefined = e.topFaceSvgOverride || undefined;
+        let topFaceSvgVOverride: string | undefined = e.topFaceSvgVOverride || undefined;
+        let southFaceSvgOverride: string | undefined = e.southFaceSvgOverride || undefined;
+        let eastFaceSvgOverride: string | undefined = e.eastFaceSvgOverride || undefined;
+        let endFaceSvgOverride: string | undefined = e.endFaceSvgOverride || undefined;
         let southFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.southFaceSvgByPlane;
         let eastFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.eastFaceSvgByPlane;
         let endFaceSvgByPlane: Readonly<Record<number, string>> | undefined = e.endFaceSvgByPlane;
@@ -328,9 +491,42 @@ async function dispatch(): Promise<WorkerResult> {
         let endCapTicks: boolean | undefined = e.endCapTicks;
         let faceSliceEqualLighting: boolean | undefined = e.faceSliceEqualLighting;
         let endCapTickColor: string | undefined = e.endCapTickColor;
-        if (typeof e.texture === 'string') {
-          const spec = BRICK_TEXTURES[e.texture];
-          if (!spec) throw new Error(`Unknown texture name: ${e.texture}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}`);
+        let weatheringOverlays: CanvasSceneEntry['weatheringOverlays'] | undefined = e.weatheringOverlays;
+        const textureName = typeof e.texture === 'string' && e.texture.trim().length > 0
+          ? e.texture.trim()
+          : undefined;
+        if (textureName) {
+          const roofSvg = roofTextureSvg(e.kind, textureName);
+          if (roofSvg) svgOverride = svgOverride ?? roofSvg;
+        }
+        if (textureName) {
+          const spec = BRICK_TEXTURES[textureName];
+          if (!spec) {
+            if (svgOverride) {
+              return {
+                kind: e.kind, col: e.col, row: e.row,
+                variant: e.variant as CanvasSceneEntry['variant'],
+                zOffset: e.zOffset,
+                svgOverride,
+                topSvgOverride,
+                topFaceSvgOverride,
+                topFaceSvgVOverride,
+                southFaceSvgOverride,
+                eastFaceSvgOverride,
+                endFaceSvgOverride,
+                southFaceSvgByPlane,
+                eastFaceSvgByPlane,
+                endFaceSvgByPlane,
+                topOutline,
+                topRotateWithAxis,
+                endCapTicks,
+                faceSliceEqualLighting,
+                endCapTickColor,
+                weatheringOverlays,
+              };
+            }
+            throw new Error(`Unknown texture name: ${textureName}. Known: ${Object.keys(BRICK_TEXTURES).join(', ')}, thatch-roof`);
+          }
           const tex = spec.svg();
           svgOverride       = svgOverride       ?? tex;
           topSvgOverride    = topSvgOverride    ?? tex;
@@ -347,6 +543,7 @@ async function dispatch(): Promise<WorkerResult> {
           endCapTicks       = endCapTicks       ?? spec.endCapTicks;
           faceSliceEqualLighting = faceSliceEqualLighting ?? spec.faceSliceEqualLighting;
           endCapTickColor = endCapTickColor ?? spec.endCapTickColor;
+          weatheringOverlays = weatheringOverlays ?? spec.weatheringOverlays;
         }
         return {
           kind: e.kind, col: e.col, row: e.row,
@@ -367,6 +564,7 @@ async function dispatch(): Promise<WorkerResult> {
           endCapTicks,
           faceSliceEqualLighting,
           endCapTickColor,
+          weatheringOverlays,
         };
       });
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({

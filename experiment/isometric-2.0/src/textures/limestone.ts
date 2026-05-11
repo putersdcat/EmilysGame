@@ -1,19 +1,19 @@
-/** ancient-stone.ts — default factory-backed ancient rubble stone material. */
+/** limestone.ts — pale factory-backed ancient-stone family variant. */
 
 import { ANCIENT_STONE_IMAGE_SIZE, createAncientStoneMaterial, type AncientStonePaletteSpec } from './ancient-stone-family';
 
 export const IMAGE_SIZE = ANCIENT_STONE_IMAGE_SIZE;
 
 export const PALETTE: AncientStonePaletteSpec = {
-  mortar: '#625848',
-  joint: 'rgba(47,42,35,0.32)',
-  rimLight: 'rgba(255,248,226,0.10)',
-  pit: 'rgba(73,64,53,0.14)',
-  rBase: 171,
-  gBase: 161,
-  bBase: 140,
-  variance: 18,
-  salt: 0,
+  mortar: '#706c5d',
+  joint: 'rgba(58,55,47,0.30)',
+  rimLight: 'rgba(255,252,228,0.14)',
+  pit: 'rgba(92,86,70,0.12)',
+  rBase: 190,
+  gBase: 184,
+  bBase: 158,
+  variance: 15,
+  salt: 2301,
 };
 
 const material = createAncientStoneMaterial(PALETTE);

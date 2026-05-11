@@ -37,7 +37,7 @@ import { getFeatureKind, getDiagonalFenceVariant, placeAssembly } from './solver
 import { drawNanoStack, drawNanoShadow, NANO_Z_SCALE } from './nano-tile';
 import { loadAssembly } from './assemblies';
 import type { SunState } from './types';
-import { StoneStub } from './textures';
+import { StoneBrick } from './textures';
 
 // ─── Chunk Bounding Box Constants ────────────────────────────
 
@@ -387,12 +387,6 @@ function makeNanoDemoSvg(kind: NanoTileKind, col: number, row: number): string {
   </svg>`;
 }
 
-/** Create a demo top-cap SVG for extrusion rendering. */
-// Stub stone-wall side/top textures live in textures/stone-stub.ts so
-// they sit alongside StoneBrick / RedClinker. The duplicated inline
-// versions here have been removed; call sites import the textures
-// namespace directly.
-
 /** Create a stub NanoTile for a feature kind with demo visuals. */
 function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number, presetVariant?: FeatureVariant): NanoTile {
     const zOffset = kind === 'stone-wall' ? 4 : kind === 'fence' ? 2 : kind === 'river' ? -2 : 0;
@@ -415,8 +409,8 @@ function makeFeatureNano(kind: NanoTileKind, worldCol: number, worldRow: number,
   if (kind === 'stone-wall') {
     return {
       ...base,
-      sideTextureSvg: StoneStub.svgSide('#6a6a6a', worldCol, worldRow),
-      topTextureSvg: StoneStub.svgTop('#7a7a7a', worldCol, worldRow),
+      sideTextureSvg: StoneBrick.svg(),
+      topTextureSvg: StoneBrick.svgTop(),
     };
   }
 
