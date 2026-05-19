@@ -11,34 +11,10 @@ import type {
   NanoTile,
   FeatureVariant,
 } from './types';
-import { woodenFenceSvg, gateSvg } from './solver';
+import { gateSvg } from './solver';
 import { TimberFrameWall, DarkCathedralStone } from './textures';
 
-// ─── Inline SVGs ─────────────────────────────────────────────
-// These SVGs are generated from solver.ts functions (shared source of truth).
-// Use RUBBLE_SVG for stone rubble patches since solver doesn't have a rubble kind.
-
-/** Stone rubble SVG (144×144, flat/walkable). */
-const RUBBLE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
-  <rect width="144" height="64" fill="#888"/>
-  <polygon points="10,60 40,30 60,55 90,20 120,50 144,60 0,60" fill="#999"/>
-  <polygon points="20,60 45,45 70,58 100,35 144,55 144,60 0,60" fill="#777"/>
-</svg>`;
-
-// ─── Fence Nano Builder ───────────────────────────────────────
-
-/** Build a fence NanoTile for the given variant. */
-function makeFenceNano(variant: FeatureVariant): NanoTile {
-  return {
-    kind: 'fence',
-    zOffset: 2,
-    zMode: 'positive',
-    svg: woodenFenceSvg(variant),
-    walkable: { type: 'never' },
-    blendEdges: false,
-    variant,
-  };
-}
+export type AssemblyEntry = AssemblyTilePlacement;
 
 type FaceSliceMaterial = {
   svg(): string;
@@ -79,38 +55,34 @@ function makeExtrudedWallNano(
 // ─── Assembly Factories ───────────────────────────────────────
 
 /**
- * Homestead-small: 5×5 tile footprint.
- * Wooden fence perimeter + central hut.
- * Gate at (2,4) — quiz-gated walkable.
- * Chunks: cx=6,cy=0 (rows 1-4) and cx=6,cy=1 (row 5) relative to world origin (30,1).
+ * Homestead-small: 5×4 tile footprint.
+ * Homestead-wall perimeter with a south-side quiz gate.
+ * Gate at (2,3) — quiz-gated walkable.
+ * Chunks: cx=6,cy=0 and cx=6,cy=1 relative to world origin (30,1).
  */
 function createHomesteadSmall(): MacroAssembly {
   const placements: AssemblyTilePlacement[] = [];
 
-  // ── Perimeter fence nanos ──────────────────────────────────
-  // Top edge (row=0)
-  placements.push({ col: 0, row: 0, nanos: [makeFenceNano('corner-tl')] });
-  placements.push({ col: 1, row: 0, nanos: [makeFenceNano('straight-h')] });
-  placements.push({ col: 2, row: 0, nanos: [makeFenceNano('straight-h')] });
-  placements.push({ col: 3, row: 0, nanos: [makeFenceNano('straight-h')] });
-  placements.push({ col: 4, row: 0, nanos: [makeFenceNano('corner-tr')] });
+  const wall = (variant: FeatureVariant): NanoTile =>
+    makeExtrudedWallNano('homestead-wall', 4, TimberFrameWall, { type: 'never' }, variant);
 
-  // Left edge (col=0, rows 1-3)
-  placements.push({ col: 0, row: 1, nanos: [makeFenceNano('straight-v')] });
-  placements.push({ col: 0, row: 2, nanos: [makeFenceNano('straight-v')] });
-  placements.push({ col: 0, row: 3, nanos: [makeFenceNano('straight-v')] });
+  // ── Homestead-wall perimeter nanos ─────────────────────────
+  placements.push({ col: 0, row: 0, nanos: [wall('corner-br')] });
+  placements.push({ col: 1, row: 0, nanos: [wall('straight-h')] });
+  placements.push({ col: 2, row: 0, nanos: [wall('straight-h')] });
+  placements.push({ col: 3, row: 0, nanos: [wall('straight-h')] });
+  placements.push({ col: 4, row: 0, nanos: [wall('corner-bl')] });
 
-  // Right edge (col=4, rows 1-3)
-  placements.push({ col: 4, row: 1, nanos: [makeFenceNano('straight-v')] });
-  placements.push({ col: 4, row: 2, nanos: [makeFenceNano('straight-v')] });
-  placements.push({ col: 4, row: 3, nanos: [makeFenceNano('straight-v')] });
+  placements.push({ col: 0, row: 1, nanos: [wall('straight-v')] });
+  placements.push({ col: 4, row: 1, nanos: [wall('straight-v')] });
+  placements.push({ col: 0, row: 2, nanos: [wall('straight-v')] });
+  placements.push({ col: 4, row: 2, nanos: [wall('straight-v')] });
 
-  // Bottom edge (row=4)
-  placements.push({ col: 0, row: 4, nanos: [makeFenceNano('corner-bl')] });
-  placements.push({ col: 1, row: 4, nanos: [makeFenceNano('straight-h')] });
-  // (2,4) = gate
+  placements.push({ col: 0, row: 3, nanos: [wall('corner-tr')] });
+  placements.push({ col: 1, row: 3, nanos: [wall('straight-h')] });
+  // (2,3) = gate
   placements.push({
-    col: 2, row: 4,
+    col: 2, row: 3,
     nanos: [{
       kind: 'gate',
       zOffset: 2,
@@ -121,94 +93,69 @@ function createHomesteadSmall(): MacroAssembly {
       variant: 'straight-h',
     }],
   });
-  placements.push({ col: 3, row: 4, nanos: [makeFenceNano('straight-h')] });
-  placements.push({ col: 4, row: 4, nanos: [makeFenceNano('corner-br')] });
-
-  // ── Center hut (2,2) ────────────────────────────────────────
-  placements.push({
-    col: 2, row: 2,
-    nanos: [makeExtrudedWallNano('homestead-wall', 10, TimberFrameWall, { type: 'always' })],
-  });
+  placements.push({ col: 3, row: 3, nanos: [wall('straight-h')] });
+  placements.push({ col: 4, row: 3, nanos: [wall('corner-tl')] });
 
   return {
     id: 'homestead-small',
     widthTiles: 5,
-    heightTiles: 5,
+    heightTiles: 4,
     placements,
   };
 }
 
 /**
- * Ruined-cathedral: 3×5 tile footprint.
- * Two crumbling wall columns flanking a central spire, with rubble patches.
+ * Ruined-cathedral: 3×6 tile footprint.
+ * Nave side walls with two taller north spires.
  * Chunks: cx=7,cy=0 (rows 1-4) and cx=7,cy=1 (row 5) relative to world origin (37,1).
  */
 function createRuinedCathedral(): MacroAssembly {
   const placements: AssemblyTilePlacement[] = [];
 
-  // ── Left column (col=0, rows 0-4): tall stone walls ─────────
-  for (let r = 0; r < 5; r++) {
-    placements.push({
-      col: 0, row: r,
-      nanos: [makeExtrudedWallNano('cathedral-wall', 16, DarkCathedralStone, { type: 'never' }, 'straight-h')],
-    });
-  }
+  const wall = (variant: FeatureVariant, zOffset: number): NanoTile =>
+    makeExtrudedWallNano('cathedral-wall', zOffset, DarkCathedralStone, { type: 'never' }, variant);
 
-  // ── Right column (col=2, rows 0-4): shorter ruined walls ─────
-  for (let r = 0; r < 5; r++) {
-    placements.push({
-      col: 2, row: r,
-      nanos: [makeExtrudedWallNano('cathedral-wall', 12, DarkCathedralStone, { type: 'never' }, 'end-b')],
-    });
-  }
+  // North spires and front lintel.
+  placements.push({ col: 0, row: 0, nanos: [wall('isolated', 8)] });
+  placements.push({ col: 1, row: 0, nanos: [wall('straight-h', 6)] });
+  placements.push({ col: 2, row: 0, nanos: [wall('isolated', 8)] });
 
-  // ── Spire (col=1, row=0): towering central spire ─────────────
-  placements.push({
-    col: 1, row: 0,
-    nanos: [makeExtrudedWallNano('cathedral-wall', 26, DarkCathedralStone, { type: 'never' }, 'isolated')],
-  });
+  // Nave side walls with staggered ruin heights.
+  placements.push({ col: 0, row: 1, nanos: [wall('straight-v', 6)] });
+  placements.push({ col: 2, row: 1, nanos: [wall('straight-v', 6)] });
+  placements.push({ col: 0, row: 2, nanos: [wall('straight-v', 6)] });
+  placements.push({ col: 2, row: 2, nanos: [wall('straight-v', 5)] });
+  placements.push({ col: 0, row: 3, nanos: [wall('straight-v', 5)] });
+  placements.push({ col: 2, row: 3, nanos: [wall('straight-v', 6)] });
+  placements.push({ col: 0, row: 4, nanos: [wall('straight-v', 6)] });
+  placements.push({ col: 2, row: 4, nanos: [wall('straight-v', 5)] });
 
-  // ── Rubble patches (walkable, lower z) ────────────────────────
-  // Left column rubble at (0,3)
-  placements.push({
-    col: 0, row: 3,
-    nanos: [{
-      kind: 'stone-wall',
-      zOffset: 2,
-      zMode: 'positive',
-      svg: RUBBLE_SVG,
-      walkable: { type: 'always' },
-      blendEdges: false,
-    }],
-  });
-  // Right column rubble at (2,2)
-  placements.push({
-    col: 2, row: 2,
-    nanos: [{
-      kind: 'stone-wall',
-      zOffset: 2,
-      zMode: 'positive',
-      svg: RUBBLE_SVG,
-      walkable: { type: 'always' },
-      blendEdges: false,
-    }],
-  });
+  // South ruin edge.
+  placements.push({ col: 0, row: 5, nanos: [wall('corner-tr', 4)] });
+  placements.push({ col: 1, row: 5, nanos: [wall('straight-h', 4)] });
+  placements.push({ col: 2, row: 5, nanos: [wall('corner-tl', 4)] });
 
   return {
     id: 'ruined-cathedral',
     widthTiles: 3,
-    heightTiles: 5,
+    heightTiles: 6,
     placements,
   };
 }
+
+export const HOMESTEAD_ASSEMBLY: MacroAssembly = createHomesteadSmall();
+export const CATHEDRAL_ASSEMBLY: MacroAssembly = createRuinedCathedral();
+
+export const HOMESTEAD_BLUEPRINT: readonly AssemblyEntry[] = HOMESTEAD_ASSEMBLY.placements;
+export const CATHEDRAL_BLUEPRINT: readonly AssemblyEntry[] = CATHEDRAL_ASSEMBLY.placements;
 
 // ─── Assembly Registry ────────────────────────────────────────
 
 const _assemblyCache = new Map<string, MacroAssembly>();
 
 const _factories: Record<string, () => MacroAssembly> = {
-  'homestead-small': createHomesteadSmall,
-  'ruined-cathedral': createRuinedCathedral,
+  'homestead-small': () => HOMESTEAD_ASSEMBLY,
+  'ruined-cathedral': () => CATHEDRAL_ASSEMBLY,
 };
 
 /**

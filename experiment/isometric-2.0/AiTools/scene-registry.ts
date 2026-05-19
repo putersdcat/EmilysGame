@@ -16,6 +16,8 @@
  *   river-crossing   — river segment with bridge
  *   tall-grass-patch — scattered tall-grass on grass terrain
  *   homestead        — homestead-wall assembly (3×3 footprint)
+ *   assembly-homestead — 5×4 homestead/cottage perimeter with south gate
+ *   assembly-cathedral — 3×6 cathedral/ruin nave with taller north spires
  *   mixed-biomes     — showcase of all terrain tile kinds
  *   all-nanos        — showcase of every NanoTileKind
  *
@@ -25,6 +27,7 @@
 import type { AssemblyChainItem } from './svg-renderer-tool.js';
 // Import game engine SVG generators directly — no more duplicated color maps
 import { getVariantSvg, woodenFenceSvg } from '../src/solver.js';
+import { CATHEDRAL_ASSEMBLY, HOMESTEAD_ASSEMBLY } from '../src/assemblies.js';
 import type { FeatureVariant, FeatureConnections } from '../src/types.js';
 // Import extruded face builder for proper 3-face geometry on stone-wall tiles
 import { buildExtrudedFaceMarkup } from './game-tile-renderer.js';
@@ -47,6 +50,8 @@ export interface SceneEntry {
   row: number;
   /** Feature variant for nano tiles. Inferred from position in run if omitted. */
   variant?: FeatureVariant;
+  /** Optional per-entry nano height override for assembly proofs. */
+  zOffset?: number;
   /** Optional procedural fence style id from src/textures/fence-family.ts. */
   fenceStyle?: string;
   /** Optional display label for annotation. */
@@ -151,10 +156,10 @@ function isNanoKind(kind: string): kind is NanoKind {
  * This is the CANONICAL source — same code path as the browser game.
  * Falls back to woodenFenceSvg for fence kinds if getVariantSvg returns null.
  */
-function makeNanoSvg(kind: NanoKind, variant: FeatureVariant | undefined, col: number, row: number, fenceStyle?: string): string {
+function makeNanoSvg(kind: NanoKind, variant: FeatureVariant | undefined, col: number, row: number, fenceStyle?: string, zOffsetOverride?: number): string {
   // Default connections from variant (straight run = connected both ends)
   const connections = inferConnectionsForVariant(variant ?? 'straight-h');
-  const zOffset = NANO_Z[kind];
+  const zOffset = zOffsetOverride ?? NANO_Z[kind];
 
   // getVariantSvg returns null for unknown kinds — fall back to woodenFenceSvg for fence group
   const svg = getVariantSvg(kind as Parameters<typeof getVariantSvg>[0], variant ?? 'straight-h', connections, Math.abs(zOffset), col, row, fenceStyle);
@@ -205,27 +210,28 @@ export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
   return descriptor.entries.map((entry) => {
     const { kind, col, row, variant, fenceStyle } = entry;
     if (isNanoKind(kind)) {
+      const zOffset = entry.zOffset ?? NANO_Z[kind];
       // Extruded kinds (stone-wall): use proper 3-face markup, not a flat z-pinned texture.
       if (EXTRUDED_NANO_KINDS.has(kind)) {
         return {
           // connections omitted → buildExtrudedFaceMarkup infers from variant internally
-          svg:        buildExtrudedFaceMarkup(kind, variant ?? 'straight-h', Math.abs(NANO_Z[kind])),
+          svg:        buildExtrudedFaceMarkup(kind, variant ?? 'straight-h', Math.abs(zOffset)),
           col,
           row,
           variant:    variant as string | undefined,
           zMode:      'positive' as const,
-          zOffset:    NANO_Z[kind],
+          zOffset,
           walkable:   NANO_WALKABLE[kind],
           renderMode: 'extruded' as const,
         };
       }
       return {
-        svg:     makeNanoSvg(kind, variant, col, row, fenceStyle),
+        svg:     makeNanoSvg(kind, variant, col, row, fenceStyle, Math.abs(zOffset)),
         col,
         row,
         variant: variant as string | undefined,
         zMode:   NANO_Z_MODE[kind],
-        zOffset: NANO_Z[kind],
+        zOffset,
         walkable: NANO_WALKABLE[kind],
         kind,
         fenceStyle,
@@ -303,6 +309,18 @@ function fenceBox(col0: number, row0: number, size: number, fenceStyle: string):
     entries.push({ kind: 'fence', col: col0 + max, row: row0 + i, variant: 'straight-v', fenceStyle });
   }
   return entries;
+}
+
+function assemblySceneEntries(assembly: typeof HOMESTEAD_ASSEMBLY): SceneEntry[] {
+  return assembly.placements.flatMap((placement) =>
+    placement.nanos.map((nano) => ({
+      kind: nano.kind as NanoKind,
+      col: placement.col,
+      row: placement.row,
+      variant: nano.variant,
+      zOffset: nano.zOffset,
+    }))
+  );
 }
 
 export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
@@ -462,6 +480,30 @@ export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
       { kind: 'homestead-wall' as NanoKind, col: 0, row: 2 },
       { kind: 'gate'           as NanoKind, col: 1, row: 2, label: 'ENTRANCE' },
       { kind: 'homestead-wall' as NanoKind, col: 2, row: 2 },
+    ],
+  },
+
+  // ── 5×4 Homestead / cottage structure proof ───────────────
+  'assembly-homestead': {
+    name: 'assembly-homestead',
+    description: '5×4 homestead / cottage footprint with homestead-wall perimeter and south gate.',
+    canvasWidth: 1000,
+    canvasHeight: 720,
+    entries: [
+      ...grassRect(0, 0, HOMESTEAD_ASSEMBLY.widthTiles, HOMESTEAD_ASSEMBLY.heightTiles),
+      ...assemblySceneEntries(HOMESTEAD_ASSEMBLY),
+    ],
+  },
+
+  // ── 3×6 Cathedral / ruin structure proof ──────────────────
+  'assembly-cathedral': {
+    name: 'assembly-cathedral',
+    description: '3×6 cathedral / ruin nave with dark-stone side walls and two taller north spires.',
+    canvasWidth: 1000,
+    canvasHeight: 850,
+    entries: [
+      ...grassRect(0, 0, CATHEDRAL_ASSEMBLY.widthTiles, CATHEDRAL_ASSEMBLY.heightTiles),
+      ...assemblySceneEntries(CATHEDRAL_ASSEMBLY),
     ],
   },
 
