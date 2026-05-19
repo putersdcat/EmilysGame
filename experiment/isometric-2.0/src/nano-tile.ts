@@ -264,6 +264,37 @@ function drawProceduralFenceNano(
     }
   };
 
+  const drawRaisedLine = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    aOffset: number,
+    bOffset: number,
+    strokeStyle: string,
+    lineWidth: number,
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y - aOffset);
+    ctx.lineTo(b.x, b.y - bOffset);
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  };
+
+  const drawGateLeaf = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    // Gate leaves are deliberately more graphic than ordinary fence rails:
+    // two rails plus diagonal bracing make the tile read as a hinged gate
+    // instead of a dense cluster of extra posts.
+    const top = height * 0.72;
+    const bottom = height * 0.42;
+    drawLineBetween(ctx, a, b, top, railDark, railWidth + 2.5);
+    drawLineBetween(ctx, a, b, bottom, railDark, railWidth + 2.5);
+    drawLineBetween(ctx, a, b, top + 1.5, railColor, railWidth);
+    drawLineBetween(ctx, a, b, bottom + 1.5, railColor, railWidth);
+    drawRaisedLine(a, b, bottom, top, railDark, Math.max(3.5, railWidth - 0.5));
+    drawRaisedLine(a, b, bottom + 1.5, top + 1.5, railHighlight, 1.4);
+  };
+
   // Physical footprint: a fence is a THIN barrier running down the CENTER
   // nano lane of the parent 144px micro tile. Its post positions land on
   // the 48px nano-grid lines (0,48,96,144), so a fence can line up with
@@ -274,6 +305,37 @@ function drawProceduralFenceNano(
   const right = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE, centerCoord);
   const top = projectFencePoint(screenX, screenY, centerCoord, 0);
   const bottom = projectFencePoint(screenX, screenY, centerCoord, MICRO_TILE_SIZE);
+
+  if (nano.kind === 'gate' && ((arms.left && arms.right) || (arms.top && arms.bottom))) {
+    const horizontal = arms.left && arms.right;
+    const start = horizontal ? left : top;
+    const end = horizontal ? right : bottom;
+    const split = center;
+    addPost(start);
+    addPost(end);
+
+    if (style?.gateLeafMode === 'double') {
+      addPost(split);
+      drawGateLeaf(start, split);
+      drawGateLeaf(split, end);
+    } else {
+      drawGateLeaf(start, end);
+    }
+
+    for (const post of posts) drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
+
+    const latch = style?.gateLeafMode === 'double' ? split : end;
+    ctx.beginPath();
+    ctx.arc(latch.x, latch.y - height * 0.56, 4, 0, Math.PI * 2);
+    ctx.fillStyle = hardwareColor;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+    return true;
+  }
 
   if (arms.left && arms.right) {
     drawSegment(left, right);
