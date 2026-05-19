@@ -17,11 +17,24 @@ import {
   type IsoNanoStack,
   type IsoFeatureVariant as FeatureVariant,
 } from './types/iso-renderer.types.js';
-import { stoneWallSvg, stoneWallTopSvg, woodenFenceSvg } from './nano-tile-svgs.js';
+import {
+  cathedralWallSvg,
+  cathedralWallTopSvg,
+  homesteadWallSvg,
+  homesteadWallTopSvg,
+  stoneWallSvg,
+  stoneWallTopSvg,
+  trollBridgeSvg,
+  waterNanoSvg,
+  woodenBridgeSvg,
+  woodenFenceSvg,
+  woodenGateSvg,
+} from './nano-tile-svgs.js';
 
 /** Default walkable rule constants (avoid allocations in hot paths). */
 const WALKABLE_NEVER  = { type: 'never'  } as const;
-// TODO: add WALKABLE_ALWAYS / WALKABLE_CONDITIONAL for bridges and gated tiles
+const WALKABLE_ALWAYS = { type: 'always' } as const;
+const WALKABLE_QUIZ_GATE = { type: 'conditional', conditionId: 'quiz-gate' } as const;
 
 // ─── Stone Wall ───────────────────────────────────────────────────────────────
 
@@ -48,6 +61,40 @@ export function stoneWallNano(
   };
 }
 
+export function homesteadWallNano(
+  variant: FeatureVariant = 'isolated',
+  zOffset = 8,
+): IsoNanoTile {
+  return {
+    kind: 'homestead-wall',
+    zOffset,
+    zMode: 'positive',
+    svg: homesteadWallSvg(variant),
+    sideTextureSvg: homesteadWallSvg(variant),
+    topTextureSvg: homesteadWallTopSvg(variant),
+    walkable: WALKABLE_NEVER,
+    blendEdges: false,
+    variant,
+  };
+}
+
+export function cathedralWallNano(
+  variant: FeatureVariant = 'isolated',
+  zOffset = 12,
+): IsoNanoTile {
+  return {
+    kind: 'cathedral-wall',
+    zOffset,
+    zMode: 'positive',
+    svg: cathedralWallSvg(variant),
+    sideTextureSvg: cathedralWallSvg(variant),
+    topTextureSvg: cathedralWallTopSvg(variant),
+    walkable: WALKABLE_NEVER,
+    blendEdges: false,
+    variant,
+  };
+}
+
 // ─── Wooden Fence ─────────────────────────────────────────────────────────────
 
 /**
@@ -66,6 +113,82 @@ export function woodenFenceNano(
     zMode: 'positive',
     svg: woodenFenceSvg(variant),
     walkable: WALKABLE_NEVER,
+    blendEdges: false,
+    variant,
+  };
+}
+
+// ─── Gate / Quiz Gate ───────────────────────────────────────────────────────
+
+/**
+ * Create a rustic gate descriptor for locked doors and quiz gates.
+ * Uses the same lightweight positive-Z billboard path as fences.
+ */
+export function woodenGateNano(
+  variant: FeatureVariant = 'straight-h',
+  conditional = false,
+  zOffset = 3,
+): IsoNanoTile {
+  return {
+    kind: 'gate',
+    zOffset,
+    zMode: 'positive',
+    svg: woodenGateSvg(false, conditional ? 'mossy-farm-rail' : 'weathered-post-rail'),
+    walkable: conditional ? WALKABLE_QUIZ_GATE : WALKABLE_NEVER,
+    blendEdges: false,
+    variant,
+  };
+}
+
+// ─── Water / River ──────────────────────────────────────────────────────────
+
+/**
+ * Create a negative-Z water descriptor. This is the first main-game port of
+ * the Iso 2.0 sunken water material; base terrain wiring comes later because
+ * main terrain is chunk-cached.
+ */
+export function waterNano(
+  variant: FeatureVariant = 'straight-h',
+  zOffset = -2,
+): IsoNanoTile {
+  return {
+    kind: 'river',
+    zOffset,
+    zMode: 'negative',
+    svg: waterNanoSvg(variant, variant === 'isolated' ? 'deep-pond' : 'clear-river'),
+    walkable: WALKABLE_NEVER,
+    blendEdges: true,
+    variant,
+  };
+}
+
+// ─── Bridge ─────────────────────────────────────────────────────────────────
+
+/** Lightweight placeholder bridge deck so bridge/gate/water APIs can be tested
+ * through the same nano bridge before the full troll-bridge family lands. */
+export function bridgeNano(
+  variant: FeatureVariant = 'straight-h',
+): IsoNanoTile {
+  return {
+    kind: 'bridge',
+    zOffset: 0,
+    zMode: 'flat',
+    svg: woodenBridgeSvg(variant),
+    walkable: WALKABLE_ALWAYS,
+    blendEdges: false,
+    variant,
+  };
+}
+
+export function trollBridgeNano(
+  variant: FeatureVariant = 'straight-h',
+): IsoNanoTile {
+  return {
+    kind: 'troll-bridge',
+    zOffset: 1,
+    zMode: 'flat',
+    svg: trollBridgeSvg(false),
+    walkable: WALKABLE_QUIZ_GATE,
     blendEdges: false,
     variant,
   };
@@ -101,8 +224,22 @@ export function getNanoStack(
   switch (tileType) {
     case 'stone_wall':
       stack = [stoneWallNano(variant ?? 'isolated')]; break;
+    case 'homestead_wall':
+      stack = [homesteadWallNano(variant ?? 'isolated')]; break;
+    case 'cathedral_wall':
+      stack = [cathedralWallNano(variant ?? 'isolated')]; break;
     case 'wooden_fence':
       stack = [woodenFenceNano(variant ?? 'straight-h')]; break;
+    case 'door_gate':
+      stack = [woodenGateNano(variant ?? 'straight-h')]; break;
+    case 'quiz_gate':
+      stack = [woodenGateNano(variant ?? 'straight-h', true)]; break;
+    case 'water':
+      stack = [waterNano(variant ?? 'straight-h')]; break;
+    case 'bridge':
+      stack = [bridgeNano(variant ?? 'straight-h')]; break;
+    case 'troll_bridge':
+      stack = [trollBridgeNano(variant ?? 'straight-h')]; break;
   }
   if (stack) _nanoStackCache.set(key, stack);
   return stack;
@@ -113,5 +250,7 @@ export function getNanoStack(
  * Quick check avoids constructing the descriptor just to see if it exists.
  */
 export function hasNanoRenderer(tileType: string): boolean {
-  return tileType === 'stone_wall' || tileType === 'wooden_fence';
+  return tileType === 'stone_wall' || tileType === 'wooden_fence' || tileType === 'door_gate'
+    || tileType === 'quiz_gate' || tileType === 'water' || tileType === 'bridge'
+    || tileType === 'troll_bridge' || tileType === 'homestead_wall' || tileType === 'cathedral_wall';
 }

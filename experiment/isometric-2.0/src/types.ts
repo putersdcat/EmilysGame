@@ -239,6 +239,8 @@ export interface NanoTile {
   readonly variants?: readonly FeatureVariant[];
   /** SVG path data for shadow silhouette. */
   readonly shadowPath?: string;
+  /** Optional procedural fence/gate construction + material style. */
+  readonly fenceStyle?: FenceStyle;
   /** Solver-resolved connection flags. */
   readonly connections?: FeatureConnections;
   /** Solver-resolved variant piece. */
@@ -282,6 +284,47 @@ export interface NanoWeatheringOverlay {
   readonly yRange?: readonly [number, number];
   /** 0..1 x-range over the actual rendered face. */
   readonly xRange?: readonly [number, number];
+}
+
+export type FenceConstructionKind = 'post-and-rail' | 'split-rail' | 'picket' | 'wattle';
+export type FenceGateKind = 'farm' | 'picket' | 'wattle';
+export type FenceLeafMode = 'single' | 'double';
+
+export interface FenceWeathering {
+  readonly sunBleach: number;
+  readonly moss: number;
+  readonly grime: number;
+  readonly cracks: number;
+}
+
+export interface FenceStyle {
+  readonly id: string;
+  readonly construction: FenceConstructionKind;
+  readonly gateKind: FenceGateKind;
+  readonly gateLeafMode: FenceLeafMode;
+  readonly postColor: string;
+  readonly postShadow: string;
+  readonly postHighlight: string;
+  readonly railColor: string;
+  readonly railShadow: string;
+  readonly railHighlight: string;
+  readonly hardwareColor: string;
+  readonly bleachColor: string;
+  readonly mossColor: string;
+  readonly grimeColor: string;
+  readonly crackColor: string;
+  readonly postWidth: number;
+  readonly postCapHeight: number;
+  readonly postHeightScale: number;
+  readonly railThickness: number;
+  readonly railSpread: number;
+  readonly railCount: 1 | 2 | 3;
+  readonly midSpanPosts: boolean;
+  readonly picketSpacing?: number;
+  readonly weaveSpacing?: number;
+  readonly sag: number;
+  readonly roughness: number;
+  readonly weathering: FenceWeathering;
 }
 
 /**

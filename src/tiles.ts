@@ -11,7 +11,8 @@ import { RENDER_CONFIG } from './config/game.config';
 
 export type TileType =
   | 'grass' | 'dirt' | 'rock' | 'water' | 'sand'
-  | 'stone_wall' | 'stone_floor' | 'bridge' | 'door_gate' | 'wooden_fence' | 'quiz_gate';
+  | 'stone_wall' | 'stone_floor' | 'bridge' | 'door_gate' | 'wooden_fence' | 'quiz_gate'
+  | 'troll_bridge' | 'homestead_wall' | 'cathedral_wall';
 
 // ─── Grass Variants (4 patterns for visual variety) ──────────
 
@@ -453,25 +454,29 @@ const TILE_SVG_SOURCES: Record<TileType, string> = {
   <circle cx="26" cy="26" r="2" fill="#E0E0FF" opacity="0.5"/>
   <rect x="0" y="28" width="32" height="4" fill="#000" opacity="0.2"/>
 </svg>`,
+
+  troll_bridge: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" fill="#6a4a10"/></svg>`,
+  homestead_wall: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" fill="#d3c8b5"/></svg>`,
+  cathedral_wall: `<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" fill="#5f5a58"/></svg>`,
 };
 
 // ─── Isometric Tile Cache ────────────────────────────────────
 
-/** Pre-rendered isometric diamond tiles (64x32 canvases) */
+/** Pre-rendered isometric diamond tiles */
 const isoTileCache = new Map<TileType, HTMLCanvasElement>();
 
 /** All available tile types */
 export const ALL_TILE_TYPES: TileType[] = Object.keys(TILE_SVG_SOURCES) as TileType[];
 
 /**
- * Render an SVG into a 64x32 isometric diamond on an offscreen canvas.
+ * Render an SVG into an isometric diamond on an offscreen canvas.
  * Uses affine transform: maps unit square (RENDER_CONFIG.microTileSize) to isometric diamond.
- * SVG size 96 → rasterises at 96px for crisp downsampling into the 64×32 diamond (#192).
+ * Iso 2.0 source tiles are 144px logical micro tiles projected to 256×128.
  */
-async function renderIsoTile(svg: string): Promise<HTMLCanvasElement> {
+async function renderIsoTile(svg: string, type?: TileType, variantSeed = 0): Promise<HTMLCanvasElement> {
   const tileSize = RENDER_CONFIG.microTileSize;
-  const tw = RENDER_CONFIG.tileWidth;   // 64
-  const th = RENDER_CONFIG.tileHeight;  // 32
+  const tw = RENDER_CONFIG.tileWidth;
+  const th = RENDER_CONFIG.tileHeight;
 
   // Load SVG as Image
   const img = new Image();
@@ -488,20 +493,113 @@ async function renderIsoTile(svg: string): Promise<HTMLCanvasElement> {
   canvas.height = th;
   const ctx = canvas.getContext('2d')!;
 
-  // Isometric transform: maps (0,0)-(32,32) square to diamond
-  // Top vertex: (tw/2, 0), Right: (tw, th/2), Bottom: (tw/2, th), Left: (0, th/2)
+  // Isometric transform: maps micro source square to projected diamond.
   ctx.setTransform(
-    tw / (2 * tileSize),    // a = 1
-    th / (2 * tileSize),    // b = 0.5
-    -tw / (2 * tileSize),   // c = -1
-    th / (2 * tileSize),    // d = 0.5
-    tw / 2,                 // e = 32 (x offset for top vertex)
-    0,                      // f = 0  (y offset for top vertex)
+    tw / (2 * tileSize),
+    th / (2 * tileSize),
+    -tw / (2 * tileSize),
+    th / (2 * tileSize),
+    tw / 2,
+    0,
   );
 
   ctx.drawImage(img, 0, 0, tileSize, tileSize);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (type) drawNativeIsoDetail(ctx, type, variantSeed, tw, th);
 
   return canvas;
+}
+
+function detailHash(seed: number, slot: number): number {
+  let h = Math.imul(seed + 0x9e3779b9, 374761393) ^ Math.imul(slot + 0x85ebca6b, 668265263);
+  h ^= h >>> 13;
+  h = Math.imul(h, 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 0xffffffff;
+}
+
+function clipIsoDiamond(ctx: CanvasRenderingContext2D, tw: number, th: number): void {
+  ctx.beginPath();
+  ctx.moveTo(tw / 2, 0);
+  ctx.lineTo(tw, th / 2);
+  ctx.lineTo(tw / 2, th);
+  ctx.lineTo(0, th / 2);
+  ctx.closePath();
+  ctx.clip();
+}
+
+function drawNativeIsoDetail(
+  ctx: CanvasRenderingContext2D,
+  type: TileType,
+  seed: number,
+  tw: number,
+  th: number,
+): void {
+  ctx.save();
+  clipIsoDiamond(ctx, tw, th);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  if (type === 'grass') {
+    for (let i = 0; i < 18; i++) {
+      const n = detailHash(seed, i);
+      const x = 12 + detailHash(seed, i + 100) * (tw - 24);
+      const y = 10 + detailHash(seed, i + 200) * (th - 20);
+      const len = 8 + n * 18;
+      ctx.strokeStyle = i % 3 === 0 ? 'rgba(18,105,34,0.28)' : 'rgba(210,255,170,0.12)';
+      ctx.lineWidth = 1 + n * 1.2;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + len * 0.45, y - 2 - n * 4, x + len, y + 1 + n * 3);
+      ctx.stroke();
+    }
+  } else if (type === 'dirt') {
+    for (let i = 0; i < 16; i++) {
+      const x = 12 + detailHash(seed, i + 10) * (tw - 24);
+      const y = 12 + detailHash(seed, i + 20) * (th - 24);
+      const r = 2 + detailHash(seed, i + 30) * 6;
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(67,43,24,0.18)' : 'rgba(190,135,67,0.13)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, r * 1.8, r * 0.75, -0.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(69,43,23,0.22)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) {
+      const x = detailHash(seed, i + 70) * tw;
+      const y = detailHash(seed, i + 80) * th;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 20, y + 8); ctx.lineTo(x + 34, y + 1); ctx.stroke();
+    }
+  } else if (type === 'sand') {
+    ctx.strokeStyle = 'rgba(154,124,70,0.22)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 10; i++) {
+      const y = 10 + detailHash(seed, i + 40) * (th - 20);
+      const x = detailHash(seed, i + 50) * tw;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + 18, y - 4, x + 42, y);
+      ctx.stroke();
+    }
+  } else if (type === 'rock') {
+    ctx.strokeStyle = 'rgba(35,35,35,0.22)';
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 12; i++) {
+      const x = 10 + detailHash(seed, i + 60) * (tw - 20);
+      const y = 10 + detailHash(seed, i + 61) * (th - 20);
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 16, y - 6); ctx.lineTo(x + 32, y + 2); ctx.stroke();
+    }
+  } else if (type === 'stone_floor') {
+    ctx.strokeStyle = 'rgba(70,60,50,0.25)';
+    ctx.lineWidth = 1;
+    for (let x = -tw; x < tw * 2; x += 28) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x + tw / 2, th); ctx.stroke();
+    }
+    for (let x = 0; x < tw * 2; x += 36) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x - tw / 2, th); ctx.stroke();
+    }
+  }
+
+  ctx.restore();
 }
 
 /**
@@ -513,7 +611,7 @@ export async function preloadTiles(): Promise<void> {
   const results = await Promise.all(
     entries.map(async ([type, svg]) => ({
       type,
-      canvas: await renderIsoTile(svg),
+      canvas: await renderIsoTile(svg, type, type.length * 97),
     })),
   );
   for (const { type, canvas } of results) {
@@ -522,7 +620,7 @@ export async function preloadTiles(): Promise<void> {
 
   // Pre-render grass variants
   const grassResults = await Promise.all(
-    GRASS_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+    GRASS_VARIANT_SVGS.map((svg, i) => renderIsoTile(svg, 'grass', i + 1)),
   );
   for (const canvas of grassResults) {
     grassVariantCache.push(canvas);
@@ -530,7 +628,7 @@ export async function preloadTiles(): Promise<void> {
 
   // Pre-render dirt variants
   const dirtResults = await Promise.all(
-    DIRT_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+    DIRT_VARIANT_SVGS.map((svg, i) => renderIsoTile(svg, 'dirt', i + 11)),
   );
   for (const canvas of dirtResults) {
     dirtVariantCache.push(canvas);
@@ -538,7 +636,7 @@ export async function preloadTiles(): Promise<void> {
 
   // Pre-render rock variants
   const rockResults = await Promise.all(
-    ROCK_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+    ROCK_VARIANT_SVGS.map((svg, i) => renderIsoTile(svg, 'rock', i + 21)),
   );
   for (const canvas of rockResults) {
     rockVariantCache.push(canvas);
@@ -546,7 +644,7 @@ export async function preloadTiles(): Promise<void> {
 
   // Pre-render sand variants
   const sandResults = await Promise.all(
-    SAND_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+    SAND_VARIANT_SVGS.map((svg, i) => renderIsoTile(svg, 'sand', i + 31)),
   );
   for (const canvas of sandResults) {
     sandVariantCache.push(canvas);
@@ -554,7 +652,7 @@ export async function preloadTiles(): Promise<void> {
 
   // Pre-render stone floor variants
   const stoneFloorResults = await Promise.all(
-    STONE_FLOOR_VARIANT_SVGS.map(svg => renderIsoTile(svg)),
+    STONE_FLOOR_VARIANT_SVGS.map((svg, i) => renderIsoTile(svg, 'stone_floor', i + 41)),
   );
   for (const canvas of stoneFloorResults) {
     stoneFloorVariantCache.push(canvas);

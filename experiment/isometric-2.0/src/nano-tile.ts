@@ -22,6 +22,8 @@ import {
   ISO_TILE_WIDTH,
   ISO_TILE_HEIGHT,
   MICRO_TILE_SIZE,
+  NANO_GRID,
+  type FeatureConnections,
   type FeatureVariant,
   type NanoTile,
   type NanoStack,
@@ -37,6 +39,7 @@ const HALF_W = ISO_TILE_WIDTH / 2;   // 128
 const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
 const ISO_X_PER_SOURCE_PX = HALF_W / MICRO_TILE_SIZE;
 const ISO_Y_PER_SOURCE_PX = HALF_H / MICRO_TILE_SIZE;
+const NANO_CELL_SIZE = MICRO_TILE_SIZE / NANO_GRID;
 
 /**
  * Visual height multiplier for nano Z rendering.
@@ -87,6 +90,237 @@ function hash01(a: number, b: number, c: number): number {
 
 // ─── Positive Z Rendering ────────────────────────────────────
 
+function connectionsFromVariant(variant: FeatureVariant | undefined): FeatureConnections {
+  switch (variant) {
+    case 'straight-h': return { top: false, right: true,  bottom: false, left: true  };
+    case 'straight-v': return { top: true,  right: false, bottom: true,  left: false };
+    case 'cross':      return { top: true,  right: true,  bottom: true,  left: true  };
+    case 'end-r':      return { top: false, right: true,  bottom: false, left: false };
+    case 'end-l':      return { top: false, right: false, bottom: false, left: true  };
+    case 'end-t':      return { top: true,  right: false, bottom: false, left: false };
+    case 'end-b':      return { top: false, right: false, bottom: true,  left: false };
+    case 'corner-tr':  return { top: true,  right: true,  bottom: false, left: false };
+    case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
+    case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
+    case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
+    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    default:           return { top: false, right: false, bottom: false, left: false };
+  }
+}
+
+function drawLineBetween(
+  ctx: CanvasRenderingContext2D,
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  yOffset: number,
+  strokeStyle: string,
+  lineWidth: number,
+): void {
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y - yOffset);
+  ctx.lineTo(b.x, b.y - yOffset);
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+}
+
+function drawFencePost(
+  ctx: CanvasRenderingContext2D,
+  p: { x: number; y: number },
+  height: number,
+): void {
+  const postW = 7;
+  const postCap = 4;
+
+  // Ground contact shadow/foot. This is deliberately drawn at the exact
+  // projected fence point, so posts read as planted into the iso ground
+  // plane instead of hovering above it.
+  ctx.beginPath();
+  ctx.ellipse(p.x + 1, p.y + 1, 5, 2.6, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,0,0,0.24)';
+  ctx.fill();
+
+  ctx.fillStyle = '#5b3518';
+  ctx.fillRect(p.x - postW / 2 - 1, p.y - 2, postW + 2, 3);
+
+  ctx.beginPath();
+  ctx.moveTo(p.x + 3, p.y + 2);
+  ctx.lineTo(p.x + 3, p.y - height + 2);
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = postW + 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  const grad = ctx.createLinearGradient(p.x - postW / 2, 0, p.x + postW / 2, 0);
+  grad.addColorStop(0, '#6f421d');
+  grad.addColorStop(0.45, '#a4672a');
+  grad.addColorStop(1, '#4f2c12');
+  ctx.fillStyle = grad;
+  ctx.fillRect(p.x - postW / 2, p.y - height, postW, height);
+
+  ctx.fillStyle = '#b6752e';
+  ctx.fillRect(p.x - postW / 2 - 1, p.y - height - postCap, postW + 2, postCap);
+  ctx.strokeStyle = 'rgba(65,38,15,0.72)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(p.x - postW / 2 - 1, p.y - height - postCap, postW + 2, postCap);
+
+  ctx.beginPath();
+  ctx.moveTo(p.x - 2, p.y - 3);
+  ctx.lineTo(p.x - 2, p.y - height + 3);
+  ctx.strokeStyle = 'rgba(224,157,68,0.52)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+}
+
+function projectFencePoint(
+  screenX: number,
+  screenY: number,
+  x: number,
+  y: number,
+  z = 0,
+): { x: number; y: number } {
+  return {
+    x: screenX + (x - y) * ISO_X_PER_SOURCE_PX + HALF_W,
+    y: screenY + (x + y) * ISO_Y_PER_SOURCE_PX - z,
+  };
+}
+
+function drawProceduralFenceNano(
+  ctx: CanvasRenderingContext2D,
+  nano: NanoTile,
+  screenX: number,
+  screenY: number,
+): boolean {
+  const height = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
+  const railColor = nano.kind === 'gate' ? '#9a6829' : '#a06a26';
+  const railDark = nano.kind === 'gate' ? '#5a3519' : '#6a421d';
+  const arms = nano.connections ?? connectionsFromVariant(nano.variant);
+  const postKeys = new Set<string>();
+  const posts: Array<{ x: number; y: number }> = [];
+
+  const addPost = (p: { x: number; y: number }) => {
+    const key = `${Math.round(p.x)},${Math.round(p.y)}`;
+    if (postKeys.has(key)) return;
+    postKeys.add(key);
+    posts.push(p);
+  };
+
+  const addPostsOnSpan = (
+    axis: 'x' | 'y',
+    fixed: number,
+    from: number,
+    to: number,
+  ) => {
+    const min = Math.min(from, to);
+    const max = Math.max(from, to);
+    const addAt = (v: number) => {
+      addPost(axis === 'x'
+        ? projectFencePoint(screenX, screenY, v, fixed)
+        : projectFencePoint(screenX, screenY, fixed, v));
+    };
+
+    addAt(min);
+    for (let v = min; v <= max; v += NANO_CELL_SIZE) {
+      if (v < min - 0.001 || v > max + 0.001) continue;
+      addAt(v);
+    }
+    addAt(max);
+  };
+
+  ctx.save();
+  ctx.lineJoin = 'round';
+
+  const drawSegment = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    // Draw dark backing first, then the warm rail and a thin highlight.
+    // Rails are intentionally round-ended so a run made from adjacent
+    // micro tiles reads as one continuous wooden fence line.
+    drawLineBetween(ctx, a, b, height * 0.68, railDark, 6);
+    drawLineBetween(ctx, a, b, height * 0.43, railDark, 6);
+    drawLineBetween(ctx, a, b, height * 0.70, railColor, 3.5);
+    drawLineBetween(ctx, a, b, height * 0.45, '#bd7b30', 3.5);
+    drawLineBetween(ctx, a, b, height * 0.72, 'rgba(235,176,78,0.55)', 1.2);
+  };
+
+  // Physical footprint: a fence is a THIN barrier running down the CENTER
+  // nano lane of the parent 144px micro tile. Its post positions land on
+  // the 48px nano-grid lines (0,48,96,144), so a fence can line up with
+  // the same L0.5 spatial grammar as a 48px-thick stone wall.
+  const centerCoord = NANO_CELL_SIZE * 1.5;
+  const center = projectFencePoint(screenX, screenY, centerCoord, centerCoord);
+  const left = projectFencePoint(screenX, screenY, 0, centerCoord);
+  const right = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE, centerCoord);
+  const top = projectFencePoint(screenX, screenY, centerCoord, 0);
+  const bottom = projectFencePoint(screenX, screenY, centerCoord, MICRO_TILE_SIZE);
+
+  if (arms.left && arms.right) {
+    drawSegment(left, right);
+    addPostsOnSpan('x', centerCoord, 0, MICRO_TILE_SIZE);
+  } else {
+    if (arms.left) {
+      drawSegment(left, center);
+      addPostsOnSpan('x', centerCoord, 0, centerCoord);
+    }
+    if (arms.right) {
+      drawSegment(center, right);
+      addPostsOnSpan('x', centerCoord, centerCoord, MICRO_TILE_SIZE);
+    }
+  }
+
+  if (arms.top && arms.bottom) {
+    drawSegment(top, bottom);
+    addPostsOnSpan('y', centerCoord, 0, MICRO_TILE_SIZE);
+  } else {
+    if (arms.top) {
+      drawSegment(top, center);
+      addPostsOnSpan('y', centerCoord, 0, centerCoord);
+    }
+    if (arms.bottom) {
+      drawSegment(center, bottom);
+      addPostsOnSpan('y', centerCoord, centerCoord, MICRO_TILE_SIZE);
+    }
+  }
+
+  if (!arms.left && !arms.right && !arms.top && !arms.bottom) addPost(center);
+
+  if (nano.kind === 'gate') {
+    if (arms.left && arms.right) {
+      const hingeA = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE * 0.42, MICRO_TILE_SIZE / 2);
+      const hingeB = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE * 0.58, MICRO_TILE_SIZE / 2);
+      drawLineBetween(ctx, hingeA, hingeB, height * 0.82, '#5a3519', 7);
+      drawLineBetween(ctx, hingeA, hingeB, height * 0.57, '#b47a2c', 7);
+      addPost(hingeA);
+      addPost(hingeB);
+    } else if (arms.top && arms.bottom) {
+      const hingeA = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE / 2, MICRO_TILE_SIZE * 0.42);
+      const hingeB = projectFencePoint(screenX, screenY, MICRO_TILE_SIZE / 2, MICRO_TILE_SIZE * 0.58);
+      drawLineBetween(ctx, hingeA, hingeB, height * 0.82, '#5a3519', 7);
+      drawLineBetween(ctx, hingeA, hingeB, height * 0.57, '#b47a2c', 7);
+      addPost(hingeA);
+      addPost(hingeB);
+    }
+  }
+
+  for (const post of posts) drawFencePost(ctx, post, height * 0.96);
+
+  if (nano.kind === 'gate') {
+    ctx.beginPath();
+    ctx.arc(center.x, center.y - height * 0.55, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#d1a13a';
+    ctx.fill();
+    ctx.strokeStyle = '#473019';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+  return true;
+}
+
 /**
  * Draw a positive-Z nano (upright barrier: fence, wall, etc.).
  *
@@ -109,6 +343,10 @@ export function drawPositiveNano(
   screenY: number,
   _sun?: SunState,
 ): boolean {
+  if (nano.kind === 'fence' || nano.kind === 'gate') {
+    return drawProceduralFenceNano(ctx, nano, screenX, screenY);
+  }
+
   const img = loadSvgImage(nano.svg);
   if (!img) return false;
 

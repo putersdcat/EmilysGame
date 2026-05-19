@@ -25,6 +25,7 @@ import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
 import { getVariantSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
+import { FenceFamily } from '../src/textures/index.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -40,10 +41,12 @@ import {
   type NanoWeatheringOverlay,
   type NanoTileKind,
   type NanoZMode,
+  type FenceStyle,
   type FeatureVariant,
   type FeatureConnections,
   type WalkableRule,
 } from '../src/types.js';
+import type { WaterStyleId } from '../src/textures/water-family.js';
 
 // ─── Local geometry constants ─────────────────────────────────
 
@@ -111,11 +114,19 @@ export interface CanvasSceneEntry {
   kind: string;
   col: number;
   row: number;
+  /** Optional nano sub-cell column inside the host micro tile (0=W, 1=center, 2=E). */
+  nanoCol?: 0 | 1 | 2;
+  /** Optional nano sub-cell row inside the host micro tile (0=N, 1=center, 2=S). */
+  nanoRow?: 0 | 1 | 2;
   variant?: FeatureVariant;
+  /** Optional procedural fence style id or resolved style. */
+  fenceStyle?: string | FenceStyle;
   zOffset?: number;
   connections?: FeatureConnections;
   /** Raw SVG override — skips getVariantSvg lookup. For extruded kinds, this overrides the SIDE texture only. */
   svgOverride?: string;
+  /** Optional procedural water material style for river/pond nanos. */
+  waterStyle?: WaterStyleId;
   /**
    * Optional override for the wall TOP texture (extruded kinds only).
    * Pass any 128×128 self-tileable brick SVG (textures/README.md
@@ -232,7 +243,7 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
     const kind     = e.kind as NanoTileKind;
 
     if (EXTRUDED_KINDS.has(e.kind)) {
-      const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row);
+      const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle);
       const top  = e.topFaceSvgOverride ?? e.topSvgOverride ?? side;
       const topV = e.topFaceSvgVOverride;
       const south = e.southFaceSvgOverride ?? side;
@@ -249,8 +260,8 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
       for (const svg of Object.values(e.endFaceSvgByPlane ?? {})) out.add(svg);
     } else {
       const svg = e.svgOverride
-        ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
-        ?? ((e.kind === 'fence' || e.kind === 'gate') ? woodenFenceSvg(variant) : null);
+        ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle)
+        ?? ((e.kind === 'fence' || e.kind === 'gate') ? woodenFenceSvg(variant, e.fenceStyle) : null);
       const side = e.southFaceSvgOverride ?? e.endFaceSvgOverride;
       if (svg) out.add(svg);
       if (side) out.add(side);
@@ -292,7 +303,7 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
   const kind = e.kind as NanoTileKind;
 
   if (EXTRUDED_KINDS.has(e.kind)) {
-    const sideSvg = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row) ?? '';
+    const sideSvg = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle) ?? '';
     // Top texture: prefer explicit topSvgOverride, otherwise reuse the
     // side SVG so a re-textured wall (e.g. red clinker) stays self-
     // consistent. Falls back to canonical StoneBrick when both are
@@ -323,13 +334,20 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
   }
 
   const svg = e.svgOverride
-    ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row)
-    ?? ((e.kind === 'fence' || e.kind === 'gate') ? woodenFenceSvg(variant) : '');
+    ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle)
+    ?? ((e.kind === 'fence' || e.kind === 'gate') ? woodenFenceSvg(variant, e.fenceStyle) : '');
+
+  const fenceStyle = (e.kind === 'fence' || e.kind === 'gate')
+    ? FenceFamily.fenceStyleForTile(e.fenceStyle, e.col, e.row, variant)
+    : (typeof e.fenceStyle === 'string'
+      ? FenceFamily.getFenceStyle(e.fenceStyle)
+      : e.fenceStyle);
 
   return {
-    kind, zOffset, zMode, walkable, blendEdges: false,
+    kind, zOffset, zMode, walkable, blendEdges: e.kind === 'river',
     svg: svg ?? '',
     sideTextureSvg: e.southFaceSvgOverride ?? e.endFaceSvgOverride,
+    fenceStyle,
     variant,
     connections: conn,
   };
@@ -343,6 +361,23 @@ function tilePos(col: number, row: number, ox: number, oy: number): ScreenPos {
   return {
     screenX: ox + (col - row) * HALF_W - HALF_W,
     screenY: oy + (col + row) * HALF_H - HALF_H,
+  };
+}
+
+function nanoEntryPos(e: CanvasSceneEntry, ox: number, oy: number): ScreenPos {
+  const base = tilePos(e.col, e.row, ox, oy);
+  if (e.nanoCol === undefined || e.nanoRow === undefined) return base;
+
+  const nanoSize = MICRO_TILE_SIZE / NANO_GRID;
+  const centerOffset = nanoSize;
+  const localX = e.nanoCol * nanoSize;
+  const localY = e.nanoRow * nanoSize;
+  const dx = localX - centerOffset;
+  const dy = localY - centerOffset;
+
+  return {
+    screenX: base.screenX + (dx - dy) * (ISO_TILE_WIDTH / MICRO_TILE_SIZE / 2),
+    screenY: base.screenY + (dx + dy) * (ISO_TILE_HEIGHT / MICRO_TILE_SIZE / 2),
   };
 }
 
@@ -451,23 +486,57 @@ function drawPlayerSprite(
   // tilePos(...) + HALF_W/ISO_TILE_HEIGHT anchor used before nano-snap.)
   const py = oy + (footWorldCol + footWorldRow) * HALF_H - HALF_H;
 
-  const bodyH = 28, bodyW = 12, headR = 7;
-  const bodyTop = py - bodyH;
+  // Match the experiment runtime player scale from src/player.ts:
+  // PLAYER_W=64, PLAYER_H=80, feet at 90% height.
+  const playerW = 64;
+  const playerH = 80;
+  const feetOffsetY = playerH * 0.9;
+  const drawX = px - playerW / 2;
+  const drawY = py - feetOffsetY;
 
   // Drop shadow
   ctx.beginPath();
-  ctx.ellipse(px, py, 8, 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(px, py + 2, 18, 6, 0, 0, Math.PI * 2);
   ctx.fillStyle = 'rgba(0,0,0,0.3)';
   ctx.fill();
 
-  // Body
-  ctx.fillStyle = '#3a6fd8';
-  ctx.fillRect(px - bodyW / 2, bodyTop, bodyW, bodyH);
+  // Legs
+  ctx.fillStyle = '#4a3728';
+  ctx.fillRect(drawX + 22, drawY + 52, 8, 18);
+  ctx.fillStyle = '#3d2d1f';
+  ctx.fillRect(drawX + 34, drawY + 52, 8, 18);
 
-  // Head
+  // Body
   ctx.beginPath();
-  ctx.arc(px, bodyTop - headR, headR, 0, Math.PI * 2);
-  ctx.fillStyle = '#e8c9a0';
+  ctx.moveTo(drawX + 20, drawY + 28);
+  ctx.quadraticCurveTo(drawX + 20, drawY + 52, drawX + 24, drawY + 56);
+  ctx.lineTo(drawX + 40, drawY + 56);
+  ctx.quadraticCurveTo(drawX + 44, drawY + 52, drawX + 44, drawY + 28);
+  ctx.quadraticCurveTo(drawX + 44, drawY + 22, drawX + 32, drawY + 20);
+  ctx.quadraticCurveTo(drawX + 20, drawY + 22, drawX + 20, drawY + 28);
+  ctx.closePath();
+  ctx.fillStyle = '#e74c3c';
+  ctx.fill();
+  ctx.fillStyle = '#7f4f24';
+  ctx.fillRect(drawX + 21, drawY + 46, 22, 4);
+
+  // Arms
+  ctx.fillStyle = '#e74c3c';
+  ctx.fillRect(drawX + 14, drawY + 30, 7, 20);
+  ctx.fillStyle = '#c0392b';
+  ctx.fillRect(drawX + 43, drawY + 30, 7, 20);
+
+  // Head + hair
+  ctx.beginPath();
+  ctx.arc(drawX + 32, drawY + 16, 12, 0, Math.PI * 2);
+  ctx.fillStyle = '#fdbf60';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(drawX + 22, drawY + 12);
+  ctx.quadraticCurveTo(drawX + 22, drawY + 4, drawX + 32, drawY + 4);
+  ctx.quadraticCurveTo(drawX + 42, drawY + 4, drawX + 42, drawY + 12);
+  ctx.quadraticCurveTo(drawX + 32, drawY + 8, drawX + 22, drawY + 12);
+  ctx.fillStyle = '#8B4513';
   ctx.fill();
   ctx.strokeStyle = 'rgba(0,0,0,0.4)';
   ctx.lineWidth = 0.8;
@@ -475,7 +544,7 @@ function drawPlayerSprite(
 
   // Label tag
   if (label) {
-    const tagY = bodyTop - headR * 2 - 4;
+    const tagY = drawY - 4;
     ctx.fillStyle = 'rgba(0,0,0,0.75)';
     ctx.fillRect(px - 16, tagY - 12, 32, 13);
     ctx.fillStyle = '#fff';
@@ -599,7 +668,7 @@ export async function renderNanoScene(
       if (zm !== zMode) continue;
       const nano = buildNanoTile(e);
       if (!nano) continue;
-      const { screenX, screenY } = tilePos(e.col, e.row, ox, oy);
+      const { screenX, screenY } = nanoEntryPos(e, ox, oy);
       if (debug) drawDebugDiamond(ctx, e.col, e.row, NANO_WALKABLE[e.kind] ?? true, ox, oy);
       drawNanoStack(nctx, [nano], screenX, screenY);
     }
@@ -641,7 +710,12 @@ export async function renderNanoScene(
   //     player correctly stands in front of the wall.
   //   * wall-vs-wall and wall-vs-terrain ordering is preserved (the
   //     +1 shift is uniform across all positive nanos).
-  const nanoDepth = (e: CanvasSceneEntry): number => e.col + e.row + 1;
+  const nanoDepth = (e: CanvasSceneEntry): number => {
+    if (e.nanoCol !== undefined && e.nanoRow !== undefined) {
+      return e.col + (e.nanoCol + 0.5) / NANO_GRID + e.row + (e.nanoRow + 0.5) / NANO_GRID;
+    }
+    return e.col + e.row + 1;
+  };
   const drawItems: DrawItem[] = [
     ...positiveNanoEntries.map(e  => ({ kind: 'nano'   as const, depth: nanoDepth(e),    entry: e  })),
     ...players.map(            p  => ({ kind: 'player' as const, depth: playerDepth(p), player: p })),
@@ -651,7 +725,7 @@ export async function renderNanoScene(
     if (item.kind === 'nano') {
       const nano = buildNanoTile(item.entry);
       if (!nano) continue;
-      const { screenX, screenY } = tilePos(item.entry.col, item.entry.row, ox, oy);
+      const { screenX, screenY } = nanoEntryPos(item.entry, ox, oy);
       if (debug) drawDebugDiamond(ctx, item.entry.col, item.entry.row, NANO_WALKABLE[item.entry.kind] ?? true, ox, oy);
       const nb = computeWallNeighbors(item.entry, entries);
       drawNanoStack(nctx, [nano], screenX, screenY, undefined, nb);

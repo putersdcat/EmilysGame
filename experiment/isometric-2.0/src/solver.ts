@@ -15,9 +15,8 @@ import {
   type FeatureVariant,
   type EdgeMasks,
   type MacroAssembly,
-  WORLD_UNIT_TILES,
+  CHUNK_TILES,
 } from './types';
-import { StoneBrick, TimberFrameWall, DarkCathedralStone } from './textures';
 
 // ─── Feature Configuration ───────────────────────────────────
 
@@ -70,21 +69,21 @@ function getNeighbors(
   row: number,
   lookup: NeighborLookup,
 ): Neighbors {
-  const worldCol = chunk.cx * WORLD_UNIT_TILES + col;
-  const worldRow = chunk.cy * WORLD_UNIT_TILES + row;
+  const worldCol = chunk.cx * CHUNK_TILES + col;
+  const worldRow = chunk.cy * CHUNK_TILES + row;
 
   return {
     top: row > 0
-      ? chunk.tiles[(row - 1) * WORLD_UNIT_TILES + col]
+      ? chunk.tiles[(row - 1) * CHUNK_TILES + col]
       : lookup(worldCol, worldRow - 1),
-    right: col < WORLD_UNIT_TILES - 1
-      ? chunk.tiles[row * WORLD_UNIT_TILES + col + 1]
+    right: col < CHUNK_TILES - 1
+      ? chunk.tiles[row * CHUNK_TILES + col + 1]
       : lookup(worldCol + 1, worldRow),
-    bottom: row < WORLD_UNIT_TILES - 1
-      ? chunk.tiles[(row + 1) * WORLD_UNIT_TILES + col]
+    bottom: row < CHUNK_TILES - 1
+      ? chunk.tiles[(row + 1) * CHUNK_TILES + col]
       : lookup(worldCol, worldRow + 1),
     left: col > 0
-      ? chunk.tiles[row * WORLD_UNIT_TILES + col - 1]
+      ? chunk.tiles[row * CHUNK_TILES + col - 1]
       : lookup(worldCol - 1, worldRow),
   };
 }
@@ -147,18 +146,187 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
 }
 
 // ─── Variant SVG Generation ──────────────────────────────────
-// Per-feature texture/SVG generators.
-//
-// Note: stone-wall textures live in src/textures/stone-brick.ts (one
-// 144×144 self-tileable image used for both side and top via
-// createPattern in nano-tile.ts). solver.ts only orchestrates which
-// feature kind/variant maps to which texture.
+// High-quality procedural SVGs for connection variants.
 // TODO: DOC — SVG generation patterns for each feature kind
 
+/**
+ * Generate individual stone block SVGs for a rectangular region.
+ * Produces staggered rows of stones with mortar gaps, color variation, and cracks.
+ */
+function stoneBlocks(x: number, y: number, w: number, h: number, seed: number, baseRowH = 12): string {
+  const blocks: string[] = [];
+  const gap = 2; // mortar gap
+  const rowH = baseRowH;
+  let row = 0;
+
+  for (let ry = y; ry < y + h - 2; ry += rowH + gap) {
+    const remainH = Math.min(rowH, y + h - ry - gap);
+    if (remainH < 4) break;
+    // Stagger every other row
+    const offset = (row % 2 === 0) ? 0 : 14;
+    let bx = x + offset;
+    let stoneIdx = 0;
+
+    while (bx < x + w - 2) {
+      const hash = ((seed * 7919 + row * 6581 + stoneIdx * 3571) >>> 0);
+      const bw = 20 + (hash % 18); // Stone width 20-37
+      const actualW = Math.min(bw, x + w - bx - gap);
+      if (actualW < 8) break;
+
+      // Color variation: base grey with slight warm/cool shift
+      const base = 145 + (hash >> 8) % 30;
+      const r = base + ((hash >> 12) % 10) - 5;
+      const g = base + ((hash >> 16) % 8) - 4;
+      const b = base + ((hash >> 20) % 12) - 2;
+
+      blocks.push(
+        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${remainH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
+      );
+
+      // Top highlight
+      blocks.push(
+        `<rect x="${bx}" y="${ry}" width="${actualW}" height="${Math.min(3, remainH)}" rx="1" fill="rgba(255,255,255,0.15)" />`
+      );
+
+      // Bottom shadow
+      blocks.push(
+        `<rect x="${bx}" y="${ry + remainH - 2}" width="${actualW}" height="2" rx="0.5" fill="rgba(0,0,0,0.08)" />`
+      );
+
+      // Occasional crack
+      if ((hash >> 24) % 5 === 0 && actualW > 14) {
+        const cx1 = bx + 4 + (hash % (actualW - 8));
+        const cy1 = ry + 2;
+        const cx2 = cx1 + ((hash >> 4) % 5) - 2;
+        const cy2 = ry + remainH - 2;
+        blocks.push(
+          `<line x1="${cx1}" y1="${cy1}" x2="${cx2}" y2="${cy2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
+        );
+      }
+
+      bx += actualW + gap;
+      stoneIdx++;
+    }
+    row++;
+  }
+  return blocks.join('\n    ');
+}
+
+/**
+ * Generate capstone row (slightly different colored stones on top of wall).
+ */
+function capStones(x: number, y: number, w: number, seed: number, capH = 6): string {
+  const caps: string[] = [];
+  // capH default 6 for side texture; pass ~2.5 for top texture to match scale.
+  let bx = x;
+  let idx = 0;
+  while (bx < x + w - 2) {
+    const hash = ((seed * 4271 + idx * 9137) >>> 0);
+    const bw = 16 + (hash % 14);
+    const actualW = Math.min(bw, x + w - bx - 2);
+    if (actualW < 6) break;
+    const grey = 150 + (hash >> 8) % 20;
+    caps.push(
+      `<rect x="${bx}" y="${y}" width="${actualW}" height="${capH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
+    );
+    bx += actualW + 2;
+    idx++;
+  }
+  return caps.join('\n    ');
+}
+
+// ─── Vertical block generation (for vertical wall tops) ─────
+// Standard stoneBlocks/capStones iterate horizontal rows (y→x).
+// Under iso transform, horizontal lines (y=const) → \ diagonals.
+// Vertical walls (/ on screen) need brick courses running along /.
+// Vertical lines (x=const) → / diagonals under iso transform.
+// These V variants iterate vertical columns (x→y) so mortar lines
+// run parallel to the wall's / direction on screen.
+
+/**
+ * Generate stone blocks with VERTICAL mortar courses (columns instead of rows).
+ * Used for top-view SVGs of vertical wall arms (N/S arms) so brick courses
+ * align with the wall's / screen direction.
+ */
+function stoneBlocksV(x: number, y: number, w: number, h: number, seed: number, baseColW = 12): string {
+  const blocks: string[] = [];
+  const gap = 2;
+  const colW = baseColW;
+  let col = 0;
+
+  for (let cx = x; cx < x + w - 2; cx += colW + gap) {
+    const remainW = Math.min(colW, x + w - cx - gap);
+    if (remainW < 4) break;
+    // Stagger every other column
+    const offset = (col % 2 === 0) ? 0 : 14;
+    let by = y + offset;
+    let stoneIdx = 0;
+
+    while (by < y + h - 2) {
+      const hash = ((seed * 7919 + col * 6581 + stoneIdx * 3571) >>> 0);
+      const bh = 20 + (hash % 18);
+      const actualH = Math.min(bh, y + h - by - gap);
+      if (actualH < 8) break;
+
+      const base = 145 + (hash >> 8) % 30;
+      const r = base + ((hash >> 12) % 10) - 5;
+      const g = base + ((hash >> 16) % 8) - 4;
+      const b = base + ((hash >> 20) % 12) - 2;
+
+      blocks.push(
+        `<rect x="${cx}" y="${by}" width="${remainW}" height="${actualH}" rx="1.5" fill="rgb(${r},${g},${b})" />`
+      );
+      // Left highlight
+      blocks.push(
+        `<rect x="${cx}" y="${by}" width="${Math.min(3, remainW)}" height="${actualH}" rx="1" fill="rgba(255,255,255,0.15)" />`
+      );
+      // Right shadow
+      blocks.push(
+        `<rect x="${cx + remainW - 2}" y="${by}" width="2" height="${actualH}" rx="0.5" fill="rgba(0,0,0,0.08)" />`
+      );
+      // Occasional horizontal crack
+      if ((hash >> 24) % 5 === 0 && actualH > 14) {
+        const ly = by + 4 + (hash % (actualH - 8));
+        blocks.push(
+          `<line x1="${cx + 2}" y1="${ly}" x2="${cx + remainW - 2}" y2="${ly + ((hash >> 4) % 5) - 2}" stroke="rgba(0,0,0,0.18)" stroke-width="0.8" />`
+        );
+      }
+
+      by += actualH + gap;
+      stoneIdx++;
+    }
+    col++;
+  }
+  return blocks.join('\n    ');
+}
+
+/**
+ * Generate capstone column strip (vertical cap edge).
+ * Matches capStones() style but runs vertically along y.
+ */
+function capStonesV(x: number, y: number, h: number, seed: number, capW = 6): string {
+  const caps: string[] = [];
+  let by = y;
+  let idx = 0;
+  while (by < y + h - 2) {
+    const hash = ((seed * 4271 + idx * 9137) >>> 0);
+    const bh = 16 + (hash % 14);
+    const actualH = Math.min(bh, y + h - by - 2);
+    if (actualH < 6) break;
+    const grey = 150 + (hash >> 8) % 20;
+    caps.push(
+      `<rect x="${x}" y="${by}" width="${capW}" height="${actualH}" rx="1.5" fill="rgb(${grey},${grey - 2},${grey - 5})" stroke="rgba(0,0,0,0.1)" stroke-width="0.5" />`
+    );
+    by += actualH + 2;
+    idx++;
+  }
+  return caps.join('\n    ');
+}
+
 /** Get wall footprint bounds based on variant and connection direction. */
-export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
+function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
   const W = 48; // wall thickness
-  const off = (144 - W) / 2; // 48
+  const off = (128 - W) / 2; // 40
   const rects: Array<{x:number,y:number,w:number,h:number}> = [];
 
   // Arm definitions: which edges the wall extends to
@@ -196,67 +364,89 @@ export function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:
 }
 
 /**
- * Stone-wall SIDE texture — thin shim.
- * Always returns the canonical Stone Brick image (variant-uniform by design).
- * @see textures/stone-brick.ts for the texture itself.
+ * Generate a SIDE-VIEW SVG for a stone wall tile (transparent background).
+ * This is the front face of the wall as seen through Z-pinned shear transform.
+ * Used as both `svg` (fallback) and `sideTextureSvg` for extruded walls.
+ *
+ * The variant param is used to seed pseudo-random stone block variation
+ * so adjacent tiles don't look identical.
  */
-export function stoneWallSvg(_variant: FeatureVariant): string {
-  return StoneBrick.svg();
-}
+function stoneWallSvg(variant: FeatureVariant): string {
+  const seed = variant.charCodeAt(0) * 137 + variant.charCodeAt(variant.length - 1) * 31;
+  const parts: string[] = [];
 
-/** Default homestead wall side material. */
-export function homesteadWallSvg(_variant: FeatureVariant = 'straight-h'): string {
-  return TimberFrameWall.svg();
-}
+  // Stone blocks fill the entire 128×128 — will be scaled to (128 × drawH) by renderer
+  parts.push(stoneBlocks(0, 0, 128, 128, seed));
 
-/** Default cathedral wall side material. */
-export function cathedralWallSvg(_variant: FeatureVariant = 'straight-h'): string {
-  return DarkCathedralStone.svg();
+  // Cap stones along top edge
+  parts.push(capStones(0, 0, 128, seed + 999));
+
+  // Subtle mortar overlay
+  parts.push(`<rect x="0" y="0" width="128" height="128" fill="none" stroke="rgba(0,0,0,0.12)" stroke-width="0.5" />`);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    ${parts.join('\n    ')}
+  </svg>`;
 }
 
 /**
- * Stone-wall TOP texture — compat shim for the SVG render path.
+ * Generate a TOP-VIEW SVG for a stone wall cap (transparent background).
+ * Shows the wall footprint from above for the extruded top cap.
+ * Uses the variant-based wall bounds to determine the footprint shape.
  *
- * The canvas/game renderer in nano-tile.ts does NOT use this — it draws
- * the top via createPattern of the SAME source brick image so grout
- * aligns pixel-perfectly between side and top.
+ * Uses stoneBlocks/capStones for horizontal arms (brick courses → \ on screen)
+ * and stoneBlocksV/capStonesV for vertical arms (brick courses → / on screen).
+ * This ensures the top face brick direction matches the side face brick direction
+ * for both wall orientations.
  *
- * The legacy SVG path (AiTools/render_iso_scene) still <image>-stretches
- * this into the iso shear, so we wrap the source brick image in a
- * pattern and fill the wall footprint rects so empty tile space stays
- * transparent.
- *
- * @param variant — wall variant (selects the wallBounds rect layout).
- * @param sourceBrickSvg — the 144×144 self-tileable brick image to use
- *        as the pattern source. Defaults to the canonical StoneBrick so
- *        existing call sites keep their behaviour. Pass `RedClinker.svg()`
- *        (or any other module conforming to textures/README.md) to
- *        retexture the wall top without touching the rest of the
- *        pipeline.
- * @param topOutline — when true (default), draws a 0.30-alpha black
- *        rectangular stroke around each wall-footprint rect. This
- *        reads as mortar end-caps for *brick* textures (whose internal
- *        lines are also rectangular and grout-coloured), but should
- *        be turned OFF for non-brick textures (e.g. Voronoi stone)
- *        whose internal geometry is irregular — otherwise the
- *        rectangle outline is visibly painted on top of the polygons.
+ * Each footprint rect gets its own clip region + block fill + border.
  */
-export function stoneWallTopSvg(
-  variant: FeatureVariant,
-  sourceBrickSvg: string = StoneBrick.svg(),
-  topOutline: boolean = true,
-): string {
+export function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
-  const dataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(sourceBrickSvg)}`;
   const parts: string[] = [];
-  parts.push(`<defs><pattern id="brickP" patternUnits="userSpaceOnUse" width="144" height="144"><image href="${dataUrl}" width="144" height="144" /></pattern></defs>`);
+  const seed = variant.charCodeAt(0) * 53 + 7;
+  const off = 40;
+  const W = 48;
+
+  // Determine if the variant has any vertical arm (top/bottom).
+  // Used to orient the central core block for primarily-vertical variants.
+  const hasVArm = variant !== 'straight-h' && variant !== 'end-r'
+               && variant !== 'end-l' && variant !== 'isolated';
+
   for (const r of rects) {
-    parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="url(#brickP)" />`);
-    if (topOutline) {
-      parts.push(`<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.30)" stroke-width="0.8" />`);
+    const id = `wp${r.x}_${r.y}`;
+    // Clip to this wall footprint rectangle
+    parts.push(
+      `<clipPath id="${id}"><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}"/></clipPath>`
+    );
+
+    // Determine brick direction for THIS rect:
+    //   N/S arms (y < off or y >= off+W) → vertical bricks (/ on screen)
+    //   W/E arms (x < off or x >= off+W) → horizontal bricks (\ on screen)
+    //   Center core: follow overall variant direction
+    const isNSArm = r.y < off || r.y >= off + W;
+    const isCenter = r.x === off && r.y === off;
+    const useVertical = isNSArm || (isCenter && hasVArm);
+
+    // Stone block row/col size: 5px to match side texture's perceived scale.
+    // Side texture draws 128×128 viewBox into 128×48 dest → 2.67× vertical squash.
+    // Side brick rowH=12 appears as ~4.5px. Top 5px under iso ≈ 5.6px. ≈match.
+    parts.push(`<g clip-path="url(#${id})">`);
+    if (useVertical) {
+      parts.push(stoneBlocksV(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
+      parts.push(capStonesV(r.x, r.y, r.h, seed + r.x * 3, 2.5));
+    } else {
+      parts.push(stoneBlocks(r.x, r.y, r.w, r.h, seed + r.x + r.y * 7, 5));
+      parts.push(capStones(r.x, r.y, r.w, seed + r.x * 3, 2.5));
     }
+    parts.push(`</g>`);
+    // Mortar border for definition
+    parts.push(
+      `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="none" stroke="rgba(0,0,0,0.15)" stroke-width="0.8" rx="1" />`
+    );
   }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -266,13 +456,13 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   const parts: string[] = [];
 
   // Grass background
-  parts.push(`<rect width="144" height="144" fill="#3a7d44" />`);
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="20" cy="20" rx="14" ry="10" fill="#458550" opacity="0.3" />`);
   parts.push(`<ellipse cx="108" cy="108" rx="12" ry="8" fill="#2d6838" opacity="0.25" />`);
 
   // Determine channel areas
   const chW = 64; // channel width
-  const off = (144 - chW) / 2; // 32
+  const off = (128 - chW) / 2; // 32
   const bankW = 10; // bank thickness
 
   // Helper: draw a natural-edged bank using wavy paths
@@ -301,7 +491,7 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
     parts.push(`<circle cx="64" cy="64" r="34" fill="#1a5588" />`);
     parts.push(`<circle cx="64" cy="64" r="24" fill="#2277aa" opacity="0.5" />`);
     parts.push(`<ellipse cx="58" cy="55" rx="10" ry="4" fill="rgba(255,255,255,0.1)" />`);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">\n    ${parts.join('\n    ')}\n  </svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">\n    ${parts.join('\n    ')}\n  </svg>`;
   }
 
   // Draw channel water with depth gradient
@@ -326,24 +516,24 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   // Water channels
   if (conn.top || conn.bottom) {
     const y1 = conn.top ? 0 : off;
-    const y2 = conn.bottom ? 144 : off + chW;
+    const y2 = conn.bottom ? 128 : off + chW;
     parts.push(`<rect x="${off - 4}" y="${y1}" width="${chW + 8}" height="${y2 - y1}" fill="url(#${waterDefsId}-v)" />`);
   }
   if (conn.left || conn.right) {
     const x1 = conn.left ? 0 : off;
-    const x2 = conn.right ? 144 : off + chW;
+    const x2 = conn.right ? 128 : off + chW;
     parts.push(`<rect x="${x1}" y="${off - 4}" width="${x2 - x1}" height="${chW + 8}" fill="url(#${waterDefsId}-h)" />`);
   }
 
   // Deeper center highlight
   if (conn.top || conn.bottom) {
     const y1 = conn.top ? 0 : off + 8;
-    const y2 = conn.bottom ? 144 : off + chW - 8;
+    const y2 = conn.bottom ? 128 : off + chW - 8;
     parts.push(`<rect x="${off + 14}" y="${y1}" width="${chW - 28}" height="${y2 - y1}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
   }
   if (conn.left || conn.right) {
     const x1 = conn.left ? 0 : off + 8;
-    const x2 = conn.right ? 144 : off + chW - 8;
+    const x2 = conn.right ? 128 : off + chW - 8;
     parts.push(`<rect x="${x1}" y="${off + 14}" width="${x2 - x1}" height="${chW - 28}" fill="#0d3a6a" opacity="0.4" rx="4" />`);
   }
 
@@ -375,14 +565,14 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   // Flow ripple lines
   parts.push(`<g opacity="0.2">`);
   if (conn.top && conn.bottom) {
-    for (let y = 10; y < 144; y += 18) {
+    for (let y = 10; y < 128; y += 18) {
       const x1 = off + 10 + Math.sin(y * 0.1) * 4;
       const x2 = off + chW - 10 + Math.sin(y * 0.1 + 1) * 4;
       parts.push(`<path d="M ${x1} ${y} Q ${64 + Math.sin(y * 0.08) * 6} ${y + 3} ${x2} ${y}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
     }
   }
   if (conn.left && conn.right) {
-    for (let x = 10; x < 144; x += 18) {
+    for (let x = 10; x < 128; x += 18) {
       const y1 = off + 10 + Math.sin(x * 0.1) * 4;
       const y2 = off + chW - 10 + Math.sin(x * 0.1 + 1) * 4;
       parts.push(`<path d="M ${x} ${y1} Q ${x + 3} ${64 + Math.sin(x * 0.08) * 6} ${x} ${y2}" stroke="rgba(180,220,255,0.6)" stroke-width="1.2" fill="none" />`);
@@ -414,7 +604,7 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   }
   parts.push(`</g>`);
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -426,7 +616,7 @@ function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
   const parts: string[] = [];
 
   // Rich base with color patches
-  parts.push(`<rect width="144" height="144" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />`);
+  parts.push(`<rect width="128" height="128" fill="rgb(${baseGreen}, ${baseGreen + 50}, ${baseGreen - 8})" />`);
   // Ground variation
   const p1g = baseGreen + 10;
   parts.push(`<ellipse cx="40" cy="80" rx="28" ry="20" fill="rgb(${p1g - 5}, ${p1g + 45}, ${p1g - 12})" opacity="0.35" />`);
@@ -489,7 +679,7 @@ function tallGrassSvg(z: number, worldCol: number, worldRow: number): string {
     parts.push(`<circle cx="${fx}" cy="${fy}" r="1" fill="white" opacity="0.5" />`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -509,17 +699,17 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
   const parts: string[] = [];
 
   // Side-view fence — NO grass background (transparent)
-  // 144×144 SVG: x=0..144 is width along iso axis, y=0..144 is height
-  // y=144 is ground level, y=0 is top
+  // 128×128 SVG: x=0..128 is width along iso axis, y=0..128 is height
+  // y=128 is ground level, y=0 is top
 
   const postW = 10;   // post width
   const railH = 7;    // rail thickness
   const capRy = 3;    // cap ellipse ry
 
-  // Helper: post at centre-x, rising from base y=144 to topY
+  // Helper: post at centre-x, rising from base y=128 to topY
   function sidePost(cx: number, topY: number): string {
     const px = cx - postW / 2;
-    const h = 144 - topY;
+    const h = 128 - topY;
     return [
       // Post shadow
       `<rect x="${px + 2}" y="${topY + 3}" width="${postW}" height="${h}" rx="1.5" fill="rgba(0,0,0,0.15)" />`,
@@ -549,8 +739,8 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
     ].join('\n    ');
   }
 
-  // Post top Y and rail positions (relative to 144-high canvas, ground at y=144)
-  const postTopY = 10;          // posts extend from y=10 to y=144
+  // Post top Y and rail positions (relative to 128-high canvas, ground at y=128)
+  const postTopY = 10;          // posts extend from y=10 to y=128
   const topRailY = 30;          // upper rail
   const botRailY = 80;          // lower rail
 
@@ -580,13 +770,13 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
 
   // Draw rails behind posts
   if (arms.left && arms.right) {
-    // Full-width rails: 0 → 144
-    parts.push(sideRail(0, 144, topRailY, true));
-    parts.push(sideRail(0, 144, botRailY, false));
+    // Full-width rails: 0 → 128
+    parts.push(sideRail(0, 128, topRailY, true));
+    parts.push(sideRail(0, 128, botRailY, false));
   } else if (arms.right) {
     // Right half: center → right edge
-    parts.push(sideRail(64, 144, topRailY, true));
-    parts.push(sideRail(64, 144, botRailY, false));
+    parts.push(sideRail(64, 128, topRailY, true));
+    parts.push(sideRail(64, 128, botRailY, false));
   } else if (arms.left) {
     // Left half: left edge → center
     parts.push(sideRail(0, 64, topRailY, true));
@@ -610,7 +800,7 @@ export function woodenFenceSvg(variant: FeatureVariant): string {
     parts.push(sidePost(64, postTopY));
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -646,18 +836,6 @@ export function getVariantSvg(
       return riverSvg(variant, connections);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
-    case 'gate':
-      return gateSvg(false);
-    case 'bridge':
-      return bridgeSvg();
-    case 'troll-bridge':
-      return trollBridgeSvg(false);
-    case 'homestead-wall':
-      return homesteadWallSvg(variant);
-    case 'cathedral-wall':
-      return cathedralWallSvg(variant);
-    case 'river-bank':
-      return riverSvg(variant, connections);
     default:
       return null;
   }
@@ -762,11 +940,11 @@ export function solveChunkFeatures(
   const newTiles: MicroTile[] = [];
   let changed = false;
 
-  for (let row = 0; row < WORLD_UNIT_TILES; row++) {
-    for (let col = 0; col < WORLD_UNIT_TILES; col++) {
-      const tile = chunk.tiles[row * WORLD_UNIT_TILES + col];
-      const worldCol = chunk.cx * WORLD_UNIT_TILES + col;
-      const worldRow = chunk.cy * WORLD_UNIT_TILES + row;
+  for (let row = 0; row < CHUNK_TILES; row++) {
+    for (let col = 0; col < CHUNK_TILES; col++) {
+      const tile = chunk.tiles[row * CHUNK_TILES + col];
+      const worldCol = chunk.cx * CHUNK_TILES + col;
+      const worldRow = chunk.cy * CHUNK_TILES + row;
       const nanoKind = getNanoKind(tile);
 
       // Diagonal fence tiles carry a pre-set variant — skip connection solving, just apply SVG
@@ -914,9 +1092,9 @@ export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind
 // ─── Gate SVG Generator ───────────────────────────────────────
 
 /** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
-export function gateSvg(unlocked = false): string {
+function gateSvg(unlocked: boolean): string {
   const parts: string[] = [];
-  parts.push(`<rect width="144" height="144" fill="#3a7d44" />`);
+  parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
 
   const postH = 48;
@@ -954,7 +1132,7 @@ export function gateSvg(unlocked = false): string {
     parts.push(`<path d="M61 ${topY + 6} Q61 ${topY + 2} 64 ${topY + 2} Q67 ${topY + 2} 67 ${topY + 6}" fill="none" stroke="#c0a020" stroke-width="2" />`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -962,11 +1140,11 @@ export function gateSvg(unlocked = false): string {
 // ─── Bridge SVG Generator ─────────────────────────────────────
 
 /** Free bridge — wooden planks over water. No lock. */
-export function bridgeSvg(): string {
+function bridgeSvg(): string {
   const parts: string[] = [];
   // River base
-  parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="144" height="64" fill="#0d3a6a" />`);
+  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
   // Water ripples
   parts.push(`<g opacity="0.15">`);
   for (let y = 40; y < 96; y += 16) {
@@ -986,17 +1164,17 @@ export function bridgeSvg(): string {
   // Side rails
   parts.push(`<rect x="14" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
   parts.push(`<rect x="108" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
 
 /** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
-export function trollBridgeSvg(unlocked = false): string {
+function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
   // River base
-  parts.push(`<rect width="144" height="144" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="144" height="64" fill="#0d3a6a" />`);
+  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
+  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
   // Water ripples
   parts.push(`<g opacity="0.15">`);
   parts.push(`<path d="M8 50 Q34 46 64 50 Q94 54 120 50" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
@@ -1029,7 +1207,7 @@ export function trollBridgeSvg(unlocked = false): string {
     parts.push(`<text x="64" y="25" text-anchor="middle" font-size="9" font-family="monospace" fill="#4aff4a">OPEN</text>`);
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
 }
@@ -1048,7 +1226,7 @@ function placeGatesInFenceRuns(
 ): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
   const newConditions = new Map<string, 'locked' | 'unlocked'>();
   const result = [...tiles];
-  const N = WORLD_UNIT_TILES;
+  const N = CHUNK_TILES;
 
   // Scan horizontal runs (straight-h fence)
   for (let row = 0; row < N; row++) {
@@ -1163,7 +1341,7 @@ function placeRiverCrossings(
 ): { tiles: MicroTile[]; newConditions: Map<string, 'locked' | 'unlocked'> } {
   const newConditions = new Map<string, 'locked' | 'unlocked'>();
   const result = [...tiles];
-  const N = WORLD_UNIT_TILES;
+  const N = CHUNK_TILES;
   const entropy = ((cx * 31 + cy * 17) >>> 0);
 
   for (let row = 0; row < N; row++) {
@@ -1236,7 +1414,7 @@ function placeRiverCrossings(
  *   4. type:'conditional' blocks if condition is 'locked', passable if 'unlocked'
  */
 export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
-  const N = WORLD_UNIT_TILES;
+  const N = CHUNK_TILES;
   const map: boolean[] = new Array(N * N).fill(true);
 
   for (let i = 0; i < N * N; i++) {
@@ -1279,50 +1457,6 @@ export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
   return map;
 }
 
-/**
- * Conservative point-walkability helper used by player movement.
- *
- * The current experiment stores a chunk-level boolean walkable map per micro tile,
- * not a richer per-pixel/per-nano occupancy mask, so this helper resolves the
- * effective walkability for the containing tile while still honoring conditional
- * gates / bridges against the live condition state.
- */
-export function isPointWalkableInTile(
-  tile: MicroTile,
-  activeConditions: ReadonlyMap<string, 'locked' | 'unlocked'>,
-  _localColFrac: number,
-  _localRowFrac: number,
-): boolean {
-  if (!tile.nanos || tile.nanos.length === 0) return true;
-
-  let hasNeverBlock = false;
-  let hasAlwaysPass = false;
-  let hasConditionalUnlocked = false;
-  let hasConditionalLocked = false;
-
-  for (const nano of tile.nanos) {
-    switch (nano.walkable.type) {
-      case 'never':
-        hasNeverBlock = true;
-        break;
-      case 'always':
-        hasAlwaysPass = true;
-        break;
-      case 'conditional': {
-        const state = activeConditions.get(nano.walkable.conditionId);
-        if (state === 'unlocked') hasConditionalUnlocked = true;
-        else hasConditionalLocked = true;
-        break;
-      }
-    }
-  }
-
-  if (hasConditionalLocked) return false;
-  if (hasConditionalUnlocked || hasAlwaysPass) return true;
-  if (hasNeverBlock) return false;
-  return true;
-}
-
 // ─── BFS Traversability ───────────────────────────────────────
 
 /**
@@ -1333,7 +1467,7 @@ export function isPointWalkableInTile(
  * Uses locked walkable map (worst-case; conditional nanos = blocked).
  */
 export function validateChunkTraversability(chunk: WorldUnitChunk): boolean {
-  const N = WORLD_UNIT_TILES;
+  const N = CHUNK_TILES;
   const walkable = chunk.walkableMap.length === N * N
     ? chunk.walkableMap
     : buildWalkableMap(chunk);
@@ -1426,8 +1560,8 @@ export function placeAssembly(
   originRow: number,
   chunk: WorldUnitChunk,
 ): void {
-  const chunkOriginCol = chunk.cx * WORLD_UNIT_TILES;
-  const chunkOriginRow = chunk.cy * WORLD_UNIT_TILES;
+  const chunkOriginCol = chunk.cx * CHUNK_TILES;
+  const chunkOriginRow = chunk.cy * CHUNK_TILES;
 
   const zOrder: Record<string, number> = { 'negative': 0, 'flat': 1, 'positive': 2 };
 
@@ -1437,12 +1571,12 @@ export function placeAssembly(
 
     const localCol = worldCol - chunkOriginCol;
     const localRow = worldRow - chunkOriginRow;
-    if (localCol < 0 || localCol >= WORLD_UNIT_TILES || localRow < 0 || localRow >= WORLD_UNIT_TILES) {
+    if (localCol < 0 || localCol >= CHUNK_TILES || localRow < 0 || localRow >= CHUNK_TILES) {
       // TODO: multi-chunk spanning tracked — tile belongs to a different chunk
       continue;
     }
 
-    const idx = localRow * WORLD_UNIT_TILES + localCol;
+    const idx = localRow * CHUNK_TILES + localCol;
     const tile = chunk.tiles[idx];
     const existing: readonly NanoTile[] = tile.nanos ?? [];
     const merged: NanoTile[] = [...existing, ...placement.nanos];

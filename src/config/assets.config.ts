@@ -154,7 +154,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   toll_gate: {
     emoji: '🚧', category: 'obstacle', height: 4, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
-    description: 'Toll gate (pay coins to pass)',
+    description: 'Toll gate (pay coins to pass)', tileType: 'troll_bridge',
   },
   quiz_gate: {
     emoji: '❓', category: 'obstacle', height: 4, layer: 'mid',
@@ -374,17 +374,23 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   house: {
     emoji: '🏠', category: 'obstacle', height: 8, layer: 'high',
     scale: 1.4, shadow: true, walkable: false, interactable: true,
-    description: 'Small house',
+    description: 'Small house', tileType: 'homestead_wall',
   },
   hut: {
     emoji: '🛖', category: 'obstacle', height: 6, layer: 'high',
     scale: 1.2, shadow: true, walkable: false, interactable: true,
-    description: 'Rustic hut',
+    description: 'Rustic hut', tileType: 'homestead_wall',
   },
   shop: {
     emoji: '🏪', category: 'obstacle', height: 7, layer: 'high',
     scale: 1.3, shadow: true, walkable: false, interactable: true,
-    description: 'Small shop',
+    description: 'Small shop', tileType: 'homestead_wall',
+  },
+  cathedral_wall: {
+    emoji: '⛪', category: 'obstacle', height: 12, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Ruined cathedral wall section', tileType: 'cathedral_wall',
+    occluderRatio: 0.75,
   },
   // Themed shop variants (#112 Phase 2)
   shop_general: {
@@ -405,7 +411,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   fence: {
     emoji: '🚧', category: 'obstacle', height: 2, layer: 'mid',
     scale: 0.7, shadow: false, walkable: false, interactable: true,
-    description: 'Wooden fence segment',
+    description: 'Wooden fence segment', tileType: 'wooden_fence',
   },
 
   // --- Effects & particles (#58) ---

@@ -64,6 +64,7 @@ import {
 } from './wildlife';
 import { getSpecies } from './config/wildlife.config';
 import { getEmojiSprite } from './emoji-cache';
+import { stampIso2Assembly, type Iso2AssemblyId } from './iso2-assemblies';
 import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
   clearBubbles, getBubbleState, resetCooldowns,
@@ -3169,6 +3170,14 @@ async function main(): Promise<void> {
     toggleFlashlight,
     isFlashlightOn,
     state,
+    invalidateRenderCaches: () => { clearTerrainCache(); clearObjectCache(); },
+    stampIso2Assembly: (chunkKey: string, id: Iso2AssemblyId, originX: number, originY: number) => {
+      const chunk = state.chunks.get(chunkKey);
+      if (!chunk) throw new Error(`Chunk not loaded: ${chunkKey}`);
+      stampIso2Assembly(chunk, id, originX, originY);
+      clearTerrainCache();
+      clearObjectCache();
+    },
     // Input manager for touch/gamepad testing (#126)
     inputMgr: input,
     // Asset/biome metadata (#58)

@@ -8,8 +8,8 @@
 export const RENDER_CONFIG = {
   canvasWidth: 800,
   canvasHeight: 600,
-  tileWidth: 64,        // Isometric tile width in px
-  tileHeight: 32,       // Isometric tile height in px (squished Y)
+  tileWidth: 256,       // Iso 2.0 diamond width in px (144px source micro tile)
+  tileHeight: 128,      // Iso 2.0 diamond height in px (2:1 projection)
   targetFPS: 60,
   renderScale: 1.0,   // Internal render resolution (0.5=half, 1.0=full).
   maxDrawCmds: 400,    // Max draw commands per frame (graceful degradation beyond this)
@@ -21,11 +21,9 @@ export const RENDER_CONFIG = {
   spriteSize: 48,       // Base SVG sprite render size
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
-  /** Source pixel size of micro-tile SVGs fed into the isometric transform (#192).
-   *  Set to 96 (3× original 32) as prep for the PNG asset pipeline.
-   *  Larger src size = better SVG rasterisation quality into the 64×32 iso diamond.
-   *  TODO: DOC - microTileSize config field, PNG asset pipeline */
-  microTileSize: 96,
+  /** Source pixel size of micro-tile SVGs fed into the isometric transform.
+   *  Iso 2.0 uses 144 so the nano sub-grid divides cleanly into 3×48px cells. */
+  microTileSize: 144,
 };  // Mutable: canvasWidth/canvasHeight updated on viewport resize
 
 // ─── Grid / World ────────────────────────────────────────────

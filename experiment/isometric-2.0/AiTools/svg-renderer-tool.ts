@@ -62,6 +62,8 @@ import { Resvg } from '@resvg/resvg-js';
 
 // Game engine geometry — pure constants, no Canvas deps
 import { ISO_TILE_WIDTH, ISO_TILE_HEIGHT, MICRO_TILE_SIZE } from '../src/types.js';
+import type { FenceStyle, FeatureConnections, FeatureVariant } from '../src/types.js';
+import { FenceFamily } from '../src/textures/index.js';
 import { HALF_W, HALF_H, NANO_Z_SCALE, Z_PX_PER_LEVEL, MIN_NANO_HEIGHT } from './iso-geometry.js';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -76,6 +78,10 @@ export interface AssemblyChainItem {
   svg: string;
   col: number;
   row: number;
+  /** Optional nano kind, used for renderer-native overlays such as fences. */
+  kind?: string;
+  /** Optional procedural fence style id from src/textures/fence-family.ts. */
+  fenceStyle?: string;
   /** Tile variant string e.g. 'straight-h', 'corner-tr'. Passed through from scene entries. */
   variant?: string;
   zMode?: NanoZMode;
@@ -86,7 +92,7 @@ export interface AssemblyChainItem {
    * tile bounding-box top-left (0,0). Rendered by dumping markup directly into the outer
    * translate group; no z-pin transform applied. Used for stone-wall / cathedral-wall.
    */
-  renderMode?: 'extruded';
+  renderMode?: 'extruded' | 'fence-overlay';
 }
 
 /** A player sprite placed at a world tile coordinate for walkability boundary validation. */
@@ -497,6 +503,18 @@ function wrapIsometricAssembly(
         out += `<text x="4" y="${HALF_H - MICRO_TILE - 2}" font-size="9" font-family="monospace" fill="#4af">z=${zOffset}</text>`;
       }
 
+    } else if (item.renderMode === 'fence-overlay') {
+      // Renderer-native fence overlay: unlike the legacy z-pinned billboard,
+      // this projects each connection arm along the actual micro-tile axes.
+      // That keeps rustic SVG showcase scenes as true rings instead of rows
+      // of beautiful but direction-agnostic fence panels.
+      out += renderFenceAssemblyOverlay(item);
+
+      if (debug) {
+        out += `<line x1="0" y1="${HALF_H}" x2="0" y2="${HALF_H - MICRO_TILE}" stroke="#4af" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+        out += `<text x="4" y="${HALF_H - MICRO_TILE - 2}" font-size="9" font-family="monospace" fill="#4af">fence</text>`;
+      }
+
     } else {
       // Positive z-pinned billboard — fence / gate / bridge / homestead / cathedral
       // mirrors nano-tile.ts drawPositiveNano:
@@ -521,6 +539,203 @@ function wrapIsometricAssembly(
 
   out += '</svg>';
   return out;
+}
+
+function variantToConnections(variant: string | undefined): FeatureConnections {
+  switch (variant as FeatureVariant | undefined) {
+    case 'straight-h': return { top: false, right: true,  bottom: false, left: true  };
+    case 'straight-v': return { top: true,  right: false, bottom: true,  left: false };
+    case 'cross':      return { top: true,  right: true,  bottom: true,  left: true  };
+    case 'end-r':      return { top: false, right: true,  bottom: false, left: false };
+    case 'end-l':      return { top: false, right: false, bottom: false, left: true  };
+    case 'end-t':      return { top: true,  right: false, bottom: false, left: false };
+    case 'end-b':      return { top: false, right: false, bottom: true,  left: false };
+    case 'corner-tr':  return { top: true,  right: true,  bottom: false, left: false };
+    case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
+    case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
+    case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
+    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    default:           return { top: false, right: true,  bottom: false, left: true  };
+  }
+}
+
+function escapeAttr(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function rgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '').padEnd(6, '0').slice(0, 6);
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${Math.max(0, Math.min(1, alpha)).toFixed(3)})`;
+}
+
+function renderFenceAssemblyOverlay(item: AssemblyChainItem): string {
+  const style = FenceFamily.fenceStyleForTile(item.fenceStyle, item.col, item.row, item.variant);
+  const conn = variantToConnections(item.variant);
+  // The original rustic SVG family looked great because it was a tall,
+  // detail-rich upright construction. The topology-correct overlay still
+  // needs that visual scale; otherwise it becomes a tiny line fence.
+  const height = Math.max((item.zOffset ?? 2) * NANO_Z_SCALE * 3.45, MIN_NANO_HEIGHT * 3.2);
+  const center = MICRO_TILE / 2;
+  const points = {
+    c: projectFenceLocal(center, center),
+    l: projectFenceLocal(0, center),
+    r: projectFenceLocal(MICRO_TILE, center),
+    t: projectFenceLocal(center, 0),
+    b: projectFenceLocal(center, MICRO_TILE),
+  };
+  const postKeys = new Set<string>();
+  const posts: Array<{ x: number; y: number }> = [];
+  const parts: string[] = ['<g class="fence-overlay">'];
+
+  const addPost = (p: { x: number; y: number }) => {
+    const key = `${Math.round(p.x)},${Math.round(p.y)}`;
+    if (postKeys.has(key)) return;
+    postKeys.add(key);
+    posts.push(p);
+  };
+  const addPosts = (axis: 'x' | 'y', fixed: number, from: number, to: number) => {
+    const min = Math.min(from, to);
+    const max = Math.max(from, to);
+    const steps = Math.max(2, style.midSpanPosts ? 4 : 2);
+    for (let i = 0; i <= steps; i++) {
+      const v = min + (max - min) * (i / steps);
+      addPost(axis === 'x' ? projectFenceLocal(v, fixed) : projectFenceLocal(fixed, v));
+    }
+  };
+  const draw = (a: { x: number; y: number }, b: { x: number; y: number }, seed: string) => {
+    parts.push(renderFenceSegment(a, b, height, style, seed));
+  };
+
+  if (conn.left && conn.right) {
+    draw(points.l, points.r, 'h-full');
+    addPosts('x', center, 0, MICRO_TILE);
+  } else {
+    if (conn.left) { draw(points.l, points.c, 'h-left'); addPosts('x', center, 0, center); }
+    if (conn.right) { draw(points.c, points.r, 'h-right'); addPosts('x', center, center, MICRO_TILE); }
+  }
+  if (conn.top && conn.bottom) {
+    draw(points.t, points.b, 'v-full');
+    addPosts('y', center, 0, MICRO_TILE);
+  } else {
+    if (conn.top) { draw(points.t, points.c, 'v-top'); addPosts('y', center, 0, center); }
+    if (conn.bottom) { draw(points.c, points.b, 'v-bottom'); addPosts('y', center, center, MICRO_TILE); }
+  }
+  if (!conn.left && !conn.right && !conn.top && !conn.bottom) addPost(points.c);
+
+  if (item.kind === 'gate') {
+    parts.push(renderGateAssemblyLeaf(conn, height, style));
+  }
+
+  for (const p of posts) parts.push(renderFencePostLocal(p, height * style.postHeightScale, style));
+  if (item.kind === 'gate') {
+    parts.push(`<circle cx="${points.c.x.toFixed(1)}" cy="${(points.c.y - height * 0.55).toFixed(1)}" r="3.6" fill="${escapeAttr(style.hardwareColor)}" stroke="rgba(0,0,0,0.45)" stroke-width="1"/>`);
+  }
+
+  parts.push('</g>');
+  return parts.join('\n');
+}
+
+function projectFenceLocal(tx: number, ty: number, z = 0): { x: number; y: number } {
+  return {
+    x: (tx - ty) * (HALF_W / MICRO_TILE) + HALF_W,
+    y: (tx + ty) * (HALF_H / MICRO_TILE) - z,
+  };
+}
+
+function renderFenceSegment(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  height: number,
+  style: FenceStyle,
+  _seed: string,
+): string {
+  const railFactors = style.railCount === 3 ? [0.78, 0.58, 0.38] : style.railCount === 1 ? [0.55] : [0.70, 0.45];
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const nx = -dy / len;
+  const ny = dx / len;
+  const parts: string[] = [];
+
+  for (const [i, factor] of railFactors.entries()) {
+    const sag = style.sag * (i + 1) * 0.18;
+    const yDrop = height * factor - sag;
+    const midX = (a.x + b.x) / 2 + nx * style.roughness * 1.8;
+    const midY = (a.y + b.y) / 2 + ny * style.roughness * 1.8 - yDrop + style.sag * 0.35;
+    const d = `M ${a.x.toFixed(1)} ${(a.y - yDrop).toFixed(1)} Q ${midX.toFixed(1)} ${midY.toFixed(1)} ${b.x.toFixed(1)} ${(b.y - yDrop).toFixed(1)}`;
+    parts.push(`<path d="${d}" stroke="rgba(0,0,0,0.22)" stroke-width="${(style.railThickness + 3).toFixed(1)}" fill="none" stroke-linecap="round"/>`);
+    parts.push(`<path d="${d}" stroke="${escapeAttr(style.railShadow)}" stroke-width="${(style.railThickness + 1.2).toFixed(1)}" fill="none" stroke-linecap="round"/>`);
+    parts.push(`<path d="${d}" stroke="${escapeAttr(style.railColor)}" stroke-width="${style.railThickness.toFixed(1)}" fill="none" stroke-linecap="round"/>`);
+    parts.push(`<path d="${d}" stroke="${escapeAttr(style.railHighlight)}" stroke-width="${Math.max(1, style.railThickness * 0.24).toFixed(1)}" fill="none" stroke-linecap="round" opacity="0.42" transform="translate(0,-1.1)"/>`);
+  }
+
+  if (style.construction === 'picket') {
+    const pickets = Math.max(5, Math.floor(len / 15));
+    for (let i = 1; i <= pickets; i++) {
+      const t = i / (pickets + 1);
+      parts.push(renderFencePostLocal({ x: a.x + dx * t, y: a.y + dy * t }, height * 0.93, style, 0.58, true));
+    }
+  } else if (style.construction === 'wattle') {
+    const stakes = Math.max(4, Math.floor(len / 18));
+    for (let i = 1; i <= stakes; i++) {
+      const t = i / (stakes + 1);
+      parts.push(renderFencePostLocal({ x: a.x + dx * t, y: a.y + dy * t }, height * 0.72, style, 0.46));
+    }
+    for (let i = 0; i < 3; i++) {
+      const offset = i * height * 0.13;
+      const side = i % 2 === 0 ? 1 : -1;
+      parts.push(`<path d="M ${a.x.toFixed(1)} ${(a.y - height * 0.56 + offset).toFixed(1)} C ${((a.x + b.x) / 2 + nx * 9 * side).toFixed(1)} ${((a.y + b.y) / 2 - height * 0.55 + offset + ny * 8 * side).toFixed(1)} ${((a.x + b.x) / 2 - nx * 8 * side).toFixed(1)} ${((a.y + b.y) / 2 - height * 0.48 + offset - ny * 8 * side).toFixed(1)} ${b.x.toFixed(1)} ${(b.y - height * 0.50 + offset).toFixed(1)}" stroke="${escapeAttr(i === 1 ? style.railShadow : style.railHighlight)}" stroke-width="2.2" opacity="${i === 1 ? '0.42' : '0.52'}" fill="none" stroke-linecap="round"/>`);
+    }
+  }
+
+  if (style.weathering.cracks > 0.05) {
+    parts.push(`<path d="M ${(a.x + dx * 0.18).toFixed(1)} ${(a.y + dy * 0.18 - height * 0.76).toFixed(1)} L ${(a.x + dx * 0.36).toFixed(1)} ${(a.y + dy * 0.36 - height * 0.69).toFixed(1)} L ${(a.x + dx * 0.48).toFixed(1)} ${(a.y + dy * 0.48 - height * 0.73).toFixed(1)}" stroke="${rgba(style.crackColor, style.weathering.cracks * 0.7)}" stroke-width="1.1" fill="none" stroke-linecap="round"/>`);
+  }
+  if (style.weathering.moss > 0.04) {
+    parts.push(`<path d="M ${(a.x + dx * 0.12).toFixed(1)} ${(a.y + dy * 0.12 - height * 0.18).toFixed(1)} Q ${((a.x + b.x) / 2).toFixed(1)} ${((a.y + b.y) / 2 - height * 0.12).toFixed(1)} ${(a.x + dx * 0.88).toFixed(1)} ${(a.y + dy * 0.88 - height * 0.18).toFixed(1)}" stroke="${rgba(style.mossColor, style.weathering.moss * 0.45)}" stroke-width="3" fill="none" stroke-linecap="round"/>`);
+  }
+
+  parts.push(`<ellipse cx="${((a.x + b.x) / 2).toFixed(1)}" cy="${((a.y + b.y) / 2 + 1.5).toFixed(1)}" rx="${(len * 0.18).toFixed(1)}" ry="3" fill="rgba(0,0,0,0.16)"/>`);
+  return parts.join('\n');
+}
+
+function renderFencePostLocal(p: { x: number; y: number }, height: number, style: FenceStyle, scale = 1, pointed = false): string {
+  const w = style.postWidth * scale;
+  const cap = style.postCapHeight * scale;
+  const x = p.x - w / 2;
+  const topY = p.y - height;
+  const topCap = pointed
+    ? `<polygon points="${x.toFixed(1)},${topY.toFixed(1)} ${p.x.toFixed(1)},${(topY - cap * 1.8).toFixed(1)} ${(x + w).toFixed(1)},${topY.toFixed(1)}" fill="${escapeAttr(style.postHighlight)}"/>`
+    : `<rect x="${(x - 1).toFixed(1)}" y="${(p.y - height - cap).toFixed(1)}" width="${(w + 2).toFixed(1)}" height="${cap.toFixed(1)}" rx="1" fill="${escapeAttr(style.postHighlight)}"/>`;
+  return [
+    `<ellipse cx="${(p.x + 1).toFixed(1)}" cy="${(p.y + 1).toFixed(1)}" rx="${Math.max(3.5, w * 0.75).toFixed(1)}" ry="2.5" fill="rgba(0,0,0,0.26)"/>`,
+    `<rect x="${(x + 1.2).toFixed(1)}" y="${(p.y - height + 1.4).toFixed(1)}" width="${w.toFixed(1)}" height="${height.toFixed(1)}" rx="1.5" fill="rgba(0,0,0,0.16)"/>`,
+    `<rect x="${x.toFixed(1)}" y="${(p.y - height).toFixed(1)}" width="${w.toFixed(1)}" height="${height.toFixed(1)}" rx="1.5" fill="${escapeAttr(style.postColor)}"/>`,
+    `<rect x="${(x + 0.8).toFixed(1)}" y="${(p.y - height).toFixed(1)}" width="${Math.max(1, w * 0.25).toFixed(1)}" height="${height.toFixed(1)}" fill="${rgba(style.postHighlight, 0.45)}"/>`,
+    `<rect x="${(x + w - Math.max(1, w * 0.25)).toFixed(1)}" y="${(p.y - height).toFixed(1)}" width="${Math.max(1, w * 0.25).toFixed(1)}" height="${height.toFixed(1)}" fill="${rgba(style.postShadow, 0.42)}"/>`,
+    topCap,
+    `<path d="M ${(x + w * 0.38).toFixed(1)} ${(p.y - height * 0.88).toFixed(1)} l ${(-w * 0.16).toFixed(1)} ${(height * 0.28).toFixed(1)} l ${(w * 0.22).toFixed(1)} ${(height * 0.22).toFixed(1)}" stroke="${rgba(style.crackColor, style.weathering.cracks * 0.78)}" stroke-width="1" fill="none" stroke-linecap="round"/>`,
+    `<ellipse cx="${(p.x - 1).toFixed(1)}" cy="${(p.y - height * 0.16).toFixed(1)}" rx="${Math.max(2, w * 0.42).toFixed(1)}" ry="1.8" fill="${rgba(style.mossColor, style.weathering.moss * 0.45)}"/>`,
+  ].join('\n');
+}
+
+function renderGateAssemblyLeaf(conn: FeatureConnections, height: number, style: FenceStyle): string {
+  const center = MICRO_TILE / 2;
+  const horizontal = conn.left || conn.right || !(conn.top || conn.bottom);
+  const a = horizontal ? projectFenceLocal(MICRO_TILE * 0.38, center) : projectFenceLocal(center, MICRO_TILE * 0.38);
+  const b = horizontal ? projectFenceLocal(MICRO_TILE * 0.62, center) : projectFenceLocal(center, MICRO_TILE * 0.62);
+  const braceA = horizontal ? projectFenceLocal(MICRO_TILE * 0.36, center) : projectFenceLocal(center, MICRO_TILE * 0.36);
+  const braceB = horizontal ? projectFenceLocal(MICRO_TILE * 0.64, center) : projectFenceLocal(center, MICRO_TILE * 0.64);
+  return [
+    renderFenceSegment(a, b, height * 0.9, style, 'gate'),
+    `<line x1="${braceA.x.toFixed(1)}" y1="${(braceA.y - height * 0.20).toFixed(1)}" x2="${braceB.x.toFixed(1)}" y2="${(braceB.y - height * 0.82).toFixed(1)}" stroke="${escapeAttr(style.hardwareColor)}" stroke-width="2.5" stroke-linecap="round" opacity="0.78"/>`,
+  ].join('\n');
 }
 
 /**

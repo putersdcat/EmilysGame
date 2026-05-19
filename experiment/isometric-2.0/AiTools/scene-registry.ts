@@ -47,6 +47,8 @@ export interface SceneEntry {
   row: number;
   /** Feature variant for nano tiles. Inferred from position in run if omitted. */
   variant?: FeatureVariant;
+  /** Optional procedural fence style id from src/textures/fence-family.ts. */
+  fenceStyle?: string;
   /** Optional display label for annotation. */
   label?: string;
 }
@@ -149,18 +151,18 @@ function isNanoKind(kind: string): kind is NanoKind {
  * This is the CANONICAL source — same code path as the browser game.
  * Falls back to woodenFenceSvg for fence kinds if getVariantSvg returns null.
  */
-function makeNanoSvg(kind: NanoKind, variant: FeatureVariant | undefined, col: number, row: number): string {
+function makeNanoSvg(kind: NanoKind, variant: FeatureVariant | undefined, col: number, row: number, fenceStyle?: string): string {
   // Default connections from variant (straight run = connected both ends)
   const connections = inferConnectionsForVariant(variant ?? 'straight-h');
   const zOffset = NANO_Z[kind];
 
   // getVariantSvg returns null for unknown kinds — fall back to woodenFenceSvg for fence group
-  const svg = getVariantSvg(kind as Parameters<typeof getVariantSvg>[0], variant ?? 'straight-h', connections, Math.abs(zOffset), col, row);
+  const svg = getVariantSvg(kind as Parameters<typeof getVariantSvg>[0], variant ?? 'straight-h', connections, Math.abs(zOffset), col, row, fenceStyle);
   if (svg) return svg;
 
   // Last resort: woodenFenceSvg for fence/gate family
   if (kind === 'fence' || kind === 'gate' || kind === 'troll-bridge' || kind === 'bridge') {
-    return woodenFenceSvg(variant ?? 'straight-h');
+    return woodenFenceSvg(variant ?? 'straight-h', fenceStyle);
   }
 
   // Style-neutral fallback: labeled grey rect (should never reach here)
@@ -201,7 +203,7 @@ function inferConnectionsForVariant(variant: FeatureVariant): FeatureConnections
  */
 export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
   return descriptor.entries.map((entry) => {
-    const { kind, col, row, variant } = entry;
+    const { kind, col, row, variant, fenceStyle } = entry;
     if (isNanoKind(kind)) {
       // Extruded kinds (stone-wall): use proper 3-face markup, not a flat z-pinned texture.
       if (EXTRUDED_NANO_KINDS.has(kind)) {
@@ -218,13 +220,16 @@ export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
         };
       }
       return {
-        svg:     makeNanoSvg(kind, variant, col, row),
+        svg:     makeNanoSvg(kind, variant, col, row, fenceStyle),
         col,
         row,
         variant: variant as string | undefined,
         zMode:   NANO_Z_MODE[kind],
         zOffset: NANO_Z[kind],
         walkable: NANO_WALKABLE[kind],
+        kind,
+        fenceStyle,
+        renderMode: (kind === 'fence' || kind === 'gate') ? 'fence-overlay' as const : undefined,
       };
     } else {
       return {
@@ -271,6 +276,33 @@ function grassRow(cols: number[], row: number): SceneEntry[] {
 
 function nanoRow(kind: NanoKind, cols: number[], row: number): SceneEntry[] {
   return cols.map(col => ({ kind, col, row, label: `${kind}(${col},${row})` }));
+}
+
+function grassRect(col0: number, row0: number, width: number, height: number): SceneEntry[] {
+  const entries: SceneEntry[] = [];
+  for (let row = row0; row < row0 + height; row++) {
+    for (let col = col0; col < col0 + width; col++) entries.push({ kind: 'grass', col, row });
+  }
+  return entries;
+}
+
+function fenceBox(col0: number, row0: number, size: number, fenceStyle: string): SceneEntry[] {
+  const max = size - 1;
+  const entries: SceneEntry[] = [
+    // Variant names describe connected DIRECTIONS, not map position.
+    // A map top-left perimeter corner connects right+bottom => corner-br.
+    { kind: 'fence', col: col0, row: row0, variant: 'corner-br', fenceStyle },
+    { kind: 'fence', col: col0 + max, row: row0, variant: 'corner-bl', fenceStyle },
+    { kind: 'fence', col: col0, row: row0 + max, variant: 'corner-tr', fenceStyle },
+    { kind: 'fence', col: col0 + max, row: row0 + max, variant: 'corner-tl', fenceStyle },
+  ];
+  for (let i = 1; i < max; i++) {
+    entries.push({ kind: 'fence', col: col0 + i, row: row0, variant: 'straight-h', fenceStyle });
+    entries.push({ kind: i === Math.floor(size / 2) ? 'gate' : 'fence', col: col0 + i, row: row0 + max, variant: 'straight-h', fenceStyle, label: i === Math.floor(size / 2) ? fenceStyle : undefined });
+    entries.push({ kind: 'fence', col: col0, row: row0 + i, variant: 'straight-v', fenceStyle });
+    entries.push({ kind: 'fence', col: col0 + max, row: row0 + i, variant: 'straight-v', fenceStyle });
+  }
+  return entries;
 }
 
 export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
@@ -341,6 +373,27 @@ export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
       { kind: 'fence' as NanoKind, col: 1, row: 3 },
       { kind: 'fence' as NanoKind, col: 2, row: 3 },
       { kind: 'fence' as NanoKind, col: 3, row: 3 },
+    ],
+  },
+
+  // ── Rustic fence style family showcase ────────────────────
+  'fence-style-rings': {
+    name: 'fence-style-rings',
+    description: 'Concentric / nested rustic fence constructions with gates: weathered post-rail, split-rail, picket, wattle, mossy, bleached.',
+    canvasWidth: 1600,
+    canvasHeight: 1050,
+    entries: [
+      ...grassRect(-1, -1, 13, 13),
+      ...fenceBox(0, 0, 11, 'weathered-post-rail'),
+      ...fenceBox(1, 1, 9, 'split-rail-oak'),
+      ...fenceBox(2, 2, 7, 'rough-picket'),
+      ...fenceBox(3, 3, 5, 'hazel-wattle'),
+      { kind: 'fence' as NanoKind, col: 10, row: 2, variant: 'straight-v', fenceStyle: 'mossy-farm-rail', label: 'mossy' },
+      { kind: 'gate' as NanoKind, col: 10, row: 3, variant: 'straight-v', fenceStyle: 'mossy-farm-rail', label: 'mossy gate' },
+      { kind: 'fence' as NanoKind, col: 10, row: 4, variant: 'straight-v', fenceStyle: 'mossy-farm-rail' },
+      { kind: 'fence' as NanoKind, col: 9, row: 6, variant: 'straight-h', fenceStyle: 'bleached-paddock', label: 'bleached' },
+      { kind: 'gate' as NanoKind, col: 10, row: 6, variant: 'straight-h', fenceStyle: 'bleached-paddock', label: 'bleached gate' },
+      { kind: 'fence' as NanoKind, col: 11, row: 6, variant: 'straight-h', fenceStyle: 'bleached-paddock' },
     ],
   },
 

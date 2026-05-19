@@ -9,7 +9,7 @@ import { ASSET_DEFS } from './config/assets.config';
 import { getEmojiSprite } from './emoji-cache';
 import { getBiome } from './config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
-import { getNanoStack } from './nano-tile-defs';
+import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData } from './gen';
@@ -23,6 +23,7 @@ import {
   wasmBuildDrawCmds, isWasmReady,
 } from './wasm-bridge';
 import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from './asset-sprites';
+import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ interface DrawCmd {
   shadow?: boolean;
   // Tile-specific fields
   tileType?: TileType;
+  tileVariant?: FeatureVariant;
   // NPC sprite fields (#85)
   npcImg?: HTMLImageElement | null;
   npcFlipX?: boolean;
@@ -157,6 +159,84 @@ function getObjectCells(key: string, chunk: ChunkData): ObjectCellRef[] {
   return list;
 }
 
+function nanoConnectionFamily(tileType: TileType): 'wall' | 'fence' | 'water' | 'bridge' | TileType {
+  switch (tileType) {
+    case 'stone_wall':
+    case 'door_gate':
+    case 'quiz_gate':
+    case 'homestead_wall':
+    case 'cathedral_wall':
+      return 'wall';
+    case 'wooden_fence':
+      return 'fence';
+    case 'water':
+      return 'water';
+    case 'bridge':
+    case 'troll_bridge':
+      return 'bridge';
+    default:
+      return tileType;
+  }
+}
+
+function sameFeatureNeighbor(
+  chunks: Map<string, ChunkData>,
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  tileType: TileType,
+): boolean {
+  let localX = cx;
+  let localY = cy;
+  let chunkX = chunk.chunkX;
+  let chunkY = chunk.chunkY;
+  const size = WORLD_CONFIG.chunkSize;
+  if (localX < 0) { chunkX--; localX = size - 1; }
+  else if (localX >= size) { chunkX++; localX = 0; }
+  if (localY < 0) { chunkY--; localY = size - 1; }
+  else if (localY >= size) { chunkY++; localY = 0; }
+  const target = chunks.get(`${chunkX},${chunkY}`);
+  if (!target) return false;
+  const cell = target.cells[localY]?.[localX];
+  if (!cell) return false;
+  const neighborTileType = ASSET_DEFS[cell.assetKey]?.tileType;
+  return !!neighborTileType && nanoConnectionFamily(neighborTileType) === nanoConnectionFamily(tileType);
+}
+
+function variantFromConnections(top: boolean, right: boolean, bottom: boolean, left: boolean): FeatureVariant {
+  const count = (top ? 1 : 0) + (right ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0);
+  if (count === 0) return 'isolated';
+  if (count === 4) return 'cross';
+  if (count === 1) return top ? 'end-t' : right ? 'end-r' : bottom ? 'end-b' : 'end-l';
+  if (count === 2) {
+    if (left && right) return 'straight-h';
+    if (top && bottom) return 'straight-v';
+    if (top && right) return 'corner-tr';
+    if (top && left) return 'corner-tl';
+    if (bottom && right) return 'corner-br';
+    return 'corner-bl';
+  }
+  if (!top) return 'tee-b';
+  if (!right) return 'tee-l';
+  if (!bottom) return 'tee-t';
+  return 'tee-r';
+}
+
+function inferTileVariant(
+  chunks: Map<string, ChunkData>,
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  tileType: TileType,
+): FeatureVariant {
+  return variantFromConnections(
+    sameFeatureNeighbor(chunks, chunk, cx, cy - 1, tileType),
+    sameFeatureNeighbor(chunks, chunk, cx + 1, cy, tileType),
+    sameFeatureNeighbor(chunks, chunk, cx, cy + 1, tileType),
+    sameFeatureNeighbor(chunks, chunk, cx - 1, cy, tileType),
+  );
+}
+
 /** Invalidate a chunk's object cache (e.g. when items collected, obstacles resolved) */
 export function invalidateObjectCache(chunkKey: string): void {
   objectCellCache.delete(chunkKey);
@@ -253,24 +333,20 @@ export class IsometricRenderer {
     this.ctx.fillRect(0, 0, RENDER_CONFIG.canvasWidth, RENDER_CONFIG.canvasHeight);
   }
 
-  /** Draw a pre-rendered isometric tile (64×32 diamond) at screen position.
-   *  For nano-capable tiles (stone_wall, wooden_fence), uses drawNanoStack
-   *  with a 0.25× scale transform to map 256×128 nano coords → 64×32 v1 space. */
-  private drawTile(tileType: TileType, sx: number, sy: number): void {
-    const nanos = getNanoStack(tileType);
+  /** Draw a pre-rendered isometric tile at screen position.
+   *  Nano-capable tiles now draw at native Iso 2.0 scale (256×128 diamond). */
+  private drawTile(tileType: TileType, sx: number, sy: number, variant?: FeatureVariant): void {
+    const nanos = getNanoStack(tileType, variant);
     if (nanos) {
-      // Map iso 2.0 nano coords (256×128 diamond) down to v1 tile size (64×32).
-      // ctx origin → top-left of v1 diamond bounding box, scale 0.25 in both axes.
       this.ctx.save();
-      this.ctx.translate(sx - 32, sy - 16);
-      this.ctx.scale(0.25, 0.25);
+      this.ctx.translate(sx - RENDER_CONFIG.tileWidth / 2, sy - RENDER_CONFIG.tileHeight / 2);
       drawNanoStack(this.ctx, nanos, 0, 0);
       this.ctx.restore();
       return;
     }
     const tileCanvas = getIsoTile(tileType);
     if (tileCanvas) {
-      this.ctx.drawImage(tileCanvas, sx - 32, sy - 16);
+      this.ctx.drawImage(tileCanvas, sx - RENDER_CONFIG.tileWidth / 2, sy - RENDER_CONFIG.tileHeight / 2);
     }
   }
 
@@ -426,6 +502,13 @@ export class IsometricRenderer {
               cmd.npcImg = npcImg;
               cmd.npcFlipX = facing === 'west';
               cmd.assetCanvas = null;
+            } else if (def.tileType && hasNanoRenderer(def.tileType)) {
+              const cmd = jsPool[jsPoolIdx++];
+              cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
+              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+              cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+              cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+              cmd.assetCanvas = null;
             } else if (hasAssetSprite(cell.assetKey)) {
               // SVG asset sprite path (#115) — priority over tileType for objects
               const cmd = jsPool[jsPoolIdx++];
@@ -447,6 +530,7 @@ export class IsometricRenderer {
               cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
               cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
               cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+              cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
               cmd.assetCanvas = null;
             } else {
               const cmd = jsPool[jsPoolIdx++];
@@ -535,7 +619,7 @@ export class IsometricRenderer {
       switch (cmd.type) {
         case CMD_TILE:
           if (cmd.shadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
-          if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
+          if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy, cmd.tileVariant);
           break;
         case CMD_EMOJI:
           if (cmd.assetCanvas) {

@@ -22,13 +22,13 @@
 
 // ─── Re-exported constants (from experiment, with v1-compatible names) ─────────
 
-/** Logical pixel size of a single micro tile (128×128 px, 4× larger than v1's 32×32). */
-export const ISO_MICRO_TILE_SIZE = 128;
+/** Logical pixel size of a single micro tile (144×144 px; 3×48px nano cells). */
+export const ISO_MICRO_TILE_SIZE = 144;
 
-/** Isometric diamond width after projection (256 px, 4× larger than v1's 64). */
+/** Isometric diamond width after projection (256 px). */
 export const ISO_DIAMOND_WIDTH = 256;
 
-/** Isometric diamond height after projection (128 px, 4× larger than v1's 32). */
+/** Isometric diamond height after projection (128 px). */
 export const ISO_DIAMOND_HEIGHT = 128;
 
 /** World Unit Chunk dimension: 5 tiles per side. */
@@ -86,7 +86,10 @@ export type IsoNanoTileKind =
   | 'gate'
   | 'troll-bridge'         // new — quiz-gated bridge (no v1 equivalent)
   | 'cathedral-wall'       // new — assembly feature
-  | 'homestead-wall';      // new — assembly feature
+  | 'homestead-wall'       // new — assembly feature
+  | 'roof-slope-left'
+  | 'roof-slope-right'
+  | 'roof-ridge';
 
 /** Tile variant for continuous feature solver (19 connection variants). */
 export type IsoFeatureVariant =

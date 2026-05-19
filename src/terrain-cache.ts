@@ -13,39 +13,45 @@ import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { getBiome } from './config/biomes.config';
 import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
+import { drawNanoStack } from './nano-tile';
+import { getNanoStack } from './nano-tile-defs';
 import { getEmojiSprite } from './emoji-cache';
 import { cellJitter } from './utils';
 import type { ChunkData } from './gen';
+import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types';
 
 // --- Chunk canvas cache ---
 
-interface CachedChunkTerrain {
+interface CachedWorldUnitTerrain {
   canvas: HTMLCanvasElement;
-  /** Isometric origin offset: world-space chunk origin in pre-rendered canvas */
+  /** Isometric origin offset: world-unit origin in pre-rendered canvas */
   originX: number;
   originY: number;
   /** Generation stamp - invalidate if chunk is modified */
   stamp: number;
-  /** Local screen positions of water tiles for animated overlay */
+  /** Local screen positions of legacy flat water tiles for animated overlay */
   waterPositions: { lsx: number; lsy: number }[];
+  allImagesLoaded: boolean;
 }
 
-const chunkCache = new Map<string, CachedChunkTerrain>();
+const chunkCache = new Map<string, CachedWorldUnitTerrain>();
 let cacheStamp = 0;
 
 // Chunk content dimensions (computed from chunk size & tile dims)
 const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
+const WU_SIZE = WORLD_CONFIG.worldUnitSize; // 5
 const TW = RENDER_CONFIG.tileWidth;  // 64
 const TH = RENDER_CONFIG.tileHeight; // 32
 const HALF_TW = TW / 2;             // 32
 const HALF_TH = TH / 2;             // 16
 
-// Full-res chunk pixel dimensions (computed from chunk size)
-const CHUNK_PX_W = (SIZE * 2) * HALF_TW + TW;
-const CHUNK_PX_H = SIZE * 2 * HALF_TH + TH;
+// Full-res world-unit pixel dimensions (5×5 cells). Whole 25×25 chunk
+// canvases are too large for Iso 2.0 256×128 tiles, so cache WUs lazily.
+const WU_PX_W = (WU_SIZE * 2) * HALF_TW + TW;
+const WU_PX_H = WU_SIZE * 2 * HALF_TH + TH;
 
-// Origin offset within the canvas (where local 0,0 maps to)
-const ORIGIN_X = SIZE * HALF_TW;
+// Origin offset within a WU canvas (where local 0,0 maps to)
+const ORIGIN_X = WU_SIZE * HALF_TW;
 const ORIGIN_Y = HALF_TH;
 
 /**
@@ -56,29 +62,38 @@ export function getCachedTerrain(
   chunkKey: string,
   chunk: ChunkData,
   allChunks?: Map<string, ChunkData>,
-): CachedChunkTerrain {
-  let entry = chunkCache.get(chunkKey);
+  startCX = 0,
+  startCY = 0,
+): CachedWorldUnitTerrain {
+  const wuKey = `${chunkKey}:${startCX},${startCY}`;
+  let entry = chunkCache.get(wuKey);
   if (entry) return entry;
 
-  // Create scaled-down offscreen canvas for this chunk's base terrain
+  // Create offscreen canvas for this 5×5 world-unit terrain slice.
   const canvas = document.createElement('canvas');
-  canvas.width = CHUNK_PX_W;
-  canvas.height = CHUNK_PX_H;
+  canvas.width = WU_PX_W;
+  canvas.height = WU_PX_H;
   const ctx = canvas.getContext('2d')!;
 
   const biome = getBiome(chunk.biomeId);
   const waterPositions: { lsx: number; lsy: number }[] = [];
+  let allImagesLoaded = true;
 
-  // Render base terrain tiles (at TCSCALE resolution)
-  for (let cy = 0; cy < SIZE; cy++) {
-    for (let cx = 0; cx < SIZE; cx++) {
+  const endCY = Math.min(SIZE, startCY + WU_SIZE);
+  const endCX = Math.min(SIZE, startCX + WU_SIZE);
+
+  // Render base terrain tiles for this WU only.
+  for (let cy = startCY; cy < endCY; cy++) {
+    for (let cx = startCX; cx < endCX; cx++) {
       const cell = chunk.cells[cy][cx];
       const def = ASSET_DEFS[cell.assetKey];
       if (!def || def.layer !== 'base') continue;
 
       // Local isometric position within chunk canvas (full-res coords, ctx.scale handles it)
-      const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
-      const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
+      const localCX = cx - startCX;
+      const localCY = cy - startCY;
+      const lsx = (localCX - localCY) * HALF_TW + ORIGIN_X;
+      const lsy = (localCX + localCY) * HALF_TH + ORIGIN_Y;
 
       // Global cell coords for tile variants and jitter (#82)
       const globalCX = chunk.chunkX * SIZE + cx;
@@ -89,6 +104,35 @@ export function getCachedTerrain(
         let tileCanvas: HTMLCanvasElement | undefined;
         if (def.tileType === 'grass') {
           tileCanvas = getGrassVariant(globalCX, globalCY);
+        } else if (def.tileType === 'water') {
+          // Native Iso 2.0 water is a negative-Z nano cut into a grass/shore base.
+          // Draw the local grass underlay first, then the connected water stack.
+          tileCanvas = getGrassVariant(globalCX, globalCY);
+          if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
+          const variant = inferWaterVariant(chunk, cx, cy, allChunks);
+          const waterStack = getNanoStack('water', variant);
+          if (waterStack) {
+            const res = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
+            if (!res.allImagesLoaded) allImagesLoaded = false;
+          }
+          continue;
+        } else if (def.tileType === 'bridge') {
+          // Bridge tiles are base-layer in gameplay, but visually they are a
+          // nano deck over the connected negative-Z water channel.
+          tileCanvas = getGrassVariant(globalCX, globalCY);
+          if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
+          const variant = inferBridgeVariant(chunk, cx, cy, allChunks);
+          const waterStack = getNanoStack('water', variant);
+          if (waterStack) {
+            const res = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
+            if (!res.allImagesLoaded) allImagesLoaded = false;
+          }
+          const bridgeStack = getNanoStack('bridge', variant);
+          if (bridgeStack) {
+            const res = drawNanoStack(ctx, bridgeStack, lsx - HALF_TW, lsy - HALF_TH);
+            if (!res.allImagesLoaded) allImagesLoaded = false;
+          }
+          continue;
         } else if (def.tileType === 'dirt') {
           tileCanvas = getDirtVariant(globalCX, globalCY);
         } else if (def.tileType === 'rock') {
@@ -101,11 +145,7 @@ export function getCachedTerrain(
           tileCanvas = getIsoTile(def.tileType);
         }
         if (tileCanvas) {
-          ctx.drawImage(tileCanvas, lsx - 32, lsy - 16);
-        }
-        // Track water tile positions for animated overlay
-        if (def.tileType === 'water') {
-          waterPositions.push({ lsx, lsy });
+          ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
         }
       } else {
         const sprite = getEmojiSprite(def.emoji, biome.tintHue);
@@ -120,7 +160,7 @@ export function getCachedTerrain(
 
   // --- Auto-tile transitions: subtle edge darkening at tile-type boundaries ---
   // Pass allChunks for cross-chunk border transitions
-  renderAutoTileTransitions(ctx, chunk, allChunks);
+  renderAutoTileTransitions(ctx, chunk, allChunks, startCX, startCY, endCX, endCY);
 
   entry = {
     canvas,
@@ -128,8 +168,9 @@ export function getCachedTerrain(
     originY: ORIGIN_Y,
     stamp: cacheStamp++,
     waterPositions,
+    allImagesLoaded,
   };
-  chunkCache.set(chunkKey, entry);
+  if (allImagesLoaded) chunkCache.set(wuKey, entry);
   return entry;
 }
 
@@ -145,35 +186,33 @@ export function drawCachedChunkTerrain(
   cameraY: number,
   allChunks?: Map<string, ChunkData>,
 ): void {
-  const cached = getCachedTerrain(chunkKey, chunk, allChunks);
-
   // Chunk's world-space origin (cell 0,0 of this chunk in grid coords)
   const chunkGX = chunk.chunkX * SIZE;
   const chunkGY = chunk.chunkY * SIZE;
-
-  // Convert chunk origin from grid to screen coordinates
-  const rx = chunkGX - cameraX;
-  const ry = chunkGY - cameraY;
-  const screenX = (rx - ry) * HALF_TW + RENDER_CONFIG.canvasWidth / 2;
-  const screenY = (rx + ry) * HALF_TH + RENDER_CONFIG.canvasHeight / 3;
-
-  // Offset by the pre-rendered canvas origin
-  const destX = screenX - cached.originX;
-  const destY = screenY - cached.originY;
-
-  // Quick bounds check: skip if entirely off screen
   const cw = RENDER_CONFIG.canvasWidth;
   const ch = RENDER_CONFIG.canvasHeight;
-  if (destX + CHUNK_PX_W < 0 || destX > cw ||
-      destY + CHUNK_PX_H < 0 || destY > ch) {
-    return;
-  }
 
-  ctx.drawImage(cached.canvas, destX, destY);
+  for (let wy = 0; wy < SIZE; wy += WU_SIZE) {
+    for (let wx = 0; wx < SIZE; wx += WU_SIZE) {
+      const wuGX = chunkGX + wx;
+      const wuGY = chunkGY + wy;
+      const rx = wuGX - cameraX;
+      const ry = wuGY - cameraY;
+      const screenX = (rx - ry) * HALF_TW + cw / 2;
+      const screenY = (rx + ry) * HALF_TH + ch / 3;
+      const destX = screenX - ORIGIN_X;
+      const destY = screenY - ORIGIN_Y;
 
-  // Draw animated water wave overlays if chunk has water tiles
-  if (cached.waterPositions.length > 0) {
-    drawWaterOverlays(ctx, cached.waterPositions, destX, destY, waterAnimFrame);
+      // Bounds check before cache creation; this is what keeps 144px tiles viable.
+      if (destX + WU_PX_W < 0 || destX > cw || destY + WU_PX_H < 0 || destY > ch) continue;
+
+      const cached = getCachedTerrain(chunkKey, chunk, allChunks, wx, wy);
+      ctx.drawImage(cached.canvas, destX, destY);
+
+      if (cached.waterPositions.length > 0) {
+        drawWaterOverlays(ctx, cached.waterPositions, destX, destY, waterAnimFrame);
+      }
+    }
   }
 }
 
@@ -412,6 +451,66 @@ function getBaseTileType(
   return def.tileType ?? def.emoji ?? cell.assetKey;
 }
 
+function isWaterBase(
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  allChunks?: Map<string, ChunkData>,
+): boolean {
+  return getBaseTileType(chunk, cx, cy, allChunks) === 'water';
+}
+
+function variantFromConnections(top: boolean, right: boolean, bottom: boolean, left: boolean): FeatureVariant {
+  const count = (top ? 1 : 0) + (right ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0);
+  if (count === 0) return 'isolated';
+  if (count === 4) return 'cross';
+  if (count === 1) {
+    if (top) return 'end-t';
+    if (right) return 'end-r';
+    if (bottom) return 'end-b';
+    return 'end-l';
+  }
+  if (count === 2) {
+    if (left && right) return 'straight-h';
+    if (top && bottom) return 'straight-v';
+    if (top && right) return 'corner-tr';
+    if (top && left) return 'corner-tl';
+    if (bottom && right) return 'corner-br';
+    return 'corner-bl';
+  }
+  if (!top) return 'tee-b';
+  if (!right) return 'tee-l';
+  if (!bottom) return 'tee-t';
+  return 'tee-r';
+}
+
+function inferWaterVariant(
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  allChunks?: Map<string, ChunkData>,
+): FeatureVariant {
+  return variantFromConnections(
+    isWaterBase(chunk, cx, cy - 1, allChunks),
+    isWaterBase(chunk, cx + 1, cy, allChunks),
+    isWaterBase(chunk, cx, cy + 1, allChunks),
+    isWaterBase(chunk, cx - 1, cy, allChunks),
+  );
+}
+
+function inferBridgeVariant(
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  allChunks?: Map<string, ChunkData>,
+): FeatureVariant {
+  const vertical = isWaterBase(chunk, cx, cy - 1, allChunks) || isWaterBase(chunk, cx, cy + 1, allChunks);
+  const horizontal = isWaterBase(chunk, cx - 1, cy, allChunks) || isWaterBase(chunk, cx + 1, cy, allChunks);
+  if (vertical && !horizontal) return 'straight-v';
+  if (horizontal && !vertical) return 'straight-h';
+  return inferWaterVariant(chunk, cx, cy, allChunks);
+}
+
 function getDominantColor(tileType: string): string | null {
   return TILE_DOMINANT_COLORS[tileType] ?? null;
 }
@@ -439,6 +538,10 @@ function renderAutoTileTransitions(
   ctx: CanvasRenderingContext2D,
   chunk: ChunkData,
   allChunks?: Map<string, ChunkData>,
+  startCX: number = 0,
+  startCY: number = 0,
+  endCX: number = SIZE,
+  endCY: number = SIZE,
 ): void {
   // Edge directions: 0=east(+1,0), 1=south(0,+1), 2=west(-1,0), 3=north(0,-1)
   const DX = [1, 0, -1, 0];
@@ -448,13 +551,15 @@ function renderAutoTileTransitions(
   const gxOff = chunk.chunkX * SIZE;
   const gyOff = chunk.chunkY * SIZE;
 
-  for (let cy = 0; cy < SIZE; cy++) {
-    for (let cx = 0; cx < SIZE; cx++) {
+  for (let cy = startCY; cy < endCY; cy++) {
+    for (let cx = startCX; cx < endCX; cx++) {
       const myType = getBaseTileType(chunk, cx, cy);
       if (!myType) continue;
 
-      const lsx = (cx - cy) * HALF_TW + ORIGIN_X;
-      const lsy = (cx + cy) * HALF_TH + ORIGIN_Y;
+      const localCX = cx - startCX;
+      const localCY = cy - startCY;
+      const lsx = (localCX - localCY) * HALF_TW + ORIGIN_X;
+      const lsy = (localCX + localCY) * HALF_TH + ORIGIN_Y;
 
       // --- Pass 1: Cardinal edge transitions ---
       for (let ni = 0; ni < 4; ni++) {
@@ -650,7 +755,9 @@ function renderAutoTileTransitions(
  * Invalidate a chunk's cached terrain (e.g. when chunk content changes).
  */
 export function invalidateChunkTerrain(chunkKey: string): void {
-  chunkCache.delete(chunkKey);
+  for (const key of chunkCache.keys()) {
+    if (key === chunkKey || key.startsWith(`${chunkKey}:`)) chunkCache.delete(key);
+  }
 }
 
 /**
@@ -661,19 +768,19 @@ export function clearTerrainCache(): void {
 }
 
 /**
- * Number of cached chunks (for debug display).
+ * Number of cached world-unit terrain slices (for debug display).
  */
 export function getTerrainCacheSize(): number {
   return chunkCache.size;
 }
 
 /**
- * Estimated memory usage of all cached chunk terrain canvases (in MB).
- * Each cached canvas is CHUNK_PX_W × CHUNK_PX_H × 4 bytes (RGBA bitmap).
+ * Estimated memory usage of all cached world-unit terrain canvases (in MB).
+ * Each cached canvas is WU_PX_W × WU_PX_H × 4 bytes (RGBA bitmap).
  */
 export function getTerrainCacheMemoryMB(): number {
-  const bytesPerChunk = CHUNK_PX_W * CHUNK_PX_H * 4;
-  return (chunkCache.size * bytesPerChunk) / (1024 * 1024);
+  const bytesPerSlice = WU_PX_W * WU_PX_H * 4;
+  return (chunkCache.size * bytesPerSlice) / (1024 * 1024);
 }
 
 /** Maximum allowed cache memory in MB before eviction kicks in */
@@ -690,7 +797,8 @@ export function evictDistantChunks(playerChunkX: number, playerChunkY: number, k
 
   const keysToEvict: string[] = [];
   for (const key of chunkCache.keys()) {
-    const parts = key.split(',');
+    const chunkPart = key.split(':')[0];
+    const parts = chunkPart.split(',');
     const cx = parseInt(parts[0], 10);
     const cy = parseInt(parts[1], 10);
     const dx = Math.abs(cx - playerChunkX);

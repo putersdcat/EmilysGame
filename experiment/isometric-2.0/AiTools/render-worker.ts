@@ -37,7 +37,9 @@ import {
   RoughWoodPlankWall,
   CottageStoneFoundation,
   ThatchRoof,
+  WaterFamily,
 } from '../src/textures/index.js';
+import type { FeatureConnections, FeatureVariant } from '../src/types.js';
 import type { RoofPrimitiveKind } from '../src/textures/roof-family.js';
 
 /**
@@ -379,6 +381,25 @@ async function dispatch(): Promise<WorkerResult> {
       return { ok: true, content, structuredContent: m };
     }
 
+    // ── render_water_animation_strip ─────────────────────────
+    // Local worker helper for validating frame-addressable WaterFamily SVGs
+    // without changing MCP schemas / rebuilding index.ts.
+    case 'render_water_animation_strip': {
+      const { variant, connections, frameCount, width, height, background, outputPath, style } = args as Record<string, any>;
+      const count = Math.max(1, Number(frameCount ?? 6));
+      const conn = connections as FeatureConnections | undefined;
+      const v = (variant ?? 'straight-h') as FeatureVariant;
+      const stripSvg = WaterFamily.svgWaterFrameStrip(v, conn, 0, 0, count, { style });
+      const r = renderSvg(stripSvg, { mode: 'flat', width: width ?? 144 * count, height: height ?? 144, background });
+      if (outputPath) savePng(outputPath, r.png);
+      const m: Record<string, unknown> = {
+        variant: v, frameCount: count, frameWidth: 144, frameHeight: 144,
+        width: r.width, height: r.height, renderTimeMs: r.renderTimeMs,
+        bytes: r.png.length, savedTo: outputPath ?? null,
+      };
+      return { ok: true, content: [img(r.base64), metaTxt(m)], structuredContent: m };
+    }
+
     // ── render_geo_proof ──────────────────────────────────────
     case 'render_geo_proof': {
       const a = args as Record<string, any>;
@@ -513,7 +534,11 @@ async function dispatch(): Promise<WorkerResult> {
             if (svgOverride) {
               return {
                 kind: e.kind, col: e.col, row: e.row,
+                nanoCol: e.nanoCol,
+                nanoRow: e.nanoRow,
                 variant: e.variant as CanvasSceneEntry['variant'],
+                fenceStyle: e.fenceStyle,
+                waterStyle: e.waterStyle,
                 zOffset: e.zOffset,
                 svgOverride,
                 topSvgOverride,
@@ -555,7 +580,11 @@ async function dispatch(): Promise<WorkerResult> {
         }
         return {
           kind: e.kind, col: e.col, row: e.row,
+          nanoCol: e.nanoCol,
+          nanoRow: e.nanoRow,
           variant: e.variant as CanvasSceneEntry['variant'],
+          fenceStyle: e.fenceStyle,
+          waterStyle: e.waterStyle,
           zOffset: e.zOffset,
           svgOverride,
           topSvgOverride,
@@ -575,6 +604,13 @@ async function dispatch(): Promise<WorkerResult> {
           weatheringOverlays,
         };
       });
+      for (const e of sceneEntries) {
+        if ((e.kind === 'river' || e.kind === 'river-bank') && !e.svgOverride && e.waterStyle) {
+          const variant = e.variant ?? 'straight-h';
+          const connections = variantToConnectionsLocal(variant);
+          e.svgOverride = WaterFamily.svgWater(variant, connections, e.col, e.row, { style: e.waterStyle });
+        }
+      }
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({
         col: p.col, row: p.row, label: p.label,
         nanoCol: p.nanoCol, nanoRow: p.nanoRow,
@@ -591,6 +627,27 @@ async function dispatch(): Promise<WorkerResult> {
 
     default:
       throw new Error(`render-worker: unknown tool "${toolName}"`);
+  }
+}
+
+function variantToConnectionsLocal(variant: FeatureVariant): FeatureConnections {
+  switch (variant) {
+    case 'straight-h': return { top: false, right: true, bottom: false, left: true };
+    case 'straight-v': return { top: true, right: false, bottom: true, left: false };
+    case 'corner-tr': return { top: true, right: true, bottom: false, left: false };
+    case 'corner-tl': return { top: true, right: false, bottom: false, left: true };
+    case 'corner-br': return { top: false, right: true, bottom: true, left: false };
+    case 'corner-bl': return { top: false, right: false, bottom: true, left: true };
+    case 'cross': return { top: true, right: true, bottom: true, left: true };
+    case 'tee-t': return { top: true, right: true, bottom: false, left: true };
+    case 'tee-r': return { top: true, right: true, bottom: true, left: false };
+    case 'tee-b': return { top: false, right: true, bottom: true, left: true };
+    case 'tee-l': return { top: true, right: false, bottom: true, left: true };
+    case 'end-t': return { top: true, right: false, bottom: false, left: false };
+    case 'end-r': return { top: false, right: true, bottom: false, left: false };
+    case 'end-b': return { top: false, right: false, bottom: true, left: false };
+    case 'end-l': return { top: false, right: false, bottom: false, left: true };
+    default: return { top: false, right: false, bottom: false, left: false };
   }
 }
 

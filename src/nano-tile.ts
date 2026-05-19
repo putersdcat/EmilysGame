@@ -26,6 +26,7 @@ import {
   type IsoNanoStack as NanoStack,
   type IsoSunState as SunState,
 } from './types/iso-renderer.types.js';
+import { wallBounds } from './nano-tile-svgs';
 
 // ─── SVG Image Cache ─────────────────────────────────────────────────────────
 // Inlined from experiment/isometric-2.0/src/tile.ts for standalone portability.
@@ -82,6 +83,8 @@ export const Z_PX_PER_LEVEL = 4;
 
 const HALF_W = ISO_TILE_WIDTH / 2;   // 128
 const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
+const ISO_X_PER_SOURCE_PX = HALF_W / MICRO_TILE_SIZE;
+const ISO_Y_PER_SOURCE_PX = HALF_H / MICRO_TILE_SIZE;
 
 /**
  * Visual height multiplier for nano Z rendering.
@@ -158,7 +161,7 @@ export function drawPositiveNano(
 
   // Z-pinned shear: horizontal lines slope at iso angle (0.5),
   // vertical edges remain vertical — the "standing billboard" effect.
-  ctx.transform(1, 0.5, 0, 1, 0, 0);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
 
   // Draw SVG extending upward from anchor.
   ctx.drawImage(img, 0, -drawH, MICRO_TILE_SIZE, drawH);
@@ -205,7 +208,8 @@ export function drawNegativeNano(
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
   // Flat iso projection (same as base tiles) shifted down by sink depth.
-  ctx.transform(1, 0.5, -1, 0.5, cx, screenY + sinkPx);
+  const renderSinkPx = nano.kind === 'river' || nano.kind === 'river-bank' ? 0 : sinkPx;
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + renderSinkPx);
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
   ctx.restore();
@@ -275,7 +279,7 @@ function drawFlatNano(
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
   // Flat iso transform (identical to base tile projection)
-  ctx.transform(1, 0.5, -1, 0.5, cx, screenY);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);
   ctx.globalAlpha = 0.7;
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
@@ -295,8 +299,7 @@ function drawFlatNano(
  * WALL_OFFSET = distance from tile edge to the near wall face (camera side).
  * WALL_THICKNESS = wall width perpendicular to its run direction.
  */
-const WALL_THICKNESS = 48;                                    // solver.ts W
-const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;  // solver.ts off = 40
+// Removed unused wall geometry constants
 
 /**
  * Returns true when the nano variant represents a wall running along the
@@ -377,76 +380,63 @@ export function drawExtrudedNano(
 
   const drawH = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
   let loaded = true;
-  const vertical = isVerticalWall(nano.variant);
 
-  const NE = WALL_OFFSET + WALL_THICKNESS;  // near edge = 88
+  const sideImg = nano.sideTextureSvg ? loadSvgImage(nano.sideTextureSvg) : null;
+  const topImg = nano.topTextureSvg ? loadSvgImage(nano.topTextureSvg) : sideImg;
+  if (!sideImg || !topImg) return false;
 
-  let frontX: number, frontY: number;
-  let capX: number, capY: number;
-  let frontMat: 1 | -1;
+  const variant = nano.variant ?? 'isolated';
+  const { rects } = wallBounds(variant);
 
-  if (vertical) {
-    frontX = screenX + HALF_W + NE;
-    frontY = screenY + NE / 2;
-    capX   = screenX + HALF_W + WALL_OFFSET - MICRO_TILE_SIZE;
-    capY   = screenY + (WALL_OFFSET + MICRO_TILE_SIZE) / 2;
-    frontMat = -1;
-  } else {
-    frontX = screenX + HALF_W - NE;
-    frontY = screenY + NE / 2;
-    capX   = screenX + HALF_W + MICRO_TILE_SIZE - WALL_OFFSET;
-    capY   = screenY + (MICRO_TILE_SIZE + WALL_OFFSET) / 2;
-    frontMat = 1;
+  const isoX = (tx: number, ty: number) => screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W;
+  const isoY = (tx: number, ty: number) => screenY + (tx + ty) * ISO_Y_PER_SOURCE_PX;
+
+  function southOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
+    return rects.some(o => o !== r && o.y === r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
   }
 
-  // ── 1. End cap (further from camera) ─────────────────────────────────────
-  if (shouldDrawEndCap(nano.variant) && nano.sideTextureSvg) {
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
+  function eastOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
+    return rects.some(o => o !== r && o.x === r.x + r.w && o.y < r.y + r.h && o.y + o.h > r.y);
+  }
+
+  // Draw visible vertical faces first. South and east faces match the
+  // experiment's footprint-rect approach, rather than stretching one full
+  // 144px texture strip across every variant.
+  for (const r of rects) {
+    if (!southOccluded(r)) {
+      const ex = isoX(r.x, r.y + r.h);
+      const ey = isoY(r.x, r.y + r.h);
       ctx.save();
-      ctx.translate(capX, capY);
-      ctx.transform(-frontMat as (1 | -1), 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, WALL_THICKNESS, drawH);
-      ctx.fillStyle = 'rgba(0,0,0,0.22)';
-      ctx.fillRect(0, -drawH, WALL_THICKNESS, drawH);
+      ctx.translate(ex, ey);
+      ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, r.x, 0, r.w, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.w, drawH);
       ctx.restore();
-    } else {
-      loaded = false;
+    }
+
+    if (!eastOccluded(r)) {
+      const ex = isoX(r.x + r.w, r.y);
+      const ey = isoY(r.x + r.w, r.y);
+      ctx.save();
+      ctx.translate(ex, ey);
+      ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
+      ctx.drawImage(sideImg, r.y, 0, r.h, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.h, drawH);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(0, -drawH, r.h, drawH);
+      ctx.restore();
     }
   }
 
-  // ── 2. Front face (closer to camera) ─────────────────────────────────────
-  if (nano.sideTextureSvg) {
-    const sideImg = loadSvgImage(nano.sideTextureSvg);
-    if (sideImg) {
-      ctx.save();
-      ctx.translate(frontX, frontY);
-      ctx.transform(frontMat, 0.5, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, 0, -drawH, MICRO_TILE_SIZE, drawH);
-      ctx.restore();
-    } else {
-      loaded = false;
-    }
-  } else {
-    if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) loaded = false;
+  // Draw footprint top cap at elevated position, using only the actual wall
+  // rects so corners/tees/crosses stop looking like full-tile checkerboards.
+  const elevatedY = screenY - drawH;
+  const cx = screenX + HALF_W;
+  ctx.save();
+  clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
+  ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, elevatedY);
+  for (const r of rects) {
+    ctx.drawImage(topImg, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
   }
-
-  // ── 3. Top cap: flat iso at elevated position ─────────────────────────────
-  if (nano.topTextureSvg) {
-    const topImg = loadSvgImage(nano.topTextureSvg);
-    if (topImg) {
-      const elevatedY = screenY - drawH;
-      const cx = screenX + HALF_W;
-
-      ctx.save();
-      clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
-      ctx.transform(1, 0.5, -1, 0.5, cx, elevatedY);
-      ctx.drawImage(topImg, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
-      ctx.restore();
-    } else {
-      loaded = false;
-    }
-  }
+  ctx.restore();
 
   return loaded;
 }
