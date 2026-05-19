@@ -842,6 +842,8 @@ export function getVariantSvg(
       return woodenFenceSvg(variant);
     case 'river':
       return WaterFamily.svgWater(variant, connections, worldCol, worldRow);
+    case 'river-bank':
+      return WaterFamily.svgRiverBank(variant, connections, worldCol, worldRow);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
     default:

@@ -608,7 +608,9 @@ async function dispatch(): Promise<WorkerResult> {
         if ((e.kind === 'river' || e.kind === 'river-bank') && !e.svgOverride && e.waterStyle) {
           const variant = e.variant ?? 'straight-h';
           const connections = variantToConnectionsLocal(variant);
-          e.svgOverride = WaterFamily.svgWater(variant, connections, e.col, e.row, { style: e.waterStyle });
+          e.svgOverride = e.kind === 'river-bank'
+            ? WaterFamily.svgRiverBank(variant, connections, e.col, e.row, { style: e.waterStyle })
+            : WaterFamily.svgWater(variant, connections, e.col, e.row, { style: e.waterStyle });
         }
       }
       const playerEntries: CanvasPlayerEntry[] = (rawPlayers ?? []).map((p: Record<string, any>) => ({

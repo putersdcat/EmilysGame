@@ -459,6 +459,92 @@ export function svgWater(
   </svg>`;
 }
 
+export function svgRiverBank(
+  variant: FeatureVariant,
+  connections?: FeatureConnections,
+  worldCol = 0,
+  worldRow = 0,
+  options: WaterFactoryOptions = {},
+): string {
+  const conn = connectionsFromVariant(variant, connections);
+  const style = waterStyleForTile(options.style, worldCol, worldRow, variant, options);
+  const seed = options.seed ?? `${style.id}:bank:${worldCol}:${worldRow}:${variant}`;
+  const frameCount = Math.max(1, options.frameCount ?? 8);
+  const frame = ((options.frame ?? 0) % frameCount + frameCount) % frameCount;
+  const phase = (frame / frameCount) * Math.PI * 2 * style.flowSpeed + hash01(`${seed}:phase`) * Math.PI * 2;
+  const wetness = clamp01(0.42 + (options.wetness ?? 0) + hash01(`${seed}:wet`) * 0.12);
+  const chW = Math.max(42, style.channelWidth * 0.62);
+  const off = (144 - chW) / 2;
+  const bankW = style.bankWidth + 5;
+  const waterW = Math.max(18, chW * 0.42);
+  const waterOff = (144 - waterW) / 2;
+  const isCorner = isCornerConnection(conn);
+  const bankAmp = 1.8 + hash01(`${seed}:bank-amp`) * 1.4;
+  const id = `river-bank-${style.id}-${variant}-${worldCol}-${worldRow}-${frame}`.replace(/[^a-zA-Z0-9_-]/g, '');
+  const parts: string[] = [];
+
+  parts.push(`<defs>
+    <linearGradient id="${id}-wet-h" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${mix(style.bankOuter, style.bankWet, wetness * 0.30)}"/>
+      <stop offset="48%" stop-color="${mix(style.bankInner, style.bankWet, wetness * 0.45)}"/>
+      <stop offset="100%" stop-color="${rgba(style.shallow, 0.58)}"/>
+    </linearGradient>
+    <linearGradient id="${id}-wet-v" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="${mix(style.bankOuter, style.bankWet, wetness * 0.30)}"/>
+      <stop offset="48%" stop-color="${mix(style.bankInner, style.bankWet, wetness * 0.45)}"/>
+      <stop offset="100%" stop-color="${rgba(style.shallow, 0.58)}"/>
+    </linearGradient>
+  </defs>`);
+
+  if (variant === 'isolated') {
+    parts.push(`<ellipse cx="72" cy="72" rx="45" ry="35" fill="${rgba(style.bankWet, 0.68)}"/>`);
+    parts.push(`<ellipse cx="72" cy="72" rx="31" ry="23" fill="${rgba(style.shallow, 0.42)}"/>`);
+  } else if (isCorner) {
+    const d = cornerPath(conn);
+    parts.push(`<path d="${d}" stroke="${mix(style.bankOuter, style.bankWet, wetness * 0.28)}" stroke-width="${(chW + bankW).toFixed(1)}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
+    parts.push(`<path d="${d}" stroke="${rgba(style.shallow, 0.54)}" stroke-width="${waterW.toFixed(1)}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
+  } else {
+    if (conn.left || conn.right) {
+      const x1 = conn.left ? -EDGE_OVERDRAW : off;
+      const x2 = conn.right ? 144 + EDGE_OVERDRAW : off + chW;
+      parts.push(`<path d="${bankPath(x1, off, x2, off, 1, phase, bankAmp)} L ${x2.toFixed(1)} ${(off + chW + bankW * 0.35).toFixed(1)} L ${x1.toFixed(1)} ${(off + chW + bankW * 0.35).toFixed(1)} Z" fill="url(#${id}-wet-h)" opacity="0.86"/>`);
+      parts.push(`<rect x="${(conn.left ? -EDGE_OVERDRAW : waterOff).toFixed(1)}" y="${(waterOff + 4).toFixed(1)}" width="${((conn.right ? 144 + EDGE_OVERDRAW : waterOff + waterW) - (conn.left ? -EDGE_OVERDRAW : waterOff)).toFixed(1)}" height="${(waterW - 8).toFixed(1)}" fill="${rgba(style.shallow, 0.32)}" rx="5"/>`);
+    }
+    if (conn.top || conn.bottom) {
+      const y1 = conn.top ? -EDGE_OVERDRAW : off;
+      const y2 = conn.bottom ? 144 + EDGE_OVERDRAW : off + chW;
+      parts.push(`<path d="${bankPath(off, y1, off, y2, 1, phase + 0.7, bankAmp)} L ${(off + chW + bankW * 0.35).toFixed(1)} ${y2.toFixed(1)} L ${(off + chW + bankW * 0.35).toFixed(1)} ${y1.toFixed(1)} Z" fill="url(#${id}-wet-v)" opacity="0.86"/>`);
+      parts.push(`<rect x="${(waterOff + 4).toFixed(1)}" y="${(conn.top ? -EDGE_OVERDRAW : waterOff).toFixed(1)}" width="${(waterW - 8).toFixed(1)}" height="${((conn.bottom ? 144 + EDGE_OVERDRAW : waterOff + waterW) - (conn.top ? -EDGE_OVERDRAW : waterOff)).toFixed(1)}" fill="${rgba(style.shallow, 0.32)}" rx="5"/>`);
+    }
+    if ((conn.top || conn.bottom) && (conn.left || conn.right)) {
+      parts.push(`<circle cx="72" cy="72" r="${(waterW * 0.58).toFixed(1)}" fill="${rgba(style.shallow, 0.34)}"/>`);
+    }
+  }
+
+  parts.push(`<g fill="${style.pebble}" opacity="0.32">`);
+  for (let i = 0; i < 9; i++) {
+    const h = hash01(`${seed}:pebble:${i}`);
+    const x = 12 + hash01(`${seed}:px:${i}`) * 120;
+    const y = 12 + hash01(`${seed}:py:${i}`) * 120;
+    if (Math.abs(x - 72) < waterW * 0.24 && Math.abs(y - 72) < waterW * 0.24) continue;
+    parts.push(`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(0.9 + h * 1.6).toFixed(1)}"/>`);
+  }
+  parts.push('</g>');
+  parts.push(`<g stroke="${style.vegetation}" stroke-width="1.2" stroke-linecap="round" opacity="0.42">`);
+  for (let i = 0; i < 10; i++) {
+    const h = hash01(`${seed}:reed:${i}`);
+    const side = h > 0.5 ? -1 : 1;
+    const x = 72 + side * (chW * 0.42 + h * 14);
+    const y = 12 + hash01(`${seed}:reed-y:${i}`) * 120;
+    parts.push(`<line x1="${x.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x + (h - 0.5) * 7).toFixed(1)}" y2="${(y - 6 - h * 4).toFixed(1)}"/>`);
+  }
+  parts.push('</g>');
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">
+    ${parts.join('\n    ')}
+  </svg>`;
+}
+
 export function svgWaterFrameStrip(
   variant: FeatureVariant,
   connections: FeatureConnections | undefined,
