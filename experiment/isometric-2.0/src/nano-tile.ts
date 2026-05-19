@@ -25,6 +25,7 @@ import {
   NANO_GRID,
   type FeatureConnections,
   type FeatureVariant,
+  type FenceStyle,
   type NanoTile,
   type NanoStack,
   type SunState,
@@ -132,9 +133,13 @@ function drawFencePost(
   ctx: CanvasRenderingContext2D,
   p: { x: number; y: number },
   height: number,
+  style?: FenceStyle,
 ): void {
-  const postW = 7;
-  const postCap = 4;
+  const postW = style?.postWidth ?? 7;
+  const postCap = style?.postCapHeight ?? 4;
+  const postColor = style?.postColor ?? '#6f421d';
+  const postShadow = style?.postShadow ?? '#4f2c12';
+  const postHighlight = style?.postHighlight ?? '#b6752e';
 
   // Ground contact shadow/foot. This is deliberately drawn at the exact
   // projected fence point, so posts read as planted into the iso ground
@@ -144,7 +149,7 @@ function drawFencePost(
   ctx.fillStyle = 'rgba(0,0,0,0.24)';
   ctx.fill();
 
-  ctx.fillStyle = '#5b3518';
+  ctx.fillStyle = postShadow;
   ctx.fillRect(p.x - postW / 2 - 1, p.y - 2, postW + 2, 3);
 
   ctx.beginPath();
@@ -156,13 +161,13 @@ function drawFencePost(
   ctx.stroke();
 
   const grad = ctx.createLinearGradient(p.x - postW / 2, 0, p.x + postW / 2, 0);
-  grad.addColorStop(0, '#6f421d');
-  grad.addColorStop(0.45, '#a4672a');
-  grad.addColorStop(1, '#4f2c12');
+  grad.addColorStop(0, postShadow);
+  grad.addColorStop(0.45, postColor);
+  grad.addColorStop(1, postShadow);
   ctx.fillStyle = grad;
   ctx.fillRect(p.x - postW / 2, p.y - height, postW, height);
 
-  ctx.fillStyle = '#b6752e';
+  ctx.fillStyle = postHighlight;
   ctx.fillRect(p.x - postW / 2 - 1, p.y - height - postCap, postW + 2, postCap);
   ctx.strokeStyle = 'rgba(65,38,15,0.72)';
   ctx.lineWidth = 1;
@@ -171,10 +176,19 @@ function drawFencePost(
   ctx.beginPath();
   ctx.moveTo(p.x - 2, p.y - 3);
   ctx.lineTo(p.x - 2, p.y - height + 3);
-  ctx.strokeStyle = 'rgba(224,157,68,0.52)';
+  ctx.strokeStyle = style?.bleachColor ?? 'rgba(224,157,68,0.52)';
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.stroke();
+}
+
+function fenceRailHeightFractions(style?: FenceStyle): readonly number[] {
+  const count = style?.railCount ?? 2;
+  const spread = style?.railSpread ?? 0.22;
+  const center = 0.56;
+  if (count === 1) return [center];
+  if (count === 3) return [center + spread, center, center - spread];
+  return [center + spread / 2, center - spread / 2];
 }
 
 function projectFencePoint(
@@ -197,8 +211,12 @@ function drawProceduralFenceNano(
   screenY: number,
 ): boolean {
   const height = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
-  const railColor = nano.kind === 'gate' ? '#9a6829' : '#a06a26';
-  const railDark = nano.kind === 'gate' ? '#5a3519' : '#6a421d';
+  const style = nano.fenceStyle;
+  const railColor = style?.railColor ?? (nano.kind === 'gate' ? '#9a6829' : '#a06a26');
+  const railDark = style?.railShadow ?? (nano.kind === 'gate' ? '#5a3519' : '#6a421d');
+  const railHighlight = style?.railHighlight ?? '#bd7b30';
+  const hardwareColor = style?.hardwareColor ?? '#473019';
+  const railWidth = style?.railThickness ?? 5;
   const arms = nano.connections ?? connectionsFromVariant(nano.variant);
   const postKeys = new Set<string>();
   const posts: Array<{ x: number; y: number }> = [];
@@ -239,11 +257,11 @@ function drawProceduralFenceNano(
     // Draw dark backing first, then the warm rail and a thin highlight.
     // Rails are intentionally round-ended so a run made from adjacent
     // micro tiles reads as one continuous wooden fence line.
-    drawLineBetween(ctx, a, b, height * 0.68, railDark, 6);
-    drawLineBetween(ctx, a, b, height * 0.43, railDark, 6);
-    drawLineBetween(ctx, a, b, height * 0.70, railColor, 3.5);
-    drawLineBetween(ctx, a, b, height * 0.45, '#bd7b30', 3.5);
-    drawLineBetween(ctx, a, b, height * 0.72, 'rgba(235,176,78,0.55)', 1.2);
+    for (const frac of fenceRailHeightFractions(style)) {
+      drawLineBetween(ctx, a, b, height * frac, railDark, railWidth + 2);
+      drawLineBetween(ctx, a, b, height * (frac + 0.02), railColor, railWidth);
+      drawLineBetween(ctx, a, b, height * (frac + 0.035), railHighlight, 1.2);
+    }
   };
 
   // Physical footprint: a fence is a THIN barrier running down the CENTER
@@ -305,14 +323,14 @@ function drawProceduralFenceNano(
     }
   }
 
-  for (const post of posts) drawFencePost(ctx, post, height * 0.96);
+  for (const post of posts) drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
 
   if (nano.kind === 'gate') {
     ctx.beginPath();
     ctx.arc(center.x, center.y - height * 0.55, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#d1a13a';
+    ctx.fillStyle = hardwareColor;
     ctx.fill();
-    ctx.strokeStyle = '#473019';
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
     ctx.lineWidth = 1.5;
     ctx.stroke();
   }

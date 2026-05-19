@@ -25,3 +25,4 @@ export * as CottageStoneFoundation from './cottage-stone-foundation';
 export * as RoofFamily from './roof-family';
 export * as ThatchRoof from './thatch-roof';
 export * as FenceFamily from './fence-family';
+export * as WaterFamily from './water-family';

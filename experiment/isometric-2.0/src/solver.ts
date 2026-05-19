@@ -15,8 +15,12 @@ import {
   type FeatureVariant,
   type EdgeMasks,
   type MacroAssembly,
-  CHUNK_TILES,
+  MICRO_TILE_SIZE,
+  WORLD_UNIT_TILES,
 } from './types';
+import { WaterFamily } from './textures';
+
+const CHUNK_TILES = WORLD_UNIT_TILES;
 
 // ─── Feature Configuration ───────────────────────────────────
 
@@ -323,11 +327,13 @@ function capStonesV(x: number, y: number, h: number, seed: number, capW = 6): st
   return caps.join('\n    ');
 }
 
+export interface FeatureFootprintRect { x: number; y: number; w: number; h: number }
+
 /** Get wall footprint bounds based on variant and connection direction. */
-function wallBounds(variant: FeatureVariant): { rects: Array<{x:number,y:number,w:number,h:number}> } {
+export function wallBounds(variant: FeatureVariant): { rects: FeatureFootprintRect[] } {
   const W = 48; // wall thickness
-  const off = (128 - W) / 2; // 40
-  const rects: Array<{x:number,y:number,w:number,h:number}> = [];
+  const off = (MICRO_TILE_SIZE - W) / 2;
+  const rects: FeatureFootprintRect[] = [];
 
   // Arm definitions: which edges the wall extends to
   const arms = { top: false, right: false, bottom: false, left: false };
@@ -405,7 +411,7 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
   const { rects } = wallBounds(variant);
   const parts: string[] = [];
   const seed = variant.charCodeAt(0) * 53 + 7;
-  const off = 40;
+  const off = (MICRO_TILE_SIZE - 48) / 2;
   const W = 48;
 
   // Determine if the variant has any vertical arm (top/bottom).
@@ -446,13 +452,13 @@ export function stoneWallTopSvg(variant: FeatureVariant): string {
     );
   }
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" viewBox="0 0 ${MICRO_TILE_SIZE} ${MICRO_TILE_SIZE}">
     ${parts.join('\n    ')}
   </svg>`;
 }
 
-/** Generate an SVG for a river tile variant. */
-function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
+/** Legacy river SVG generator kept exported for old harnesses; runtime uses WaterFamily.svgWater(). */
+export function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
   const parts: string[] = [];
 
   // Grass background
@@ -491,7 +497,7 @@ function riverSvg(variant: FeatureVariant, conn: FeatureConnections): string {
     parts.push(`<circle cx="64" cy="64" r="34" fill="#1a5588" />`);
     parts.push(`<circle cx="64" cy="64" r="24" fill="#2277aa" opacity="0.5" />`);
     parts.push(`<ellipse cx="58" cy="55" rx="10" ry="4" fill="rgba(255,255,255,0.1)" />`);
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">\n    ${parts.join('\n    ')}\n  </svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${MICRO_TILE_SIZE}" height="${MICRO_TILE_SIZE}" viewBox="0 0 ${MICRO_TILE_SIZE} ${MICRO_TILE_SIZE}">\n    ${parts.join('\n    ')}\n  </svg>`;
   }
 
   // Draw channel water with depth gradient
@@ -826,14 +832,16 @@ export function getVariantSvg(
   zOffset: number,
   worldCol: number,
   worldRow: number,
+  fenceStyle?: string,
 ): string | null {
+  void fenceStyle;
   switch (nanoKind) {
     case 'stone-wall':
       return stoneWallSvg(variant);
     case 'fence':
       return woodenFenceSvg(variant);
     case 'river':
-      return riverSvg(variant, connections);
+      return WaterFamily.svgWater(variant, connections, worldCol, worldRow);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
     default:
@@ -1092,7 +1100,7 @@ export function getFeatureKind(worldCol: number, worldRow: number): NanoTileKind
 // ─── Gate SVG Generator ───────────────────────────────────────
 
 /** Generate an open or closed gate SVG. Horizontal orientation (rails run left-right). */
-function gateSvg(unlocked: boolean): string {
+export function gateSvg(unlocked = false): string {
   const parts: string[] = [];
   parts.push(`<rect width="128" height="128" fill="#3a7d44" />`);
   parts.push(`<ellipse cx="64" cy="100" rx="30" ry="16" fill="#458550" opacity="0.4" />`);
@@ -1455,6 +1463,107 @@ export function buildWalkableMap(chunk: WorldUnitChunk): boolean[] {
   }
 
   return map;
+}
+
+function rectContainsPoint(rect: FeatureFootprintRect, x: number, y: number): boolean {
+  return x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+}
+
+function footprintBounds(variant: FeatureVariant, thickness: number): { rects: FeatureFootprintRect[] } {
+  const off = (MICRO_TILE_SIZE - thickness) / 2;
+  const rects: FeatureFootprintRect[] = [];
+  const arms = { top: false, right: false, bottom: false, left: false };
+
+  switch (variant) {
+    case 'straight-h': arms.left = true; arms.right = true; break;
+    case 'straight-v': arms.top = true; arms.bottom = true; break;
+    case 'corner-tr': arms.top = true; arms.right = true; break;
+    case 'corner-tl': arms.top = true; arms.left = true; break;
+    case 'corner-br': arms.bottom = true; arms.right = true; break;
+    case 'corner-bl': arms.bottom = true; arms.left = true; break;
+    case 'cross': arms.top = arms.right = arms.bottom = arms.left = true; break;
+    case 'tee-t': arms.left = arms.right = arms.bottom = true; break;
+    case 'tee-b': arms.left = arms.right = arms.top = true; break;
+    case 'tee-r': arms.top = arms.bottom = arms.left = true; break;
+    case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
+    case 'end-t': arms.top = true; break;
+    case 'end-b': arms.bottom = true; break;
+    case 'end-r': arms.right = true; break;
+    case 'end-l': arms.left = true; break;
+    default:
+      rects.push({ x: off, y: off, w: thickness, h: thickness });
+      return { rects };
+  }
+
+  rects.push({ x: off, y: off, w: thickness, h: thickness });
+  if (arms.top) rects.push({ x: off, y: 0, w: thickness, h: off });
+  if (arms.bottom) rects.push({ x: off, y: off + thickness, w: thickness, h: off });
+  if (arms.left) rects.push({ x: 0, y: off, w: off, h: thickness });
+  if (arms.right) rects.push({ x: off + thickness, y: off, w: off, h: thickness });
+  return { rects };
+}
+
+export function pointHitsWallFootprint(
+  variant: FeatureVariant,
+  localColFrac: number,
+  localRowFrac: number,
+): boolean {
+  const x = Math.max(0, Math.min(MICRO_TILE_SIZE, localColFrac * MICRO_TILE_SIZE));
+  const y = Math.max(0, Math.min(MICRO_TILE_SIZE, localRowFrac * MICRO_TILE_SIZE));
+  return wallBounds(variant).rects.some(rect => rectContainsPoint(rect, x, y));
+}
+
+function pointHitsFenceFootprint(
+  variant: FeatureVariant,
+  localColFrac: number,
+  localRowFrac: number,
+): boolean {
+  const x = Math.max(0, Math.min(MICRO_TILE_SIZE, localColFrac * MICRO_TILE_SIZE));
+  const y = Math.max(0, Math.min(MICRO_TILE_SIZE, localRowFrac * MICRO_TILE_SIZE));
+  return footprintBounds(variant, 18).rects.some(rect => rectContainsPoint(rect, x, y));
+}
+
+function nanoBlocksPoint(
+  nano: NanoTile,
+  activeConditions: ReadonlyMap<string, 'locked' | 'unlocked'>,
+  localColFrac: number,
+  localRowFrac: number,
+): boolean {
+  if (nano.walkable.type === 'always') return false;
+  if (nano.walkable.type === 'conditional' && activeConditions.get(nano.walkable.conditionId) === 'unlocked') return false;
+
+  if (nano.kind === 'stone-wall' || nano.kind === 'cathedral-wall' || nano.kind === 'homestead-wall') {
+    return pointHitsWallFootprint(nano.variant ?? 'isolated', localColFrac, localRowFrac);
+  }
+  if (nano.kind === 'fence' || nano.kind === 'gate') {
+    return pointHitsFenceFootprint(nano.variant ?? 'isolated', localColFrac, localRowFrac);
+  }
+
+  return nano.walkable.type === 'never' || nano.walkable.type === 'conditional';
+}
+
+/**
+ * Exact sub-tile walkability for fractional player positions.
+ * Coarse walkableMap says whether a micro tile is generally blocked; this
+ * narrows structural nanos to their real footprint so players can slide
+ * along walls/fences and stand on open portions of the same micro tile.
+ */
+export function isPointWalkableInTile(
+  tile: MicroTile,
+  activeConditions: ReadonlyMap<string, 'locked' | 'unlocked'>,
+  localColFrac: number,
+  localRowFrac: number,
+): boolean {
+  if (!tile.nanos?.length) return true;
+
+  // Bridges / unlocked gates intentionally override a river's never-walkable
+  // rule for the whole tile, matching buildWalkableMap's coarse semantics.
+  if (tile.nanos.some(nano => nano.walkable.type === 'always'
+    || (nano.walkable.type === 'conditional' && activeConditions.get(nano.walkable.conditionId) === 'unlocked'))) {
+    return true;
+  }
+
+  return !tile.nanos.some(nano => nanoBlocksPoint(nano, activeConditions, localColFrac, localRowFrac));
 }
 
 // ─── BFS Traversability ───────────────────────────────────────

@@ -195,6 +195,24 @@ const STYLES: Record<string, FenceStyle> = {
   [HazelWattle.id]: HazelWattle,
 };
 
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v));
+}
+
+function hash01(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+function resolveFenceStyle(styleLike?: string | FenceStyle): FenceStyle {
+  if (!styleLike) return defaultFenceStyle();
+  return typeof styleLike === 'string' ? (getFenceStyle(styleLike) ?? defaultFenceStyle()) : styleLike;
+}
+
 export function getFenceStyle(name: string): FenceStyle | undefined {
   return STYLES[name];
 }
@@ -205,4 +223,31 @@ export function listFenceStyles(): readonly string[] {
 
 export function defaultFenceStyle(): FenceStyle {
   return WeatheredPostRail;
+}
+
+export function fenceStyleForTile(
+  styleLike: string | FenceStyle | undefined,
+  worldCol: number,
+  worldRow: number,
+  variant: string,
+): FenceStyle {
+  const base = resolveFenceStyle(styleLike);
+  const seed = `${base.id}:${worldCol}:${worldRow}:${variant}`;
+  const bleachNoise = hash01(`${seed}:bleach`) * 0.10 - 0.03;
+  const mossNoise = hash01(`${seed}:moss`) * 0.08 - 0.02;
+  const grimeNoise = hash01(`${seed}:grime`) * 0.10 - 0.02;
+  const crackNoise = hash01(`${seed}:cracks`) * 0.08 - 0.02;
+  const roughNoise = hash01(`${seed}:rough`) * 0.08 - 0.03;
+
+  return style({
+    ...base,
+    roughness: clamp01(base.roughness + roughNoise),
+    sag: Math.max(0, base.sag + hash01(`${seed}:sag`) * 0.5 - 0.15),
+    weathering: {
+      sunBleach: clamp01(base.weathering.sunBleach + bleachNoise),
+      moss: clamp01(base.weathering.moss + mossNoise),
+      grime: clamp01(base.weathering.grime + grimeNoise),
+      cracks: clamp01(base.weathering.cracks + crackNoise),
+    },
+  });
 }
