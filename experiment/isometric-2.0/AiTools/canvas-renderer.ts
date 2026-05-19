@@ -25,7 +25,7 @@ import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
 import { getVariantSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
-import { FenceFamily } from '../src/textures/index.js';
+import { DarkCathedralStone, FenceFamily, StoneBrick, TimberFrameWall } from '../src/textures/index.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
 import { injectSvgImage } from '../src/tile.js';
@@ -107,6 +107,65 @@ const TERRAIN_COLORS: Record<string, string> = {
   sand:        '#c2a05a',
   'dry-grass': '#8b7a32',
 };
+
+interface DefaultExtrudedMaterial {
+  readonly sideSvg: string;
+  readonly topFaceSvg?: string;
+  readonly topFaceSvgV?: string;
+  readonly southFaceSvg?: string;
+  readonly eastFaceSvg?: string;
+  readonly endFaceSvg?: string;
+  readonly southFaceSvgByPlane?: Readonly<Record<number, string>>;
+  readonly eastFaceSvgByPlane?: Readonly<Record<number, string>>;
+  readonly endFaceSvgByPlane?: Readonly<Record<number, string>>;
+  readonly topRotateWithAxis?: boolean;
+  readonly endCapTicks?: boolean;
+  readonly faceSliceEqualLighting?: boolean;
+  readonly endCapTickColor?: string;
+}
+
+function defaultExtrudedMaterial(kind: string): DefaultExtrudedMaterial | undefined {
+  if (kind === 'stone-wall') {
+    return {
+      sideSvg: StoneBrick.svg(),
+      topFaceSvg: StoneBrick.svgTop(),
+      topFaceSvgV: StoneBrick.svgTopV(),
+      southFaceSvg: StoneBrick.svgSouth(),
+      eastFaceSvg: StoneBrick.svgEast(),
+      endFaceSvg: StoneBrick.svgEnd(),
+      southFaceSvgByPlane: { 0: StoneBrick.svgSouth(0), 48: StoneBrick.svgSouth(48), 96: StoneBrick.svgSouth(96), 144: StoneBrick.svgSouth(144) },
+      eastFaceSvgByPlane: { 0: StoneBrick.svgEast(0), 48: StoneBrick.svgEast(48), 96: StoneBrick.svgEast(96), 144: StoneBrick.svgEast(144) },
+      endFaceSvgByPlane: { 0: StoneBrick.svgEnd(0), 48: StoneBrick.svgEnd(48), 96: StoneBrick.svgEnd(96), 144: StoneBrick.svgEnd(144) },
+      topRotateWithAxis: true,
+      endCapTicks: false,
+      faceSliceEqualLighting: true,
+      endCapTickColor: '#3a3835',
+    };
+  }
+  if (kind === 'cathedral-wall') {
+    return {
+      sideSvg: DarkCathedralStone.svg(),
+      topFaceSvg: DarkCathedralStone.svgTop(),
+      southFaceSvg: DarkCathedralStone.svgSouth(),
+      eastFaceSvg: DarkCathedralStone.svgEast(),
+      topRotateWithAxis: false,
+      endCapTicks: false,
+    };
+  }
+  if (kind === 'homestead-wall') {
+    return {
+      sideSvg: TimberFrameWall.svg(),
+      topFaceSvg: TimberFrameWall.svgTop(),
+      topFaceSvgV: TimberFrameWall.svgTopV(),
+      southFaceSvg: TimberFrameWall.svgSouth(),
+      eastFaceSvg: TimberFrameWall.svgEast(),
+      endFaceSvg: TimberFrameWall.svgEnd(),
+      topRotateWithAxis: true,
+      endCapTicks: false,
+    };
+  }
+  return undefined;
+}
 
 // ─── Public types ─────────────────────────────────────────────
 
@@ -243,21 +302,22 @@ function collectSvgStrings(entries: CanvasSceneEntry[]): Set<string> {
     const kind     = e.kind as NanoTileKind;
 
     if (EXTRUDED_KINDS.has(e.kind)) {
-      const side = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle);
-      const top  = e.topFaceSvgOverride ?? e.topSvgOverride ?? side;
-      const topV = e.topFaceSvgVOverride;
-      const south = e.southFaceSvgOverride ?? side;
-      const east = e.eastFaceSvgOverride ?? side;
-      const end = e.endFaceSvgOverride;
+      const material = defaultExtrudedMaterial(e.kind);
+      const side = e.svgOverride ?? material?.sideSvg ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle);
+      const top  = e.topFaceSvgOverride ?? e.topSvgOverride ?? material?.topFaceSvg ?? side;
+      const topV = e.topFaceSvgVOverride ?? material?.topFaceSvgV;
+      const south = e.southFaceSvgOverride ?? material?.southFaceSvg ?? side;
+      const east = e.eastFaceSvgOverride ?? material?.eastFaceSvg ?? side;
+      const end = e.endFaceSvgOverride ?? material?.endFaceSvg;
       if (side) out.add(side);
       if (top)  out.add(top);
       if (topV) out.add(topV);
       if (south) out.add(south);
       if (east) out.add(east);
       if (end) out.add(end);
-      for (const svg of Object.values(e.southFaceSvgByPlane ?? {})) out.add(svg);
-      for (const svg of Object.values(e.eastFaceSvgByPlane ?? {})) out.add(svg);
-      for (const svg of Object.values(e.endFaceSvgByPlane ?? {})) out.add(svg);
+      for (const svg of Object.values(e.southFaceSvgByPlane ?? material?.southFaceSvgByPlane ?? {})) out.add(svg);
+      for (const svg of Object.values(e.eastFaceSvgByPlane ?? material?.eastFaceSvgByPlane ?? {})) out.add(svg);
+      for (const svg of Object.values(e.endFaceSvgByPlane ?? material?.endFaceSvgByPlane ?? {})) out.add(svg);
     } else {
       const svg = e.svgOverride
         ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle)
@@ -303,33 +363,29 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
   const kind = e.kind as NanoTileKind;
 
   if (EXTRUDED_KINDS.has(e.kind)) {
-    const sideSvg = e.svgOverride ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle) ?? '';
-    // Top texture: prefer explicit topSvgOverride, otherwise reuse the
-    // side SVG so a re-textured wall (e.g. red clinker) stays self-
-    // consistent. Falls back to canonical StoneBrick when both are
-    // empty (unreachable in practice — extruded kinds always supply a
-    // side via getVariantSvg).
-    const topSvg  = e.topFaceSvgOverride ?? e.topSvgOverride ?? sideSvg;
+    const material = defaultExtrudedMaterial(e.kind);
+    const sideSvg = e.svgOverride ?? material?.sideSvg ?? getVariantSvg(kind, variant, conn, zOffset, e.col, e.row, e.fenceStyle) ?? '';
+    const topSvg  = e.topFaceSvgOverride ?? e.topSvgOverride ?? material?.topFaceSvg ?? sideSvg;
     return {
       kind, zOffset, zMode, walkable, blendEdges: false,
       svg:            sideSvg,
       sideTextureSvg: sideSvg,
       topTextureSvg:  topSvg,
-      topFaceTextureSvg: e.topFaceSvgOverride,
-      topFaceTextureSvgV: e.topFaceSvgVOverride,
-      southFaceTextureSvg: e.southFaceSvgOverride,
-      eastFaceTextureSvg: e.eastFaceSvgOverride,
-      endFaceTextureSvg: e.endFaceSvgOverride,
-      southFaceTextureByPlane: e.southFaceSvgByPlane,
-      eastFaceTextureByPlane: e.eastFaceSvgByPlane,
-      endFaceTextureByPlane: e.endFaceSvgByPlane,
+      topFaceTextureSvg: e.topFaceSvgOverride ?? material?.topFaceSvg,
+      topFaceTextureSvgV: e.topFaceSvgVOverride ?? material?.topFaceSvgV,
+      southFaceTextureSvg: e.southFaceSvgOverride ?? material?.southFaceSvg,
+      eastFaceTextureSvg: e.eastFaceSvgOverride ?? material?.eastFaceSvg,
+      endFaceTextureSvg: e.endFaceSvgOverride ?? material?.endFaceSvg,
+      southFaceTextureByPlane: e.southFaceSvgByPlane ?? material?.southFaceSvgByPlane,
+      eastFaceTextureByPlane: e.eastFaceSvgByPlane ?? material?.eastFaceSvgByPlane,
+      endFaceTextureByPlane: e.endFaceSvgByPlane ?? material?.endFaceSvgByPlane,
       weatheringOverlays: e.weatheringOverlays,
-      faceSliceEqualLighting: e.faceSliceEqualLighting,
-      endCapTickColor: e.endCapTickColor,
+      faceSliceEqualLighting: e.faceSliceEqualLighting ?? material?.faceSliceEqualLighting,
+      endCapTickColor: e.endCapTickColor ?? material?.endCapTickColor,
       variant,
       connections: conn,
-      topRotateWithAxis: e.topRotateWithAxis,
-      endCapTicks: e.endCapTicks,
+      topRotateWithAxis: e.topRotateWithAxis ?? material?.topRotateWithAxis,
+      endCapTicks: e.endCapTicks ?? material?.endCapTicks,
     };
   }
 

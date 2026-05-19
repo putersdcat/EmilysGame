@@ -18,7 +18,7 @@ import {
   MICRO_TILE_SIZE,
   WORLD_UNIT_TILES,
 } from './types';
-import { WaterFamily } from './textures';
+import { DarkCathedralStone, TimberFrameWall, WaterFamily } from './textures';
 
 const CHUNK_TILES = WORLD_UNIT_TILES;
 
@@ -838,6 +838,10 @@ export function getVariantSvg(
   switch (nanoKind) {
     case 'stone-wall':
       return stoneWallSvg(variant);
+    case 'cathedral-wall':
+      return DarkCathedralStone.svg();
+    case 'homestead-wall':
+      return TimberFrameWall.svg();
     case 'fence':
       return woodenFenceSvg(variant);
     case 'river':
