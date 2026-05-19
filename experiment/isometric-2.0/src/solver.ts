@@ -844,6 +844,10 @@ export function getVariantSvg(
       return WaterFamily.svgWater(variant, connections, worldCol, worldRow);
     case 'river-bank':
       return WaterFamily.svgRiverBank(variant, connections, worldCol, worldRow);
+    case 'bridge':
+      return bridgeSvg();
+    case 'troll-bridge':
+      return trollBridgeSvg(false);
     case 'tall-grass':
       return tallGrassSvg(zOffset, worldCol, worldRow);
     default:
@@ -1150,17 +1154,12 @@ export function gateSvg(unlocked = false): string {
 // ─── Bridge SVG Generator ─────────────────────────────────────
 
 /** Free bridge — wooden planks over water. No lock. */
-function bridgeSvg(): string {
+export function bridgeSvg(): string {
   const parts: string[] = [];
-  // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
-  // Water ripples
-  parts.push(`<g opacity="0.15">`);
-  for (let y = 40; y < 96; y += 16) {
-    parts.push(`<path d="M10 ${y} Q36 ${y-4} 64 ${y} Q92 ${y+4} 118 ${y}" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  }
-  parts.push(`</g>`);
+  // Transparent deck overlay: the actual river tile underneath supplies
+  // water/banks. Keeping the bridge transparent prevents a full-tile blue
+  // slab when it is layered into the river-crossing scene.
+  parts.push(`<ellipse cx="64" cy="66" rx="54" ry="30" fill="rgba(20,12,4,0.22)" />`);
   // Bridge planks (horizontal boards)
   const plankColor = ['#8B6914', '#9a7818', '#7a5910'];
   for (let i = 0; i < 5; i++) {
@@ -1180,16 +1179,10 @@ function bridgeSvg(): string {
 }
 
 /** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
-function trollBridgeSvg(unlocked: boolean): string {
+export function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
-  // River base
-  parts.push(`<rect width="128" height="128" fill="#1a5588" />`);
-  parts.push(`<rect x="0" y="32" width="128" height="64" fill="#0d3a6a" />`);
-  // Water ripples
-  parts.push(`<g opacity="0.15">`);
-  parts.push(`<path d="M8 50 Q34 46 64 50 Q94 54 120 50" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  parts.push(`<path d="M8 70 Q34 66 64 70 Q94 74 120 70" stroke="rgba(180,220,255,0.8)" stroke-width="1" fill="none" />`);
-  parts.push(`</g>`);
+  // Transparent deck overlay: the river underneath supplies water/banks.
+  parts.push(`<ellipse cx="64" cy="66" rx="56" ry="32" fill="rgba(20,12,4,0.26)" />`);
   // Rough planks — more variation, gaps
   const roughColors = ['#6a4a10', '#8B6014', '#5a3a08', '#7a5518'];
   for (let i = 0; i < 5; i++) {

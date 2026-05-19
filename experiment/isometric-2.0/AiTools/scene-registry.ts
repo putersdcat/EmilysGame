@@ -406,18 +406,19 @@ export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
     entries: [
       // Grass banks
       ...[ [0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],
-           [0,1],[1,1],[2,1],           [4,1],[5,1],[6,1],
+           [0,1],[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],
            [0,2],[1,2],[2,2],[3,2],[4,2],[5,2],[6,2] ]
         .map(([c,r]) => ({ kind: 'grass' as TileKind, col: c, row: r })),
       // River channel (row 1)
-      { kind: 'river' as NanoKind, col: 0, row: 1 },
-      { kind: 'river' as NanoKind, col: 1, row: 1 },
-      { kind: 'river' as NanoKind, col: 2, row: 1 },
-      // Bridge crossing
+      { kind: 'river' as NanoKind, col: 0, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 1, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 2, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 3, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 4, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 5, row: 1, variant: 'straight-h' },
+      { kind: 'river' as NanoKind, col: 6, row: 1, variant: 'straight-h' },
+      // Bridge crossing overlays the river tile instead of replacing it.
       { kind: 'bridge' as NanoKind, col: 3, row: 1, label: 'BRIDGE' },
-      { kind: 'river' as NanoKind, col: 4, row: 1 },
-      { kind: 'river' as NanoKind, col: 5, row: 1 },
-      { kind: 'river' as NanoKind, col: 6, row: 1 },
     ],
   },
 

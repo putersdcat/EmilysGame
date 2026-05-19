@@ -466,7 +466,7 @@ export function drawPositiveNano(
  *
  * Rendered flat (iso projected like base tiles) with a downward offset
  * to create the "sunken" appearance. Clipped to the parent tile's diamond.
- * Blend edges add grass-to-water transitions on all four edges.
+ * Blend edges add grass-to-water transitions only on exposed edges.
  *
  * Returns the effective sink depth in pixels for player sprite offset.
  */
@@ -496,44 +496,55 @@ export function drawNegativeNano(
 
   ctx.restore();
 
-  // Four-sided inward blend: grass-colored gradient from each edge,
-  // fading toward center — creates natural "bank" transition.
+  // Exposed-edge inward blend: grass-colored gradient from each edge,
+  // fading toward center — creates natural "bank" transition. Crucially,
+  // do NOT blend connected river edges: doing so paints grass-coloured
+  // bands across water seams in multi-tile river runs.
   if (nano.blendEdges) {
     const blendPx = 18;
     // Grass base color (semi-transparent for blend)
     const bankColor = 'rgba(58, 125, 68, 0.5)';
     const bankFade = 'rgba(58, 125, 68, 0)';
+    const connections = nano.connections ?? connectionsFromVariant(nano.variant);
 
     ctx.save();
     clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
     // Top edge
-    let grad = ctx.createLinearGradient(cx, cy - HALF_H, cx, cy - HALF_H + blendPx);
-    grad.addColorStop(0, bankColor);
-    grad.addColorStop(1, bankFade);
-    ctx.fillStyle = grad;
-    ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    if (!connections.top) {
+      let grad = ctx.createLinearGradient(cx, cy - HALF_H, cx, cy - HALF_H + blendPx);
+      grad.addColorStop(0, bankColor);
+      grad.addColorStop(1, bankFade);
+      ctx.fillStyle = grad;
+      ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    }
 
     // Bottom edge
-    grad = ctx.createLinearGradient(cx, cy + HALF_H, cx, cy + HALF_H - blendPx);
-    grad.addColorStop(0, bankColor);
-    grad.addColorStop(1, bankFade);
-    ctx.fillStyle = grad;
-    ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    if (!connections.bottom) {
+      let grad = ctx.createLinearGradient(cx, cy + HALF_H, cx, cy + HALF_H - blendPx);
+      grad.addColorStop(0, bankColor);
+      grad.addColorStop(1, bankFade);
+      ctx.fillStyle = grad;
+      ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    }
 
     // Left edge
-    grad = ctx.createLinearGradient(cx - HALF_W, cy, cx - HALF_W + blendPx, cy);
-    grad.addColorStop(0, bankColor);
-    grad.addColorStop(1, bankFade);
-    ctx.fillStyle = grad;
-    ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    if (!connections.left) {
+      let grad = ctx.createLinearGradient(cx - HALF_W, cy, cx - HALF_W + blendPx, cy);
+      grad.addColorStop(0, bankColor);
+      grad.addColorStop(1, bankFade);
+      ctx.fillStyle = grad;
+      ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    }
 
     // Right edge
-    grad = ctx.createLinearGradient(cx + HALF_W, cy, cx + HALF_W - blendPx, cy);
-    grad.addColorStop(0, bankColor);
-    grad.addColorStop(1, bankFade);
-    ctx.fillStyle = grad;
-    ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    if (!connections.right) {
+      const grad = ctx.createLinearGradient(cx + HALF_W, cy, cx + HALF_W - blendPx, cy);
+      grad.addColorStop(0, bankColor);
+      grad.addColorStop(1, bankFade);
+      ctx.fillStyle = grad;
+      ctx.fillRect(screenX, screenY, ISO_TILE_WIDTH, ISO_TILE_HEIGHT);
+    }
 
     ctx.restore();
   }
@@ -564,7 +575,7 @@ function drawFlatNano(
 
   // Flat iso transform (identical to base tile projection)
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);
-  ctx.globalAlpha = 0.7;
+  ctx.globalAlpha = (nano.kind === 'bridge' || nano.kind === 'troll-bridge') ? 1 : 0.7;
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
   ctx.restore();
