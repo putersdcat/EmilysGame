@@ -8,7 +8,8 @@
  */
 import { test, expect, Page } from '@playwright/test';
 import { getNanoStack, hasNanoRenderer } from '../../src/nano-tile-defs';
-import { listNanoFenceStyles, listNanoWaterStyles, waterNanoSvg } from '../../src/nano-tile-svgs';
+import { listNanoFenceStyles, listNanoWaterStyles, wallBounds, waterNanoSvg } from '../../src/nano-tile-svgs';
+import { ISO_DIAMOND_HEIGHT, ISO_DIAMOND_WIDTH, ISO_MICRO_TILE_SIZE } from '../../src/types/iso-renderer.types';
 
 const BASE_URL = 'http://localhost:5173/?test=1';
 
@@ -60,5 +61,21 @@ test.describe('Iso 2.0 nano main-game port', () => {
     const waterSvg = waterNanoSvg('corner-bl', 'clear-river');
     expect(waterSvg).toContain('Q 72 72');
     expect(waterSvg).not.toContain('<rect width="144" height="144" fill="#');
+  });
+
+  test('main Iso2 structural port uses 144px source geometry and canonical tee variants', async () => {
+    expect(ISO_MICRO_TILE_SIZE).toBe(144);
+    expect(ISO_DIAMOND_WIDTH).toBe(256);
+    expect(ISO_DIAMOND_HEIGHT).toBe(128);
+
+    expect(wallBounds('tee-t').rects.some(rect => rect.y === 96 && rect.h === 48)).toBe(true);
+    expect(wallBounds('tee-t').rects.some(rect => rect.y === 0 && rect.h === 48)).toBe(false);
+
+    const stone = getNanoStack('stone_wall', 'straight-h')?.[0];
+    expect(stone?.topFaceTextureSvg).toBeTruthy();
+    expect(stone?.topFaceTextureSvgV).toBeTruthy();
+    expect(stone?.southFaceTextureSvg).toBeTruthy();
+    expect(stone?.eastFaceTextureSvg).toBeTruthy();
+    expect(stone?.faceSliceEqualLighting).toBe(true);
   });
 });

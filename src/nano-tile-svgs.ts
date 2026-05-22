@@ -161,10 +161,10 @@ function connectionsForVariant(variant: FeatureVariant): { top: boolean; right: 
     case 'corner-br': return { top: false, right: true, bottom: true, left: false };
     case 'corner-bl': return { top: false, right: false, bottom: true, left: true };
     case 'cross': return { top: true, right: true, bottom: true, left: true };
-    case 'tee-t': return { top: true, right: true, bottom: false, left: true };
-    case 'tee-r': return { top: true, right: true, bottom: true, left: false };
-    case 'tee-b': return { top: false, right: true, bottom: true, left: true };
-    case 'tee-l': return { top: true, right: false, bottom: true, left: true };
+    case 'tee-t': return { top: false, right: true, bottom: true, left: true };
+    case 'tee-r': return { top: true, right: false, bottom: true, left: true };
+    case 'tee-b': return { top: true, right: true, bottom: false, left: true };
+    case 'tee-l': return { top: true, right: true, bottom: true, left: false };
     case 'end-t': return { top: true, right: false, bottom: false, left: false };
     case 'end-r': return { top: false, right: true, bottom: false, left: false };
     case 'end-b': return { top: false, right: false, bottom: true, left: false };

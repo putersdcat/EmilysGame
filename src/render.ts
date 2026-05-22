@@ -216,10 +216,10 @@ function variantFromConnections(top: boolean, right: boolean, bottom: boolean, l
     if (bottom && right) return 'corner-br';
     return 'corner-bl';
   }
-  if (!top) return 'tee-b';
-  if (!right) return 'tee-l';
-  if (!bottom) return 'tee-t';
-  return 'tee-r';
+  if (!top) return 'tee-t';
+  if (!right) return 'tee-r';
+  if (!bottom) return 'tee-b';
+  return 'tee-l';
 }
 
 function inferTileVariant(

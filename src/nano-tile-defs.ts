@@ -17,6 +17,7 @@ import {
   type IsoNanoStack,
   type IsoFeatureVariant as FeatureVariant,
 } from './types/iso-renderer.types.js';
+import { DarkCathedralStone, StoneBrick, TimberFrameWall } from './iso2-materials.js';
 import {
   cathedralWallSvg,
   cathedralWallTopSvg,
@@ -55,6 +56,12 @@ export function stoneWallNano(
     svg: stoneWallSvg(variant),            // billboard fallback
     sideTextureSvg: stoneWallSvg(variant), // front + end cap face
     topTextureSvg:  stoneWallTopSvg(variant), // top footprint cap
+    topFaceTextureSvg: StoneBrick.svgTop(),
+    topFaceTextureSvgV: StoneBrick.svgTopV(),
+    southFaceTextureSvg: StoneBrick.svgSouth(),
+    eastFaceTextureSvg: StoneBrick.svgEast(),
+    endFaceTextureSvg: StoneBrick.svgEnd(),
+    faceSliceEqualLighting: true,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
@@ -72,6 +79,11 @@ export function homesteadWallNano(
     svg: homesteadWallSvg(variant),
     sideTextureSvg: homesteadWallSvg(variant),
     topTextureSvg: homesteadWallTopSvg(variant),
+    topFaceTextureSvg: TimberFrameWall.svgTop(),
+    topFaceTextureSvgV: TimberFrameWall.svgTopV(),
+    southFaceTextureSvg: TimberFrameWall.svgSouth(),
+    eastFaceTextureSvg: TimberFrameWall.svgEast(),
+    endFaceTextureSvg: TimberFrameWall.svgEnd(),
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
@@ -89,6 +101,12 @@ export function cathedralWallNano(
     svg: cathedralWallSvg(variant),
     sideTextureSvg: cathedralWallSvg(variant),
     topTextureSvg: cathedralWallTopSvg(variant),
+    topFaceTextureSvg: DarkCathedralStone.svgTop(),
+    southFaceTextureSvg: DarkCathedralStone.svgSouth(),
+    eastFaceTextureSvg: DarkCathedralStone.svgEast(),
+    endFaceTextureSvg: DarkCathedralStone.svgEnd(),
+    topRotateWithAxis: false,
+    endCapTicks: false,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,

@@ -154,6 +154,24 @@ export interface IsoNanoTile {
   readonly sideTextureSvg?: string;
   /** Optional: top face texture SVG for drawExtrudedNano (walls). */
   readonly topTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for the top/XY face. */
+  readonly topFaceTextureSvg?: string;
+  /** Optional top/XY material slice for V-axis top strips. */
+  readonly topFaceTextureSvgV?: string;
+  /** Optional Canvas extrusion material slice for the south/XZ face. */
+  readonly southFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for the east/YZ face. */
+  readonly eastFaceTextureSvg?: string;
+  /** Optional Canvas extrusion material slice for exposed wall end faces. */
+  readonly endFaceTextureSvg?: string;
+  /** When false, all wall top rects use the H/top texture orientation. */
+  readonly topRotateWithAxis?: boolean;
+  /** When true, explicit face slices should not receive extra side darkening. */
+  readonly faceSliceEqualLighting?: boolean;
+  /** Whether brick-header-style exposed end-cap ticks are allowed. */
+  readonly endCapTicks?: boolean;
+  /** Optional color for future exposed end-cap/header grout ticks. */
+  readonly endCapTickColor?: string;
 }
 
 /** Ordered stack of nano tiles on a single MicroTile. */

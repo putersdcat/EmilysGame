@@ -96,6 +96,8 @@ export const NANO_Z_SCALE = 12;
 
 /** Minimum visible nano height in pixels. */
 const MIN_NANO_HEIGHT = 16;
+const WALL_THICKNESS = MICRO_TILE_SIZE / 3;
+const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -373,7 +375,8 @@ export function drawExtrudedNano(
   screenY: number,
   sun?: SunState,
 ): boolean {
-  const hasExtrusion = nano.sideTextureSvg || nano.topTextureSvg;
+  const hasExtrusion = nano.sideTextureSvg || nano.topTextureSvg
+    || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg;
   if (!hasExtrusion) {
     return drawPositiveNano(ctx, nano, screenX, screenY, sun);
   }
@@ -381,9 +384,16 @@ export function drawExtrudedNano(
   const drawH = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
   let loaded = true;
 
-  const sideImg = nano.sideTextureSvg ? loadSvgImage(nano.sideTextureSvg) : null;
-  const topImg = nano.topTextureSvg ? loadSvgImage(nano.topTextureSvg) : sideImg;
-  if (!sideImg || !topImg) return false;
+  const southTextureSvg = nano.southFaceTextureSvg ?? nano.sideTextureSvg;
+  const eastTextureSvg = nano.eastFaceTextureSvg ?? nano.sideTextureSvg;
+  const topTextureSvg = nano.topFaceTextureSvg ?? nano.topTextureSvg ?? nano.sideTextureSvg;
+  const topVTextureSvg = nano.topFaceTextureSvgV ?? topTextureSvg;
+
+  const southImg = southTextureSvg ? loadSvgImage(southTextureSvg) : null;
+  const eastImg = eastTextureSvg ? loadSvgImage(eastTextureSvg) : null;
+  const topImg = topTextureSvg ? loadSvgImage(topTextureSvg) : null;
+  const topVImg = topVTextureSvg ? loadSvgImage(topVTextureSvg) : topImg;
+  if (!southImg || !eastImg || !topImg || !topVImg) return false;
 
   const variant = nano.variant ?? 'isolated';
   const { rects } = wallBounds(variant);
@@ -398,6 +408,21 @@ export function drawExtrudedNano(
   function eastOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
     return rects.some(o => o !== r && o.x === r.x + r.w && o.y < r.y + r.h && o.y + o.h > r.y);
   }
+  function isCoreRect(r: { x: number; y: number; w: number; h: number }): boolean {
+    return r.w === WALL_THICKNESS && r.h === WALL_THICKNESS
+      && r.x === WALL_OFFSET && r.y === WALL_OFFSET;
+  }
+  function topIsV(r: { x: number; y: number; w: number; h: number }): boolean {
+    const v = nano.variant;
+    if (v === 'straight-v' || v === 'end-t' || v === 'end-b' || v === 'tee-l' || v === 'tee-r') return true;
+    if (v === 'straight-h' || v === 'end-l' || v === 'end-r') return false;
+    if (nano.topRotateWithAxis === false) return false;
+    if (isCoreRect(r)) return false;
+    const inVBand = r.x === WALL_OFFSET && r.w === WALL_THICKNESS;
+    const aboveCore = r.y + r.h <= WALL_OFFSET;
+    const belowCore = r.y >= WALL_OFFSET + WALL_THICKNESS;
+    return inVBand && (aboveCore || belowCore);
+  }
 
   // Draw visible vertical faces first. South and east faces match the
   // experiment's footprint-rect approach, rather than stretching one full
@@ -409,7 +434,7 @@ export function drawExtrudedNano(
       ctx.save();
       ctx.translate(ex, ey);
       ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, r.x, 0, r.w, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.w, drawH);
+      ctx.drawImage(southImg, r.x, 0, r.w, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.w, drawH);
       ctx.restore();
     }
 
@@ -419,9 +444,11 @@ export function drawExtrudedNano(
       ctx.save();
       ctx.translate(ex, ey);
       ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
-      ctx.drawImage(sideImg, r.y, 0, r.h, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.h, drawH);
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
-      ctx.fillRect(0, -drawH, r.h, drawH);
+      ctx.drawImage(eastImg, r.y, 0, r.h, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.h, drawH);
+      if (!nano.faceSliceEqualLighting) {
+        ctx.fillStyle = 'rgba(0,0,0,0.18)';
+        ctx.fillRect(0, -drawH, r.h, drawH);
+      }
       ctx.restore();
     }
   }
@@ -434,7 +461,8 @@ export function drawExtrudedNano(
   clipDiamond(ctx, cx, elevatedY + HALF_H, HALF_W, HALF_H);
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, elevatedY);
   for (const r of rects) {
-    ctx.drawImage(topImg, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+    const img = topIsV(r) ? topVImg : topImg;
+    ctx.drawImage(img, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
   }
   ctx.restore();
 
