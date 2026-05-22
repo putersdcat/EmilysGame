@@ -104,10 +104,10 @@ function connectionsFromVariant(variant: FeatureVariant | undefined): FeatureCon
     case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
     case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
     case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
-    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
-    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
-    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
-    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-r':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-b':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-l':      return { top: true,  right: true,  bottom: true,  left: false };
     default:           return { top: false, right: false, bottom: false, left: false };
   }
 }
@@ -475,6 +475,153 @@ export function drawPositiveNano(
 
 // ─── Negative Z Rendering ────────────────────────────────────
 
+type ScreenPoint = { x: number; y: number };
+
+function projectFlatIsoPoint(
+  cx: number,
+  tileTopY: number,
+  sourceX: number,
+  sourceY: number,
+  yOffset = 0,
+): ScreenPoint {
+  return {
+    x: cx + (sourceX - sourceY) * ISO_X_PER_SOURCE_PX,
+    y: tileTopY + yOffset + (sourceX + sourceY) * ISO_Y_PER_SOURCE_PX,
+  };
+}
+
+function drawProjectedCutFace(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  tileTopY: number,
+  sinkPx: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  fill: string,
+): void {
+  if (Math.hypot(x2 - x1, y2 - y1) < 2) return;
+
+  const drop = Math.max(11, sinkPx * 1.55);
+  const a = projectFlatIsoPoint(cx, tileTopY, x1, y1, 0);
+  const b = projectFlatIsoPoint(cx, tileTopY, x2, y2, 0);
+  const bd = projectFlatIsoPoint(cx, tileTopY, x2, y2, drop);
+  const ad = projectFlatIsoPoint(cx, tileTopY, x1, y1, drop);
+
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.lineTo(bd.x, bd.y);
+  ctx.lineTo(ad.x, ad.y);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+
+  ctx.strokeStyle = 'rgba(18, 27, 18, 0.42)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(ad.x, ad.y);
+  ctx.lineTo(bd.x, bd.y);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(149, 128, 72, 0.30)';
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+
+  const strata = (t: number, color: string) => {
+    const ax = a.x + (ad.x - a.x) * t;
+    const ay = a.y + (ad.y - a.y) * t;
+    const bx = b.x + (bd.x - b.x) * t;
+    const by = b.y + (bd.y - b.y) * t;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+  };
+
+  strata(0.38, 'rgba(171, 148, 79, 0.18)');
+  strata(0.70, 'rgba(15, 25, 15, 0.22)');
+}
+
+function drawCutFaceSegments(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  tileTopY: number,
+  sinkPx: number,
+  horizontal: boolean,
+  fixedA: number,
+  fixedB: number,
+  start: number,
+  end: number,
+  gapStart: number | null,
+  gapEnd: number | null,
+  fill: string,
+): void {
+  const draw = (a: number, b: number) => {
+    if (b - a < 3) return;
+    if (horizontal) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, a, fixedA, b, fixedB, fill);
+    else drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, fixedA, a, fixedB, b, fill);
+  };
+
+  if (gapStart === null || gapEnd === null) {
+    draw(start, end);
+    return;
+  }
+
+  draw(start, Math.max(start, gapStart));
+  draw(Math.min(end, gapEnd), end);
+}
+
+function drawSunkenCutFaces(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  tileTopY: number,
+  sinkPx: number,
+  connections: FeatureConnections,
+): void {
+  // Match WaterFamily clear-river geometry: 64px channel centered inside
+  // the 144px micro tile. Faces are drawn along the CHANNEL banks, not the
+  // whole tile diamond, mirroring the wall renderer's footprint-first logic.
+  const channelW = 64;
+  const off = (MICRO_TILE_SIZE - channelW) / 2;
+  const lip = 5;
+  const outerMin = -lip;
+  const outerMax = MICRO_TILE_SIZE + lip;
+  const low = off - lip;
+  const high = off + channelW + lip;
+  const hasH = connections.left || connections.right;
+  const hasV = connections.top || connections.bottom;
+  const hStart = connections.left ? outerMin : off;
+  const hEnd = connections.right ? outerMax : off + channelW;
+  const vStart = connections.top ? outerMin : off;
+  const vEnd = connections.bottom ? outerMax : off + channelW;
+
+  if (hasH) {
+    // Split around an intersecting vertical arm so crosses/tees become a
+    // true plus-shaped trench instead of a square pond with walls through it.
+    const gapA = hasV ? low : null;
+    const gapB = hasV ? high : null;
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, low, low, hStart, hEnd, gapA, gapB, 'rgba(73, 78, 39, 0.76)');
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, high, high, hStart, hEnd, gapA, gapB, 'rgba(42, 54, 34, 0.78)');
+    if (!connections.left) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hStart, low, hStart, high, 'rgba(60, 64, 36, 0.74)');
+    if (!connections.right) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hEnd, low, hEnd, high, 'rgba(39, 50, 33, 0.80)');
+  }
+
+  if (hasV) {
+    const gapA = hasH ? low : null;
+    const gapB = hasH ? high : null;
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, low, low, vStart, vEnd, gapA, gapB, 'rgba(58, 65, 37, 0.76)');
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, high, high, vStart, vEnd, gapA, gapB, 'rgba(79, 72, 40, 0.76)');
+    if (!connections.top) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vStart, high, vStart, 'rgba(68, 70, 38, 0.74)');
+    if (!connections.bottom) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vEnd, high, vEnd, 'rgba(45, 56, 35, 0.78)');
+  }
+}
+
 /**
  * Draw a negative-Z nano (carve-out: river, trench, etc.).
  *
@@ -502,6 +649,13 @@ export function drawNegativeNano(
   // Clip to parent tile's diamond to prevent bleed
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
+  const connections = nano.connections ?? connectionsFromVariant(nano.variant);
+
+  // Draw visible excavated side faces first. This is the negative-Z equivalent
+  // of the wall renderer's side faces: without it, the lowered water texture
+  // reads as a flat decal rather than a carved channel.
+  drawSunkenCutFaces(ctx, cx, screenY, sinkPx, connections);
+
   // Flat iso projection (same as base tiles) shifted down by sink depth.
   // The shift moves the SVG content lower within the diamond, creating the
   // sunken plane effect (e.g., water surface below surrounding terrain).
@@ -519,8 +673,6 @@ export function drawNegativeNano(
     // Grass base color (semi-transparent for blend)
     const bankColor = 'rgba(58, 125, 68, 0.5)';
     const bankFade = 'rgba(58, 125, 68, 0)';
-    const connections = nano.connections ?? connectionsFromVariant(nano.variant);
-
     ctx.save();
     clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
@@ -584,12 +736,63 @@ function drawFlatNano(
   const cx = screenX + HALF_W;
   const cy = screenY + HALF_H;
 
+  const drawBridgeDropFace = (
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+    topYOffset: number,
+    bottomYOffset: number,
+    fill: string,
+  ) => {
+    const a = projectFlatIsoPoint(cx, screenY, x1, y1, topYOffset);
+    const b = projectFlatIsoPoint(cx, screenY, x2, y2, topYOffset);
+    const bd = projectFlatIsoPoint(cx, screenY, x2, y2, bottomYOffset);
+    const ad = projectFlatIsoPoint(cx, screenY, x1, y1, bottomYOffset);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(bd.x, bd.y);
+    ctx.lineTo(ad.x, ad.y);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(36, 23, 7, 0.58)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
+
   ctx.save();
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
+  if (nano.kind === 'bridge' || nano.kind === 'troll-bridge') {
+    const liftPx = Math.max(10, nano.zOffset * NANO_Z_SCALE);
+    const lowerPlane = 8;
+
+    // Contact shadow stays on the lower water plane; the deck itself is drawn
+    // lifted above it. This makes bridge-over-river read as spanning depth.
+    ctx.save();
+    ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + lowerPlane);
+    ctx.fillStyle = 'rgba(9, 8, 5, 0.34)';
+    ctx.fillRect(14, 38, MICRO_TILE_SIZE - 28, 58);
+    ctx.restore();
+
+    // Two visible underside faces connect the raised deck to the lower water
+    // plane. This is intentionally simple but makes the bridge read as a
+    // physical slab spanning the carved channel instead of a flat decal.
+    drawBridgeDropFace(14, 92, 114, 92, -liftPx, lowerPlane, 'rgba(76, 49, 14, 0.64)');
+    drawBridgeDropFace(114, 36, 114, 92, -liftPx, lowerPlane, 'rgba(43, 29, 9, 0.68)');
+
+    ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY - liftPx);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
+    ctx.restore();
+    return true;
+  }
+
   // Flat iso transform (identical to base tile projection)
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);
-  ctx.globalAlpha = (nano.kind === 'bridge' || nano.kind === 'troll-bridge') ? 1 : 0.7;
+  ctx.globalAlpha = 0.7;
   ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
 
   ctx.restore();

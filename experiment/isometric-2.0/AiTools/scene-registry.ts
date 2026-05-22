@@ -27,7 +27,7 @@
 
 import type { AssemblyChainItem } from './svg-renderer-tool.js';
 // Import game engine SVG generators directly — no more duplicated color maps
-import { getVariantSvg, woodenFenceSvg } from '../src/solver.js';
+import { connectionsToBitmask, getVariantSvg, variantFromBitmask, woodenFenceSvg } from '../src/solver.js';
 import { CATHEDRAL_ASSEMBLY, HOMESTEAD_ASSEMBLY } from '../src/assemblies.js';
 import type { FeatureVariant, FeatureConnections } from '../src/types.js';
 // Import extruded face builder for proper 3-face geometry on stone-wall tiles
@@ -35,6 +35,7 @@ import { buildExtrudedFaceMarkup } from './game-tile-renderer.js';
 
 /** Nano kinds that use 3-face extruded box rendering via buildExtrudedFaceMarkup(). */
 const EXTRUDED_NANO_KINDS = new Set<NanoKind>(['stone-wall', 'cathedral-wall', 'homestead-wall']);
+const CONNECTABLE_NANO_KINDS = new Set<NanoKind>(['stone-wall', 'cathedral-wall', 'homestead-wall', 'fence', 'river']);
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -112,10 +113,10 @@ const NANO_Z: Record<NanoKind, number> = {
   'stone-wall':     4,
   'river':         -2,
   'river-bank':     1,
-  'bridge':         0,
+  'bridge':         1,
   'tall-grass':     0,
   'gate':           2,
-  'troll-bridge':   0,
+  'troll-bridge':   1,
   'cathedral-wall': 6,
   'homestead-wall': 3,
 };
@@ -192,10 +193,10 @@ function inferConnectionsForVariant(variant: FeatureVariant): FeatureConnections
     case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true };
     case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
     case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true };
-    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true };
-    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
-    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true };
-    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true };
+    case 'tee-t':      return { top: false, right: true,  bottom: true, left: true };
+    case 'tee-r':      return { top: true,  right: false, bottom: true, left: true };
+    case 'tee-b':      return { top: true,  right: true,  bottom: false, left: true };
+    case 'tee-l':      return { top: true,  right: true,  bottom: true, left: false };
     case 'isolated':   return { top: false, right: false, bottom: false, left: false };
     default:           return { top: true,  right: true,  bottom: true,  left: true };
   }
@@ -208,7 +209,21 @@ function inferConnectionsForVariant(variant: FeatureVariant): FeatureConnections
  * Nano tile SVGs come from the actual game engine (solver.ts).
  */
 export function resolveScene(descriptor: SceneDescriptor): AssemblyChainItem[] {
-  return descriptor.entries.map((entry) => {
+  const entries = descriptor.entries.map((entry) => {
+    const kind = entry.kind;
+    if (!isNanoKind(kind) || !CONNECTABLE_NANO_KINDS.has(kind) || entry.variant) return entry;
+    const hasSameKind = (col: number, row: number): boolean =>
+      descriptor.entries.some(other => other.kind === kind && other.col === col && other.row === row);
+    const connections: FeatureConnections = {
+      top: hasSameKind(entry.col, entry.row - 1),
+      right: hasSameKind(entry.col + 1, entry.row),
+      bottom: hasSameKind(entry.col, entry.row + 1),
+      left: hasSameKind(entry.col - 1, entry.row),
+    };
+    return { ...entry, variant: variantFromBitmask(connectionsToBitmask(connections)) };
+  });
+
+  return entries.map((entry) => {
     const { kind, col, row, variant, fenceStyle } = entry;
     if (isNanoKind(kind)) {
       const zOffset = entry.zOffset ?? NANO_Z[kind];
@@ -431,7 +446,7 @@ export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
   // ── River with bridge crossing ─────────────────────────────
   'river-crossing': {
     name: 'river-crossing',
-    description: 'River segment with bridge crossing. Tests negative-Z river alignment and flat bridge surface.',
+    description: 'River segment with raised bridge crossing. Tests negative-Z river depth, joins, and elevated bridge deck.',
     canvasWidth: 1100,
     canvasHeight: 600,
     entries: [

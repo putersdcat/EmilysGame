@@ -1252,6 +1252,8 @@ export function bridgeSvg(): string {
   // water/banks. Keeping the bridge transparent prevents a full-tile blue
   // slab when it is layered into the river-crossing scene.
   parts.push(`<ellipse cx="64" cy="66" rx="54" ry="30" fill="rgba(20,12,4,0.22)" />`);
+  parts.push(`<rect x="14" y="82" width="100" height="8" rx="2" fill="#4a2f0d" opacity="0.72" />`);
+  parts.push(`<rect x="14" y="36" width="100" height="8" rx="2" fill="#5a3a10" opacity="0.64" />`);
   // Bridge planks (horizontal boards)
   const plankColor = ['#8B6914', '#9a7818', '#7a5910'];
   for (let i = 0; i < 5; i++) {
@@ -1265,6 +1267,10 @@ export function bridgeSvg(): string {
   // Side rails
   parts.push(`<rect x="14" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
   parts.push(`<rect x="108" y="34" width="6" height="60" rx="2" fill="#7a5010" />`);
+  parts.push(`<circle cx="17" cy="34" r="5" fill="#9a7018" />`);
+  parts.push(`<circle cx="111" cy="34" r="5" fill="#9a7018" />`);
+  parts.push(`<circle cx="17" cy="94" r="5" fill="#5f3f10" />`);
+  parts.push(`<circle cx="111" cy="94" r="5" fill="#5f3f10" />`);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
     ${parts.join('\n    ')}
   </svg>`;
@@ -1275,6 +1281,8 @@ export function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
   // Transparent deck overlay: the river underneath supplies water/banks.
   parts.push(`<ellipse cx="64" cy="66" rx="56" ry="32" fill="rgba(20,12,4,0.26)" />`);
+  parts.push(`<rect x="15" y="82" width="98" height="9" rx="2" fill="#332106" opacity="0.78" />`);
+  parts.push(`<rect x="15" y="36" width="98" height="8" rx="2" fill="#4a2d08" opacity="0.68" />`);
   // Rough planks — more variation, gaps
   const roughColors = ['#6a4a10', '#8B6014', '#5a3a08', '#7a5518'];
   for (let i = 0; i < 5; i++) {
@@ -1469,7 +1477,7 @@ function placeRiverCrossings(
       if (isTroll) {
         const bridgeNano: NanoTile = {
           kind: 'troll-bridge',
-          zOffset: 0,
+          zOffset: 1,
           zMode: 'flat',
           svg: trollBridgeSvg(false),
           walkable: { type: 'always' },
@@ -1479,7 +1487,7 @@ function placeRiverCrossings(
       } else {
         const bridgeNano: NanoTile = {
           kind: 'bridge',
-          zOffset: 0,
+          zOffset: 1,
           zMode: 'flat',
           svg: bridgeSvg(),
           walkable: { type: 'always' },

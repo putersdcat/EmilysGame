@@ -131,10 +131,10 @@ function connectionsFromVariant(variant: FeatureVariant, conn?: FeatureConnectio
     case 'corner-br': return { top: false, right: true, bottom: true, left: false };
     case 'corner-bl': return { top: false, right: false, bottom: true, left: true };
     case 'cross': return { top: true, right: true, bottom: true, left: true };
-    case 'tee-t': return { top: true, right: true, bottom: false, left: true };
-    case 'tee-r': return { top: true, right: true, bottom: true, left: false };
-    case 'tee-b': return { top: false, right: true, bottom: true, left: true };
-    case 'tee-l': return { top: true, right: false, bottom: true, left: true };
+    case 'tee-t': return { top: false, right: true, bottom: true, left: true };
+    case 'tee-r': return { top: true, right: false, bottom: true, left: true };
+    case 'tee-b': return { top: true, right: true, bottom: false, left: true };
+    case 'tee-l': return { top: true, right: true, bottom: true, left: false };
     case 'end-t': return { top: true, right: false, bottom: false, left: false };
     case 'end-r': return { top: false, right: true, bottom: false, left: false };
     case 'end-b': return { top: false, right: false, bottom: true, left: false };
@@ -328,6 +328,36 @@ function drawRoundedCornerJoin(parts: string[], style: WaterStyle, conn: Feature
   parts.push(`<path d="${d}" stroke="${rgba(style.deep, 0.45)}" stroke-width="${(chW - 26).toFixed(1)}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
 }
 
+function drawRectSegments(
+  parts: string[],
+  horizontal: boolean,
+  fixed: number,
+  thickness: number,
+  start: number,
+  end: number,
+  gapStart: number | null,
+  gapEnd: number | null,
+  fill: string,
+  rx = 4,
+): void {
+  const draw = (a: number, b: number) => {
+    if (b - a < 2) return;
+    if (horizontal) {
+      parts.push(`<rect x="${a.toFixed(1)}" y="${fixed.toFixed(1)}" width="${(b - a).toFixed(1)}" height="${thickness.toFixed(1)}" fill="${fill}" rx="${rx}"/>`);
+    } else {
+      parts.push(`<rect x="${fixed.toFixed(1)}" y="${a.toFixed(1)}" width="${thickness.toFixed(1)}" height="${(b - a).toFixed(1)}" fill="${fill}" rx="${rx}"/>`);
+    }
+  };
+
+  if (gapStart === null || gapEnd === null) {
+    draw(start, end);
+    return;
+  }
+
+  draw(start, Math.max(start, gapStart));
+  draw(Math.min(end, gapEnd), end);
+}
+
 export function svgWater(
   variant: FeatureVariant,
   connections?: FeatureConnections,
@@ -375,9 +405,6 @@ export function svgWater(
       const x2 = conn.right ? maxEdge : off + chW + 4;
       parts.push(`<rect x="${x1.toFixed(1)}" y="${(off - 9).toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${(chW + 18).toFixed(1)}" rx="5"/>`);
     }
-    if (!isCorner && (conn.top || conn.bottom) && (conn.left || conn.right)) {
-      parts.push(`<circle cx="72" cy="72" r="${(chW * 0.58).toFixed(1)}"/>`);
-    }
     parts.push(`</g>`);
 
     if (isCorner) {
@@ -386,20 +413,33 @@ export function svgWater(
       const y1 = conn.top ? minEdge : off;
       const y2 = conn.bottom ? maxEdge : off + chW;
       parts.push(`<rect x="${(off - 4).toFixed(1)}" y="${y1.toFixed(1)}" width="${(chW + 8).toFixed(1)}" height="${(y2 - y1).toFixed(1)}" fill="url(#${id}-v)"/>`);
-      parts.push(`<rect x="${(off + 13).toFixed(1)}" y="${(conn.top ? minEdge : off + 8).toFixed(1)}" width="${(chW - 26).toFixed(1)}" height="${(conn.bottom ? maxEdge : off + chW - 8) - (conn.top ? minEdge : off + 8)}" fill="${rgba(style.deep, 0.42)}" rx="4"/>`);
+      drawRectSegments(
+        parts,
+        false,
+        off + 13,
+        chW - 26,
+        conn.top ? minEdge : off + 8,
+        conn.bottom ? maxEdge : off + chW - 8,
+        (conn.left || conn.right) ? off + 13 : null,
+        (conn.left || conn.right) ? off + chW - 13 : null,
+        rgba(style.deep, 0.28),
+      );
     }
     if (!isCorner && (conn.left || conn.right)) {
       const x1 = conn.left ? minEdge : off;
       const x2 = conn.right ? maxEdge : off + chW;
       parts.push(`<rect x="${x1.toFixed(1)}" y="${(off - 4).toFixed(1)}" width="${(x2 - x1).toFixed(1)}" height="${(chW + 8).toFixed(1)}" fill="url(#${id}-h)"/>`);
-      parts.push(`<rect x="${(conn.left ? minEdge : off + 8).toFixed(1)}" y="${(off + 13).toFixed(1)}" width="${(conn.right ? maxEdge : off + chW - 8) - (conn.left ? minEdge : off + 8)}" height="${(chW - 26).toFixed(1)}" fill="${rgba(style.deep, 0.42)}" rx="4"/>`);
-    }
-
-    // Rounded central join keeps corner/tee/cross tiles from reading as
-    // disconnected hard rectangles. It is fully hidden inside straight runs.
-    if (!isCorner && (conn.top || conn.bottom) && (conn.left || conn.right)) {
-      parts.push(`<circle cx="72" cy="72" r="${(chW * 0.47).toFixed(1)}" fill="${style.mid}"/>`);
-      parts.push(`<circle cx="72" cy="72" r="${(chW * 0.30).toFixed(1)}" fill="${rgba(style.deep, 0.45)}"/>`);
+      drawRectSegments(
+        parts,
+        true,
+        off + 13,
+        chW - 26,
+        conn.left ? minEdge : off + 8,
+        conn.right ? maxEdge : off + chW - 8,
+        (conn.top || conn.bottom) ? off + 13 : null,
+        (conn.top || conn.bottom) ? off + chW - 13 : null,
+        rgba(style.deep, 0.28),
+      );
     }
 
     const bankAmp = 2.3 + hash01(`${seed}:bank-amp`) * 1.9;

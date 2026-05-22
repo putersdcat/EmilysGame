@@ -577,10 +577,10 @@ function inferConnections(variant: FeatureVariant): FeatureConnections {
     case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
     case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
     case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
-    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
-    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
-    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
-    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-r':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-b':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-l':      return { top: true,  right: true,  bottom: true,  left: false };
     case 'isolated':   return NONE_CONNECTED;
     default:           return ALL_CONNECTED;
   }

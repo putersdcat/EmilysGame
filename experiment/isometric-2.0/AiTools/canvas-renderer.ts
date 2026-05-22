@@ -65,8 +65,8 @@ const NANO_Z: Partial<Record<string, number>> = {
   'roof-ridge': 4,
   'fence':          2,
   'gate':           2,
-  'troll-bridge':   0,
-  'bridge':         0,
+  'troll-bridge':   1,
+  'bridge':         1,
   'river':          2,
   'river-bank':     1,
   'tall-grass':     0,
@@ -1248,10 +1248,10 @@ function variantToConnections(variant: FeatureVariant): FeatureConnections {
     case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
     case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
     case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
-    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
-    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
-    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
-    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-r':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-b':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-l':      return { top: true,  right: true,  bottom: true,  left: false };
     default:           return { top: true,  right: true,  bottom: true,  left: true  };
   }
 }

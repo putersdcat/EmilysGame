@@ -478,12 +478,35 @@ function wrapIsometricAssembly(
       // mirrors: ctx.transform(1, 0.5, -1, 0.5, cx, sY + sinkPx)
       // cx = sX + HALF_W  →  in tile-local: HALF_W (= 128)
       const sinkPx = Math.abs(zOffset) * Z_PX_PER_LEVEL;
+      out += renderNegativeCutFaces(item, sinkPx);
       out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, ${sinkPx})">`;
       out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
 
     } else if (zMode === 'flat') {
       // Flat semi-transparent — tall-grass
       // mirrors: ctx.transform(1, 0.5, -1, 0.5, cx, sY) + alpha 0.7
+      if (item.kind === 'bridge' || item.kind === 'troll-bridge') {
+        const liftPx = Math.max(10, Math.abs(zOffset) * NANO_Z_SCALE);
+        const project = (x: number, y: number, yOffset: number) => ({ x: HALF_W + x - y, y: yOffset + x * 0.5 + y * 0.5 });
+        const dropFace = (x1: number, y1: number, x2: number, y2: number, fill: string): string => {
+          const a = project(x1, y1, -liftPx);
+          const b = project(x2, y2, -liftPx);
+          const bd = project(x2, y2, 8);
+          const ad = project(x1, y1, 8);
+          return `<polygon points="${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)} ${bd.x.toFixed(1)},${bd.y.toFixed(1)} ${ad.x.toFixed(1)},${ad.y.toFixed(1)}" fill="${fill}" stroke="rgba(36,23,7,0.58)" stroke-width="1"/>`;
+        };
+        out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, 8)" opacity="0.34">`;
+        out += `<rect x="14" y="38" width="100" height="58" rx="4" fill="rgb(9,8,5)"/></g>`;
+        out += dropFace(14, 92, 114, 92, 'rgba(76,49,14,0.64)');
+        out += dropFace(114, 36, 114, 92, 'rgba(43,29,9,0.68)');
+        out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, -${liftPx})" opacity="1">`;
+        out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
+        if (debug) {
+          out += `<line x1="${HALF_W}" y1="${HALF_H}" x2="${HALF_W}" y2="${HALF_H - liftPx}" stroke="#4af" stroke-width="1.5" stroke-dasharray="4 2"/>`;
+        }
+        out += '</g>';
+        continue;
+      }
       out += `<g transform="matrix(1, 0.5, -1, 0.5, ${HALF_W}, 0)" opacity="0.7">`;
       out += `<svg width="${MICRO_TILE}" height="${MICRO_TILE}" viewBox="0 0 128 128">${innerContent}</svg></g>`;
 
@@ -541,6 +564,80 @@ function wrapIsometricAssembly(
   return out;
 }
 
+function renderNegativeCutFaces(item: AssemblyChainItem, sinkPx: number): string {
+  const conn = variantToConnections(item.variant);
+  const channelW = 64;
+  const off = (MICRO_TILE - channelW) / 2;
+  const lip = 5;
+  const outerMin = -lip;
+  const outerMax = MICRO_TILE + lip;
+  const low = off - lip;
+  const high = off + channelW + lip;
+  const hasH = conn.left || conn.right;
+  const hasV = conn.top || conn.bottom;
+  const hStart = conn.left ? outerMin : off;
+  const hEnd = conn.right ? outerMax : off + channelW;
+  const vStart = conn.top ? outerMin : off;
+  const vEnd = conn.bottom ? outerMax : off + channelW;
+
+  const project = (x: number, y: number, yOffset = 0) => ({
+    x: HALF_W + x - y,
+    y: yOffset + x * 0.5 + y * 0.5,
+  });
+  const face = (x1: number, y1: number, x2: number, y2: number, fill: string): string => {
+    if (Math.hypot(x2 - x1, y2 - y1) < 2) return '';
+    const drop = Math.max(11, sinkPx * 1.55);
+    const a = project(x1, y1, 0);
+    const b = project(x2, y2, 0);
+    const bd = project(x2, y2, drop);
+    const ad = project(x1, y1, drop);
+    const line = (t: number, color: string) => {
+      const ax = a.x + (ad.x - a.x) * t;
+      const ay = a.y + (ad.y - a.y) * t;
+      const bx = b.x + (bd.x - b.x) * t;
+      const by = b.y + (bd.y - b.y) * t;
+      return `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="${color}" stroke-width="1"/>`;
+    };
+    return `<g><polygon points="${a.x.toFixed(1)},${a.y.toFixed(1)} ${b.x.toFixed(1)},${b.y.toFixed(1)} ${bd.x.toFixed(1)},${bd.y.toFixed(1)} ${ad.x.toFixed(1)},${ad.y.toFixed(1)}" fill="${fill}" stroke="rgba(20,28,18,0.42)" stroke-width="1"/>${line(0.38, 'rgba(171,148,79,0.18)')}${line(0.70, 'rgba(15,25,15,0.22)')}</g>`;
+  };
+  const segments = (
+    horizontal: boolean,
+    fixedA: number,
+    fixedB: number,
+    start: number,
+    end: number,
+    gapStart: number | null,
+    gapEnd: number | null,
+    fill: string,
+  ): string => {
+    const draw = (a: number, b: number) => {
+      if (b - a < 3) return '';
+      return horizontal ? face(a, fixedA, b, fixedB, fill) : face(fixedA, a, fixedB, b, fill);
+    };
+    if (gapStart === null || gapEnd === null) return draw(start, end);
+    return draw(start, Math.max(start, gapStart)) + draw(Math.min(end, gapEnd), end);
+  };
+
+  let out = '';
+  if (hasH) {
+    const gapA = hasV ? low : null;
+    const gapB = hasV ? high : null;
+    out += segments(true, low, low, hStart, hEnd, gapA, gapB, 'rgba(73,78,39,0.76)');
+    out += segments(true, high, high, hStart, hEnd, gapA, gapB, 'rgba(42,54,34,0.78)');
+    if (!conn.left) out += face(hStart, low, hStart, high, 'rgba(60,64,36,0.74)');
+    if (!conn.right) out += face(hEnd, low, hEnd, high, 'rgba(39,50,33,0.80)');
+  }
+  if (hasV) {
+    const gapA = hasH ? low : null;
+    const gapB = hasH ? high : null;
+    out += segments(false, low, low, vStart, vEnd, gapA, gapB, 'rgba(58,65,37,0.76)');
+    out += segments(false, high, high, vStart, vEnd, gapA, gapB, 'rgba(79,72,40,0.76)');
+    if (!conn.top) out += face(low, vStart, high, vStart, 'rgba(68,70,38,0.74)');
+    if (!conn.bottom) out += face(low, vEnd, high, vEnd, 'rgba(45,56,35,0.78)');
+  }
+  return out;
+}
+
 function variantToConnections(variant: string | undefined): FeatureConnections {
   switch (variant as FeatureVariant | undefined) {
     case 'straight-h': return { top: false, right: true,  bottom: false, left: true  };
@@ -554,10 +651,10 @@ function variantToConnections(variant: string | undefined): FeatureConnections {
     case 'corner-tl':  return { top: true,  right: false, bottom: false, left: true  };
     case 'corner-br':  return { top: false, right: true,  bottom: true,  left: false };
     case 'corner-bl':  return { top: false, right: false, bottom: true,  left: true  };
-    case 'tee-t':      return { top: true,  right: true,  bottom: false, left: true  };
-    case 'tee-r':      return { top: true,  right: true,  bottom: true,  left: false };
-    case 'tee-b':      return { top: false, right: true,  bottom: true,  left: true  };
-    case 'tee-l':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-t':      return { top: false, right: true,  bottom: true,  left: true  };
+    case 'tee-r':      return { top: true,  right: false, bottom: true,  left: true  };
+    case 'tee-b':      return { top: true,  right: true,  bottom: false, left: true  };
+    case 'tee-l':      return { top: true,  right: true,  bottom: true,  left: false };
     default:           return { top: false, right: true,  bottom: false, left: true  };
   }
 }
