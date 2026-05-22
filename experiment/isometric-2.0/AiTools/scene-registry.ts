@@ -13,6 +13,7 @@
  *   wall-h-run       — 8-tile horizontal stone-wall run
  *   wall-v-run       — 8-tile vertical stone-wall run
  *   fence-perimeter  — 4×4 fence box with gate
+ *   fence-with-gate  — 5×5 fence yard with south locked gate opening
  *   river-crossing   — river segment with bridge
  *   tall-grass-patch — scattered tall-grass on grass terrain
  *   homestead        — homestead-wall assembly (3×3 footprint)
@@ -114,7 +115,7 @@ const NANO_Z: Record<NanoKind, number> = {
   'bridge':         0,
   'tall-grass':     0,
   'gate':           2,
-  'troll-bridge':   1,
+  'troll-bridge':   0,
   'cathedral-wall': 6,
   'homestead-wall': 3,
 };
@@ -127,7 +128,7 @@ const NANO_Z_MODE: Record<NanoKind, 'positive' | 'negative' | 'flat'> = {
   'bridge':         'flat',
   'tall-grass':     'flat',
   'gate':           'positive',
-  'troll-bridge':   'positive',
+  'troll-bridge':   'flat',
   'cathedral-wall': 'positive',
   'homestead-wall': 'positive',
 };
@@ -139,7 +140,7 @@ const NANO_WALKABLE: Record<NanoKind, boolean> = {
   'river-bank':     true,
   'bridge':         true,
   'tall-grass':     true,
-  'gate':           true,
+  'gate':           false,
   'troll-bridge':   true,
   'cathedral-wall': false,
   'homestead-wall': false,
@@ -391,6 +392,18 @@ export const BUILT_IN_SCENES: Record<string, SceneDescriptor> = {
       { kind: 'fence' as NanoKind, col: 1, row: 3 },
       { kind: 'fence' as NanoKind, col: 2, row: 3 },
       { kind: 'fence' as NanoKind, col: 3, row: 3 },
+    ],
+  },
+
+  // ── 5×5 fence yard with explicit locked gate opening ───────
+  'fence-with-gate': {
+    name: 'fence-with-gate',
+    description: '5×5 fence yard with a south-side locked gate in the perimeter opening.',
+    canvasWidth: 1000,
+    canvasHeight: 760,
+    entries: [
+      ...grassRect(0, 0, 5, 5),
+      ...fenceBox(0, 0, 5, 'weathered-post-rail'),
     ],
   },
 

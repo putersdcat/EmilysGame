@@ -1182,7 +1182,7 @@ export function bridgeSvg(): string {
   </svg>`;
 }
 
-/** Troll bridge — rough planks with a toll sign. Locked unless condition resolved. */
+/** Troll bridge — rough planks with a toll sign. Walkable flavor bridge. */
 export function trollBridgeSvg(unlocked: boolean): string {
   const parts: string[] = [];
   // Transparent deck overlay: the river underneath supplies water/banks.
@@ -1373,21 +1373,18 @@ function placeRiverCrossings(
       const straightIdx = isHorizontalRun ? col : row;
       if (straightIdx % 5 !== 2) continue; // bridge every 5 tiles, offset by 2
 
-      const worldCol = cx * N + col;
-      const worldRow = cy * N + row;
-
-      // Entropy: 1/3 chance of troll bridge, 2/3 free bridge
+      // Entropy: 1/3 chance of troll bridge, 2/3 free bridge.
+      // Both bridge variants are walkable; the troll version is a visual / quiz
+      // prompt opportunity rather than a hard traversal lock.
       const isTroll = (entropy + col * 7 + row * 13) % 3 === 0;
 
       if (isTroll) {
-        const conditionId = `quiz:bridge-${worldCol}-${worldRow}`;
-        newConditions.set(conditionId, 'locked');
         const bridgeNano: NanoTile = {
           kind: 'troll-bridge',
           zOffset: 0,
           zMode: 'flat',
           svg: trollBridgeSvg(false),
-          walkable: { type: 'conditional', conditionId },
+          walkable: { type: 'always' },
           blendEdges: false,
         };
         result[idx] = { ...tile, nanos: [...tile.nanos!, bridgeNano] };

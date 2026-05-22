@@ -65,7 +65,7 @@ const NANO_Z: Partial<Record<string, number>> = {
   'roof-ridge': 4,
   'fence':          2,
   'gate':           2,
-  'troll-bridge':   1,
+  'troll-bridge':   0,
   'bridge':         0,
   'river':          2,
   'river-bank':     1,
@@ -81,7 +81,7 @@ const NANO_ZMODE: Partial<Record<string, NanoZMode>> = {
   'roof-ridge': 'positive',
   'fence':          'positive',
   'gate':           'positive',
-  'troll-bridge':   'positive',
+  'troll-bridge':   'flat',
   'bridge':         'flat',
   'river':          'negative',
   'river-bank':     'flat',
@@ -91,7 +91,7 @@ const NANO_ZMODE: Partial<Record<string, NanoZMode>> = {
 const NANO_WALKABLE: Partial<Record<string, boolean>> = {
   'stone-wall': false, 'cathedral-wall': false, 'homestead-wall': false,
   'roof-slope-left': false, 'roof-slope-right': false, 'roof-ridge': false,
-  'fence': false, 'gate': true, 'troll-bridge': true, 'bridge': true,
+  'fence': false, 'gate': false, 'troll-bridge': true, 'bridge': true,
   'river': false, 'river-bank': true, 'tall-grass': true,
 };
 

@@ -210,12 +210,14 @@ function drawProceduralFenceNano(
   screenX: number,
   screenY: number,
 ): boolean {
-  const height = Math.max(nano.zOffset * NANO_Z_SCALE, MIN_NANO_HEIGHT);
+  const height = Math.max(
+    nano.zOffset * NANO_Z_SCALE,
+    nano.kind === 'gate' ? 34 : MIN_NANO_HEIGHT,
+  );
   const style = nano.fenceStyle;
   const railColor = style?.railColor ?? (nano.kind === 'gate' ? '#9a6829' : '#a06a26');
   const railDark = style?.railShadow ?? (nano.kind === 'gate' ? '#5a3519' : '#6a421d');
   const railHighlight = style?.railHighlight ?? '#bd7b30';
-  const hardwareColor = style?.hardwareColor ?? '#473019';
   const railWidth = style?.railThickness ?? 5;
   const arms = nano.connections ?? connectionsFromVariant(nano.variant);
   const postKeys = new Set<string>();
@@ -293,6 +295,31 @@ function drawProceduralFenceNano(
     drawLineBetween(ctx, a, b, bottom + 1.5, railColor, railWidth);
     drawRaisedLine(a, b, bottom, top, railDark, Math.max(3.5, railWidth - 0.5));
     drawRaisedLine(a, b, bottom + 1.5, top + 1.5, railHighlight, 1.4);
+    drawRaisedLine(a, b, top, bottom, railDark, Math.max(3.5, railWidth - 0.5));
+    drawRaisedLine(a, b, top + 1.5, bottom + 1.5, railHighlight, 1.4);
+  };
+
+  const drawPadlock = (p: { x: number; y: number }) => {
+    const y = p.y - height * 0.62;
+    ctx.save();
+    ctx.fillStyle = '#d3a923';
+    ctx.strokeStyle = '#4a2c10';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(p.x - 6, y - 1, 12, 10, 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(p.x, y - 1, 4.5, Math.PI, 0);
+    ctx.strokeStyle = '#d3a923';
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(p.x, y - 1, 4.5, Math.PI, 0);
+    ctx.strokeStyle = '#4a2c10';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
   };
 
   // Physical footprint: a fence is a THIN barrier running down the CENTER
@@ -324,14 +351,7 @@ function drawProceduralFenceNano(
 
     for (const post of posts) drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
 
-    const latch = style?.gateLeafMode === 'double' ? split : end;
-    ctx.beginPath();
-    ctx.arc(latch.x, latch.y - height * 0.56, 4, 0, Math.PI * 2);
-    ctx.fillStyle = hardwareColor;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    drawPadlock(split);
 
     ctx.restore();
     return true;
@@ -388,13 +408,7 @@ function drawProceduralFenceNano(
   for (const post of posts) drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
 
   if (nano.kind === 'gate') {
-    ctx.beginPath();
-    ctx.arc(center.x, center.y - height * 0.55, 4, 0, Math.PI * 2);
-    ctx.fillStyle = hardwareColor;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    drawPadlock(center);
   }
 
   ctx.restore();
