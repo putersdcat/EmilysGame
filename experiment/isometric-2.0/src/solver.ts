@@ -1482,6 +1482,7 @@ function placeRiverCrossings(
           svg: trollBridgeSvg(false),
           walkable: { type: 'always' },
           blendEdges: false,
+          variant: isHorizontalRun ? 'straight-v' : 'straight-h',
         };
         result[idx] = { ...tile, nanos: [...tile.nanos!, bridgeNano] };
       } else {
@@ -1492,6 +1493,7 @@ function placeRiverCrossings(
           svg: bridgeSvg(),
           walkable: { type: 'always' },
           blendEdges: false,
+          variant: isHorizontalRun ? 'straight-v' : 'straight-h',
         };
         result[idx] = { ...tile, nanos: [...tile.nanos!, bridgeNano] };
       }

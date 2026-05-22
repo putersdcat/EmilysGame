@@ -622,6 +622,87 @@ function drawSunkenCutFaces(
   }
 }
 
+function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: FeatureConnections): void {
+  // Draw the live Canvas river plane directly in source coordinates. This
+  // avoids the core SVG-raster issue: an SVG image clipped to 144×144 cannot
+  // actually overdraw connected edges even if its internal markup requests it.
+  const channelW = 64;
+  const off = (MICRO_TILE_SIZE - channelW) / 2;
+  const over = 30;
+  const hasH = connections.left || connections.right;
+  const hasV = connections.top || connections.bottom;
+  const hStart = connections.left ? -over : off;
+  const hEnd = connections.right ? MICRO_TILE_SIZE + over : off + channelW;
+  const vStart = connections.top ? -over : off;
+  const vEnd = connections.bottom ? MICRO_TILE_SIZE + over : off + channelW;
+  const shallow = '#2b86a8';
+  const mid = '#1b638f';
+  const deep = 'rgba(13, 52, 95, 0.36)';
+  const foam = 'rgba(168, 217, 232, 0.20)';
+
+  const fillHChannel = (x: number, y: number, w: number, h: number) => {
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    grad.addColorStop(0, 'rgba(63,81,46,0.34)');
+    grad.addColorStop(0.18, shallow);
+    grad.addColorStop(0.50, mid);
+    grad.addColorStop(0.82, shallow);
+    grad.addColorStop(1, 'rgba(63,81,46,0.26)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = deep;
+    ctx.fillRect(x, off + 16, w, channelW - 32);
+  };
+  const fillVChannel = (x: number, y: number, w: number, h: number) => {
+    const grad = ctx.createLinearGradient(x, 0, x + w, 0);
+    grad.addColorStop(0, 'rgba(63,81,46,0.34)');
+    grad.addColorStop(0.18, shallow);
+    grad.addColorStop(0.50, mid);
+    grad.addColorStop(0.82, shallow);
+    grad.addColorStop(1, 'rgba(63,81,46,0.26)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, y, w, h);
+    ctx.fillStyle = deep;
+    ctx.fillRect(off + 16, y, channelW - 32, h);
+  };
+
+  ctx.save();
+  if (hasH) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
+  if (hasV) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
+
+  // Cross/tee overlaps should be water, not a dark square. Repaint the center
+  // with the mid tone and a small soft highlight.
+  if (hasH && hasV) {
+    ctx.fillStyle = 'rgba(27,99,143,0.64)';
+    ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
+    const g = ctx.createRadialGradient(72, 68, 4, 72, 72, 34);
+    g.addColorStop(0, 'rgba(168,217,232,0.16)');
+    g.addColorStop(1, 'rgba(27,99,143,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
+  }
+
+  ctx.strokeStyle = foam;
+  ctx.lineWidth = 1.1;
+  ctx.lineCap = 'round';
+  if (hasH) {
+    for (let x = hStart + 18; x < hEnd - 10; x += 34) {
+      ctx.beginPath();
+      ctx.moveTo(x, off + 18 + ((x / 17) % 4));
+      ctx.quadraticCurveTo(x + 10, off + 14, x + 22, off + 18);
+      ctx.stroke();
+    }
+  }
+  if (hasV) {
+    for (let y = vStart + 18; y < vEnd - 10; y += 34) {
+      ctx.beginPath();
+      ctx.moveTo(off + 18 + ((y / 17) % 4), y);
+      ctx.quadraticCurveTo(off + 14, y + 10, off + 18, y + 22);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 /**
  * Draw a negative-Z nano (carve-out: river, trench, etc.).
  *
@@ -637,8 +718,8 @@ export function drawNegativeNano(
   screenX: number,
   screenY: number,
 ): { sinkPx: number; loaded: boolean } {
-  const img = loadSvgImage(nano.svg);
-  if (!img) return { sinkPx: 0, loaded: false };
+  const img = nano.kind === 'river' ? null : loadSvgImage(nano.svg);
+  if (nano.kind !== 'river' && !img) return { sinkPx: 0, loaded: false };
 
   const sinkPx = Math.abs(nano.zOffset) * Z_PX_PER_LEVEL;
   const cx = screenX + HALF_W;
@@ -646,7 +727,8 @@ export function drawNegativeNano(
 
   ctx.save();
 
-  // Clip to parent tile's diamond to prevent bleed
+  // Clip cut faces to the parent tile's diamond: the vertical excavated
+  // banks belong to this tile's terrain surface.
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
   const connections = nano.connections ?? connectionsFromVariant(nano.variant);
@@ -656,11 +738,29 @@ export function drawNegativeNano(
   // reads as a flat decal rather than a carved channel.
   drawSunkenCutFaces(ctx, cx, screenY, sinkPx, connections);
 
+  ctx.restore();
+
+  ctx.save();
+
+  // Connected river water must NOT be clipped to each source diamond after
+  // it is lowered. Clipping the sunken plane per tile exposes the original
+  // grass diamond at every connected boundary, producing the green bars the
+  // proof images showed. River water is drawn procedurally below so it can
+  // extend beyond the 144px source tile in connected directions. Non-river
+  // negative nanos stay clipped.
+  if (nano.kind !== 'river') {
+    clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
+  }
+
   // Flat iso projection (same as base tiles) shifted down by sink depth.
   // The shift moves the SVG content lower within the diamond, creating the
   // sunken plane effect (e.g., water surface below surrounding terrain).
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + sinkPx);
-  ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
+  if (nano.kind === 'river') {
+    drawProceduralRiverWater(ctx, connections);
+  } else {
+    ctx.drawImage(img!, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
+  }
 
   ctx.restore();
 
@@ -720,6 +820,149 @@ export function drawNegativeNano(
 
 // ─── Flat Nano Rendering ─────────────────────────────────────
 
+function bridgeSpansVertical(nano: NanoTile): boolean {
+  const conn = nano.connections ?? connectionsFromVariant(nano.variant);
+  if ((conn.top || conn.bottom) && !(conn.left || conn.right)) return true;
+  if ((conn.left || conn.right) && !(conn.top || conn.bottom)) return false;
+  return nano.variant === 'straight-v' || nano.variant === 'end-t' || nano.variant === 'end-b';
+}
+
+function drawProceduralBridgeNano(
+  ctx: CanvasRenderingContext2D,
+  nano: NanoTile,
+  screenX: number,
+  screenY: number,
+): boolean {
+  const cx = screenX + HALF_W;
+  const cy = screenY + HALF_H;
+  const verticalSpan = bridgeSpansVertical(nano);
+  const center = MICRO_TILE_SIZE / 2;
+  const start = 14;
+  const end = MICRO_TILE_SIZE - 14;
+  const widthHalf = 28;
+  const archH = Math.max(18, nano.zOffset * NANO_Z_SCALE + 8);
+  const segments = 10;
+  const isTroll = nano.kind === 'troll-bridge';
+  const plankColors = isTroll
+    ? ['#6a4810', '#7d5817', '#573707', '#8a631d']
+    : ['#8b6418', '#9b7622', '#765113'];
+
+  const zAt = (axis: number): number => {
+    const t = Math.max(0, Math.min(1, (axis - start) / (end - start)));
+    return Math.sin(Math.PI * t) * archH;
+  };
+  const project = (axis: number, side: number, extraZ = 0): ScreenPoint => {
+    const z = zAt(axis) + extraZ;
+    const x = verticalSpan ? center + side : axis;
+    const y = verticalSpan ? axis : center + side;
+    return projectFlatIsoPoint(cx, screenY, x, y, -z);
+  };
+  const ground = (axis: number, side: number): ScreenPoint => {
+    const x = verticalSpan ? center + side : axis;
+    const y = verticalSpan ? axis : center + side;
+    return projectFlatIsoPoint(cx, screenY, x, y, 6);
+  };
+  const poly = (pts: readonly ScreenPoint[], fill: string, stroke = 'rgba(44,27,7,0.62)') => {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  };
+  const strokeCurve = (side: number, zLift: number, color: string, width: number) => {
+    ctx.beginPath();
+    for (let i = 0; i <= segments; i++) {
+      const axis = start + (end - start) * (i / segments);
+      const p = project(axis, side, zLift);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  };
+
+  ctx.save();
+  clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
+
+  // Shadow sits on the sunken water plane under the arched center span.
+  poly([
+    ground(center - 28, -widthHalf + 4),
+    ground(center - 28, widthHalf - 4),
+    ground(center + 28, widthHalf - 4),
+    ground(center + 28, -widthHalf + 4),
+  ], 'rgba(8, 6, 3, 0.28)', 'rgba(0,0,0,0)');
+
+  // Long side faces from deck edge down toward the ground/water plane. Because
+  // zAt(start/end)=0, these naturally land on both banks instead of floating.
+  for (let i = 0; i < segments; i++) {
+    const a0 = start + (end - start) * (i / segments);
+    const a1 = start + (end - start) * ((i + 1) / segments);
+    poly([project(a0, -widthHalf), project(a1, -widthHalf), ground(a1, -widthHalf), ground(a0, -widthHalf)], 'rgba(88, 56, 15, 0.62)');
+    poly([project(a0, widthHalf), project(a1, widthHalf), ground(a1, widthHalf), ground(a0, widthHalf)], 'rgba(47, 31, 9, 0.68)');
+  }
+
+  // Arched plank deck.
+  for (let i = 0; i < segments; i++) {
+    const a0 = start + (end - start) * (i / segments) + 1.5;
+    const a1 = start + (end - start) * ((i + 1) / segments) - 1.5;
+    poly([
+      project(a0, -widthHalf + 3, 1.5),
+      project(a0, widthHalf - 3, 1.5),
+      project(a1, widthHalf - 3, 1.5),
+      project(a1, -widthHalf + 3, 1.5),
+    ], plankColors[i % plankColors.length], 'rgba(58, 36, 8, 0.72)');
+  }
+
+  // Rails follow the arch, making the height change legible.
+  strokeCurve(-widthHalf - 2, 9, isTroll ? '#4e3008' : '#7a4f10', 5.5);
+  strokeCurve(widthHalf + 2, 9, isTroll ? '#3d2607' : '#6b430d', 5.5);
+  strokeCurve(-widthHalf - 2, 12, isTroll ? '#8b6218' : '#b1842b', 1.4);
+  strokeCurve(widthHalf + 2, 12, isTroll ? '#765016' : '#a17424', 1.4);
+
+  // Bank posts plus a center pair emphasize that the bridge has supports.
+  for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+    const axis = start + (end - start) * t;
+    for (const side of [-widthHalf - 2, widthHalf + 2]) {
+      const foot = project(axis, side, 0);
+      const top = project(axis, side, 18);
+      ctx.beginPath();
+      ctx.moveTo(foot.x, foot.y);
+      ctx.lineTo(top.x, top.y);
+      ctx.strokeStyle = side < 0 ? '#7a4c10' : '#503109';
+      ctx.lineWidth = 4;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(top.x, top.y, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#a87922';
+      ctx.fill();
+    }
+  }
+
+  if (isTroll) {
+    const p = project(center, -4, 34);
+    ctx.fillStyle = 'rgba(91, 54, 14, 0.96)';
+    ctx.fillRect(p.x - 18, p.y - 10, 36, 18);
+    ctx.strokeStyle = '#2a1805';
+    ctx.strokeRect(p.x - 18, p.y - 10, 36, 18);
+    ctx.fillStyle = '#ffd66b';
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TROLL', p.x, p.y - 2);
+  }
+
+  ctx.restore();
+  return true;
+}
+
 /**
  * Draw a flat nano overlay (zMode='flat', e.g., tall grass decal).
  * Same iso projection as base tiles, semi-transparent to show base through.
@@ -730,65 +973,18 @@ function drawFlatNano(
   screenX: number,
   screenY: number,
 ): boolean {
+  if (nano.kind === 'bridge' || nano.kind === 'troll-bridge') {
+    return drawProceduralBridgeNano(ctx, nano, screenX, screenY);
+  }
+
   const img = loadSvgImage(nano.svg);
   if (!img) return false;
 
   const cx = screenX + HALF_W;
   const cy = screenY + HALF_H;
 
-  const drawBridgeDropFace = (
-    x1: number,
-    y1: number,
-    x2: number,
-    y2: number,
-    topYOffset: number,
-    bottomYOffset: number,
-    fill: string,
-  ) => {
-    const a = projectFlatIsoPoint(cx, screenY, x1, y1, topYOffset);
-    const b = projectFlatIsoPoint(cx, screenY, x2, y2, topYOffset);
-    const bd = projectFlatIsoPoint(cx, screenY, x2, y2, bottomYOffset);
-    const ad = projectFlatIsoPoint(cx, screenY, x1, y1, bottomYOffset);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.lineTo(bd.x, bd.y);
-    ctx.lineTo(ad.x, ad.y);
-    ctx.closePath();
-    ctx.fillStyle = fill;
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(36, 23, 7, 0.58)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  };
-
   ctx.save();
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
-
-  if (nano.kind === 'bridge' || nano.kind === 'troll-bridge') {
-    const liftPx = Math.max(10, nano.zOffset * NANO_Z_SCALE);
-    const lowerPlane = 8;
-
-    // Contact shadow stays on the lower water plane; the deck itself is drawn
-    // lifted above it. This makes bridge-over-river read as spanning depth.
-    ctx.save();
-    ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + lowerPlane);
-    ctx.fillStyle = 'rgba(9, 8, 5, 0.34)';
-    ctx.fillRect(14, 38, MICRO_TILE_SIZE - 28, 58);
-    ctx.restore();
-
-    // Two visible underside faces connect the raised deck to the lower water
-    // plane. This is intentionally simple but makes the bridge read as a
-    // physical slab spanning the carved channel instead of a flat decal.
-    drawBridgeDropFace(14, 92, 114, 92, -liftPx, lowerPlane, 'rgba(76, 49, 14, 0.64)');
-    drawBridgeDropFace(114, 36, 114, 92, -liftPx, lowerPlane, 'rgba(43, 29, 9, 0.68)');
-
-    ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY - liftPx);
-    ctx.globalAlpha = 1;
-    ctx.drawImage(img, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
-    ctx.restore();
-    return true;
-  }
 
   // Flat iso transform (identical to base tile projection)
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY);

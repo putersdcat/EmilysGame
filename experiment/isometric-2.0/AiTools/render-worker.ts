@@ -606,8 +606,12 @@ async function dispatch(): Promise<WorkerResult> {
       });
       for (const e of sceneEntries) {
         if ((e.kind === 'river' || e.kind === 'river-bank') && !e.svgOverride && e.waterStyle) {
-          const variant = e.variant ?? 'straight-h';
-          const connections = variantToConnectionsLocal(variant);
+          const connections = e.connections ?? (e.variant
+            ? variantToConnectionsLocal(e.variant)
+            : inferSameKindConnectionsLocal(e, sceneEntries));
+          const variant = e.variant ?? variantFromConnectionsLocal(connections);
+          e.connections = connections;
+          e.variant = variant;
           e.svgOverride = e.kind === 'river-bank'
             ? WaterFamily.svgRiverBank(variant, connections, e.col, e.row, { style: e.waterStyle })
             : WaterFamily.svgWater(variant, connections, e.col, e.row, { style: e.waterStyle });
@@ -630,6 +634,36 @@ async function dispatch(): Promise<WorkerResult> {
     default:
       throw new Error(`render-worker: unknown tool "${toolName}"`);
   }
+}
+
+function inferSameKindConnectionsLocal(entry: { kind: string; col: number; row: number }, entries: readonly { kind: string; col: number; row: number }[]): FeatureConnections {
+  const hasSameKind = (col: number, row: number): boolean =>
+    entries.some(e => e.kind === entry.kind && e.col === col && e.row === row);
+  return {
+    top: hasSameKind(entry.col, entry.row - 1),
+    right: hasSameKind(entry.col + 1, entry.row),
+    bottom: hasSameKind(entry.col, entry.row + 1),
+    left: hasSameKind(entry.col - 1, entry.row),
+  };
+}
+
+function variantFromConnectionsLocal(conn: FeatureConnections): FeatureVariant {
+  if (conn.top && conn.right && conn.bottom && conn.left) return 'cross';
+  if (!conn.top && conn.right && conn.bottom && conn.left) return 'tee-t';
+  if (conn.top && !conn.right && conn.bottom && conn.left) return 'tee-r';
+  if (conn.top && conn.right && !conn.bottom && conn.left) return 'tee-b';
+  if (conn.top && conn.right && conn.bottom && !conn.left) return 'tee-l';
+  if (conn.top && conn.right && !conn.bottom && !conn.left) return 'corner-tr';
+  if (conn.top && !conn.right && !conn.bottom && conn.left) return 'corner-tl';
+  if (!conn.top && conn.right && conn.bottom && !conn.left) return 'corner-br';
+  if (!conn.top && !conn.right && conn.bottom && conn.left) return 'corner-bl';
+  if (!conn.top && conn.right && !conn.bottom && conn.left) return 'straight-h';
+  if (conn.top && !conn.right && conn.bottom && !conn.left) return 'straight-v';
+  if (conn.top) return 'end-t';
+  if (conn.right) return 'end-r';
+  if (conn.bottom) return 'end-b';
+  if (conn.left) return 'end-l';
+  return 'isolated';
 }
 
 function variantToConnectionsLocal(variant: FeatureVariant): FeatureConnections {
