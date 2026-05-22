@@ -27,9 +27,13 @@ const CHUNK_TILES = WORLD_UNIT_TILES;
 /** Nano tile kinds that participate in same-kind connection solving. */
 const CONNECTABLE_KINDS: ReadonlySet<NanoTileKind> = new Set([
   'stone-wall',
+  'cathedral-wall',
+  'homestead-wall',
   'fence',
   'river',
 ]);
+
+type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
 /** Extract the primary nano tile kind from a micro tile (first nano in stack). */
 function getNanoKind(tile: MicroTile): NanoTileKind | null {
@@ -111,6 +115,49 @@ function connCount(c: FeatureConnections): number {
   return (c.top ? 1 : 0) + (c.right ? 1 : 0) + (c.bottom ? 1 : 0) + (c.left ? 1 : 0);
 }
 
+/** Convert connections to the canonical #219 bitmask: bit0=top, bit1=right, bit2=bottom, bit3=left. */
+export function connectionsToBitmask(conn: FeatureConnections): number {
+  return (conn.top ? 1 : 0)
+    | (conn.right ? 2 : 0)
+    | (conn.bottom ? 4 : 0)
+    | (conn.left ? 8 : 0);
+}
+
+/** Convert the canonical #219 bitmask back to connection flags. */
+export function bitmaskToConnections(bitmask: number): FeatureConnections {
+  return {
+    top: Boolean(bitmask & 1),
+    right: Boolean(bitmask & 2),
+    bottom: Boolean(bitmask & 4),
+    left: Boolean(bitmask & 8),
+  };
+}
+
+/** 16-entry lookup table for bit0=top, bit1=right, bit2=bottom, bit3=left. */
+const FEATURE_VARIANT_BY_BITMASK: readonly FeatureVariant[] = [
+  'isolated',  // 0000
+  'end-t',     // 0001
+  'end-r',     // 0010
+  'corner-tr', // 0011
+  'end-b',     // 0100
+  'straight-v',// 0101
+  'corner-br', // 0110
+  'tee-l',     // 0111 — left open
+  'end-l',     // 1000
+  'corner-tl', // 1001
+  'straight-h',// 1010
+  'tee-b',     // 1011 — bottom open
+  'corner-bl', // 1100
+  'tee-r',     // 1101 — right open
+  'tee-t',     // 1110 — top open
+  'cross',     // 1111
+];
+
+/** Select a FeatureVariant from the canonical #219 connection bitmask. */
+export function variantFromBitmask(bitmask: number): FeatureVariant {
+  return FEATURE_VARIANT_BY_BITMASK[bitmask & 0b1111]!;
+}
+
 /**
  * Select the appropriate variant for a tile based on its connections.
  * This is a pure lookup: connections → variant.
@@ -146,7 +193,48 @@ function selectVariant(conn: FeatureConnections): FeatureVariant {
     return 'tee-l';
   }
 
-  return 'cross';
+  return variantFromBitmask(connectionsToBitmask(conn));
+}
+
+/**
+ * Resolve variants for one nano kind in-place on a chunk.
+ *
+ * This is the direct #219 API: it inspects the 4 cardinal neighbors,
+ * computes bit0=top/bit1=right/bit2=bottom/bit3=left, and mutates each
+ * matching primary nano's `connections`, `variant`, and generated SVG.
+ */
+export function resolveVariants(
+  chunk: WorldUnitChunk,
+  kind: NanoTileKind,
+  lookup: NeighborLookup = () => null,
+): WorldUnitChunk {
+  if (!CONNECTABLE_KINDS.has(kind)) return chunk;
+
+  for (let row = 0; row < CHUNK_TILES; row++) {
+    for (let col = 0; col < CHUNK_TILES; col++) {
+      const tile = chunk.tiles[row * CHUNK_TILES + col];
+      const nano = tile.nanos?.[0];
+      if (!nano || nano.kind !== kind) continue;
+      if (nano.variant === 'diagonal-left' || nano.variant === 'diagonal-right' || nano.variant === 'vertex') continue;
+
+      const worldCol = chunk.cx * CHUNK_TILES + col;
+      const worldRow = chunk.cy * CHUNK_TILES + row;
+      const connections = resolveConnections(kind, getNeighbors(chunk, col, row, lookup));
+      const variant = variantFromBitmask(connectionsToBitmask(connections));
+      const svg = getVariantSvg(kind, variant, connections, nano.zOffset, worldCol, worldRow) ?? nano.svg;
+      const mutableNano = nano as Mutable<NanoTile>;
+      mutableNano.connections = connections;
+      mutableNano.variant = variant;
+      mutableNano.svg = svg;
+      if (kind === 'stone-wall') {
+        mutableNano.sideTextureSvg = svg;
+        mutableNano.topTextureSvg = stoneWallTopSvg(variant);
+      }
+    }
+  }
+
+  chunk.dirty = true;
+  return chunk;
 }
 
 // ─── Variant SVG Generation ──────────────────────────────────
@@ -351,8 +439,8 @@ export function wallBounds(variant: FeatureVariant): { rects: FeatureFootprintRe
     case 'tee-l': arms.top = arms.bottom = arms.right = true; break;
     case 'end-t': arms.bottom = true; break;
     case 'end-b': arms.top = true; break;
-    case 'end-r': arms.left = true; break;
-    case 'end-l': arms.right = true; break;
+    case 'end-r': arms.right = true; break;
+    case 'end-l': arms.left = true; break;
     default: // isolated — central block
       rects.push({ x: off, y: off, w: W, h: W });
       return { rects };

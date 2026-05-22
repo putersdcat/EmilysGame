@@ -24,7 +24,7 @@ import type { SKRSContext2D } from '@napi-rs/canvas';
 import { drawNanoStack } from '../src/nano-tile.js';
 
 // Texture generators — same functions the browser uses
-import { getVariantSvg, woodenFenceSvg, wallBounds } from '../src/solver.js';
+import { connectionsToBitmask, getVariantSvg, variantFromBitmask, woodenFenceSvg, wallBounds } from '../src/solver.js';
 import { DarkCathedralStone, FenceFamily, StoneBrick, TimberFrameWall } from '../src/textures/index.js';
 
 // Single glue point: inject napi-canvas Image into engine SVG cache
@@ -97,6 +97,9 @@ const NANO_WALKABLE: Partial<Record<string, boolean>> = {
 
 /** Kinds that use sideTextureSvg + topTextureSvg path in drawNanoStack → drawExtrudedNano */
 const EXTRUDED_KINDS = new Set(['stone-wall', 'cathedral-wall', 'homestead-wall']);
+
+/** Kinds that participate in #219 same-kind neighbor variant inference. */
+const CONNECTABLE_SCENE_KINDS = new Set(['stone-wall', 'cathedral-wall', 'homestead-wall', 'fence', 'river']);
 
 /** Terrain kinds: drawn as procedural diamond fills, no SVG */
 const TERRAIN_COLORS: Record<string, string> = {
@@ -413,6 +416,28 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
 
 interface ScreenPos { screenX: number; screenY: number; }
 
+function inferSceneConnections(entry: CanvasSceneEntry, entries: readonly CanvasSceneEntry[]): FeatureConnections {
+  const hasSameKind = (col: number, row: number): boolean =>
+    entries.some(e => e.col === col && e.row === row && e.kind === entry.kind);
+
+  return {
+    top: hasSameKind(entry.col, entry.row - 1),
+    right: hasSameKind(entry.col + 1, entry.row),
+    bottom: hasSameKind(entry.col, entry.row + 1),
+    left: hasSameKind(entry.col - 1, entry.row),
+  };
+}
+
+function resolveSceneEntries(entries: readonly CanvasSceneEntry[]): CanvasSceneEntry[] {
+  return entries.map((entry) => {
+    if (TERRAIN_COLORS[entry.kind] || !CONNECTABLE_SCENE_KINDS.has(entry.kind)) return entry;
+    const connections = entry.connections
+      ?? (entry.variant ? variantToConnections(entry.variant) : inferSceneConnections(entry, entries));
+    const variant = entry.variant ?? variantFromBitmask(connectionsToBitmask(connections));
+    return { ...entry, connections, variant };
+  });
+}
+
 function tilePos(col: number, row: number, ox: number, oy: number): ScreenPos {
   return {
     screenX: ox + (col - row) * HALF_W - HALF_W,
@@ -690,8 +715,9 @@ export async function renderNanoScene(
   const geometryLayers = opts.geometryLayers ?? false;
   const players = opts.players ?? [];
   const bg      = opts.background ?? '#1a1f2b';
+  const sceneEntries = resolveSceneEntries(entries);
 
-  await preloadTextures(collectSvgStrings(entries));
+  await preloadTextures(collectSvgStrings(sceneEntries));
 
   const canvas = createCanvas(width, height);
   const ctx    = canvas.getContext('2d') as SKRSContext2D;
@@ -700,10 +726,10 @@ export async function renderNanoScene(
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  const { ox, oy } = computeOrigin(entries, players, width, height);
+  const { ox, oy } = computeOrigin(sceneEntries, players, width, height);
 
   // Sort all entries back-to-front by painter's key col+row
-  const sorted = [...entries].sort((a, b) => (a.col + a.row) - (b.col + b.row));
+  const sorted = [...sceneEntries].sort((a, b) => (a.col + a.row) - (b.col + b.row));
   const terrain = sorted.filter(e => TERRAIN_COLORS[e.kind]);
   const nanos   = sorted.filter(e => !TERRAIN_COLORS[e.kind]);
 
@@ -783,7 +809,7 @@ export async function renderNanoScene(
       if (!nano) continue;
       const { screenX, screenY } = nanoEntryPos(item.entry, ox, oy);
       if (debug) drawDebugDiamond(ctx, item.entry.col, item.entry.row, NANO_WALKABLE[item.entry.kind] ?? true, ox, oy);
-      const nb = computeWallNeighbors(item.entry, entries);
+      const nb = computeWallNeighbors(item.entry, sceneEntries);
       drawNanoStack(nctx, [nano], screenX, screenY, undefined, nb);
     } else {
       drawPlayerSprite(ctx, item.player.col, item.player.row, item.player.label, ox, oy, item.player.nanoCol, item.player.nanoRow);
