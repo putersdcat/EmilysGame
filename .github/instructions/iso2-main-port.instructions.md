@@ -44,6 +44,9 @@ applyTo: "{src/iso2-*.ts,src/nano-tile*.ts,src/render.ts,src/terrain-cache.ts,sr
 
 ## Current Breadcrumb
 
-- Tracking issue: `#245`.
-- Snapshot commit containing the broad pending port/factory state: `13ade67`.
-- Do not continue the main-engine port until the texture-factory contracts and exact walkability APIs are understood; previous context was too narrow and caused fragile partial wiring.
+- Tracking issue: `#246` (Main engine Iso 2.0 structural port: 144px tiles and stone-wall parity; remaining follow-up was negative-Z river + arched bridge Canvas logic).
+- Structural slice committed: `d7917d6` (face-sliced stone/homestead/cathedral walls, types for top/south/east/end face textures + rotate/equal-lighting/end-cap flags, nano defs + renderer updates, tee convention fixes, focused tests + screenshot).
+- River/negative-Z + bridge + procedural fence render path port: in-flight on this branch (large updates to `src/nano-tile.ts` for channel-cut faces, `drawProceduralRiverWater`, `drawProceduralBridgeNano`, `drawProceduralFenceNano` + connections handling, integration into draw*Nano paths, supporting changes in defs/types/test/screenshot). Matches experiment SoT (per solver.ts connections, water-family, nano-tile drawNegative/drawFlat).
+- Local visual tooling: `isoSvgRenderer` registered in `.vscode/mcp.json` (stdio → `experiment/isometric-2.0/AiTools/dist/index.js`; the entry for the mandated AiTools/isoSvgRenderer MCP per `isosvgrenderer.instructions.md` and Proompts). dist built + relay verified; restart in VS Code MCP panel (or TUI /mcps) required to surface `isoSvgRenderer__*` tools (`render_game_tile`, `render_iso_scene`, etc.) for proofs.
+- Texture contracts demonstrated (main `iso2-materials.ts` + face slices in defs/nano-tile). Exact walkability/solver metadata (isPointWalkableInTile, buildWalkableMap, resolveVariants, wallBounds point queries from exp/solver.ts) is the clear next vertical slice after landing this render path work.
+- Always: before changes run experiment `npx tsc --noEmit`; after main changes run root typecheck + focused `tests/rendering/iso2-*.spec.ts`. Prefer isoSvgRenderer MCP calls for experiment-side visual iteration/proofs; pair checkpoints with tests.
