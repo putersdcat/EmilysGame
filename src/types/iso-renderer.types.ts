@@ -101,6 +101,14 @@ export type IsoFeatureVariant =
   | 'isolated'
   | 'diagonal-left' | 'diagonal-right' | 'vertex';
 
+/** Continuous feature connection flags for walls, fences, rivers, and bridges. */
+export interface IsoFeatureConnections {
+  readonly top: boolean;
+  readonly right: boolean;
+  readonly bottom: boolean;
+  readonly left: boolean;
+}
+
 // ─── Walkability ───────────────────────────────────────────────────────────────
 
 /**
@@ -172,6 +180,8 @@ export interface IsoNanoTile {
   readonly endCapTicks?: boolean;
   /** Optional color for future exposed end-cap/header grout ticks. */
   readonly endCapTickColor?: string;
+  /** Solver-resolved connection flags for continuous feature renderers. */
+  readonly connections?: IsoFeatureConnections;
 }
 
 /** Ordered stack of nano tiles on a single MicroTile. */

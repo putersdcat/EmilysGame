@@ -189,7 +189,7 @@ export function bridgeNano(
 ): IsoNanoTile {
   return {
     kind: 'bridge',
-    zOffset: 0,
+    zOffset: 1,
     zMode: 'flat',
     svg: woodenBridgeSvg(variant),
     walkable: WALKABLE_ALWAYS,

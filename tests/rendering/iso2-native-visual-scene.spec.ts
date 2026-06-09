@@ -38,23 +38,39 @@ test('native Iso2 water/bridge/wall/fence controlled scene', async ({ page }) =>
       }
     }
 
-    // Focused structure showcase: homestead and ruined cathedral close enough
-    // to see in one native 256×128 Iso2 canvas viewport.
-    debug.stampIso2Assembly('0,0', 'homestead-small', 10, 8);
-    debug.stampIso2Assembly('0,0', 'ruined-cathedral', 15, 8);
+    // Compact, intentional Iso2 showcase. Keep the camera centered on a
+    // coherent compound instead of mixing whole assemblies with loose feature
+    // runs; the screenshot should answer "does this render as a structure?".
 
-    // Supporting feature-family checks near the same camera.
-    for (let x = 9; x <= 16; x++) setCell(x, 15, 'wall');
-    setCell(12, 15, 'door_locked');
-    for (let x = 8; x <= 14; x++) setCell(x, 18, 'water');
-    setCell(11, 18, 'bridge');
-    setCell(14, 18, 'toll_gate');
-    for (let x = 17; x <= 21; x++) setCell(x, 15, 'fence');
+    // Stone wall corner / room shell on the right.
+    for (let x = 14; x <= 18; x++) setCell(x, 8, 'wall');
+    for (let y = 9; y <= 12; y++) setCell(18, y, 'wall');
+    for (let x = 14; x <= 18; x++) setCell(x, 12, 'wall');
+    setCell(16, 12, 'door_locked');
 
-    state.player.x = 14.0;
+    // Connected fence yard on the left with a single gate on the south edge.
+    for (let x = 8; x <= 12; x++) {
+      setCell(x, 8, 'fence');
+      setCell(x, 12, x === 10 ? 'quiz_gate' : 'fence');
+    }
+    for (let y = 9; y <= 11; y++) {
+      setCell(8, y, 'fence');
+      setCell(12, y, 'fence');
+    }
+
+    // River crossing through the center so the negative-Z channel and arched
+    // bridge are visible in the same viewport.
+    for (let x = 8; x <= 18; x++) setCell(x, 15, 'water');
+    setCell(13, 15, 'bridge');
+
+    // Small structural material samples, away from the interaction radius.
+    setCell(9, 6, 'house');
+    setCell(19, 7, 'cathedral_wall');
+
+    state.player.x = 11.0;
     state.player.y = 10.0;
-    state.camera.x = 14.0;
-    state.camera.y = 10.0;
+    state.camera.x = 13.0;
+    state.camera.y = 11.0;
     state.ui.dialog.active = false;
     state.ui.dialog.currentLine = '';
     state.quiz.active = false;
