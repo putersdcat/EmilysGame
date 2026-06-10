@@ -164,10 +164,12 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   // Assert cannot walk locked gate (uses exact footprint + cond from iso2-solver isPointWalkableInTile + mechanics; fence run simulates placer output from src/gen.ts per AUTONOMOUS_LOOP.md + #223)
   expect(lockedPos.y).toBeLessThanOrEqual(2.4);
 
-  // simulate quiz unlock (sets cond; real UI would call resolve + this)
+  // After locked attempt, move to gate and sim quiz trigger (or simulate unlock after correct answer; real UI would open quiz on interact at gate, correct sets cond via resolveCondition)
   await page.evaluate(() => {
     const debug = (window as any).__gameDebug;
     const state = debug.state;
+    state.player.y = 3.0; // at gate position for quiz trigger
+    // sim quiz correct -> unlock
     state.activeConditions.set('quiz-gate', 'unlocked' as const);
     debug.invalidateRenderCaches();
   });
