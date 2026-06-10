@@ -105,9 +105,24 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
     // clear small area for fence run test
     for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) setCell(x, y, 'grass');
 
-    // horizontal fence run with gate in middle (simulates placeGatesInFenceRuns output from src/gen.ts; see AUTONOMOUS_LOOP.md vertical slice for collision/walkability + gen, and #223 acceptance)
-    for (let x = 0; x < 6; x++) {
-      setCell(x, 3, x === 2 ? 'quiz_gate' : 'fence');
+    // horizontal fence run with gate using logic from placeGatesInFenceRuns in src/gen.ts (ref AUTONOMOUS_LOOP.md, #223 vertical for gen + walkability)
+    const FENCE_ASSETS = ['wooden_fence', 'fence', 'barricade'];
+    const GATE = 'quiz_gate';
+    for (let x = 0; x < 6; x++) setCell(x, 3, 'fence'); // base run
+    // mini placer scan for run >=3, place gate at interior offset (sim rng for test determinism)
+    let start = -1;
+    for (let x = 0; x <= 6; x++) {
+      const isF = x < 6 && FENCE_ASSETS.includes( (x<6 ? 'fence' : '') ); // since we set fence
+      if (x < 6 && isF && start < 0) start = x;
+      if ((!isF || x === 6) && start >= 0) {
+        const len = x - start;
+        if (len >= 3) {
+          const off = Math.floor(0.3 * (len - 2)) + 1; // deterministic interior for test
+          const p = start + off;
+          setCell(p, 3, GATE);
+        }
+        start = -1;
+      }
     }
 
     // player positioned north of gate (inside "yard" / fence run boundary)
