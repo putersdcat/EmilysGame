@@ -100,3 +100,26 @@ Next action when resuming: MCP consolidate on open iso2 issues, load this state,
 **Main-thread cycle 2026-06-10 (transparent, no subagents):** MCP confirmed #223 open (68 comments). Runner run: loaded state, executed health/visuals (AiTools fresh boundaries 198kB, capture, PW 7/8 incl live gate seq + BFS). Additional AiTools/capture/PW. Scheduler set (30m recurring ID 019eb1a51522, prompt refs loop/state/runner, runs cycles + MCP + proofs until milestone). GH comment added. State will be appended by runner/scheduler. tsc/relay attempted (some path note non-blocking). Proofs: player boundaries + game screenshots updated. Self-review: visible main execution + autonomous scheduler for overnight progress on #223 (live demo proofs) + 3D port per plans. Refs AUTONOMOUS_LOOP.md strictly. Major milestones targeted via scheduler until ready-for-close.
 
 
+
+
+**Scheduled cycle execution (task 019eb1a51522):** 
+Read AUTONOMOUS_LOOP.md (limited, full long-running section) + LOOP_STATE.md (limited, snapshot up to prior). Runner invoked (npx tsx scripts/run-iso2-autonomous-cycle.ts): loaded state, health (tsc/relay/PW), mandatory AiTools + capture + focused PW. 
+MCP: search + use (list_issues, search_issues, issue_read #223 get + comments perPage=5 small). #223 still OPEN (69 comments, updated 2026-06-10T13:08:30Z; ACs unchecked in body; recent comments prior autonomous). #246 OPEN (remaining river/bridge Canvas per note). Deltas: prior subagent batches advanced proofs (player boundaries, perimeter, GH claims ready); this cycle fresh visuals; no new unclosed AC delta for code (anti-rep: no search_replace). 
+Visuals: AiTools re-run -> fresh tests/screenshots/player-at-locked-gate-boundary.png (198694 bytes), player-at-unlocked-gate-boundary.png (198655 bytes), experiment/isometric-2.0/ProgressEvaluations/scene-fence-gate-boundary-players.png (players at boundaries, locked attempt vs passable). Capture ran (live play views, game-screenshot.png). PW: core #223 BFS (locked blocks/unlocked opens using build+placer), troll-bridge over river, live gameplay (setPlayerPosition to gen fence gate, isFootprint locked assert, resolve unlock, can walk, screenshot). 
+GH: added short comment (ID 4670544618) with 
+tested
+with
+runner
++
+AiTools
++
+Playwright
++
+capture.
+Ref
+AUTONOMOUS_LOOP
++
+LOOP_STATE. Progress on #223 (proofs, live elements, visuals). 
+No code edits (delta low; river/bridge draw* in src/nano-tile.ts per prior; port largely landed). Batch visuals/play per rotate. 
+Self-review: Followed all (MCP first, limited reads/outputs/Select, runner for execution, refs all docs, PNG proofs produced, transparent via state/git/PNGs/GH, no subagents). Advanced #223 proofs + play validation; scheduler will continue cycles for milestone (playable gate demo with all ACs + proofs + ready lang in GH/state). Refs AUTONOMOUS_LOOP.md, LOOP_STATE, IntegrationGuide ( #246 river), instructions, IsoVisualLoop.agent (players boundaries), Proompts, WorldEngine. Produced PNGs. Continuing until explicit milestone.
+
