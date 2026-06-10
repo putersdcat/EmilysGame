@@ -16,7 +16,8 @@
  * Run: npm run screenshot
  */
 
-import { chromium, Browser, Page } from '@playwright/test';
+import { chromium } from '@playwright/test';
+import type { Browser, Page } from 'playwright';
 import { spawn, ChildProcess } from 'child_process';
 import { setTimeout } from 'timers/promises';
 import * as path from 'path';
