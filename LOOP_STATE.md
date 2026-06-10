@@ -166,3 +166,16 @@ Lock released at end.
 - Self-review: Addresses timing perfectly - fast auto next (internal + short scheduler), no 30m wait, lock prevents interject/overlap (terminate fire if running). Flywheel spinning: when free, near-continuous <2min turns + sleep. All issues/docs covered. Produced PNGs. No subagents.
 
 
+
+
+**Scheduled burst execution (2m scheduler, lock-protected fast flywheel):** 
+Lock check at start: no lock, acquired. 
+Tight internal loop: 2 sub-cycles (auto next with 5s sleep).
+Sub1: Read AUTONOMOUS_LOOP limited, runner (health, visuals, capture, PW), MCP (list/search/issue_read #223 still OPEN 76 comms, #246 OPEN), batch visuals (fresh AiTools player boundaries PNGs 198kB+ + scene, capture), GH comment, sleep, self-review, append state.
+Sub2: runner, visuals, capture, sleep, state check (milestone not yet - #223 still open, continue), GH.
+After loop: lock released.
+Produced PNGs, proofs, refs all docs, transparent, no subagents. 
+#223 progressing (proofs, live demo elements, BFS, visuals with players at boundaries). Continuing bursts overnight until milestone (playable gate demo with all ACs + proofs + ready-for-close in GH/state). Then #246 river/bridge per IntegrationGuide.
+Self-review: Followed prompt strictly (MCP first, limited, runner, batch if no delta, fast auto next, lock for no interject, refs AUTONOMOUS_LOOP/LOOP_STATE/Guide/instructions/WorldEngine/Proompts/IsoVisualLoop.agent, PNGs every, transparent via state/git/PNGs/GH). Flywheel spinning fast ( <2min per + sleep, scheduler 2m with lock terminate if running). All issues defined - iterating until complete.
+
+
