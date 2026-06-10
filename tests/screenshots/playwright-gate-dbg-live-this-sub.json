@@ -7,6 +7,5 @@
   "wAfterResolveSame": true,
   "wAfterResolveThrough": true,
   "ok": false,
-  "note": "LIVE MCP @5173 (port was responding) gen fence gate from placeGatesInFenceRuns 8.5,3.5 per #223 AC + poll bg diagnosis",
-  "hasDbg": true
+  "note": "LIVE MCP @5173 gen fence gate from placeGatesInFenceRuns 8.5,3.5: locked=false, after resolve+clear through cell true per #223 AC"
 }
