@@ -161,6 +161,7 @@ interface GameState {
     speed: number;
     isMoving: boolean;
     animFrame: number;
+    sinkDepth?: number; // iso2: neg-Z sink (rivers/gates per #223 walk + AUTONOMOUS_LOOP.md)
   };
   playerVariation: CharacterVariation;
   camera: Camera;
@@ -784,6 +785,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
       speed: PLAYER_CONFIG.speed,
       isMoving: false,
       animFrame: 0,
+      sinkDepth: 0, // iso2: for negative Z (rivers) from walk integration
     },
     playerVariation,
     camera: {
@@ -1282,6 +1284,15 @@ function update(state: GameState, input: InputManager): void {
       const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./tiles').TileType] : undefined;
       const surface = footTileDef?.surface ?? 'grass';
       playFootstep(state.sfx, surface);
+
+      // iso2 sinkDepth for negative Z (rivers, from walk integration per #223)
+      // Use exact walk logic to detect if in channel
+      const currentCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
+      if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
+        state.player.sinkDepth = 4; // match iso2 nano z for sink visual
+      } else {
+        state.player.sinkDepth = 0;
+      }
     } else {
       // Wall bump SFX (#75) — debounce handles frame-spam
       playSfx(state.sfx, 'wall_bump');

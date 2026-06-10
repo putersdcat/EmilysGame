@@ -9,6 +9,12 @@
 import { test, expect, Page } from '@playwright/test';
 import { getNanoStack, hasNanoRenderer } from '../../src/nano-tile-defs';
 import { listNanoFenceStyles, listNanoWaterStyles, wallBounds, waterNanoSvg } from '../../src/nano-tile-svgs';
+import {
+  isPointWalkableInTile,
+  buildWalkableMap,
+  pointHitsWallFootprint,
+  pointHitsFenceFootprint,
+} from '../../src/nano-tile-svgs';
 import { ISO_DIAMOND_HEIGHT, ISO_DIAMOND_WIDTH, ISO_MICRO_TILE_SIZE } from '../../src/types/iso-renderer.types';
 
 const BASE_URL = 'http://localhost:5173/?test=1';
@@ -77,5 +83,35 @@ test.describe('Iso 2.0 nano main-game port', () => {
     expect(stone?.southFaceTextureSvg).toBeTruthy();
     expect(stone?.eastFaceTextureSvg).toBeTruthy();
     expect(stone?.faceSliceEqualLighting).toBe(true);
+  });
+
+  test('exact walkability port (isPointWalkableInTile + footprints + buildWalkableMap)', () => {
+    // stone wall blocks its footprint rects
+    const wallNanos = getNanoStack('stone_wall', 'straight-h') ?? [];
+    expect(pointHitsWallFootprint('straight-h', 0.5, 0.5)).toBe(true); // center of 48px strip
+    expect(isPointWalkableInTile(wallNanos, new Map(), 0.5, 0.5)).toBe(false);
+
+    // fence is thinner
+    const fenceNanos = getNanoStack('wooden_fence', 'straight-h') ?? [];
+    expect(pointHitsFenceFootprint('straight-h', 0.5, 0.5)).toBe(true);
+    expect(isPointWalkableInTile(fenceNanos, new Map(), 0.5, 0.5)).toBe(false);
+
+    // bridge is 'always' → overrides even if river under it
+    const bridgeNanos = getNanoStack('bridge', 'straight-h') ?? [];
+    const conditions = new Map<string, 'locked' | 'unlocked'>();
+    expect(isPointWalkableInTile(bridgeNanos, conditions, 0.5, 0.5)).toBe(true);
+
+    // river 'never' blocks (using the water stack which carries never-walkable nanos for the channel)
+    const riverNanos = getNanoStack('water', 'straight-h') ?? [];
+    const map = buildWalkableMap([riverNanos, [], [] /* padding for tiny map */], conditions);
+    expect(map[0]).toBe(false);
+
+    // locked gate is blocked via conditional
+    const gateLocked = getNanoStack('quiz_gate', 'straight-h') ?? [];
+    const lockedConds = new Map([['quiz-gate', 'locked' as const]]);
+    expect(isPointWalkableInTile(gateLocked, lockedConds, 0.5, 0.5)).toBe(false);
+
+    const unlockedConds = new Map([['quiz-gate', 'unlocked' as const]]);
+    expect(isPointWalkableInTile(gateLocked, unlockedConds, 0.5, 0.5)).toBe(true);
   });
 });

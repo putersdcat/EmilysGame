@@ -15,12 +15,28 @@
  */
 
 import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types.js';
+import { wallBounds } from './iso2-solver.js';
+
+// Barrel re-exports for the walkability + solver metadata port (src/iso2-solver.ts).
+// Existing call sites that did `import { wallBounds } from './nano-tile-svgs'` continue to work.
+export {
+  wallBounds,
+  pointHitsWallFootprint,
+  pointHitsFenceFootprint,
+  isPointWalkableInTile,
+  buildWalkableMap,
+  resolveCondition,
+  connectionsToBitmask,
+  bitmaskToConnections,
+  variantFromBitmask,
+  resolveVariants,
+} from './iso2-solver.js';
 import { DarkCathedralStone, StoneBrick, TimberFrameWall } from './iso2-materials.js';
 
 const MICRO_TILE_SIZE = 144;
 const LEGACY_TILE_SIZE = 128;
-const WALL_THICKNESS = 48;
-const WALL_OFFSET = (MICRO_TILE_SIZE - WALL_THICKNESS) / 2;
+// (WALL_THICKNESS / footprint constants centralized in src/iso2-solver.ts with the walkability port)
+// (WALL_OFFSET / footprint logic centralized in src/iso2-solver.ts after the walkability port)
 const LEGACY_TO_MICRO_SCALE = MICRO_TILE_SIZE / LEGACY_TILE_SIZE;
 
 // ─── Shared Procedural Material Helpers ─────────────────────────────────────
@@ -239,42 +255,9 @@ export function waterNanoSvg(variant: FeatureVariant = 'straight-h', styleId: Na
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">\n    ${parts.join('\n    ')}\n  </svg>`;
 }
 
-/** Wall footprint rects for each variant (tile-local 144×144 source space). */
-export function wallBounds(variant: FeatureVariant): { rects: Array<{ x: number; y: number; w: number; h: number }> } {
-  const W = WALL_THICKNESS;
-  const off = WALL_OFFSET;
-  const rects: Array<{ x: number; y: number; w: number; h: number }> = [];
-  const arms = { top: false, right: false, bottom: false, left: false };
-
-  switch (variant) {
-    case 'straight-h': arms.left = true;  arms.right = true;  break;
-    case 'straight-v': arms.top = true;   arms.bottom = true; break;
-    case 'corner-tr':  arms.top = true;   arms.right = true;  break;
-    case 'corner-tl':  arms.top = true;   arms.left = true;   break;
-    case 'corner-br':  arms.bottom = true; arms.right = true; break;
-    case 'corner-bl':  arms.bottom = true; arms.left = true;  break;
-    case 'cross':      arms.top = arms.right = arms.bottom = arms.left = true; break;
-    case 'tee-t':  arms.left  = arms.right  = arms.bottom = true; break;
-    case 'tee-b':  arms.left  = arms.right  = arms.top    = true; break;
-    case 'tee-r':  arms.top   = arms.bottom = arms.left   = true; break;
-    case 'tee-l':  arms.top   = arms.bottom = arms.right  = true; break;
-    case 'end-t':  arms.bottom = true; break;
-    case 'end-b':  arms.top    = true; break;
-    case 'end-r':  arms.left   = true; break;
-    case 'end-l':  arms.right  = true; break;
-    default: // isolated — central block only
-      rects.push({ x: off, y: off, w: W, h: W });
-      return { rects };
-  }
-
-  rects.push({ x: off, y: off, w: W, h: W }); // central core
-  if (arms.top)    rects.push({ x: off, y: 0,       w: W,   h: off });
-  if (arms.bottom) rects.push({ x: off, y: off + W, w: W,   h: off });
-  if (arms.left)   rects.push({ x: 0,   y: off,     w: off, h: W   });
-  if (arms.right)  rects.push({ x: off + W, y: off, w: off, h: W   });
-
-  return { rects };
-}
+// wallBounds (and the rest of the walkability/solver APIs) now come from the iso2-solver port.
+// The local definition was removed to centralize after landing the walkability vertical slice.
+// Internal callers in this file (footprintTopSvg etc.) use the imported wallBounds from the top of the file.
 
 // ─── Public SVG Generators ────────────────────────────────────────────────────
 
@@ -498,3 +481,6 @@ export function trollBridgeSvg(unlocked = false): string {
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">\n    ${parts.join('\n    ')}\n  </svg>`;
 }
+
+// Note: wallBounds and the new walkability/solver functions are re-exported at the top
+// of this file from './iso2-solver.js' (the canonical port of the experiment solver).

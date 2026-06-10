@@ -505,6 +505,11 @@ function generateGridChunk(
   // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
   placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
 
+  // Phase 5.42: place gates at fence run openings for #223 conditional walk (AUTONOMOUS_LOOP.md).
+  // Scans horiz/vert runs of fence assets (>=3), punches quiz_gate (conditional via woodenGateNano + iso2-solver isPointWalkableInTile/buildWalkableMap).
+  // Complements template gates; creates openings in perimeters/fence lines. Default locked.
+  placeGatesInFenceRuns(cells, size, seededRandom(featureSeed + 472), biome);
+
   // Phase 5.41: convert remaining door_gate → door_locked (#98)
   // door_gate cells that weren't converted to quiz_gate need to become
   // door_locked so the mechanics system can resolve them with keys.
@@ -2559,6 +2564,65 @@ function promoteDoorGates(cells: CellData[][], size: number): void {
       if (cells[y][x].assetKey === 'door_gate') {
         cells[y][x].assetKey = 'door_locked';
         cells[y][x].interactable = true;
+      }
+    }
+  }
+}
+
+/**
+ * Phase 5.42: Place quiz gates at openings in fence runs (ref #223 + AUTONOMOUS_LOOP.md).
+ * Solver-style post-process: detects continuous fence segments (wooden_fence/fence/barricade),
+ * replaces an interior cell with quiz_gate (walkable:false default; nano gets conditional 'quiz-gate').
+ * Enables exact iso2 walk (isPointWalkableInTile fence footprint + cond unlock) and BFS.
+ * Horizontal then vertical to catch perimeters.
+ */
+function placeGatesInFenceRuns(
+  cells: CellData[][],
+  size: number,
+  rng: () => number,
+  biome: BiomeDef,
+): void {
+  const w = biome.obstacleWeights ?? {};
+  if ((w['quiz_gate'] ?? 0) <= 0 && (w['fence'] ?? 0) <= 0) return;
+  const FENCE_ASSETS = ['wooden_fence', 'fence', 'barricade'];
+  const GATE = 'quiz_gate';
+  // Horizontal runs
+  for (let y = 0; y < size; y++) {
+    let start = -1;
+    for (let x = 0; x <= size; x++) {
+      const isF = x < size && FENCE_ASSETS.includes(cells[y][x]?.assetKey);
+      if (isF && start < 0) start = x;
+      if ((!isF || x === size) && start >= 0) {
+        const len = x - start;
+        if (len >= 3) {
+          const off = Math.floor(rng() * (len - 2)) + 1; // vary gate pos in run interior
+          const p = start + off;
+          const c = cells[y][p];
+          if (c && !c.npcId && !c.itemId) {
+            cells[y][p] = { assetKey: GATE, walkable: false, interactable: true };
+          }
+        }
+        start = -1;
+      }
+    }
+  }
+  // Vertical runs
+  for (let x = 0; x < size; x++) {
+    let start = -1;
+    for (let y = 0; y <= size; y++) {
+      const isF = y < size && FENCE_ASSETS.includes(cells[y]?.[x]?.assetKey);
+      if (isF && start < 0) start = y;
+      if ((!isF || y === size) && start >= 0) {
+        const len = y - start;
+        if (len >= 3) {
+          const off = Math.floor(rng() * (len - 2)) + 1;
+          const p = start + off;
+          const c = cells[p]?.[x];
+          if (c && !c.npcId && !c.itemId) {
+            cells[p][x] = { assetKey: GATE, walkable: false, interactable: true };
+          }
+        }
+        start = -1;
       }
     }
   }

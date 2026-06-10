@@ -12,6 +12,8 @@ import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';
 import { invalidateObjectCache } from './render';
+import { isPointWalkableInTile, variantFromBitmask, connectionsToBitmask } from './nano-tile-svgs';
+import { getNanoStack } from './nano-tile-defs';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -58,21 +60,84 @@ export function isWalkable(
  * Check if the player's collision footprint (axis-aligned rectangle) is fully
  * walkable at position (px, py). Samples all four corners of the footprint
  * to prevent walk-through on any approach direction (#151, #180).
+ * Enhanced for Iso 2.0: uses exact point walk for nano features (walls, fences, rivers, gates)
+ * to allow sliding along partial footprints and respect conditional/negative Z.
  */
 export function isFootprintWalkable(
   px: number,
   py: number,
   chunks: Map<string, ChunkData>,
+  conditions: Map<string, 'locked' | 'unlocked'> = new Map(),
 ): boolean {
   const hw = PLAYER_CONFIG.collisionHalfW;
   const hh = PLAYER_CONFIG.collisionHalfH;
-  // Check all four corners of the collision rectangle
+  // Check all four corners of the collision rectangle using enhanced position check
   return (
-    isWalkable(Math.floor(px - hw), Math.floor(py - hh), chunks) &&
-    isWalkable(Math.floor(px + hw), Math.floor(py - hh), chunks) &&
-    isWalkable(Math.floor(px - hw), Math.floor(py + hh), chunks) &&
-    isWalkable(Math.floor(px + hw), Math.floor(py + hh), chunks)
+    isPositionWalkable(px - hw, py - hh, chunks, conditions) &&
+    isPositionWalkable(px + hw, py - hh, chunks, conditions) &&
+    isPositionWalkable(px - hw, py + hh, chunks, conditions) &&
+    isPositionWalkable(px + hw, py + hh, chunks, conditions)
   );
+}
+
+const assetToNanoKind: Record<string, string> = {
+  'stone_wall': 'stone-wall',
+  'homestead_wall': 'homestead-wall',
+  'cathedral_wall': 'cathedral-wall',
+  'wooden_fence': 'fence',
+  'barricade': 'fence',
+  'quiz_gate': 'gate',
+  'door_locked': 'gate',
+  'water': 'river',
+  'bridge': 'bridge',
+  'troll_bridge': 'troll-bridge',
+};
+
+function getNanoKindForAsset(assetKey: string): string | null {
+  return assetToNanoKind[assetKey] || null;
+}
+
+function isPositionWalkable(
+  px: number,
+  py: number,
+  chunks: Map<string, ChunkData>,
+  conditions: Map<string, 'locked' | 'unlocked'> = new Map(),
+): boolean {
+  const size = WORLD_CONFIG.chunkSize;
+  const cx = Math.floor(px / size);
+  const cy = Math.floor(py / size);
+  const key = `${cx},${cy}`;
+  const chunk = chunks.get(key);
+  if (!chunk) return true;
+
+  const lx = Math.floor(px - cx * size);
+  const ly = Math.floor(py - cy * size);
+  if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
+
+  const cell = chunk.cells[ly][lx];
+  const nanoKind = getNanoKindForAsset(cell.assetKey);
+  if (nanoKind) {
+    // Infer variant from 4-dir neighbors (same assetKey for continuous)
+    const neighbors: any = { top: false, right: false, bottom: false, left: false };
+    const check = (dx: number, dy: number, dir: string) => {
+      const nx = lx + dx, ny = ly + dy;
+      if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
+        if (chunk.cells[ny][nx].assetKey === cell.assetKey) (neighbors as any)[dir] = true;
+      }
+    };
+    check(0, -1, 'top');
+    check(1, 0, 'right');
+    check(0, 1, 'bottom');
+    check(-1, 0, 'left');
+    const variant = variantFromBitmask(connectionsToBitmask(neighbors));
+    const stack = getNanoStack(cell.assetKey as any, variant);
+    if (stack && stack.length > 0) {
+      const localColFrac = px - Math.floor(px);
+      const localRowFrac = py - Math.floor(py);
+      return isPointWalkableInTile(stack, conditions, localColFrac, localRowFrac);
+    }
+  }
+  return cell.walkable;
 }
 
 /**
