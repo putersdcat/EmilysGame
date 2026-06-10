@@ -147,19 +147,11 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
     debug.invalidateRenderCaches();
   });
 
-  // After unlock, keyboard + direct advance past gate row to demonstrate successful walk (the isFootprint using iso2 isPoint + cond now allows crossing the fence gate)
+  // After unlock, use keyboard movement to demonstrate successful walk (the isFootprint using iso2 isPoint + cond now allows crossing the fence gate). 
+  // The dedicated capture test below provides the clear visual PNG proof of player on the south side after unlock (for human + vision assessment).
   await page.keyboard.press('s');
   await page.keyboard.press('ArrowDown');
-  await page.waitForTimeout(500);
-  await page.evaluate(() => {
-    const debug = (window as any).__gameDebug;
-    const state = debug.state;
-    if (state.player.y < 3.5) state.player.y = 4.5; // cross the gate row
-    state.camera.y = state.player.y; // follow so unlocked view shows player south of the gate line
-    debug.invalidateRenderCaches();
-  });
-
-  await page.waitForTimeout(1200); // give renderer time to pick up new player y and camera for clear visual delta in PNG
+  await page.waitForTimeout(800);
 
   const unlockedPos = await page.evaluate(() => {
     const p = (window as any).__gameDebug.state.player;
@@ -167,8 +159,8 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   });
   await canvas.screenshot({ path: 'tests/screenshots/player-at-unlocked-gate.png' });
 
-  // Live gameplay exercised (keyboard + cond unlock at fence gate boundary from placer logic; direct pos after unlock shows the walk now allowed by exact footprint + cond).
-  // Screenshots capture player at locked vs unlocked positions. Unit BFS test + these visuals prove can't-locked/can-unlocked per #223 + AUTONOMOUS_LOOP.md.
+  // Live gameplay exercised (keyboard moves + cond unlock at fence gate boundary from placer logic; the walk is now allowed by exact footprint + cond).
+  // Screenshots capture player at locked vs unlocked positions (visual delta in dedicated capture test). Unit BFS test + these visuals prove can't-locked/can-unlocked per #223 + AUTONOMOUS_LOOP.md.
   console.log('lockedPos', lockedPos, 'unlockedPos', unlockedPos);
 });
 
