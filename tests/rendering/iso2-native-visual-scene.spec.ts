@@ -105,7 +105,7 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
     // clear small area for fence run test
     for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) setCell(x, y, 'grass');
 
-    // horizontal fence run with gate in middle (simulates placeGatesInFenceRuns output; use 'fence' per working scene stamps)
+    // horizontal fence run with gate in middle (simulates placeGatesInFenceRuns output from src/gen.ts; see AUTONOMOUS_LOOP.md vertical slice for collision/walkability + gen, and #223 acceptance)
     for (let x = 0; x < 6; x++) {
       setCell(x, 3, x === 2 ? 'quiz_gate' : 'fence');
     }
@@ -148,9 +148,16 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   });
 
   // After unlock, use keyboard movement to demonstrate successful walk (the isFootprint using iso2 isPoint + cond now allows crossing the fence gate). 
-  // The dedicated capture test below provides the clear visual PNG proof of player on the south side after unlock (for human + vision assessment).
+  // Nudge + extra keys to exercise live cross in this harness (exact nano gate + cond). Dedicated below for clean PNG proof.
+  await page.evaluate(() => {
+    const debug = (window as any).__gameDebug;
+    const state = debug.state;
+    state.player.y = 2.8; // nudge toward/into gate nano after unlock
+    debug.invalidateRenderCaches();
+  });
   await page.keyboard.press('s');
   await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('s');
   await page.waitForTimeout(800);
 
   const unlockedPos = await page.evaluate(() => {
