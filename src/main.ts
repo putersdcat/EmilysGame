@@ -187,6 +187,8 @@ interface GameState {
   pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
   // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
   pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
+  // Active conditions for iso2 conditional walkables (e.g. 'quiz-gate' locked/unlocked per #223 + AUTONOMOUS_LOOP.md)
+  activeConditions: Map<string, 'locked' | 'unlocked'>;
   // NPC trading state
   trade: TradeState;
   // Pending trade to open after dialog closes (NPC persona id)
@@ -811,6 +813,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     lastChunkY: Math.floor(startY / size),
     pendingQuiz: null,
     pendingGateQuiz: null,
+    activeConditions: new Map([['quiz-gate', 'locked' as const]]),
     trade: createTradeState(),
     pendingTrade: null,
     status: createPlayerStatus(),
@@ -1034,6 +1037,8 @@ function update(state: GameState, input: InputManager): void {
           if (state.pendingGateQuiz) {
             const g = state.pendingGateQuiz;
             resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
+            // iso2: unlock cond so isPointWalkableInTile / buildWalkableMap see passable (supports cond path + morph to door_open)
+            state.activeConditions.set('quiz-gate', 'unlocked');
             state.pendingGateQuiz = null;
             addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
             playSfx(state.sfx, 'gate_open');
@@ -1258,21 +1263,22 @@ function update(state: GameState, input: InputManager): void {
 
     // Axis-independent collision resolution with footprint (#151, #180)
     // Try combined move first; if blocked, try each axis independently (wall-sliding)
+    // iso2: pass activeConditions so conditional gates (quiz-gate etc) use isPointWalkableInTile + cond state (per #223/AUTONOMOUS_LOOP.md)
     let movedX = false;
     let movedY = false;
-    if (isFootprintWalkable(newX, newY, state.chunks)) {
+    if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
       state.player.x = newX;
       state.player.y = newY;
       movedX = true;
       movedY = true;
     } else {
       // Try X-only
-      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks)) {
+      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
         state.player.x = newX;
         movedX = true;
       }
       // Try Y-only
-      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks)) {
+      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
         state.player.y = newY;
         movedY = true;
       }

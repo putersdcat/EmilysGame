@@ -114,4 +114,49 @@ test.describe('Iso 2.0 nano main-game port', () => {
     const unlockedConds = new Map([['quiz-gate', 'unlocked' as const]]);
     expect(isPointWalkableInTile(gateLocked, unlockedConds, 0.5, 0.5)).toBe(true);
   });
+
+  test('fence perimeter + gate run placement BFS (main port of #223: locked blocks, unlocked opens path; uses buildWalkableMap + our gen placer semantics)', () => {
+    // Simulate fence run perimeter with gate at "south" (like placeGatesInFenceRuns + getNanoStack for quiz_gate/fence)
+    const FENCE = getNanoStack('wooden_fence', 'straight-h') ?? [];
+    const GATE = getNanoStack('quiz_gate', 'straight-h') ?? [];
+    const N = 5;
+    const nanosPerTile: Array<readonly any[]> = Array(N*N).fill([]);
+    // perimeter fence
+    for (let i=0; i<N; i++) {
+      nanosPerTile[0*N + i] = FENCE; // top row
+      nanosPerTile[(N-1)*N + i] = (i===2 ? GATE : FENCE); // bottom row, gate at col 2 (opening)
+      if (i>0 && i<N-1) {
+        nanosPerTile[i*N + 0] = FENCE; // left
+        nanosPerTile[i*N + (N-1)] = FENCE; // right
+      }
+    }
+    // interior open
+    for (let r=1; r<N-1; r++) for (let c=1; c<N-1; c++) nanosPerTile[r*N + c] = [];
+
+    const lockedMap = buildWalkableMap(nanosPerTile, new Map([['quiz-gate','locked' as const]]));
+    const unlockedMap = buildWalkableMap(nanosPerTile, new Map([['quiz-gate','unlocked' as const]]));
+
+    // Simple BFS on the map (port of exp gate-bridge test logic)
+    function findPath(map: readonly boolean[], start: number, goal: number): number[] | null {
+      const q: number[][] = [[start]]; const seen = new Set([start]);
+      const dirs = [[1,0],[-1,0],[0,1],[0,-1]] as const;
+      while (q.length) {
+        const p = q.shift()!; const cur = p[p.length-1];
+        if (cur === goal) return p;
+        const col = cur % N, row = Math.floor(cur / N);
+        for (const [dc,dr] of dirs) {
+          const nc = col+dc, nr = row+dr;
+          if (nc<0||nc>=N||nr<0||nr>=N) continue;
+          const nxt = nr*N + nc;
+          if (!map[nxt] || seen.has(nxt)) continue;
+          seen.add(nxt); q.push([...p, nxt]);
+        }
+      }
+      return null;
+    }
+    const start = 2*N + 2; // center interior
+    const goal = (N-1)*N + 2; // the gate cell
+    expect(findPath(lockedMap, start, goal)).toBeNull(); // cannot exit through locked gate in fence run
+    expect(findPath(unlockedMap, start, goal)).not.toBeNull(); // can after unlock
+  });
 });
