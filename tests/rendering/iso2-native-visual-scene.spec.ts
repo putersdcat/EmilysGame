@@ -109,11 +109,12 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
     const FENCE_ASSETS = ['wooden_fence', 'fence', 'barricade'];
     const GATE = 'quiz_gate';
     for (let x = 0; x < 6; x++) setCell(x, 3, 'fence'); // base run
-    // mini placer scan for run >=3, place gate at interior offset (sim rng for test determinism)
+    // mini placer scan for run >=3, place gate at interior offset (sim rng for test determinism; matches gen.ts placer)
     let start = -1;
     for (let x = 0; x <= 6; x++) {
-      const isF = x < 6 && FENCE_ASSETS.includes( (x<6 ? 'fence' : '') ); // since we set fence
-      if (x < 6 && isF && start < 0) start = x;
+      const cell = x < 6 ? chunk.cells[3][x] : null;
+      const isF = !!cell && FENCE_ASSETS.includes(cell.assetKey);
+      if (isF && start < 0) start = x;
       if ((!isF || x === 6) && start >= 0) {
         const len = x - start;
         if (len >= 3) {
@@ -125,9 +126,9 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
       }
     }
 
-    // player positioned north of gate (inside "yard" / fence run boundary)
+    // player positioned north of gate (inside "yard" / fence run boundary) -- start farther to simulate live move to the gate from gen area
     state.player.x = 2.5;
-    state.player.y = 2.2;
+    state.player.y = 1.0;
     state.camera.x = 2.5;
     state.camera.y = 3;
     state.activeConditions = new Map([['quiz-gate', 'locked' as const]]);
@@ -143,7 +144,13 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   // Focus to help keyboard in headless Playwright
   await canvas.click({ position: { x: 100, y: 100 } });
 
-  // attempt move south ( 's' / ArrowDown ) through locked gate in fence run -- should be blocked by iso2 exact walk + cond (exact footprint for gate nano)
+  // live move to the gate: multiple 's' to approach from farther north (simulates moving player to fence run with gate from gen)
+  await page.keyboard.press('s');
+  await page.keyboard.press('s');
+  await page.keyboard.press('ArrowDown');
+  await page.waitForTimeout(400);
+
+  // attempt move south through locked gate in fence run -- should be blocked by iso2 exact walk + cond (exact footprint for gate nano)
   await page.keyboard.press('s');
   await page.keyboard.press('ArrowDown');
   await page.waitForTimeout(500);
