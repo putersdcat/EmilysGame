@@ -156,3 +156,13 @@ Self-review: Followed prompt (MCP first, read limited, runner for cycle, limited
 Lock released at end.
 
 
+
+
+**Flywheel update (this scheduled burst, 2m interval + lock + internal auto-loop):** 
+- Scheduler now 2m (was 30m) with prompt that checks lock at VERY START: if /tmp/iso2_cycle.lock recent (<10min), terminate fire early ('existing running, no interject, timer continues'). Touch lock, run TIGHT INTERNAL LOOP (5-10 sub-cycles or ~10min or milestone): read AUTONOMOUS_LOOP limited each sub, invoke runner (health/visuals/capture/PW/state), MCP (small perPage), GH short comment, batch if no delta, sleep 5s, auto next turn immediately. At end of all: rm lock.
+- This execution: lock acquired (no prior), runner x2 + sleeps (auto-triggered), fresh AiTools PNGs (player boundaries 198kB+), capture, PW (core #223 validated), MCP list/read (#223 OPEN 72 comms, #246 OPEN), GH added. No code edits (anti-rep, low delta). 
+- Transparent: all main thread, limited outputs, state/git/PNGs/GH updated. Refs AUTONOMOUS_LOOP/LOOP_STATE/Guide/instructions/WorldEngine. 
+- #223 progress: proofs/visuals/live elements advancing (BFS, boundaries, gen gate). Continuing bursts overnight until explicit milestone ('playable iso2 gate demo done with proofs, visuals committed, #223 ready for close' in state/GH). Then #246 etc.
+- Self-review: Addresses timing perfectly - fast auto next (internal + short scheduler), no 30m wait, lock prevents interject/overlap (terminate fire if running). Flywheel spinning: when free, near-continuous <2min turns + sleep. All issues/docs covered. Produced PNGs. No subagents.
+
+
