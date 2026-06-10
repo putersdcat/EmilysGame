@@ -1,0 +1,12 @@
+{
+  "pos": [
+    8.5,
+    3.5
+  ],
+  "wLocked": false,
+  "wAfterResolveSame": false,
+  "wAfterResolveThrough": true,
+  "ok": true,
+  "timeMs": 0,
+  "note": "LIVE MCP followup @5173 gen fence gate 8.5,3.5: locked false, after resolve+explicit clear checked same+through cell"
+}

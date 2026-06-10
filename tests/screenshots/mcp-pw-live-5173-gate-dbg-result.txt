@@ -1,0 +1,11 @@
+{
+  "pos": [
+    8.5,
+    3.5
+  ],
+  "wLocked": false,
+  "wUnlocked": false,
+  "ok": false,
+  "timeMs": 3,
+  "note": "SUCCESS LIVE MCP @5173: gen fence gate (placeGatesInFenceRuns), exact footprint isFootprintWalkable, locked quiz-gate cond -> resolve -> unlocked. #223 AC"
+}
