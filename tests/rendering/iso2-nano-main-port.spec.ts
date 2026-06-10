@@ -169,15 +169,16 @@ test.describe('Iso 2.0 nano main-game port', () => {
     await page.waitForTimeout(80);
     const ok = await page.evaluate(() => {
       const dbg = (window as any).__gameDebug;
-      // "move player to fence run with gate (from gen)" area (central skip means sim cond; outer chunks get real placed gates from placer)
+      // "move player to fence run with gate (from gen)" area (central skip means sim cond for reliable central test; outer chunks get real placed gates from placer per gen.ts)
       dbg.setPlayerPosition(8.5, 3.5);
       dbg.setActiveCondition('quiz-gate', 'locked');
-      // assert cannot walk locked (exact footprint)
+      // assert cannot walk locked (use exact footprint)
       const w1 = dbg.isFootprintWalkable(8.5, 3.5);
       // trigger quiz (or simulate unlock) + resolveCondition
       dbg.resolveQuizGateSim();
       const w2 = dbg.isFootprintWalkable(8.5, 3.5);
-      return typeof w1 === 'boolean' && typeof w2 === 'boolean';
+      // stricter: locked blocks, unlocked allows (proxy for gate footprint walk)
+      return typeof w1 === 'boolean' && typeof w2 === 'boolean' && w1 === false && w2 === true;
     });
     expect(ok).toBe(true);
     // Live engine fired with #223 wiring (player uses footprint + conds from iso2-solver/mechanics, resolve unlocks). Visuals (players at boundaries) from AiTools gate/fence renders + capture screenshot.
