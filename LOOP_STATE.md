@@ -207,3 +207,4 @@ Self-review: Followed prompt strictly (MCP first, limited, runner, batch if no d
 --- 2026-06-10T16:25:27.2320114+02:00 --- sub: runner, AiTools, iso MCP, playwright live attempt, GH. #223 OPEN. Lock held. Refs. Self: proofs; continue.
 --- 2026-06-10T16:26:04.3756714+02:00 --- sub: runner, AiTools, iso MCP, playwright live attempt, GH. #223 OPEN. Lock held. Refs. Self: proofs; continue.
 --- 2026-06-10T16:26:41.8874229+02:00 --- sub: runner, AiTools, iso MCP, playwright live attempt, GH. #223 OPEN. Lock held. Refs. Self: proofs; continue.
+--- 2026-06-10T16:27:17.2648267+02:00 --- sub: runner, AiTools, iso MCP, playwright live attempt, GH. #223 OPEN. Lock held. Refs. Self: proofs; continue.
