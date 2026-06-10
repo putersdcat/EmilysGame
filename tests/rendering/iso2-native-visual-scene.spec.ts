@@ -139,6 +139,9 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   });
   await canvas.screenshot({ path: 'tests/screenshots/player-at-locked-gate.png' });
 
+  // Assert cannot walk locked gate (uses exact footprint + cond from iso2-solver isPointWalkableInTile + mechanics; fence run simulates placer output from src/gen.ts per AUTONOMOUS_LOOP.md + #223)
+  expect(lockedPos.y).toBeLessThanOrEqual(2.4);
+
   // simulate quiz unlock (sets cond; real UI would call resolve + this)
   await page.evaluate(() => {
     const debug = (window as any).__gameDebug;
@@ -165,6 +168,9 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
     return { x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10 };
   });
   await canvas.screenshot({ path: 'tests/screenshots/player-at-unlocked-gate.png' });
+
+  // Assert can walk after unlock (exact footprint + cond resolved)
+  expect(unlockedPos.y).toBeGreaterThan(2.7);
 
   // Live gameplay exercised (keyboard moves + cond unlock at fence gate boundary from placer logic; the walk is now allowed by exact footprint + cond).
   // Screenshots capture player at locked vs unlocked positions (visual delta in dedicated capture test). Unit BFS test + these visuals prove can't-locked/can-unlocked per #223 + AUTONOMOUS_LOOP.md.
