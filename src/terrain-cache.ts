@@ -187,8 +187,8 @@ export function drawCachedChunkTerrain(
   cameraY: number,
   allChunks?: Map<string, ChunkData>,
 ): void {
-  // Minor walkableMap wire call (gates/fence from gen + iso2-solver): ensures cache path has up-to-date map for #223.
-  // (resolveCondition later flips for unlocked gates per live test.)
+  // Minor walkableMap wire (using buildWalkableMap + nanos from getNanoStack for chunks with gates per AUTONOMOUS_LOOP.md + #223).
+  // Ensures cache path has up-to-date map (resolveCondition flips for unlocked). Uses chunk.activeConditions if present for per-condition ids.
   ensureChunkWalkableMap(chunk);
   // Chunk's world-space origin (cell 0,0 of this chunk in grid coords)
   const chunkGX = chunk.chunkX * SIZE;

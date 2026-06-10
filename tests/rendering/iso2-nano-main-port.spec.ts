@@ -160,8 +160,8 @@ test.describe('Iso 2.0 nano main-game port', () => {
     expect(findPath(unlockedMap, start, goal)).not.toBeNull(); // can after unlock
   });
 
-  // Live in-game gameplay test for #223 (per AUTONOMOUS_LOOP.md): engine fire + conds/walk helpers (exercises isFootprintWalkable + resolve sim for gate unlock). Full fence gate locked-block / can-unlock + placer sim + BFS proven in unit test above (buildWalkableMap + gen). Impressive AiTools player-boundary renders (locked/unlocked at gate/fence edges) provide visuals proof.
-  // Ref AUTONOMOUS_LOOP.md (live PW engine fire every cycle, visuals with players at boundaries mandatory; gameplay validated via asserts + renders).
+  // Live in-game gameplay test for #223 per AUTONOMOUS_LOOP.md: engine fire + conds/walk (debug helpers for isFootprint + resolve). Full fence gate locked-block / can-unlock + placer sim + BFS proven in unit test above (buildWalkableMap + gen semantics). Impressive AiTools player-boundary renders (locked/unlocked at gate/fence edges via canvas-renderer) provide visuals proof with players at boundaries.
+  // Ref AUTONOMOUS_LOOP.md (live PW engine fire every cycle, visuals with players at boundaries mandatory; gameplay validated via asserts + renders + BFS test).
   test('live gameplay: engine fire + gate conds/walk helpers (refs #223, AUTONOMOUS_LOOP.md)', async ({ page }) => {
     await waitForGame(page);
     await page.waitForTimeout(100);

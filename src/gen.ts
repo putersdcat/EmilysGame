@@ -508,7 +508,11 @@ function generateGridChunk(
   // Phase 5.42: place gates at fence run openings for #223 conditional walk (AUTONOMOUS_LOOP.md).
   // Scans horiz/vert runs of fence assets (>=3), punches quiz_gate (conditional via woodenGateNano + iso2-solver isPointWalkableInTile/buildWalkableMap).
   // Complements template gates; creates openings in perimeters/fence lines. Default locked.
-  placeGatesInFenceRuns(cells, size, seededRandom(featureSeed + 472), biome);
+  // Skip for very central starting chunks (using chunkX/chunkY) so the player can move freely at game start (playability).
+  // Features will appear in nearby chunks for exploration and the live gate/quiz mechanics per AUTONOMOUS_LOOP.md.
+  if (Math.abs(chunkX) > 1 || Math.abs(chunkY) > 1) {
+    placeGatesInFenceRuns(cells, size, seededRandom(featureSeed + 472), biome);
+  }
 
   // Phase 5.41: convert remaining door_gate → door_locked (#98)
   // door_gate cells that weren't converted to quiz_gate need to become
