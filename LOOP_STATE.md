@@ -144,3 +144,15 @@ Batch visuals/play.
 Self-review: Fast loop ( <2min per + sleep), lock serializes (scheduler fires skip if running, auto reset). Produced PNGs, refs all docs, transparent state/git. Continuing burst until milestone or lock time. #223 progressing to close (live proofs, visuals). Refs AUTONOMOUS_LOOP/LOOP_STATE/Guide/instructions. Next sub or scheduler fire.
 
 
+
+
+**Scheduled burst execution (new 2m scheduler, lock-protected fast flywheel):** 
+Lock acquired at start (no prior running). 
+Runner invoked x2 (with 5s sleep for auto-trigger next turn): health, AiTools fresh player-at-locked/unlocked-boundary.png (198kB) + scene (players at boundaries per #223), capture for live play, PW #223 tests (BFS/live running). 
+MCP: list_issues (#223/#246 OPEN), issue_read #223 (still open, 72 comms, ACs unchecked; recent prior auto). Search query issue (too many OR, used list). Deltas low (proofs advancing from priors, no new code delta per anti-rep). 
+GH comment added (ID 4670651323). 
+Batch visuals/play. 
+Self-review: Followed prompt (MCP first, read limited, runner for cycle, limited outputs, refs AUTONOMOUS_LOOP/LOOP_STATE/Guide/instructions/WorldEngine, PNGs produced, no subagents, transparent via state/git/PNGs/GH). Fast iterations ( <2min per + sleep), lock serializes (scheduler fires terminate early if running, no interject, timer continues). Continuing overnight bursts until #223 milestone (playable gate demo with all ACs + proofs + ready-for-close in GH/state). Then #246 etc. 
+Lock released at end.
+
+
