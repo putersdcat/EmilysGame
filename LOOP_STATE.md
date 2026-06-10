@@ -191,3 +191,4 @@ Self-review: Followed prompt strictly (MCP first, limited, runner, batch if no d
 
 
 --- 2026-06-10T15:38:00.2368449+02:00 --- burst complete: test edit for reliable live (helpers exercised; strict+PNG+unit cover AC live/BFS per #223); runner+AiTools+PW+GH+git+5s internal+lock release done. Flywheel ready (next scheduler fire or manual will see updated test + fresh proofs). Milestone lang used. Refs AUTONOMOUS_LOOP.
+--- 2026-06-10T15:43:50.3409893+02:00 --- microsoft/playwright-mcp config received and actioned: used PW browser interactive (capture starts dev + launches browser + navigates + live game screenshots; AiTools for player boundary visuals at fence gate; live dbg test code executed in runner). #223 proofs updated. Lock released. Flywheel continues.
