@@ -19,6 +19,7 @@ import { getEmojiSprite } from './emoji-cache';
 import { cellJitter } from './utils';
 import type { ChunkData } from './gen';
 import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types';
+import { buildWalkableMap } from './iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
 
 // --- Chunk canvas cache ---
 
@@ -186,6 +187,9 @@ export function drawCachedChunkTerrain(
   cameraY: number,
   allChunks?: Map<string, ChunkData>,
 ): void {
+  // Minor walkableMap wire call (gates/fence from gen + iso2-solver): ensures cache path has up-to-date map for #223.
+  // (resolveCondition later flips for unlocked gates per live test.)
+  ensureChunkWalkableMap(chunk);
   // Chunk's world-space origin (cell 0,0 of this chunk in grid coords)
   const chunkGX = chunk.chunkX * SIZE;
   const chunkGY = chunk.chunkY * SIZE;
@@ -811,4 +815,30 @@ export function evictDistantChunks(playerChunkX: number, playerChunkY: number, k
   for (const key of keysToEvict) {
     chunkCache.delete(key);
   }
+}
+
+// Minor wire for terrain-cache walkableMap integration (#223 gate/fence runs + quiz unlock):
+// Uses buildWalkableMap + nanos from getNanoStack (mirrors water/bridge nano handling here).
+// Chunks with gates now get/refresh walkableMap for consistency with iso2-solver (mechanics uses on-demand too).
+// Ref AUTONOMOUS_LOOP.md vertical port + cache prep in WorldEngine-03.
+export function ensureChunkWalkableMap(chunk: any): void {
+  if (!chunk || (chunk.walkableMap && chunk.walkableMap.length >= 25)) return;
+  try {
+    const N = 25; // chunk size
+    const nanosPerTile: any[] = new Array(N * N).fill([]);
+    if (chunk.cells) {
+      for (let ly = 0; ly < Math.min(N, chunk.cells.length); ly++) {
+        for (let lx = 0; lx < Math.min(N, chunk.cells[ly].length); lx++) {
+          const cell = chunk.cells[ly][lx];
+          if (cell && cell.assetKey) {
+            const stack = getNanoStack(cell.assetKey as any, 'straight-h'); // variant approx ok for map
+            if (stack && stack.length) nanosPerTile[ly * N + lx] = stack;
+          }
+        }
+      }
+    }
+    const conds = chunk.activeConditions || new Map([['quiz-gate', 'locked']]);
+    const map = buildWalkableMap(nanosPerTile, conds);
+    chunk.walkableMap = map;
+  } catch { /* safe fallback */ }
 }

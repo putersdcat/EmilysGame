@@ -3181,6 +3181,8 @@ async function main(): Promise<void> {
   );
 
   // Debug hooks for testing (available via window.__gameDebug)
+  // Refs: #223 live gate gameplay (player can't walk locked fence-run gate / can after unlock), isFootprint exact + conds from iso2-solver/mechanics,
+  // AUTONOMOUS_LOOP.md (live Playwright test + visuals with players at boundaries mandatory).
   (window as any).__gameDebug = {
     setTimeOfDay,
     getCycleProgress,
@@ -3200,6 +3202,11 @@ async function main(): Promise<void> {
     // Asset/biome metadata (#58)
     getAssetDefs: () => ASSET_DEFS,
     getBiomeDefs: () => BIOME_DEFS,
+    // #223 live gameplay test helpers (per AUTONOMOUS_LOOP.md): exact walk + gate conds + player pos for fence run gate locked/unlock
+    isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks, state.activeConditions),
+    setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },
+    setActiveCondition: (id: string, val: 'locked' | 'unlocked') => { state.activeConditions.set(id, val); },
+    resolveQuizGateSim: () => { state.activeConditions.set('quiz-gate', 'unlocked'); },
     // Status helpers (#70)
     getDebuffs: () => getDebuffs(state.status),
     getDebuffVisuals: getDebuffVisualsState,
