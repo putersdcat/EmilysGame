@@ -84,7 +84,7 @@ export { placeQuizGates, placeBonfires, placeGatesInFenceRuns, promoteDoorGates,
 // countWalkableNeighbors was moved to world/GridUtils.ts (slice 5). Re-export kept
 // for backward compat (consumed via the public engine/gen surface by other tools/tests).
 export { countWalkableNeighbors } from './world/GridUtils';
-import { traversalCompatible, weightedSelectTemplate, findTerminator } from './world/WorldUnitSolver';
+import { traversalCompatible, weightedSelectTemplate, findTerminator, validateCornerGovernance } from './world/WorldUnitSolver';
 import {
   edgesCompatible,
   getAllRotations,
@@ -539,78 +539,9 @@ const MAX_PROPAGATION_ITERATIONS = 1000;
 // Imported above; used by propagateAC3, propagateAC3Partial, and collapse logic.
 
 // --- Corner Governance (#42) ---
-// At most 2 distinct surface types may meet at any corner junction point.
-
-function getCornerSurface(cellType: string): string {
-  return MICRO_TILE_DEFS[cellType as TileType]?.surface ?? 'grass';
-}
-
-function validateCornerGovernance(
-  candidate: RotatedTemplate,
-  gy: number,
-  gx: number,
-  slots: SlotState[][],
-): boolean {
-  // This slot participates in up to 4 corner junctions.
-  // For each junction, collect surface types from collapsed neighbors + candidate.
-  // Junction (jy, jx): top-left=SE, top-right=SW, bot-left=NE, bot-right=NW
-  const checks: Array<{
-    mySurface: string;
-    neighbors: Array<{ sy: number; sx: number; corner: 'nw' | 'ne' | 'sw' | 'se' }>;
-  }> = [
-    // This slot is top-left → contributes SE corner
-    {
-      mySurface: getCornerSurface(candidate.cornerCells.se),
-      neighbors: [
-        { sy: gy, sx: gx + 1, corner: 'sw' },
-        { sy: gy + 1, sx: gx, corner: 'ne' },
-        { sy: gy + 1, sx: gx + 1, corner: 'nw' },
-      ],
-    },
-    // This slot is top-right → contributes SW corner
-    {
-      mySurface: getCornerSurface(candidate.cornerCells.sw),
-      neighbors: [
-        { sy: gy, sx: gx - 1, corner: 'se' },
-        { sy: gy + 1, sx: gx - 1, corner: 'ne' },
-        { sy: gy + 1, sx: gx, corner: 'nw' },
-      ],
-    },
-    // This slot is bottom-left → contributes NE corner
-    {
-      mySurface: getCornerSurface(candidate.cornerCells.ne),
-      neighbors: [
-        { sy: gy - 1, sx: gx, corner: 'se' },
-        { sy: gy - 1, sx: gx + 1, corner: 'sw' },
-        { sy: gy, sx: gx + 1, corner: 'nw' },
-      ],
-    },
-    // This slot is bottom-right → contributes NW corner
-    {
-      mySurface: getCornerSurface(candidate.cornerCells.nw),
-      neighbors: [
-        { sy: gy - 1, sx: gx - 1, corner: 'se' },
-        { sy: gy - 1, sx: gx, corner: 'sw' },
-        { sy: gy, sx: gx - 1, corner: 'ne' },
-      ],
-    },
-  ];
-
-  for (const check of checks) {
-    const surfaces = new Set<string>([check.mySurface]);
-    let hasCollapsedNeighbor = false;
-    for (const { sy, sx, corner } of check.neighbors) {
-      if (sy < 0 || sy >= GRID_DIM || sx < 0 || sx >= GRID_DIM) continue;
-      const slot = slots[sy][sx];
-      if (!slot.collapsed) continue;
-      hasCollapsedNeighbor = true;
-      surfaces.add(getCornerSurface(slot.collapsed.cornerCells[corner]));
-    }
-    // Only enforce if at least one neighbor is collapsed (otherwise no constraint yet)
-    if (hasCollapsedNeighbor && surfaces.size > 2) return false;
-  }
-  return true;
-}
+// `getCornerSurface` + `validateCornerGovernance` moved to
+// ./world/WorldUnitSolver.ts (B3 micro-slice 8.2 / #253).
+// Imported above; used by collapseAllMRV.
 
 function solveWorldUnitGrid(
   biome: BiomeDef,
@@ -918,7 +849,7 @@ function collapseAllMRV(
     if (slot.candidates.length > 0) {
       // Filter by corner governance first; fall back to unfiltered if all rejected
       const governed = slot.candidates.filter(c =>
-        validateCornerGovernance(c.template, bestY, bestX, slots),
+        validateCornerGovernance(c.template, bestY, bestX, slots, GRID_DIM),
       );
       slot.collapsed = weightedSelectTemplate(
         governed.length > 0 ? governed : slot.candidates, rng,
