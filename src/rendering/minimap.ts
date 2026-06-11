@@ -10,7 +10,7 @@
 import { WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getBiome } from '../config/biomes.config';
-import type { ChunkData } from '../gen';
+import type { ChunkData } from '../engine/gen';
 
 // --- Config ---
 

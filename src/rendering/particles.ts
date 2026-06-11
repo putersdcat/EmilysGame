@@ -10,7 +10,7 @@ import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { PARTICLE_CAPS, PARTICLE_LIMITS, getEffectiveSpawnRate } from '../config/particles.config';
 import { getTimeOfDay } from './lighting';
 import type { Camera } from './render';
-import type { ChunkData } from '../gen';
+import type { ChunkData } from '../engine/gen';
 
 // ─── Types ──────────────────────────────────────────────────
 

@@ -15,7 +15,7 @@ import {
   initSampledSfx, hasSample, playSample, preloadAllSamples,
   type ActiveSampleSource,
 } from './sampled-sfx';
-import { isTestMode } from '../../llm';
+import { isTestMode } from '../../engine/llm';
 
 // ─── Types ──────────────────────────────────────────────────
 

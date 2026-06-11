@@ -16,7 +16,7 @@ import {
   type IsoFeatureConnections as FeatureConnections,
   type IsoFeatureVariant as FeatureVariant,
   type IsoNanoTile as NanoTile,
-} from './types/iso-renderer.types.js';
+} from '../types/iso-renderer.types.js';
 
 // ─── Constants (must stay in sync with wall geometry in nano-tile.ts and experiment) ──
 

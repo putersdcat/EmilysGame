@@ -16,10 +16,10 @@ import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVar
 import { drawNanoStack } from './nano-tile';
 import { getNanoStack } from './nano-tile-defs';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
-import { cellJitter } from '../utils';
-import type { ChunkData } from '../gen';
+import { cellJitter } from '../engine/utils';
+import type { ChunkData } from '../engine/gen';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
-import { buildWalkableMap } from '../iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
+import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
 
 // --- Chunk canvas cache ---
 

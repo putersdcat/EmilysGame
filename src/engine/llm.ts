@@ -16,9 +16,9 @@
  * TODO: DOC - LLM integration architecture, TPS monitoring, cache flow
  */
 
-import { LLM_CONFIG } from './config/game.config';
-import { ENTROPY_PROMPTS, FALLBACK_WORDLIST } from './config/entropy.config';
-import { getScrambledWordlist } from './config/wordlists.asset';
+import { LLM_CONFIG } from '../config/game.config';
+import { ENTROPY_PROMPTS, FALLBACK_WORDLIST } from '../config/entropy.config';
+import { getScrambledWordlist } from '../config/wordlists.asset';
 
 // ─── Types ───────────────────────────────────────────────────
 

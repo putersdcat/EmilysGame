@@ -9,8 +9,8 @@
 
 import { getQuestions, type QuizQuestion, type QuizDifficulty } from './config/quiz.config';
 import { WORLD_CONFIG } from './config/game.config';
-import { rephraseQuizQuestion } from './llm';
-import { shuffle } from './utils';
+import { rephraseQuizQuestion } from './engine/llm';
+import { shuffle } from './engine/utils';
 
 // ─── Difficulty Scaling ──────────────────────────────────────
 

@@ -4,7 +4,7 @@
  * TODO: DOC - NPC voice system, settings, per-NPC voice mapping
  */
 
-import { isTestMode } from '../../llm';
+import { isTestMode } from '../../engine/llm';
 
 /** Cached once — doesn't change at runtime */
 const _isTestMode = isTestMode();

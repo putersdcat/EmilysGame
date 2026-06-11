@@ -6,7 +6,7 @@
  * descriptors, so this module stays data-oriented and avoids renderer logic.
  */
 
-import { ASSET_DEFS } from './config/assets.config';
+import { ASSET_DEFS } from '../config/assets.config';
 import type { ChunkData, CellData } from './gen';
 
 export type Iso2AssemblyId = 'homestead-small' | 'ruined-cathedral';

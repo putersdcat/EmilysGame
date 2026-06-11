@@ -11,7 +11,7 @@ import {
   MAX_WILDLIFE_PER_CHUNK, INTERACT_RANGE, BIOME_DENSITY,
   getSpecies,
 } from './config/wildlife.config';
-import type { ChunkData } from './gen';
+import type { ChunkData } from './engine/gen';
 import { getCycleProgress } from './rendering/lighting';
 import type { Camera } from './rendering/render';
 

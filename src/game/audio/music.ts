@@ -15,7 +15,7 @@ import {
   DEFAULT_MUSIC_SETTINGS,
   type MusicTrack, type MusicSettings,
 } from '../../config/music.config';
-import { isTestMode } from '../../llm';
+import { isTestMode } from '../../engine/llm';
 
 // --- Types ------------------------------------------------------------------
 

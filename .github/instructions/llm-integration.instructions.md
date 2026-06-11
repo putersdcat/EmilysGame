@@ -1,6 +1,6 @@
 ---
 description: "Use when editing LLM integration, entropy system, or NPC chat. Covers test mode bypass, health checks, and fallback patterns."
-applyTo: "src/llm.ts"
+applyTo: "src/engine/llm.ts"
 ---
 # LLM Integration Rules
 

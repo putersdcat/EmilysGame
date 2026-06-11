@@ -11,9 +11,9 @@
  * TODO: DOC — document the grid solver algorithm and chain integrity rules
  */
 
-import { WORLD_CONFIG, getDifficulty, type DifficultyProfile } from './config/game.config';
-import { ASSET_DEFS } from './config/assets.config';
-import { getBiome, type BiomeDef } from './config/biomes.config';
+import { WORLD_CONFIG, getDifficulty, type DifficultyProfile } from '../config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { getBiome, type BiomeDef } from '../config/biomes.config';
 import {
   sha256,
   fastHash,
@@ -24,7 +24,7 @@ import {
   weightedPick,
 } from './utils';
 import { expandEntropy } from './llm';
-import { DIRECTION_WORDS } from './config/entropy.config';
+import { DIRECTION_WORDS } from '../config/entropy.config';
 import {
   edgesCompatible,
   getAllRotations,
@@ -34,8 +34,8 @@ import {
   type EdgeTag,
   type RotatedTemplate,
   type Cardinal,
-} from './config/tiles.config';
-import type { TileType } from './rendering/tiles';
+} from '../config/tiles.config';
+import type { TileType } from '../rendering/tiles';
 
 // --- Types ---
 

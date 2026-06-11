@@ -1,6 +1,6 @@
 ---
 description: "Use when editing gen.ts — the world generation monolith. Covers extraction strategy and type-sharing rules."
-applyTo: "src/gen.ts"
+applyTo: "src/engine/gen.ts"
 ---
 # gen.ts — World Generation
 

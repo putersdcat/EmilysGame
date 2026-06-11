@@ -15,7 +15,7 @@
  */
 
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types.js';
-import { wallBounds } from '../iso2-solver.js';
+import { wallBounds } from '../engine/iso2-solver.js';
 
 // Barrel re-exports for the walkability + solver metadata port (src/iso2-solver.ts).
 // Existing call sites that did `import { wallBounds } from './nano-tile-svgs'` continue to work.
@@ -30,8 +30,8 @@ export {
   bitmaskToConnections,
   variantFromBitmask,
   resolveVariants,
-} from '../iso2-solver.js';
-import { DarkCathedralStone, StoneBrick, TimberFrameWall } from '../iso2-materials.js';
+} from '../engine/iso2-solver.js';
+import { DarkCathedralStone, StoneBrick, TimberFrameWall } from '../asset-pipeline/iso2-materials.js';
 
 const MICRO_TILE_SIZE = 144;
 const LEGACY_TILE_SIZE = 128;
@@ -483,4 +483,4 @@ export function trollBridgeSvg(unlocked = false): string {
 }
 
 // Note: wallBounds and the new walkability/solver functions are re-exported at the top
-// of this file from '../iso2-solver.js' (the canonical port of the experiment solver).
+// of this file from '../engine/iso2-solver.js' (the canonical port of the experiment solver).
