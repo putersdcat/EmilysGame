@@ -30,16 +30,19 @@ Core constraints (do not violate without an explicit decision):
 
 ## 2. Current state (June 2026)
 
-`src/` is **flat** (~75 `.ts` files) except for `src/config/` and `src/types/`.
-Two god-files dominate:
+**Phase B1 (folder restructure) is complete** (#251). `src/` is now organized into
+the layered structure described in §3: `engine/` (7), `rendering/` (15),
+`asset-pipeline/` (7), `game/` (13) + `game/audio/` (5), `ui/` (5), `config/` (18),
+`types/` (2). Only `main.ts` and `.d.ts` files remain at `src/` root.
+
+Two god-files still need internal decomposition (Phase B2/B3):
 
 - `src/main.ts` (**3316 lines**) — entry point + per-frame orchestration of ~20
-  concerns; exposes ~80–90 `window.__gameDebug` accessors.
-- `src/gen.ts` (**2558 lines**) — world generation monolith implementing a partial
-  version of the WorldEngine solver pipeline.
+  concerns; exposes ~80–90 `window.__gameDebug` accessors. → #252
+- `src/engine/gen.ts` (**2558 lines**) — world generation monolith implementing a
+  partial version of the WorldEngine solver pipeline. → #253
 
-There is no enforced layering: rendering, generation, gameplay, UI, and asset
-generation all live side-by-side at `src/` root. This document defines the target
+Layering is now enforced by folder boundaries (see §3 rules). This document defines the target
 layering; Phase B (#251–#254) executes the move.
 
 See [EngineDecompositionMap.md](EngineDecompositionMap.md) for the complete list of
@@ -47,18 +50,23 @@ files > 400 lines with measured line counts and per-file split plans.
 
 ---
 
-## 3. Target layered structure
+## 3. Layered structure
+
+Folders below exist as of B1 (#251). Items marked _(planned)_ are produced by the
+B2/B3 god-file decomposition (#252/#253) and do not exist yet.
 
 ```
 src/
 ├── engine/          # PURE logic — no DOM, no Canvas, no window
-│   ├── world/       # gen.ts split: BiomeSelector, TemplateStamper, Populator,
-│   │                #   CollectibleScatterer, ObstacleSolver, Validation, Entropy, index
+│   ├── gen.ts                # world-gen monolith (B3 #253 splits into world/ ↓)
+│   ├── world/    (planned)   # BiomeSelector, TemplateStamper, Populator,
+│   │                         #   CollectibleScatterer, ObstacleSolver, Validation, Entropy, index
 │   ├── iso2-solver.ts        # nano footprint walkability / collision
+│   ├── iso2-assemblies.ts    # multi-tile structure stamping
 │   ├── mechanics.ts          # interaction, collision, autocollect
 │   ├── llm.ts                # LLM client, health, entropy expansion
-│   ├── utils.ts / math       # hash, RNG, BFS
-│   └── math.ts / constants
+│   ├── utils.ts              # hash, RNG, BFS
+│   └── perf.ts               # frame timing / benchmark
 ├── rendering/       # ALL Canvas drawing + isometric projection
 │   ├── render.ts             # IsometricRenderer, Camera consumer, draw pool, depth sort
 │   ├── terrain-cache.ts      # per-chunk baked terrain canvases
@@ -73,19 +81,19 @@ src/
 │   ├── sprites.ts, asset-sprites.ts, npc-sprites.ts, emoji-cache.ts
 │   ├── iso2-materials.ts     # face-slice structural materials
 │   └── asset-library.ts, content-loader.ts
-├── game/            # systems + orchestration (extracted from main.ts)
-│   ├── bootstrap.ts, game-loop.ts, input-wiring.ts, interactions.ts
-│   ├── save-wiring.ts, systems-orchestrator.ts, debug-hooks.ts, game-state.ts
+├── game/            # systems + orchestration
 │   ├── input.ts, quiz.ts, math-solver.ts, trading.ts, inventory.ts
 │   ├── status.ts, injury.ts, knowledge.ts, wildlife.ts, save.ts
 │   ├── age-profile.ts, tutorial.ts, platform.ts
-│   └── audio/        # sfx.ts, music.ts, sampled-sfx.ts, midi-loader.ts, npc-voice.ts
+│   ├── audio/                # sfx.ts, music.ts, sampled-sfx.ts, midi-loader.ts, npc-voice.ts
+│   └── (planned, B2 #252)    # bootstrap, game-loop, input-wiring, interactions,
+│                             #   save-wiring, systems-orchestrator, debug-hooks, game-state
 ├── ui/              # HUD, menus, overlays, DOM sync
-│   ├── ui.ts, menus.ts, customizer.ts, thought-bubbles.ts, markdown.ts
-│   └── book-content.ts
+│   ├── ui.ts, customizer.ts, thought-bubbles.ts, markdown.ts, book-content.ts
+│   └── menus.ts   (planned, B2 #252 — extracted from main.ts)
 ├── config/          # (unchanged) immutable, typed *.config.ts data
 ├── types/           # shared cross-boundary types (Camera, world, interaction, ...)
-└── main.ts          # thin bootstrap entry (< 400 lines target)
+└── main.ts          # entry point — B2 #252 reduces to a thin bootstrap (< 400 lines target)
 ```
 
 ### Layering rules
