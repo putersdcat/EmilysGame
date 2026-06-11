@@ -7,14 +7,14 @@
  * - drawNanoStack paints fence/gate/water/bridge descriptors onto a canvas
  */
 import { test, expect, Page } from '@playwright/test';
-import { getNanoStack, hasNanoRenderer } from '../../src/nano-tile-defs';
-import { listNanoFenceStyles, listNanoWaterStyles, wallBounds, waterNanoSvg } from '../../src/nano-tile-svgs';
+import { getNanoStack, hasNanoRenderer } from '../../src/rendering/nano-tile-defs';
+import { listNanoFenceStyles, listNanoWaterStyles, wallBounds, waterNanoSvg } from '../../src/rendering/nano-tile-svgs';
 import {
   isPointWalkableInTile,
   buildWalkableMap,
   pointHitsWallFootprint,
   pointHitsFenceFootprint,
-} from '../../src/nano-tile-svgs';
+} from '../../src/rendering/nano-tile-svgs';
 import { ISO_DIAMOND_HEIGHT, ISO_DIAMOND_WIDTH, ISO_MICRO_TILE_SIZE } from '../../src/types/iso-renderer.types';
 
 const BASE_URL = 'http://localhost:5173/?test=1';
