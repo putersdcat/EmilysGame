@@ -21,7 +21,7 @@ import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt,
 import { createInventory, type Inventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './game/quiz';
 import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui/ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './game/save';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
@@ -45,10 +45,10 @@ import {
   getQuizBias, openArticle,
   type KnowledgeState,
 } from './game/knowledge';
-import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
+import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './ui/book-content';
 import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './game/age-profile';
 import type { AgeBand } from './types/content-pack.types';
-import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
+import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './ui/customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './rendering/particles';
 import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './rendering/lighting';
@@ -69,7 +69,7 @@ import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
   clearBubbles, getBubbleState, resetCooldowns,
   getMessageHistory, toggleHistoryPanel,
-} from './thought-bubbles';
+} from './ui/thought-bubbles';
 import { HINTS } from './config/hints.config';
 import {
   createTradeState, openTrade, closeTrade, tradeNavigate,

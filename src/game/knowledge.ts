@@ -11,8 +11,8 @@ import {
 import {
   getBookArticleById, searchBookArticles,
   getBookArticlesBySubject,
-} from '../book-content';
-import { renderMarkdown, escapeHtml } from '../markdown';
+} from '../ui/book-content';
+import { renderMarkdown, escapeHtml } from '../ui/markdown';
 
 // ─── Types ───────────────────────────────────────────────────
 

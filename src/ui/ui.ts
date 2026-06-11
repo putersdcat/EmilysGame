@@ -5,27 +5,27 @@
  * TODO: DOC - UI layout diagram
  */
 
-import { ASSET_DEFS } from './config/assets.config';
-import { ITEM_DEFS } from './config/items.config';
-import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from './config/game.config';
-import { getTerrainCacheSize, getTerrainCacheMemoryMB } from './rendering/terrain-cache';
-import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from './engine/llm';
-import { getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
-import { getWeatherInfo } from './rendering/weather';
-import { isFlashlightOn } from './rendering/local-lights';
-import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from './engine/gen';
-import { perfStats } from './engine/perf';
-import { getParticleStats } from './rendering/particles';
-import { getShadowDebugInfo } from './rendering/shadows';
-import { getBlendIntensity } from './rendering/terrain-cache';
-import { getAllSlotInfo } from './game/save';
-import type { Inventory } from './game/inventory';
-import type { QuizState } from './game/quiz';
-import type { PlayerStatus } from './game/status';
-import type { InjuryState } from './game/injury';
-import type { MusicState } from './game/audio/music';
-import type { SfxState } from './game/audio/sfx';
-import { getDebuffs } from './game/status';
+import { ASSET_DEFS } from '../config/assets.config';
+import { ITEM_DEFS } from '../config/items.config';
+import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from '../config/game.config';
+import { getTerrainCacheSize, getTerrainCacheMemoryMB } from '../rendering/terrain-cache';
+import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from '../engine/llm';
+import { getTimeOfDay, getPlayedSeconds } from '../rendering/lighting';
+import { getWeatherInfo } from '../rendering/weather';
+import { isFlashlightOn } from '../rendering/local-lights';
+import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from '../engine/gen';
+import { perfStats } from '../engine/perf';
+import { getParticleStats } from '../rendering/particles';
+import { getShadowDebugInfo } from '../rendering/shadows';
+import { getBlendIntensity } from '../rendering/terrain-cache';
+import { getAllSlotInfo } from '../game/save';
+import type { Inventory } from '../game/inventory';
+import type { QuizState } from '../game/quiz';
+import type { PlayerStatus } from '../game/status';
+import type { InjuryState } from '../game/injury';
+import type { MusicState } from '../game/audio/music';
+import type { SfxState } from '../game/audio/sfx';
+import { getDebuffs } from '../game/status';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -820,7 +820,7 @@ export function syncSfxUI(sfx: SfxState): void {
 
 // ─── Voice UI Sync (#76) ────────────────────────────────────
 
-import type { VoiceState } from './game/audio/npc-voice';
+import type { VoiceState } from '../game/audio/npc-voice';
 
 let _lastVoiceSyncFrame = 0;
 

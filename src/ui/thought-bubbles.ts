@@ -5,7 +5,7 @@
  * TODO: DOC - bubble system architecture
  */
 
-import { HINTS, MAX_BUBBLE_QUEUE, MIN_BUBBLE_GAP, MAX_HISTORY_SIZE, type HintDef, type BubbleType } from './config/hints.config';
+import { HINTS, MAX_BUBBLE_QUEUE, MIN_BUBBLE_GAP, MAX_HISTORY_SIZE, type HintDef, type BubbleType } from '../config/hints.config';
 
 // ─── Types ───────────────────────────────────────────────────
 
