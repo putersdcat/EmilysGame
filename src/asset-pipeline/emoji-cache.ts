@@ -5,9 +5,9 @@
  * TODO: DOC - emoji sprite cache system
  */
 
-import { ASSET_DEFS } from './config/assets.config';
-import { BIOME_DEFS } from './config/biomes.config';
-import { RENDER_CONFIG } from './config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { BIOME_DEFS } from '../config/biomes.config';
+import { RENDER_CONFIG } from '../config/game.config';
 
 const cache = new Map<string, HTMLCanvasElement>();
 const SPRITE_SIZE = 48; // px - matches render scale expectations

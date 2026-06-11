@@ -14,7 +14,7 @@ import type {
   QuizCategory,
   QuizDifficulty,
   SubjectId,
-} from './types/content-pack.types';
+} from '../types/content-pack.types';
 
 // ─── Content Pack Loader ────────────────────────────────────
 

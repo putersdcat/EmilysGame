@@ -13,7 +13,7 @@ import { IsometricRenderer, setDialogNpc, type Camera } from './rendering/render
 import { InputManager, type TouchControlMode } from './input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './tutorial';
-import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
+import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './asset-pipeline/sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
@@ -36,9 +36,9 @@ import {
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './rendering/wasm-bridge';
 import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './rendering/terrain-cache';
 import { clearObjectCache, invalidateObjectCache } from './rendering/render';
-import { preloadEmojiSprites } from './emoji-cache';
-import { preloadAssetSprites, hasAssetSprite } from './asset-sprites';
-import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
+import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
+import { preloadAssetSprites, hasAssetSprite } from './asset-pipeline/asset-sprites';
+import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './asset-pipeline/npc-sprites';
 import { initMinimap, renderMinimap } from './rendering/minimap';
 import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
@@ -63,7 +63,7 @@ import {
   getTimeSlot,
 } from './wildlife';
 import { getSpecies } from './config/wildlife.config';
-import { getEmojiSprite } from './emoji-cache';
+import { getEmojiSprite } from './asset-pipeline/emoji-cache';
 import { stampIso2Assembly, type Iso2AssemblyId } from './iso2-assemblies';
 import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
@@ -118,7 +118,7 @@ import {
   setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
   type VoiceState,
 } from './game/audio/npc-voice';
-import type { FacingPose } from './sprites';
+import type { FacingPose } from './asset-pipeline/sprites';
 
 
 // ─── Extra Key Queue (numeric + R for quiz accessibility, #94) ───
@@ -210,9 +210,9 @@ interface GameState {
   // Age band profile (#92)
   ageProfile: AgeProfile;
   // Transient expression override (#102) — reverts after timer expires
-  expressionOverride: { expr: import('./sprites').Expression; until: number } | null;
+  expressionOverride: { expr: import('./asset-pipeline/sprites').Expression; until: number } | null;
   // Base default expression to revert to after transient override (#102)
-  _baseExpression: import('./sprites').Expression;
+  _baseExpression: import('./asset-pipeline/sprites').Expression;
   // Diarrhea illness chain (#133)
   streamDrinkCount: number;
   diarrheaUntil: number;       // frameCount when speed-debuff ends (0 = inactive)
@@ -248,7 +248,7 @@ const DIARRHEA_CONFIG = {
 
 // ─── Transient Expression System (#102) ─────────────────────
 
-import type { Expression as SpriteExpression } from './sprites';
+import type { Expression as SpriteExpression } from './asset-pipeline/sprites';
 
 /** Temporarily override player expression — reverts automatically */
 function setTransientExpression(state: GameState, expr: SpriteExpression, durationMs: number): void {

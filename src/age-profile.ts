@@ -7,7 +7,7 @@
  */
 
 import type { AgeBand } from './types/content-pack.types';
-import { contentPackLoader } from './content-loader';
+import { contentPackLoader } from './asset-pipeline/content-loader';
 
 // ─── Constants ──────────────────────────────────────────────
 

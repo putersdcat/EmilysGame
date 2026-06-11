@@ -7,7 +7,7 @@
 
 import { ASSET_DEFS, OBSTACLE_TEMPLATES, QUIZ_GATE_ASSET, type ObstacleTemplate } from './config/assets.config';
 import { NPC_DEFS } from './config/npc.config';
-import { facingTowardPlayer } from './npc-sprites';
+import { facingTowardPlayer } from './asset-pipeline/npc-sprites';
 import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';

@@ -9,7 +9,7 @@
  * TODO: DOC - asset-library.ts PNG loader API, cache strategy, tint support
  */
 
-import { ASSET_LIBRARY, activePngKeys } from './config/asset-library.config';
+import { ASSET_LIBRARY, activePngKeys } from '../config/asset-library.config';
 
 const SPRITE_SIZE = 48; // must match asset-sprites.ts SPRITE_SIZE
 

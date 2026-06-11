@@ -6,7 +6,7 @@
  * TODO: DOC - Book content pipeline and pack integration
  */
 
-import { contentPackLoader } from './content-loader';
+import { contentPackLoader } from './asset-pipeline/content-loader';
 import {
   KNOWLEDGE_ARTICLES, getArticleById as getStaticArticle,
   type KnowledgeArticle, type SubjectId,

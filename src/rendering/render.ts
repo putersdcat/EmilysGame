@@ -6,7 +6,7 @@
 
 import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
-import { getEmojiSprite } from '../emoji-cache';
+import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { getBiome } from '../config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
@@ -17,12 +17,12 @@ import { cellJitter } from '../utils';
 import { FIRE_VARIANTS, getFireAnimation } from '../config/fire.config';
 import { getTileLOD } from '../config/tiles.config';
 import { getShadowParams } from './shadows';
-import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from '../npc-sprites';
+import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from '../asset-pipeline/npc-sprites';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
 } from './wasm-bridge';
-import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-sprites';
+import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-pipeline/asset-sprites';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 
 // ─── Types ───────────────────────────────────────────────────

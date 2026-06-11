@@ -8,8 +8,8 @@
  * TODO: DOC - asset sprite pipeline, SVG design specs, cache strategy
  */
 
-import { BIOME_DEFS } from './config/biomes.config';
-import { RENDER_CONFIG } from './config/game.config';
+import { BIOME_DEFS } from '../config/biomes.config';
+import { RENDER_CONFIG } from '../config/game.config';
 import { getPngSprite, hasPngConfig, preloadPngAssets } from './asset-library';
 
 const cache = new Map<string, HTMLCanvasElement>();

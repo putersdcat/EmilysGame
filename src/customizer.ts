@@ -6,8 +6,8 @@
  * TODO: DOC - customizer UI spec
  */
 
-import type { CharacterVariation, Accessory, Expression, OutfitPattern } from './sprites';
-import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from './sprites';
+import type { CharacterVariation, Accessory, Expression, OutfitPattern } from './asset-pipeline/sprites';
+import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from './asset-pipeline/sprites';
 import { getUnlockablesForCategory } from './config/cosmetics.config';
 
 // ─── Preset Options ──────────────────────────────────────────

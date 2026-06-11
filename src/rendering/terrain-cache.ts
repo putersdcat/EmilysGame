@@ -15,7 +15,7 @@ import { getBiome } from '../config/biomes.config';
 import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
 import { drawNanoStack } from './nano-tile';
 import { getNanoStack } from './nano-tile-defs';
-import { getEmojiSprite } from '../emoji-cache';
+import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { cellJitter } from '../utils';
 import type { ChunkData } from '../gen';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
