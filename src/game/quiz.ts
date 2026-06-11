@@ -7,10 +7,10 @@
  * TODO: DOC - quiz flow diagram, streak model
  */
 
-import { getQuestions, type QuizQuestion, type QuizDifficulty } from './config/quiz.config';
-import { WORLD_CONFIG } from './config/game.config';
-import { rephraseQuizQuestion } from './engine/llm';
-import { shuffle } from './engine/utils';
+import { getQuestions, type QuizQuestion, type QuizDifficulty } from '../config/quiz.config';
+import { WORLD_CONFIG } from '../config/game.config';
+import { rephraseQuizQuestion } from '../engine/llm';
+import { shuffle } from '../engine/utils';
 
 // ─── Difficulty Scaling ──────────────────────────────────────
 

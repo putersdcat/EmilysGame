@@ -5,15 +5,15 @@
  * TODO: DOC - wildlife system overview, spawn algorithm, interaction hooks
  */
 
-import { WORLD_CONFIG } from './config/game.config';
+import { WORLD_CONFIG } from '../config/game.config';
 import {
   SPECIES, type SpeciesDef, type TimeSlot, type BehaviorWeights,
   MAX_WILDLIFE_PER_CHUNK, INTERACT_RANGE, BIOME_DENSITY,
   getSpecies,
-} from './config/wildlife.config';
-import type { ChunkData } from './engine/gen';
-import { getCycleProgress } from './rendering/lighting';
-import type { Camera } from './rendering/render';
+} from '../config/wildlife.config';
+import type { ChunkData } from '../engine/gen';
+import { getCycleProgress } from '../rendering/lighting';
+import type { Camera } from '../rendering/render';
 
 // ─── Types ──────────────────────────────────────────────────
 

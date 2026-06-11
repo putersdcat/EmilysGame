@@ -7,7 +7,7 @@
  * TODO: DOC - debuff visual effects
  */
 
-import { LOW_THRESHOLD, CRITICAL_THRESHOLD, type PlayerStatus } from '../status';
+import { LOW_THRESHOLD, CRITICAL_THRESHOLD, type PlayerStatus } from '../game/status';
 
 // ─── Blur Overlay ────────────────────────────────────────────
 

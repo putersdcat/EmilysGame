@@ -5,9 +5,9 @@
  * TODO: DOC - trading system API
  */
 
-import type { NpcPersona, NpcTrade } from './config/npc.config';
+import type { NpcPersona, NpcTrade } from '../config/npc.config';
 import type { Inventory } from './inventory';
-import { ITEM_DEFS } from './config/items.config';
+import { ITEM_DEFS } from '../config/items.config';
 
 // ─── Types ───────────────────────────────────────────────────
 

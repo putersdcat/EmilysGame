@@ -7,12 +7,12 @@
 import {
   SUBJECTS,
   type SubjectId, type KnowledgeArticle,
-} from './config/knowledge.config';
+} from '../config/knowledge.config';
 import {
   getBookArticleById, searchBookArticles,
   getBookArticlesBySubject,
-} from './book-content';
-import { renderMarkdown, escapeHtml } from './markdown';
+} from '../book-content';
+import { renderMarkdown, escapeHtml } from '../markdown';
 
 // ─── Types ───────────────────────────────────────────────────
 

@@ -4,7 +4,7 @@
  * TODO: DOC - inventory API reference
  */
 
-import { ITEM_DEFS, type ItemDef } from './config/items.config';
+import { ITEM_DEFS, type ItemDef } from '../config/items.config';
 
 // ─── Types ───────────────────────────────────────────────────
 

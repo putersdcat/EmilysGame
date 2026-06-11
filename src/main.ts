@@ -10,19 +10,19 @@ import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc, type Camera } from './rendering/render';
-import { InputManager, type TouchControlMode } from './input';
-import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
-import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './tutorial';
+import { InputManager, type TouchControlMode } from './game/input';
+import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './game/platform';
+import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './asset-pipeline/sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './engine/mechanics';
-import { createInventory, type Inventory } from './inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
+import { createInventory, type Inventory } from './game/inventory';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './game/quiz';
 import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './game/save';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import {
@@ -44,9 +44,9 @@ import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
   getQuizBias, openArticle,
   type KnowledgeState,
-} from './knowledge';
+} from './game/knowledge';
 import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
-import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './age-profile';
+import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './game/age-profile';
 import type { AgeBand } from './types/content-pack.types';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
@@ -61,7 +61,7 @@ import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
   getTimeSlot,
-} from './wildlife';
+} from './game/wildlife';
 import { getSpecies } from './config/wildlife.config';
 import { getEmojiSprite } from './asset-pipeline/emoji-cache';
 import { stampIso2Assembly, type Iso2AssemblyId } from './engine/iso2-assemblies';
@@ -77,13 +77,13 @@ import {
   syncTradeDOM, type TradeState,
   generateBarterQuiz, shouldTriggerBarter, barterNavigate, submitBarterAnswer,
   syncBarterQuizDOM, getTradeDialog,
-} from './trading';
+} from './game/trading';
 import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
   serializeStatus, deserializeStatus, resetTickCounter,
   CRITICAL_THRESHOLD,
   type PlayerStatus,
-} from './status';
+} from './game/status';
 import {
   initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
   triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
@@ -94,7 +94,7 @@ import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
   getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
   type InjuryState,
-} from './injury';
+} from './game/injury';
 import {
   createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
   nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
@@ -271,7 +271,7 @@ function tickExpressionOverride(state: GameState): void {
 
 // ─── Wound-Care Quiz (#109) ─────────────────────────────────
 
-import type { WoundCareQuestion } from './injury';
+import type { WoundCareQuestion } from './game/injury';
 
 /**
  * Start a wound-care mini-quiz after bandaid use.

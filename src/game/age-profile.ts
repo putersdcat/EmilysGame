@@ -6,8 +6,8 @@
  * TODO: DOC - Age profile system and content filtering
  */
 
-import type { AgeBand } from './types/content-pack.types';
-import { contentPackLoader } from './asset-pipeline/content-loader';
+import type { AgeBand } from '../types/content-pack.types';
+import { contentPackLoader } from '../asset-pipeline/content-loader';
 
 // ─── Constants ──────────────────────────────────────────────
 

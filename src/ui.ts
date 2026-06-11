@@ -18,14 +18,14 @@ import { perfStats } from './engine/perf';
 import { getParticleStats } from './rendering/particles';
 import { getShadowDebugInfo } from './rendering/shadows';
 import { getBlendIntensity } from './rendering/terrain-cache';
-import { getAllSlotInfo } from './save';
-import type { Inventory } from './inventory';
-import type { QuizState } from './quiz';
-import type { PlayerStatus } from './status';
-import type { InjuryState } from './injury';
+import { getAllSlotInfo } from './game/save';
+import type { Inventory } from './game/inventory';
+import type { QuizState } from './game/quiz';
+import type { PlayerStatus } from './game/status';
+import type { InjuryState } from './game/injury';
 import type { MusicState } from './game/audio/music';
 import type { SfxState } from './game/audio/sfx';
-import { getDebuffs } from './status';
+import { getDebuffs } from './game/status';
 
 // ─── Types ───────────────────────────────────────────────────
 

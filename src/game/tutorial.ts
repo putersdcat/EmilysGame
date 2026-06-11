@@ -5,7 +5,7 @@
  * TODO: DOC - tutorial flow diagram, step descriptions
  */
 
-import { isTestMode } from './engine/llm';
+import { isTestMode } from '../engine/llm';
 
 // ─── Constants ───────────────────────────────────────────────
 
