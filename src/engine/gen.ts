@@ -20,7 +20,6 @@ import {
   asciiModulo,
   seededRandom,
   PerlinNoise,
-  bfsFloodFill,
   weightedPick,
 } from './utils';
 import { expandEntropy } from './llm';
@@ -69,6 +68,7 @@ import { scatterCollectibles, layCoinTrails } from './world/CollectibleScatterer
 export { scatterCollectibles, layCoinTrails } from './world/CollectibleScatterer';
 import { populateAnchors, clusterDecorations } from './world/Populator';
 import { countWalkableNeighbors } from './world/GridUtils';
+import { enforcePassability } from './world/Passability';
 // Re-export content population (B3 / #253 — extracted to world/Populator.ts).
 // populateAnchors + clusterDecorations are called internally by generateChunkSync below.
 // scatterDecorations is legacy (kept for test compat); re-exported but not called here.
@@ -77,6 +77,10 @@ export { populateAnchors, clusterDecorations, scatterDecorations } from './world
 // The still-in-gen.ts ObstacleSolver phase fns (addExtraObstacles, placeQuizGates)
 // call countWalkableNeighbors; it will follow the solver into its own module in slice 7.
 export { countWalkableNeighbors } from './world/GridUtils';
+// Re-export passability enforcement + water debug (B3 / #253 — extracted to world/Passability.ts).
+// enforcePassability is called internally by generateChunkSync (twice). getWaterDebugInfo is
+// consumed by main.ts + ui/ui.ts via the gen.ts re-export.
+export { enforcePassability, getWaterDebugInfo } from './world/Passability';
 import {
   edgesCompatible,
   getAllRotations,
@@ -1145,99 +1149,11 @@ function stampWorldUnitGrid(
 }
 
 // --- Phase 4: Passability Enforcement ---
-
-function enforcePassability(
-  cells: CellData[][],
-  size: number,
-  rng: () => number,
-): void {
-  const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
-  // Only force center walkable if it's not water (#100: protect water cells)
-  if (cells[center.y][center.x].assetKey !== 'water') {
-    cells[center.y][center.x].walkable = true;
-    cells[center.y][center.x].assetKey = 'grass';
-  }
-
-  const reachable = bfsFloodFill(
-    (x, y) => cells[y][x].walkable,
-    size, size, center,
-  );
-
-  const totalCells = size * size;
-  const passabilityRatio = reachable.size / totalCells;
-
-  if (passabilityRatio < WORLD_CONFIG.passabilityTarget) {
-    const needed = Math.floor(WORLD_CONFIG.passabilityTarget * totalCells) - reachable.size;
-    let carved = 0;
-    for (let attempt = 0; attempt < totalCells && carved < needed; attempt++) {
-      const x = Math.floor(rng() * size);
-      const y = Math.floor(rng() * size);
-      // #100: Never carve through water or bridge cells — preserve river integrity
-      if (!cells[y][x].walkable && cells[y][x].assetKey !== 'water' && cells[y][x].assetKey !== 'bridge') {
-        cells[y][x] = { assetKey: 'grass', walkable: true, interactable: false };
-        carved++;
-      }
-    }
-  }
-
-  const mid = Math.floor(size / 2);
-  const edgePoints = [
-    { x: mid, y: 0 },
-    { x: mid, y: size - 1 },
-    { x: 0, y: mid },
-    { x: size - 1, y: mid },
-  ];
-  for (const ep of edgePoints) {
-    // #100: Don't overwrite water cells at edge entry points
-    if (cells[ep.y][ep.x].assetKey !== 'water' && cells[ep.y][ep.x].assetKey !== 'bridge') {
-      cells[ep.y][ep.x] = { assetKey: 'grass', walkable: true, interactable: false };
-    }
-  }
-
-  // #100: Validate river integrity — water cells must remain non-walkable
-  validateWaterIntegrity(cells, size);
-}
-
-/**
- * #100: Validate that all water cells remain non-walkable after passability enforcement.
- * Also counts river segments and crossing points for debug purposes.
- */
-let _lastWaterDebug = { waterCells: 0, bridgeCells: 0, leaks: 0 };
-export function getWaterDebugInfo(): { waterCells: number; bridgeCells: number; leaks: number } {
-  return { ..._lastWaterDebug };
-}
-
-function validateWaterIntegrity(cells: CellData[][], size: number): void {
-  let waterCells = 0;
-  let bridgeCells = 0;
-  let leaks = 0;
-
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const cell = cells[y][x];
-      if (cell.assetKey === 'water') {
-        waterCells++;
-        // Fix any leaked walkability on water cells
-        if (cell.walkable) {
-          cell.walkable = false;
-          leaks++;
-        }
-      } else if (cell.assetKey === 'bridge') {
-        bridgeCells++;
-        // Bridge must always be walkable
-        if (!cell.walkable) {
-          cell.walkable = true;
-        }
-      }
-    }
-  }
-
-  _lastWaterDebug = { waterCells, bridgeCells, leaks };
-
-  if (leaks > 0 && typeof window !== 'undefined' && (window as any).__DEBUG_GEN) {
-    console.warn(`[gen] Water integrity: fixed ${leaks} walkable water cell leaks`);
-  }
-}
+// `enforcePassability` and the file-local `validateWaterIntegrity` helper
+// were moved to src/engine/world/Passability.ts (B3 / #253). The water
+// debug state (`_lastWaterDebug`) and the public `getWaterDebugInfo()`
+// getter also live with Passability; gen.ts re-exports the getter for
+// API stability (consumed by main.ts and ui/ui.ts).
 
 // --- Phase 5: Content Population ---
 // `populateAnchors`, `clusterDecorations`, `scatterDecorations`, and their
