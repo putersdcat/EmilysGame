@@ -16,8 +16,8 @@ import {
   type IsoNanoTile,
   type IsoNanoStack,
   type IsoFeatureVariant as FeatureVariant,
-} from './types/iso-renderer.types.js';
-import { DarkCathedralStone, StoneBrick, TimberFrameWall } from './iso2-materials.js';
+} from '../types/iso-renderer.types.js';
+import { DarkCathedralStone, StoneBrick, TimberFrameWall } from '../iso2-materials.js';
 import {
   cathedralWallSvg,
   cathedralWallTopSvg,

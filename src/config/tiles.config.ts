@@ -7,7 +7,7 @@
  * GitHub: #22 — Enhanced Micro Tile Metadata & Per-Side Edge Vectors
  */
 
-import type { TileType } from '../tiles';
+import type { TileType } from '../rendering/tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 

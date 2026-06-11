@@ -9,7 +9,7 @@ import { perfStats, perfSmooth, recordFrameTime, resetFrameHistory, getFrameBenc
 import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
-import { IsometricRenderer, setDialogNpc, type Camera } from './render';
+import { IsometricRenderer, setDialogNpc, type Camera } from './rendering/render';
 import { InputManager, type TouchControlMode } from './input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './tutorial';
@@ -24,7 +24,7 @@ import { type QuizDifficulty } from './config/quiz.config';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './save';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
-import { preloadTiles } from './tiles';
+import { preloadTiles } from './rendering/tiles';
 import {
   MICRO_TILE_DEFS, WORLD_UNIT_TEMPLATES, BIOME_PALETTES,
   validateAllTileDefs, validateTemplate, normalizeTileDef,
@@ -33,13 +33,13 @@ import {
   computeTraversalChannels, computeCornerCells, computeChainPorts,
   getAllRotations as getAllTemplateRotations,
 } from './config/tiles.config';
-import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
-import { clearObjectCache, invalidateObjectCache } from './render';
+import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './rendering/wasm-bridge';
+import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './rendering/terrain-cache';
+import { clearObjectCache, invalidateObjectCache } from './rendering/render';
 import { preloadEmojiSprites } from './emoji-cache';
 import { preloadAssetSprites, hasAssetSprite } from './asset-sprites';
 import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
-import { initMinimap, renderMinimap } from './minimap';
+import { initMinimap, renderMinimap } from './rendering/minimap';
 import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
   getQuizBias, openArticle,
@@ -50,13 +50,13 @@ import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgePr
 import type { AgeBand } from './types/content-pack.types';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
 import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
-import { updateAndRenderParticles, clearParticles } from './particles';
-import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './lighting';
-import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './local-lights';
+import { updateAndRenderParticles, clearParticles } from './rendering/particles';
+import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './rendering/lighting';
+import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './rendering/weather';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
-import { invalidateShadowCache } from './shadows';
-import { updateFog, renderFog, toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, serializeVisited, deserializeVisited, getFogDebugInfo } from './fog';
+import { invalidateShadowCache } from './rendering/shadows';
+import { updateFog, renderFog, toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, serializeVisited, deserializeVisited, getFogDebugInfo } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -89,7 +89,7 @@ import {
   triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
   setDiarrheaOverlay, updateDiarrheaOverlay,
   spawnPoopBurst, updateAndRenderPoopParticles, renderPoopMarkers,
-} from './debuff-visuals';
+} from './rendering/debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
   getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
@@ -1287,7 +1287,7 @@ function update(state: GameState, input: InputManager): void {
     if (movedX || movedY) {
       // Terrain-aware footstep SFX (#108)
       const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
-      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./tiles').TileType] : undefined;
+      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
       const surface = footTileDef?.surface ?? 'grass';
       playFootstep(state.sfx, surface);
 

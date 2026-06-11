@@ -1,6 +1,6 @@
 ---
 description: "Use when porting experiment/isometric-2.0 nano tiles, materials, assemblies, or renderer behavior into the main Emily's Game engine."
-applyTo: "{src/iso2-*.ts,src/nano-tile*.ts,src/render.ts,src/terrain-cache.ts,src/tiles.ts,src/config/tiles.config.ts,src/config/assets.config.ts,tests/rendering/iso2-*.spec.ts}"
+applyTo: "{src/iso2-*.ts,src/rendering/nano-tile*.ts,src/rendering/render.ts,src/rendering/terrain-cache.ts,src/rendering/tiles.ts,src/config/tiles.config.ts,src/config/assets.config.ts,tests/rendering/iso2-*.spec.ts}"
 ---
 
 # Iso 2.0 Main Engine Port Instructions

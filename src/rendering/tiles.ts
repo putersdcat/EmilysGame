@@ -5,7 +5,7 @@
  * TODO: DOC - tile pipeline and caching strategy
  */
 
-import { RENDER_CONFIG } from './config/game.config';
+import { RENDER_CONFIG } from '../config/game.config';
 
 // ─── Types ───────────────────────────────────────────────────
 

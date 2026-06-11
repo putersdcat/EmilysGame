@@ -5,7 +5,7 @@
  * TODO: DOC - local light sources, bonfire flicker, flashlight cone
  */
 
-import { RENDER_CONFIG } from './config/game.config';
+import { RENDER_CONFIG } from '../config/game.config';
 import { getCycleProgress, getCurrentLighting } from './lighting';
 
 // ─── Types ──────────────────────────────────────────────────

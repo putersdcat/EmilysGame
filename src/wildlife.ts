@@ -12,8 +12,8 @@ import {
   getSpecies,
 } from './config/wildlife.config';
 import type { ChunkData } from './gen';
-import { getCycleProgress } from './lighting';
-import type { Camera } from './render';
+import { getCycleProgress } from './rendering/lighting';
+import type { Camera } from './rendering/render';
 
 // ─── Types ──────────────────────────────────────────────────
 

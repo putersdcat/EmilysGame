@@ -8,7 +8,7 @@
 
 // ─── Types ───────────────────────────────────────────────────
 
-import type { TileType } from '../tiles';
+import type { TileType } from '../rendering/tiles';
 
 export type ObjectCategory = 'terrain' | 'plant' | 'obstacle' | 'interactive' | 'collectible' | 'npc' | 'ego';
 export type DrawLayer = 'base' | 'mid' | 'high' | 'overlay';

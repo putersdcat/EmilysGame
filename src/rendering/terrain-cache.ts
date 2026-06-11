@@ -9,17 +9,17 @@
  * TODO: DOC - terrain cache strategy, invalidation, memory budget
  */
 
-import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
-import { ASSET_DEFS } from './config/assets.config';
-import { getBiome } from './config/biomes.config';
+import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { getBiome } from '../config/biomes.config';
 import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
 import { drawNanoStack } from './nano-tile';
 import { getNanoStack } from './nano-tile-defs';
-import { getEmojiSprite } from './emoji-cache';
-import { cellJitter } from './utils';
-import type { ChunkData } from './gen';
-import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types';
-import { buildWalkableMap } from './iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
+import { getEmojiSprite } from '../emoji-cache';
+import { cellJitter } from '../utils';
+import type { ChunkData } from '../gen';
+import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
+import { buildWalkableMap } from '../iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
 
 // --- Chunk canvas cache ---
 

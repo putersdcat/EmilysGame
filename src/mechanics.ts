@@ -11,9 +11,9 @@ import { facingTowardPlayer } from './npc-sprites';
 import type { CellData, ChunkData } from './gen';
 import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
 import type { Inventory } from './inventory';
-import { invalidateObjectCache } from './render';
-import { isPointWalkableInTile, variantFromBitmask, connectionsToBitmask } from './nano-tile-svgs';
-import { getNanoStack } from './nano-tile-defs';
+import { invalidateObjectCache } from './rendering/render';
+import { isPointWalkableInTile, variantFromBitmask, connectionsToBitmask } from './rendering/nano-tile-svgs';
+import { getNanoStack } from './rendering/nano-tile-defs';
 
 // ─── Types ───────────────────────────────────────────────────
 

@@ -5,7 +5,7 @@
  * TODO: DOC - fog-of-war rendering, visited state persistence
  */
 
-import { RENDER_CONFIG } from './config/game.config';
+import { RENDER_CONFIG } from '../config/game.config';
 import { getCycleProgress } from './lighting';
 import type { Camera } from './render';
 

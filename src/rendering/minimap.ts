@@ -7,10 +7,10 @@
  * TODO: DOC - minimap rendering strategy, zoom levels, memory
  */
 
-import { WORLD_CONFIG } from './config/game.config';
-import { ASSET_DEFS } from './config/assets.config';
-import { getBiome } from './config/biomes.config';
-import type { ChunkData } from './gen';
+import { WORLD_CONFIG } from '../config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { getBiome } from '../config/biomes.config';
+import type { ChunkData } from '../gen';
 
 // --- Config ---
 

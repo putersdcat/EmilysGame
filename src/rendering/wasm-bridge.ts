@@ -5,11 +5,11 @@
  * TODO: DOC - WASM bridge architecture, data layout, fallback behavior
  */
 
-import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
-import { ASSET_DEFS } from './config/assets.config';
-import { getBiome } from './config/biomes.config';
+import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { getBiome } from '../config/biomes.config';
 import { ALL_TILE_TYPES, type TileType } from './tiles';
-import type { ChunkData } from './gen';
+import type { ChunkData } from '../gen';
 import type { Camera } from './render';
 
 // === WASM module interface (matches build/release.d.ts exports) ===

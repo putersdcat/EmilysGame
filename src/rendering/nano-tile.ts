@@ -26,7 +26,7 @@ import {
   type IsoNanoTile as NanoTile,
   type IsoNanoStack as NanoStack,
   type IsoSunState as SunState,
-} from './types/iso-renderer.types.js';
+} from '../types/iso-renderer.types.js';
 import { wallBounds } from './nano-tile-svgs';
 
 // ─── SVG Image Cache ─────────────────────────────────────────────────────────

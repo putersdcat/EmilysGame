@@ -4,26 +4,26 @@
  * TODO: DOC - full rendering pipeline docs
  */
 
-import { RENDER_CONFIG, WORLD_CONFIG } from './config/game.config';
-import { ASSET_DEFS } from './config/assets.config';
-import { getEmojiSprite } from './emoji-cache';
-import { getBiome } from './config/biomes.config';
+import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
+import { ASSET_DEFS } from '../config/assets.config';
+import { getEmojiSprite } from '../emoji-cache';
+import { getBiome } from '../config/biomes.config';
 import { getIsoTile, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
-import type { ChunkData } from './gen';
-import { cellJitter } from './utils';
-import { FIRE_VARIANTS, getFireAnimation } from './config/fire.config';
-import { getTileLOD } from './config/tiles.config';
+import type { ChunkData } from '../gen';
+import { cellJitter } from '../utils';
+import { FIRE_VARIANTS, getFireAnimation } from '../config/fire.config';
+import { getTileLOD } from '../config/tiles.config';
 import { getShadowParams } from './shadows';
-import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from './npc-sprites';
+import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from '../npc-sprites';
 import {
   WCMD_TILE, WCMD_EMOJI, WCMD_SHADOW_EMOJI, WCMD_ITEM, WCMD_PLAYER,
   wasmBuildDrawCmds, isWasmReady,
 } from './wasm-bridge';
-import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from './asset-sprites';
-import type { IsoFeatureVariant as FeatureVariant } from './types/iso-renderer.types';
+import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-sprites';
+import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 
 // ─── Types ───────────────────────────────────────────────────
 

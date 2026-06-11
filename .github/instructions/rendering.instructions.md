@@ -1,6 +1,6 @@
 ---
 description: "Use when editing rendering code — render.ts, terrain-cache.ts, local-lights.ts, shadows.ts, fog.ts, lighting.ts. Covers zero-allocation hot-path rules and Camera type consolidation."
-applyTo: "src/{render,terrain-cache,local-lights,shadows,fog,lighting}.ts"
+applyTo: "src/rendering/{render,terrain-cache,local-lights,shadows,fog,lighting}.ts"
 ---
 # Rendering Pipeline Rules
 

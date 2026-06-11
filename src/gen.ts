@@ -35,7 +35,7 @@ import {
   type RotatedTemplate,
   type Cardinal,
 } from './config/tiles.config';
-import type { TileType } from './tiles';
+import type { TileType } from './rendering/tiles';
 
 // --- Types ---
 
