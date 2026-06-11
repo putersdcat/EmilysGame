@@ -24,7 +24,24 @@ import {
   weightedPick,
 } from './utils';
 import { expandEntropy } from './llm';
-import { DIRECTION_WORDS } from '../config/entropy.config';
+import {
+  getWordlist,
+  getEntropyBuffer,
+  getLastEntropyOutput,
+  setLastEntropyOutput,
+  appendEntropyRaw,
+} from './world/Entropy';
+// Re-export the entropy pool public API so existing importers (main.ts, ui/ui.ts)
+// keep importing it from './engine/gen' (B3 / #253 — extracted to world/Entropy.ts).
+export {
+  setWordlist,
+  getWordlist,
+  feedEntropy,
+  getEntropyStats,
+  restoreEntropyBuffer,
+  getEntropyBuffer,
+  getDirectionPair,
+} from './world/Entropy';
 import {
   edgesCompatible,
   getAllRotations,
@@ -102,63 +119,9 @@ export interface ChunkData {
 }
 
 // --- Entropy State ---
-// The entropy pool grows over the session as NPC chat words, quiz answers,
-// and LLM outputs concatenate. It salts chunk generation for evolving worlds. (#4)
-
-let wordlist: string[] = [];
-let lastEntropyOutput = '';
-let entropyBuffer = '';
-let entropyFeedCount = 0; // Number of external feeds (NPC chat, quiz, etc.)
-
-export function setWordlist(list: string[]): void {
-  wordlist = list;
-}
-
-export function getWordlist(): string[] {
-  return wordlist;
-}
-
-/**
- * Feed external text into the entropy pool.
- * Called when NPC dialog, quiz answers, or player chat occurs.
- * The text is appended to the growing entropy buffer, which salts
- * future chunk generation for evolving, player-influenced worlds. (#4)
- */
-export function feedEntropy(text: string): void {
-  if (!text || text.length === 0) return;
-  entropyBuffer += text;
-  entropyFeedCount++;
-}
-
-/** Get entropy pool stats for debug display. */
-export function getEntropyStats(): { poolSize: number; feedCount: number; lastOutput: string } {
-  return {
-    poolSize: entropyBuffer.length,
-    feedCount: entropyFeedCount,
-    lastOutput: lastEntropyOutput.slice(0, 40),
-  };
-}
-
-/** Restore entropy buffer from save data. feedCount approximated from buffer length. */
-export function restoreEntropyBuffer(buffer: string): void {
-  entropyBuffer = buffer || '';
-  // Approximate feedCount from buffer (avg ~40 chars per feed)
-  entropyFeedCount = entropyBuffer.length > 0 ? Math.max(1, Math.round(entropyBuffer.length / 40)) : 0;
-}
-
-/** Get entropy buffer for saving. */
-export function getEntropyBuffer(): string {
-  return entropyBuffer;
-}
-
-// --- Direction Pair ---
-
-export function getDirectionPair(direction: string, rng: () => number): string {
-  const table = DIRECTION_WORDS[direction] || DIRECTION_WORDS['right'];
-  const verb = table.verbs[Math.floor(rng() * table.verbs.length)];
-  const noun = table.nouns[Math.floor(rng() * table.nouns.length)];
-  return `${verb} ${noun}`;
-}
+// Moved to ./world/Entropy.ts (B3 / #253). The entropy pool + wordlist + direction
+// pair helper now live there; the public API is re-exported above so importers are
+// unaffected. Internal generation code below uses the imported accessors.
 
 /**
  * Distance-based biome selection with spatial coherence via Perlin noise.
@@ -388,12 +351,13 @@ export async function generateChunk(
 ): Promise<ChunkData> {
   const size = WORLD_CONFIG.chunkSize;
 
+  const wordlist = getWordlist();
   const pairIndex = Math.abs(fastHash(`${chunkX},${chunkY}`)) % wordlist.length;
   const pair = wordlist[pairIndex] || 'obliterate quasar';
 
-  const entropyText = await expandEntropy(pair, lastEntropyOutput);
-  lastEntropyOutput = entropyText;
-  entropyBuffer += entropyText;
+  const entropyText = await expandEntropy(pair, getLastEntropyOutput());
+  setLastEntropyOutput(entropyText);
+  appendEntropyRaw(entropyText);
 
   const hashHex = await sha256(entropyText);
   const noiseSeed = fastHash(hashHex.slice(8, 16));
@@ -429,9 +393,11 @@ export function generateChunkSync(
   const size = WORLD_CONFIG.chunkSize;
 
   const coordHash = fastHash(`chunk_${chunkX}_${chunkY}_sync`);
+  const wordlist = getWordlist();
   const pairIndex = coordHash % wordlist.length;
   const pair = wordlist[pairIndex] || 'obliterate quasar';
   // Salt with entropy pool for player-influenced variation (#4)
+  const entropyBuffer = getEntropyBuffer();
   const entropySalt = entropyBuffer.length > 0
     ? `_e${fastHash(entropyBuffer) >>> 0}`
     : '';
@@ -825,6 +791,7 @@ function applyEntropyCellFlags(
   biome: BiomeDef,
 ): void {
   // Build a flag source string from entropy buffer + chunk seed
+  const entropyBuffer = getEntropyBuffer();
   const flagSource = entropyBuffer.length > 0
     ? entropyBuffer.slice(-256)  // Use last 256 chars of pool
     : `fallback_${chunkX}_${chunkY}_${featureSeed}`;
