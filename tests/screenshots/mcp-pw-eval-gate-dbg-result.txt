@@ -1,0 +1,4 @@
+{
+  "error": "missing_dbg_hooks",
+  "available": []
+}

@@ -51,3 +51,32 @@ From issues (#223 open for walk/gate, #246 river follow-up done per commits, #21
 **Run this loop. Produce impressive deliverables (e.g., working iso2 world with exact walk, gates, visuals proven in engine + MCP). Update issues. Avoid user ping until e.g. full playable segment + proofs.**
 
 (Reference: Proompts.md, Docs/*, .github/instructions/iso2-*, GitHub milestone 5 issues, current code state with iso2-solver.ts + river port.)
+
+## Long-Running / Overnight Operation (added for reliability)
+The original 5-minute static scheduler prompt injection led to repetition, staleness, and cutoff. 
+
+**Preferred mechanisms (builds local tooling/memory/instructions):**
+- **Persistent memory**: Always read `LOOP_STATE.md` (created with backlog snapshot, port status vs IntegrationGuide, anti-rep rules, cycle history) at the **start** of every cycle. Append a short summary + date at end of cycle. This is the single source of "what was done last" so you never purely repeat.
+- **Runner script**: Use `npx tsx scripts/run-iso2-autonomous-cycle.ts` for each iteration. It encapsulates health (tsc + relay + focused PW), mandatory visuals (AiTools player-boundary renders) + "play the game" (capture-screenshot.ts for live in-engine state), delta-based decisioning (from LOOP_STATE + latest MCP), limited git, state append, and clear "orchestrator notes" for the next MCP/GH/subagent step. Safe, idempotent, produces proofs every run.
+- **Schedulers vs background subagents**:
+  - Short recurring (15-30min): `scheduler_create` with prompt "Invoke the runner script once; read/update LOOP_STATE; MCP delta check on #223/#246; if milestone near produce batch visuals and comment GH. Ref AUTONOMOUS_LOOP + LOOP_STATE."
+  - Long overnight (recommended): Use `spawn_subagent` (background: true, capability_mode all or execute) with a detailed briefing that includes: full current LOOP_STATE content, AUTONOMOUS_LOOP.md, Docs/Iso2.0-MainEngineIntegrationGuide.md + WorldEngine-*, .github/instructions/iso2-main-port.instructions.md, .github/agents/IsoVisualLoop.agent.md, Proompts.md. Instruct the subagent to: "Run the runner in a while loop with 30-120s sleeps. Re-MCP at start of each inner cycle for fresh issue state. Prioritize port of 3D visuals (experiment/ SoT -> main per vertical slices), autonomous playtests (PW sequences + capture for movement/gates/quizzes/world traversal + boundary PNGs), advance/close #223 with proofs, then #246 river/bridge, prep #226. Use monitor for long cmds. Stop only on explicit 'playable iso2 gate demo done with proofs, #223 ready for close' or unrecoverable error. Log everything to LOOP_STATE and git."
+  - Use `get_command_or_subagent_output` + `wait_commands_or_subagents` + `kill_command_or_subagent` to supervise.
+- **Anti-staleness & anti-repetition rules** (enforced in runner + subagent prompts):
+  - Every cycle start: MCP (search/list/read key issues with small perPage) + load LOOP_STATE + recent git + key docs (limited reads). Compute "delta" (new unclosed ACs, new comments, visual gaps called out in plans, user feedback).
+  - Only perform code changes (search_replace) or major work if delta exists or a clear next vertical from IntegrationGuide/port order is unblocked. Otherwise: batch visuals (re-run AiTools renders or isoSvgRenderer MCP scenes with players at boundaries), autonomous play captures (multiple capture runs or enhanced PW "play" sequences), docs/state updates, or health/perf spot checks.
+  - Rotate: port slice -> gameplay test enhancement -> visuals proof batch -> GH tracking.
+  - Self-review every cycle end (write 2-3 sentences to state): "Advanced milestone? New PNG proof? Updated issue? Not a pure repeat?"
+- **Environment & tooling built for overnight (Windows/pwsh)**:
+  - Health on every cycle: main+exp tsc (limited), AiTools/test-relay.mjs smoke, focused iso2 PW or capture.
+  - Visuals: terminal AiTools (render-gate-player-proof.ts etc. for player-at-boundary PNGs in tests/screenshots/ + ProgressEvaluations/) + capture-screenshot.ts for live game "play" views. If MCP connected: search_tool "isoSvgRenderer" then use_tool render_* with players.
+  - Play/test autonomously: Use dbg in main (__gameDebug: setPlayerPosition, isFootprintWalkable, setActiveCondition, resolveQuizGateSim) inside PW evaluate + page.screenshot at boundaries. Enhance tests/rendering/iso2-*.spec.ts for longer sequences (walk to gen fence+gate, locked assert, unlock, pass, multi-feature boundaries). Run full capture for end-to-end in-game visuals.
+  - Git: small, frequent commits of specific proofs + state + changed files only. Branch is experiment/isometric-2.0.
+  - Limits respected: read with offset/limit, grep head_limit, run cmds with | Select-Object -First / head, short GH comments.
+  - Subagent isolation: Use isolation "worktree" or "none" as appropriate; resume_from for continuity.
+- **Exit / pause only on milestone**: "playable iso2 gate demo done with proofs, visuals committed, #223 ready for close" (or equivalent for next epic). Then human review + new target in LOOP_STATE. Update GH with all PNG links + "tested with AiTools + Playwright + runner + capture".
+- **MCP first, every cycle**: grok_com_github tools (list/search/issue_read/add_issue_comment). Consolidate backlog, read latest comments on #223 etc., add short progress + PNG links. Use issue_write only if creating master tracker.
+
+**How to leave overnight**: Delete old short schedulers if stale. Create/improve one long scheduler **or** (better) spawn a background subagent with the briefing above + "use the runner script in loop". Check logs / subagent output / new PNGs / GH comments / git log in the morning. Major progress expected on port (3D visuals into main), #223 ACs closed with proofs, autonomous play validated, LOOP_STATE + docs updated.
+
+Always reference this file + LOOP_STATE.md + the IntegrationGuide + iso2-main-port instructions in every iteration. Use todo_write at start/end of cycles. Be autonomous until the explicit milestone.

@@ -1,0 +1,10 @@
+{
+  "pos": [
+    8.5,
+    3.5
+  ],
+  "wLocked": true,
+  "wThrough": true,
+  "ok": false,
+  "note": "LIVE standalone @5173 gen fence gate (strings locked/unlocked) per #223 + solver"
+}
