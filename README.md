@@ -1,6 +1,11 @@
 **Project Vision**  
 Emily's Game is an isometric, procedural world adventure designed for educational exploration and discovery. Players navigate a vast 1024×1024 cell world generated using novel LLM entropy mechanics, where language model outputs are mathematically processed into deterministic world seeds. The game incorporates educational elements through dynamic quizzes, a searchable in-game encyclopedia ("Book of Knowledge"), and subject-biased learning paths. Key features include biome progression (Forest → Cave → Castle), LLM entropy via SHA-256 hashed verb/noun pairs, 100-500 Q&A pairs per subject rewritten for 12-year-olds, isometric Canvas 2D rendering with occlusion, and hierarchical tile-based procedural generation.
 
+**Documentation**  
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** — canonical engine architecture: layered structure, spatial hierarchy, rendering & generation pipelines, state/save model. Read this first.  
+- **[AGENTS.md](AGENTS.md)** — how AI agents (and humans) add code, run visual tests, and follow conventions.  
+- **[Docs/EngineDecompositionMap.md](Docs/EngineDecompositionMap.md)** — file-by-file decomposition plan for the engine refactor (EPIC #247).  
+
 **How to Run**  
 - **Prerequisites**: Node.js 16+, npm 8+, optional local LLM server (BitNet) on `http://127.0.0.1:8002`.  
 - **Installation**: Run `npm install`.  

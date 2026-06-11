@@ -6,6 +6,8 @@ Emily's Game is an isometric browser-based procedural adventure game with LLM-dr
 
 **All planning, feature tracking, and task management is in GitHub Issues and the GitHub Project board.** Reference issues and milestones first — do not create standalone Markdown planning documents.
 
+**Start-here docs:** Read [`ARCHITECTURE.md`](../ARCHITECTURE.md) (engine architecture: layered structure, spatial hierarchy, rendering/generation pipelines, state/save model) and [`AGENTS.md`](../AGENTS.md) (how to add code, run visual tests, conventions, and the Iso 2.0 → main port contract) before making engine changes.
+
 ## GitHub Project Location
 
 - **Project Board:** "EmilysGame - Development Roadmap" (user-level GitHub Project V2)
