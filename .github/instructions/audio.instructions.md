@@ -1,6 +1,6 @@
 ---
 description: "Use when editing audio code — sfx.ts, music.ts, sampled-sfx.ts, midi-loader.ts, npc-voice.ts. Covers WebAudio error handling and silent-failure patterns."
-applyTo: "src/{sfx,music,sampled-sfx,midi-loader,npc-voice}.ts"
+applyTo: "src/game/audio/{sfx,music,sampled-sfx,midi-loader,npc-voice}.ts"
 ---
 # Audio System Rules
 

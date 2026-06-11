@@ -10,12 +10,12 @@ import {
   getSfxDef, AMBIENCE_PROFILES,
   DEFAULT_SFX_SETTINGS,
   type SfxDef, type AmbienceProfile, type AmbienceLayer, type SfxSettings,
-} from './config/sfx.config';
+} from '../../config/sfx.config';
 import {
   initSampledSfx, hasSample, playSample, preloadAllSamples,
   type ActiveSampleSource,
 } from './sampled-sfx';
-import { isTestMode } from './llm';
+import { isTestMode } from '../../llm';
 
 // ─── Types ──────────────────────────────────────────────────
 

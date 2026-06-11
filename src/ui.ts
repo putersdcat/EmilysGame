@@ -23,8 +23,8 @@ import type { Inventory } from './inventory';
 import type { QuizState } from './quiz';
 import type { PlayerStatus } from './status';
 import type { InjuryState } from './injury';
-import type { MusicState } from './music';
-import type { SfxState } from './sfx';
+import type { MusicState } from './game/audio/music';
+import type { SfxState } from './game/audio/sfx';
 import { getDebuffs } from './status';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -820,7 +820,7 @@ export function syncSfxUI(sfx: SfxState): void {
 
 // ─── Voice UI Sync (#76) ────────────────────────────────────
 
-import type { VoiceState } from './npc-voice';
+import type { VoiceState } from './game/audio/npc-voice';
 
 let _lastVoiceSyncFrame = 0;
 

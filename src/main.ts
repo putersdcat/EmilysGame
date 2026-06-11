@@ -102,7 +102,7 @@ import {
   serializeMusicSettings, deserializeMusicSettings,
   getCurrentTrackInfo, initMidiTracks, getTotalTrackCount, updateMidiProgress,
   type MusicState,
-} from './music';
+} from './game/audio/music';
 import {
   createSfxState, playSfx, stopAmbience,
   setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
@@ -112,12 +112,12 @@ import {
   playPositionalSfx, getPositionalSourceCount,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
   type SfxState,
-} from './sfx';
+} from './game/audio/sfx';
 import {
   createVoiceState, speakLine, cancelSpeech, toggleVoice,
   setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
   type VoiceState,
-} from './npc-voice';
+} from './game/audio/npc-voice';
 import type { FacingPose } from './sprites';
 
 

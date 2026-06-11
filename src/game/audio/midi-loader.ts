@@ -5,7 +5,7 @@
  * TODO: DOC - MIDI track loading pipeline
  */
 
-import type { MusicTrack } from './config/music.config';
+import type { MusicTrack } from '../../config/music.config';
 
 // ─── Manifest Types ─────────────────────────────────────────
 

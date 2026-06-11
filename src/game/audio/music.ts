@@ -6,7 +6,7 @@
  * TODO: DOC - MIDIocre integration, SF2 path, auto-advance logic
  */
 
-import { Midiocre } from './vendor/midiocre';
+import { Midiocre } from '../../vendor/midiocre';
 import {
   loadMidiManifest, getLoadedMidiTracks, preloadAllMidiTracks,
   isMidiManifestLoaded, type MidiManifestEntry,
@@ -14,8 +14,8 @@ import {
 import {
   DEFAULT_MUSIC_SETTINGS,
   type MusicTrack, type MusicSettings,
-} from './config/music.config';
-import { isTestMode } from './llm';
+} from '../../config/music.config';
+import { isTestMode } from '../../llm';
 
 // --- Types ------------------------------------------------------------------
 
