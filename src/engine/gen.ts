@@ -731,6 +731,9 @@ function buildPerlinBase(
   // Second noise channel at lower frequency for spatially coherent terrain type selection.
   // This replaces Math.random() so nearby cells get the same terrain type → larger patches.
   const terrainTypeNoise = new PerlinNoise(noiseSeed + 7777);
+  // Third channel for obstacle selection — deterministic + spatially coherent so obstacles
+  // form patches instead of unseeded random scatter (#265 determinism, #261 coherence).
+  const obstacleTypeNoise = new PerlinNoise(noiseSeed + 9999);
   const cells: CellData[][] = [];
   // #101: chunk climate for tile affinity scoring
   const climate = getChunkClimate(chunkX, chunkY);
@@ -743,7 +746,8 @@ function buildPerlinBase(
       const density = perlin.noise100(gx * 0.1, gy * 0.1);
       // Low-frequency noise (0.04) → large coherent patches of same terrain type
       const typeNoise = terrainTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
-      cells[y][x] = assignTerrainCell(density, biome, typeNoise, climate);
+      const obstacleNoise = obstacleTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
+      cells[y][x] = assignTerrainCell(density, biome, typeNoise, climate, obstacleNoise);
     }
   }
   return cells;
@@ -760,6 +764,7 @@ function assignTerrainCell(
   biome: BiomeDef,
   typeNoise: number,
   climate?: { moisture: number; temperature: number },
+  obstacleNoise?: number,
 ): CellData {
   const { terrain, obstacle } = WORLD_CONFIG.density;
 
@@ -774,7 +779,8 @@ function assignTerrainCell(
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? true, interactable: false };
   } else if (density <= obstacle.max) {
-    const assetKey = weightedPick(biome.obstacleWeights, Math.random());
+    // #265: deterministic, spatially-coherent obstacle pick (was Math.random()).
+    const assetKey = weightedPick(biome.obstacleWeights, obstacleNoise ?? typeNoise);
     const def = ASSET_DEFS[assetKey];
     return { assetKey, walkable: def?.walkable ?? false, interactable: def?.interactable ?? false };
   } else {
