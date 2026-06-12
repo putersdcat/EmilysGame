@@ -84,7 +84,7 @@ export { placeQuizGates, placeBonfires, placeGatesInFenceRuns, promoteDoorGates,
 // countWalkableNeighbors was moved to world/GridUtils.ts (slice 5). Re-export kept
 // for backward compat (consumed via the public engine/gen surface by other tools/tests).
 export { countWalkableNeighbors } from './world/GridUtils';
-import { traversalCompatible, weightedSelectTemplate, findTerminator, validateCornerGovernance } from './world/WorldUnitSolver';
+import { traversalCompatible, weightedSelectTemplate, findTerminator, validateCornerGovernance, OPPOSITES, buildAllArcs, propagateAC3, getArcsAffectedBy, propagateAC3Partial } from './world/WorldUnitSolver';
 import {
   edgesCompatible,
   getAllRotations,
@@ -532,7 +532,8 @@ interface SolveResult {
 }
 
 // --- AC-3 Solver Budget ---
-const MAX_PROPAGATION_ITERATIONS = 1000;
+// `MAX_PROPAGATION_ITERATIONS` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
+// Imported at top of file; used by propagateAC3 and propagateAC3Partial.
 
 // --- Traversal Continuity Check (#42) ---
 // Moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.1 / #253).
@@ -572,7 +573,7 @@ function solveWorldUnitGrid(
   }
 
   // Phase 2c: Build arc set and run initial AC-3 propagation
-  const arcs = buildAllArcs();
+  const arcs = buildAllArcs(GRID_DIM);
   propagateAC3(slots, arcs);
 
   // Phase 2d: Collapse slots using MRV heuristic + propagation
@@ -696,74 +697,10 @@ function applyBorderConstraints(
   }
 }
 
-// --- Arc Construction ---
-
-const OPPOSITES: Record<Cardinal, Cardinal> = { n: 's', s: 'n', e: 'w', w: 'e' };
-
-function buildAllArcs(): Arc[] {
-  const arcs: Arc[] = [];
-  for (let gy = 0; gy < GRID_DIM; gy++) {
-    for (let gx = 0; gx < GRID_DIM; gx++) {
-      // Right neighbor
-      if (gx + 1 < GRID_DIM) {
-        arcs.push({ fromY: gy, fromX: gx, toY: gy, toX: gx + 1, fromSide: 'e', toSide: 'w' });
-        arcs.push({ fromY: gy, fromX: gx + 1, toY: gy, toX: gx, fromSide: 'w', toSide: 'e' });
-      }
-      // Bottom neighbor
-      if (gy + 1 < GRID_DIM) {
-        arcs.push({ fromY: gy, fromX: gx, toY: gy + 1, toX: gx, fromSide: 's', toSide: 'n' });
-        arcs.push({ fromY: gy + 1, fromX: gx, toY: gy, toX: gx, fromSide: 'n', toSide: 's' });
-      }
-    }
-  }
-  return arcs;
-}
-
-// --- AC-3 Constraint Propagation ---
-
-function propagateAC3(slots: SlotState[][], allArcs: Arc[]): void {
-  // Worklist: start with all arcs
-  const queue: Arc[] = [...allArcs];
-  let iterations = 0;
-
-  while (queue.length > 0 && iterations < MAX_PROPAGATION_ITERATIONS) {
-    iterations++;
-    const arc = queue.shift()!;
-    const fromSlot = slots[arc.fromY][arc.fromX];
-    const toSlot = slots[arc.toY][arc.toX];
-
-    // Skip if either is already collapsed
-    if (fromSlot.collapsed || toSlot.collapsed) continue;
-
-    // Revise: remove candidates from 'from' that have no compatible candidate in 'to'
-    const before = fromSlot.candidates.length;
-    fromSlot.candidates = fromSlot.candidates.filter(fc => {
-      // At least one candidate in 'to' must be edge-compatible AND traversal-compatible (#42)
-      return toSlot.candidates.some(tc =>
-        edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide])
-        && traversalCompatible(fc.template, tc.template, arc.fromSide, arc.toSide),
-      );
-    });
-
-    // If candidates were removed, re-enqueue arcs pointing TO this slot
-    if (fromSlot.candidates.length < before) {
-      for (const otherArc of allArcs) {
-        if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX &&
-            !(otherArc.fromY === arc.toY && otherArc.fromX === arc.toX)) {
-          queue.push(otherArc);
-        }
-      }
-    }
-  }
-}
-
-// --- Arcs Affected by a Specific Slot ---
-
-function getArcsAffectedBy(
-  gy: number, gx: number, allArcs: Arc[],
-): Arc[] {
-  return allArcs.filter(a => a.toY === gy && a.toX === gx);
-}
+// --- Arc Construction + AC-3 Constraint Propagation ---
+// `OPPOSITES`, `buildAllArcs`, `propagateAC3`, and `getArcsAffectedBy` all
+// moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
+// Imported at top of file; used by solveWorldUnitGrid and collapseAllMRV.
 
 // --- Slot Selection Priority ---
 // Improved filling order: boundary-first → chain-continuation → MRV
@@ -894,51 +831,8 @@ function collapseAllMRV(
 }
 
 /** Partial AC-3 propagation from a specific worklist. */
-function propagateAC3Partial(
-  slots: SlotState[][],
-  queue: Arc[],
-  allArcs: Arc[],
-): void {
-  let iterations = 0;
-  while (queue.length > 0 && iterations < MAX_PROPAGATION_ITERATIONS) {
-    iterations++;
-    const arc = queue.shift()!;
-    const fromSlot = slots[arc.fromY][arc.fromX];
-    const toSlot = slots[arc.toY][arc.toX];
-
-    if (fromSlot.collapsed) continue;
-
-    // If toSlot is collapsed, filter from against the single collapsed value
-    // Includes traversal continuity check (#42)
-    let changed = false;
-    if (toSlot.collapsed) {
-      const before = fromSlot.candidates.length;
-      fromSlot.candidates = fromSlot.candidates.filter(fc =>
-        edgesCompatible(fc.template.edgeTags[arc.fromSide], toSlot.collapsed!.edgeTags[arc.toSide])
-        && traversalCompatible(fc.template, toSlot.collapsed!, arc.fromSide, arc.toSide),
-      );
-      changed = fromSlot.candidates.length < before;
-    } else {
-      const before = fromSlot.candidates.length;
-      fromSlot.candidates = fromSlot.candidates.filter(fc =>
-        toSlot.candidates.some(tc =>
-          edgesCompatible(fc.template.edgeTags[arc.fromSide], tc.template.edgeTags[arc.toSide])
-          && traversalCompatible(fc.template, tc.template, arc.fromSide, arc.toSide),
-        ),
-      );
-      changed = fromSlot.candidates.length < before;
-    }
-
-    if (changed) {
-      for (const otherArc of allArcs) {
-        if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX &&
-            !(otherArc.fromY === arc.toY && otherArc.fromX === arc.toX)) {
-          queue.push(otherArc);
-        }
-      }
-    }
-  }
-}
+// `propagateAC3Partial` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
+// Imported at top of file; used by collapseAllMRV.
 
 // `weightedSelectTemplate` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.1 / #253).
 // Imported at top of file; used by collapseAllMRV.
