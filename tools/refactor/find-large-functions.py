@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Find large functions and classes in TypeScript files.
-Designed for the Emily's Game refactoring effort.
+Robust large function/class discovery for TypeScript.
+Uses brace counting instead of declaration-based stopping.
 
 Usage:
-    python tools/refactor/find-large-functions.py src/ --min-lines 70
+    python tools/refactor/find-large-functions.py src/ --min-lines 60
 """
 import os
 import re
@@ -17,15 +17,17 @@ from typing import List
 class CodeItem:
     file: str
     name: str
-    type: str          # 'function' or 'class'
+    type: str
     start_line: int
     line_count: int
 
-def find_large_items(root_dir: str, min_lines: int = 70) -> List[CodeItem]:
+def find_large_items(root_dir: str, min_lines: int = 60) -> List[CodeItem]:
     results: List[CodeItem] = []
-    # Matches: export? async? function/class Name
-    pattern = re.compile(
-        r'^(export\s+)?(async\s+)?(function|class)\s+([A-Za-z0-9_]+)',
+
+    # Detect start of functions, arrow functions, and classes
+    start_pattern = re.compile(
+        r'^(export\s+)?(async\s+)?(function|class)\s+([A-Za-z0-9_]+)|'
+        r'^(export\s+)?(const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(async\s+)?\(',
         re.MULTILINE
     )
 
@@ -40,25 +42,40 @@ def find_large_items(root_dir: str, min_lines: int = 70) -> List[CodeItem]:
             except Exception:
                 continue
 
-            for match in pattern.finditer(content):
-                item_type = match.group(3)
-                item_name = match.group(4)
+            for match in start_pattern.finditer(content):
+                # Extract name from the match
+                name = None
+                for group in match.groups():
+                    if group and group not in ('export', 'async', 'function', 'class', 'const', 'let', 'var'):
+                        name = group
+                        break
+                if not name:
+                    continue
+
                 start_pos = match.start()
                 start_line = content[:start_pos].count('\n') + 1
 
-                # Count lines until we hit another top-level declaration
+                # Brace counting to find real end of block
                 remaining = content[start_pos:]
+                brace_count = 0
+                started = False
                 line_count = 0
+
                 for line in remaining.splitlines():
-                    stripped = line.strip()
-                    if re.match(r'^(export\s+)?(async\s+)?(function|class|interface|type|const|let|var)\s+\w+', stripped):
-                        break
+                    if '{' in line:
+                        started = True
+                        brace_count += line.count('{')
+                    if started:
+                        brace_count -= line.count('}')
                     line_count += 1
+                    if started and brace_count == 0:
+                        break
 
                 if line_count >= min_lines:
+                    item_type = 'class' if 'class' in match.group(0) else 'function'
                     results.append(CodeItem(
                         file=str(filepath.relative_to(root_dir)),
-                        name=item_name,
+                        name=name,
                         type=item_type,
                         start_line=start_line,
                         line_count=line_count
@@ -68,13 +85,12 @@ def find_large_items(root_dir: str, min_lines: int = 70) -> List[CodeItem]:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Find large functions/classes in TypeScript")
+    parser = argparse.ArgumentParser()
     parser.add_argument("directory", help="Root directory to scan")
-    parser.add_argument("--min-lines", type=int, default=70, help="Minimum line count to report")
+    parser.add_argument("--min-lines", type=int, default=60)
     args = parser.parse_args()
 
     items = find_large_items(args.directory, args.min_lines)
-
     print(f"\nFound {len(items)} items with >= {args.min_lines} lines:\n")
     for item in sorted(items, key=lambda x: -x.line_count):
-        print(f"{item.line_count:4d} lines | {item.type:8s} | {item.name:35s} | {item.file}:{item.start_line}")
+        print(f"{item.line_count:4d} lines | {item.type:8s} | {item.name:40s} | {item.file}:{item.start_line}")
