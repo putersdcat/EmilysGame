@@ -84,15 +84,20 @@ export { placeQuizGates, placeBonfires, placeGatesInFenceRuns, promoteDoorGates,
 // countWalkableNeighbors was moved to world/GridUtils.ts (slice 5). Re-export kept
 // for backward compat (consumed via the public engine/gen surface by other tools/tests).
 export { countWalkableNeighbors } from './world/GridUtils';
-import { findTerminator, buildAllArcs, propagateAC3, collapseAllMRV } from './world/WorldUnitSolver';
+// 8.5 (#253): top-level solver orchestration (biome pool, border constraints,
+// stamp, chain integrity, border extraction, MRV orchestrator) all live in
+// WorldUnitSolver.ts. gen.ts only needs the two public orchestrator
+// functions for the generateGridChunk pipeline; the other 5 helpers
+// (buildBiomeCandidatePool, findFallbackTemplate, applyBorderConstraints,
+// extractGridBorderEdges, enforceChainIntegrity) are file-private inside
+// the module and called only by solveWorldUnitGrid.
+// `findTerminator`, `buildAllArcs`, `propagateAC3`, `collapseAllMRV` (8.1-8.4)
+// are also no longer imported here — they're called internally by the
+// orchestrator `solveWorldUnitGrid` inside WorldUnitSolver.ts.
+import { solveWorldUnitGrid, stampWorldUnitGrid } from './world/WorldUnitSolver';
 import {
-  edgesCompatible,
-  getAllRotations,
-  BIOME_TEMPLATE_WEIGHTS,
-  MICRO_TILE_DEFS,
   tileMatchesClimate,
   type EdgeTag,
-  type RotatedTemplate,
 } from '../config/tiles.config';
 import type { TileType } from '../rendering/tiles';
 
@@ -282,10 +287,15 @@ function generateGridChunk(
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
 
   // Phase 2: solve world unit grid (AC-3 constraint propagation)
+  // The solver uses its module-level GRID_DIM constant (derived from
+  // WORLD_CONFIG.chunkSize / worldUnitSize) which matches gen.ts's
+  // local constant exactly. No gridDim parameter is required.
   const { grid, borderEdges } = solveWorldUnitGrid(biome, rng, borderConstraints, mood, biomeTransitions);
 
   // Phase 3: stamp solved templates onto cell grid
-  stampWorldUnitGrid(cells, grid);
+  // Pass gen.ts's WU_SIZE explicitly so the stamper is renderer-safe
+  // (the module doesn't read WORLD_CONFIG.worldUnitSize directly).
+  stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
 
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
@@ -501,314 +511,57 @@ function applyEntropyCellFlags(
 // --- Phase 2: AC-3 World Unit Grid Solver (#17) ---
 // TODO: DOC — AC-3 constraint propagation solver for world unit placement.
 // Design: WorldEngine-02-EdgeContracts.md, Section 6.
-
-interface WeightedCandidate {
-  template: RotatedTemplate;
-  weight: number;
-}
-
-/** Possibility set for each grid slot. Candidates shrink via propagation. */
-interface SlotState {
-  candidates: WeightedCandidate[];
-  collapsed: RotatedTemplate | null;
-}
-
-/** An arc connects two adjacent slots along a specific direction pair. */
-// `Arc` interface moved to ./world/WorldUnitSolver.ts as the structural
-// `ArcLike` type (B3 micro-slice 8.4 / #253). gen.ts continues to use the
-// local `Arc` shape for any remaining in-file references; if a future
-// slice needs the explicit interface here, re-introduce it as an alias
-// of the module's type.
-
-interface SolveResult {
-  grid: (RotatedTemplate | null)[][];
-  borderEdges: ChunkBorderEdges;
-}
+//
+// B3 micro-slice 8.5 (#253): the full Phase 2 orchestrator and the helpers
+// (biome candidate pool, border-constraint application, MRV/AC-3 collapse,
+// chain-integrity enforcement, border-edge extraction, and the Phase 3
+// cell stamper) all moved to ./world/WorldUnitSolver.ts. gen.ts is now
+// just the Phases 1/4/5/6 orchestrator: build base terrain, solve, stamp,
+// enforce passability, populate, place obstacles/collectibles/bonfires,
+// apply entropy flags.
+//
+// The `WeightedCandidate` and `SlotState` types live inside
+// WorldUnitSolver.ts as the solver's internal types; consumers that
+// previously imported them from gen.ts should import from
+// `engine/world/WorldUnitSolver` instead.
 
 // --- AC-3 Solver Budget ---
-// `MAX_PROPAGATION_ITERATIONS` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
-// Imported at top of file; used by propagateAC3 and propagateAC3Partial.
+// `MAX_PROPAGATION_ITERATIONS` lives in ./world/WorldUnitSolver.ts (8.3 / #253).
 
 // --- Traversal Continuity Check (#42) ---
-// Moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.1 / #253).
-// Imported above; used by propagateAC3, propagateAC3Partial, and collapse logic.
+// `traversalCompatible` lives in ./world/WorldUnitSolver.ts (8.1 / #253).
 
 // --- Corner Governance (#42) ---
-// `getCornerSurface` + `validateCornerGovernance` moved to
-// ./world/WorldUnitSolver.ts (B3 micro-slice 8.2 / #253).
-// Imported above; used by collapseAllMRV.
-
-function solveWorldUnitGrid(
-  biome: BiomeDef,
-  rng: () => number,
-  borderConstraints?: BorderConstraints,
-  mood?: MoodProfile,
-  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
-): SolveResult {
-  const allRotations = getAllRotations();
-  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations, mood, biomeTransitions);
-  const fallback = findFallbackTemplate(allRotations);
-
-  // Phase 2a: Initialize possibility sets
-  const slots: SlotState[][] = [];
-  for (let gy = 0; gy < GRID_DIM; gy++) {
-    slots[gy] = [];
-    for (let gx = 0; gx < GRID_DIM; gx++) {
-      slots[gy][gx] = {
-        candidates: biomeCandidates.map(c => ({ ...c })),
-        collapsed: null,
-      };
-    }
-  }
-
-  // Phase 2b: Apply border constraints from neighboring chunks
-  if (borderConstraints) {
-    applyBorderConstraints(slots, borderConstraints);
-  }
-
-  // Phase 2c: Build arc set and run initial AC-3 propagation
-  const arcs = buildAllArcs(GRID_DIM);
-  propagateAC3(slots, arcs);
-
-  // Phase 2d: Collapse slots using MRV heuristic + propagation
-  collapseAllMRV(slots, rng, fallback, arcs, GRID_DIM);
-
-  // Build result grid
-  const grid: (RotatedTemplate | null)[][] = [];
-  for (let gy = 0; gy < GRID_DIM; gy++) {
-    grid[gy] = [];
-    for (let gx = 0; gx < GRID_DIM; gx++) {
-      grid[gy][gx] = slots[gy][gx].collapsed;
-    }
-  }
-
-  enforceChainIntegrity(grid, allRotations);
-  const borderEdges = extractGridBorderEdges(grid);
-
-  return { grid, borderEdges };
-}
-
-// --- Biome Candidate Pool ---
-
-function buildBiomeCandidatePool(
-  biome: BiomeDef,
-  allRotations: Map<string, RotatedTemplate[]>,
-  mood?: MoodProfile,
-  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
-): WeightedCandidate[] {
-  const pool: WeightedCandidate[] = [];
-  const biomeWeights = BIOME_TEMPLATE_WEIGHTS[biome.name] ?? {};
-  const hasTransition = biomeTransitions && (biomeTransitions.n || biomeTransitions.s || biomeTransitions.e || biomeTransitions.w);
-
-  for (const [templateName, rotations] of allRotations.entries()) {
-    let weight = biomeWeights[templateName] ?? 0.01;
-
-    // Apply mood modifiers (#46): additive bias from mood profile
-    if (mood) {
-      const mod = mood.modifiers[templateName];
-      if (mod !== undefined) {
-        weight += mod;
-      } else if (mood.category === 'sparse') {
-        // Sparse mood penalizes everything not explicitly boosted
-        weight = Math.max(0.005, weight - 0.1);
-      }
-    }
-
-    // Biome transition: slightly widen pool by boosting low-weight templates (#46)
-    if (hasTransition && weight < 0.02) {
-      weight += 0.01;
-    }
-
-    // Floor to prevent zero weights
-    weight = Math.max(0.005, weight);
-
-    for (const rot of rotations) {
-      pool.push({ template: rot, weight });
-    }
-  }
-  return pool;
-}
-
-function findFallbackTemplate(
-  allRotations: Map<string, RotatedTemplate[]>,
-): RotatedTemplate | null {
-  const meadowRots = allRotations.get('meadow_base');
-  if (meadowRots && meadowRots.length > 0) return meadowRots[0];
-  return null;
-}
-
-// --- Border Constraints from Neighboring Chunks ---
-
-function applyBorderConstraints(
-  slots: SlotState[][],
-  bc: BorderConstraints,
-): void {
-  // North border: our row 0 must match the south edge of the chunk above
-  if (bc.n) {
-    for (let gx = 0; gx < GRID_DIM && gx < bc.n.length; gx++) {
-      const requiredTag = bc.n[gx];
-      const requiredTraversal = bc.nTraversal?.[gx];
-      slots[0][gx].candidates = slots[0][gx].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.n, requiredTag) &&
-          (requiredTraversal === undefined || c.template.traversalChannels.n === requiredTraversal),
-      );
-    }
-  }
-  // South border: our last row must match the north edge of the chunk below
-  if (bc.s) {
-    const lastRow = GRID_DIM - 1;
-    for (let gx = 0; gx < GRID_DIM && gx < bc.s.length; gx++) {
-      const requiredTag = bc.s[gx];
-      const requiredTraversal = bc.sTraversal?.[gx];
-      slots[lastRow][gx].candidates = slots[lastRow][gx].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.s, requiredTag) &&
-          (requiredTraversal === undefined || c.template.traversalChannels.s === requiredTraversal),
-      );
-    }
-  }
-  // West border: our column 0 must match the east edge of the chunk to the left
-  if (bc.w) {
-    for (let gy = 0; gy < GRID_DIM && gy < bc.w.length; gy++) {
-      const requiredTag = bc.w[gy];
-      const requiredTraversal = bc.wTraversal?.[gy];
-      slots[gy][0].candidates = slots[gy][0].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.w, requiredTag) &&
-          (requiredTraversal === undefined || c.template.traversalChannels.w === requiredTraversal),
-      );
-    }
-  }
-  // East border: our last column must match the west edge of the chunk to the right
-  if (bc.e) {
-    const lastCol = GRID_DIM - 1;
-    for (let gy = 0; gy < GRID_DIM && gy < bc.e.length; gy++) {
-      const requiredTag = bc.e[gy];
-      const requiredTraversal = bc.eTraversal?.[gy];
-      slots[gy][lastCol].candidates = slots[gy][lastCol].candidates.filter(
-        c => edgesCompatible(c.template.edgeTags.e, requiredTag) &&
-          (requiredTraversal === undefined || c.template.traversalChannels.e === requiredTraversal),
-      );
-    }
-  }
-}
+// `getCornerSurface` + `validateCornerGovernance` live in
+// ./world/WorldUnitSolver.ts (8.2 / #253).
 
 // --- Arc Construction + AC-3 Constraint Propagation ---
 // `OPPOSITES`, `buildAllArcs`, `propagateAC3`, and `getArcsAffectedBy` all
-// moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
-// Imported at top of file; used by solveWorldUnitGrid and collapseAllMRV.
+// live in ./world/WorldUnitSolver.ts (8.3 / #253).
 
 // --- Slot Selection Priority + MRV Collapse ---
-// `slotPriority` and `collapseAllMRV` moved to ./world/WorldUnitSolver.ts
-// (B3 micro-slice 8.4 / #253). Imported at top of file; used by solveWorldUnitGrid.
+// `slotPriority` and `collapseAllMRV` live in ./world/WorldUnitSolver.ts
+// (8.4 / #253).
 
 /** Partial AC-3 propagation from a specific worklist. */
-// `propagateAC3Partial` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
-// Imported at top of file; used by collapseAllMRV.
+// `propagateAC3Partial` lives in ./world/WorldUnitSolver.ts (8.3 / #253).
 
-// `weightedSelectTemplate` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.1 / #253).
-// Imported at top of file; used by collapseAllMRV.
+// `weightedSelectTemplate` lives in ./world/WorldUnitSolver.ts (8.1 / #253).
 
-// --- Border Edge Extraction ---
-
-function extractGridBorderEdges(
-  grid: (RotatedTemplate | null)[][],
-): ChunkBorderEdges {
-  return {
-    n: Array.from({ length: GRID_DIM }, (_, gx) => grid[0]?.[gx]?.edgeTags.n ?? 'open'),
-    s: Array.from({ length: GRID_DIM }, (_, gx) => grid[GRID_DIM - 1]?.[gx]?.edgeTags.s ?? 'open'),
-    e: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[GRID_DIM - 1]?.edgeTags.e ?? 'open'),
-    w: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[0]?.edgeTags.w ?? 'open'),
-    // Traversal walkability per border position (#46)
-    nTraversal: Array.from({ length: GRID_DIM }, (_, gx) => grid[0]?.[gx]?.traversalChannels.n ?? true),
-    sTraversal: Array.from({ length: GRID_DIM }, (_, gx) => grid[GRID_DIM - 1]?.[gx]?.traversalChannels.s ?? true),
-    eTraversal: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[GRID_DIM - 1]?.traversalChannels.e ?? true),
-    wTraversal: Array.from({ length: GRID_DIM }, (_, gy) => grid[gy]?.[0]?.traversalChannels.w ?? true),
-  };
-}
-
-// --- Chain Integrity (#42: uses chainPorts for precise chain edge detection) ---
-
-function enforceChainIntegrity(
-  grid: (RotatedTemplate | null)[][],
-  allRotations: Map<string, RotatedTemplate[]>,
-): void {
-  for (let gy = 0; gy < GRID_DIM; gy++) {
-    for (let gx = 0; gx < GRID_DIM; gx++) {
-      const template = grid[gy][gx];
-      if (!template) continue;
-
-      // Use chainPorts for precise chain edge detection (#42)
-      // Check exits first (must connect forward); fall back to entries for legacy
-      const ports = template.chainPorts;
-      const dirsToCheck = ports.exits.length > 0
-        ? ports.exits
-        : ports.entries;
-      if (dirsToCheck.length === 0) continue;
-
-      for (const dir of dirsToCheck) {
-        const tag = template.edgeTags[dir];
-        const nx = gx + (dir === 'e' ? 1 : dir === 'w' ? -1 : 0);
-        const ny = gy + (dir === 's' ? 1 : dir === 'n' ? -1 : 0);
-
-        const needsFix =
-          nx < 0 || nx >= GRID_DIM || ny < 0 || ny >= GRID_DIM ||
-          !grid[ny]?.[nx];
-
-        if (needsFix && tag !== 'open') {
-          const replacement = findTerminator(template.baseName, allRotations);
-          if (replacement) {
-            // Check that replacement is compatible with placed neighbors
-            const nTag = gy > 0 && grid[gy - 1][gx] ? grid[gy - 1][gx]!.edgeTags.s : undefined;
-            const wTag = gx > 0 && grid[gy][gx - 1] ? grid[gy][gx - 1]!.edgeTags.e : undefined;
-            if (
-              (!nTag || edgesCompatible(replacement.edgeTags.n, nTag)) &&
-              (!wTag || edgesCompatible(replacement.edgeTags.w, wTag))
-            ) {
-              grid[gy][gx] = replacement;
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-// `findTerminator` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.1 / #253).
-// Imported at top of file; used by enforceChainIntegrity for recovery on dangling chains.
+// `findTerminator` lives in ./world/WorldUnitSolver.ts (8.1 / #253); used
+// by `enforceChainIntegrity` for recovery on dangling chains.
 
 // --- Phase 3: Stamp Grid onto Cells ---
 // (Phase 3 of generateGridChunk; called immediately after solveWorldUnitGrid.)
-// Stamps the solved 5x5 RotatedTemplate grid into the concrete CellData grid.
-// Micro-tile walkability from MICRO_TILE_DEFS takes precedence; falls back to ASSET_DEFS.
+// B3 micro-slice 8.5 (#253): `stampWorldUnitGrid` lives in
+// ./world/WorldUnitSolver.ts; gen.ts calls it with (cells, grid, GRID_DIM, WU_SIZE).
 
-function stampWorldUnitGrid(
-  cells: CellData[][],
-  grid: (RotatedTemplate | null)[][],
-): void {
-  for (let gy = 0; gy < GRID_DIM; gy++) {
-    for (let gx = 0; gx < GRID_DIM; gx++) {
-      const template = grid[gy][gx];
-      if (!template) continue;
-
-      const baseX = gx * WU_SIZE;
-      const baseY = gy * WU_SIZE;
-
-      for (let ty = 0; ty < WU_SIZE; ty++) {
-        for (let tx = 0; tx < WU_SIZE; tx++) {
-          const cellKey = template.cells[ty]?.[tx];
-          if (cellKey === null || cellKey === undefined) continue;
-
-          const microDef = MICRO_TILE_DEFS[cellKey as TileType];
-          const def = ASSET_DEFS[cellKey];
-          cells[baseY + ty][baseX + tx] = {
-            assetKey: cellKey,
-            walkable: microDef?.walkable ?? def?.walkable ?? true,
-            interactable: def?.interactable ?? false,
-          };
-        }
-      }
-    }
-  }
-}
+// --- Phase 4: Passability Enforcement ---
+// `enforcePassability` and the file-local `validateWaterIntegrity` helper
+// were moved to src/engine/world/Passability.ts (B3 / #253). The water
+// debug state (`_lastWaterDebug`) and the public `getWaterDebugInfo()`
+// getter also live with Passability; gen.ts re-exports the getter for
+// API stability (consumed by main.ts and ui/ui.ts).
 
 // --- Phase 4: Passability Enforcement ---
 // `enforcePassability` and the file-local `validateWaterIntegrity` helper

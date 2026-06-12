@@ -36,16 +36,41 @@
  *     to the affected neighbors. See 8.4 notes for the structural-type
  *     decoupling.
  *
- * These are pure, stateless helpers used by the still-in-gen.ts AC-3 machinery.
- * The full solver (`solveWorldUnitGrid`, `stampWorldUnitGrid`,
- * border-constraint application, chain integrity orchestration) remains in
- * gen.ts and will move in later micro-slices (8.5 → 8.6).
+ * Micro-slice 8.5 (added — the top-level orchestration):
+ *   - buildBiomeCandidatePool — build the per-biome weighted candidate
+ *     pool with mood + biome-transition modifiers (#46)
+ *   - findFallbackTemplate — pick the meadow_base rotation as the
+ *     recovery template when a slot has no candidates (contradiction)
+ *   - applyBorderConstraints — filter slot candidates against the
+ *     already-solved edges of neighboring chunks (#17)
+ *   - solveWorldUnitGrid — the top-level AC-3 world unit grid solver
+ *     orchestrator (Phases 2a–2d). Initializes slots, applies border
+ *     constraints, runs full AC-3 propagation, collapses via MRV,
+ *     enforces chain integrity, extracts border edges, and returns
+ *     the result. THIS IS THE PUBLIC FACE of the AC-3 solver.
+ *   - stampWorldUnitGrid — Phase 3: write the solved 5×5 RotatedTemplate
+ *     grid into the concrete CellData grid. Public (also called from
+ *     gen.ts's generateGridChunk).
+ *   - extractGridBorderEdges — extract per-position border EdgeTags
+ *     + TraversalChannels for the chunk's n/s/e/w edges (used by
+ *     downstream chunks to honor #17 edge contracts)
+ *   - enforceChainIntegrity — replace dangling chain features (river
+ *     ends, wall ends, path dead-ends) with appropriate terminators
+ *     when they would otherwise leak off the chunk edge (#42)
+ *   - type SolveResult (private) — the {grid, borderEdges} return type
+ *     of solveWorldUnitGrid
  *
- * `validateCornerGovernance` (8.2), the propagation helpers (8.3), and
- * `collapseAllMRV` (8.4) accept structural `SlotLike` and `ArcLike` types so
- * the module stays decoupled from the full `SlotState` and `Arc` types
- * (which still live in gen.ts and move with micro-slice 8.5). The functions
- * only read the fields they actually need, so the structural subsets are
+ * With 8.5, the AC-3 world unit grid solver surface is COMPLETE in this
+ * module. The remaining gen.ts work is the chunk-generation pipeline
+ * glue (generateGridChunk, generateChunkSync, generateChunk) plus the
+ * LLM entropy cell-flag pass (applyEntropyCellFlags, #4).
+ *
+ * These functions accept structural `SlotLike` / `ArcLike` /
+ * `BiomeLike` / `MoodLike` / `BorderLike` types so the module stays
+ * decoupled from the full `SlotState` / `Arc` / `BiomeDef` / `MoodProfile`
+ * / `BorderConstraints` types (which all still live in gen.ts and
+ * are forwarded through the structural subsets). The functions only
+ * read the fields they actually need, so the structural subsets are
  * sufficient.
  *
  * Re-exports are intentionally minimal; gen.ts imports directly for internal use.
@@ -59,7 +84,45 @@
  */
 
 import type { EdgeTag, Cardinal, RotatedTemplate, CornerCells } from '../../config/tiles.config';
-import { MICRO_TILE_DEFS, edgesCompatible } from '../../config/tiles.config';
+import {
+  MICRO_TILE_DEFS,
+  edgesCompatible,
+  getAllRotations,
+  BIOME_TEMPLATE_WEIGHTS,
+} from '../../config/tiles.config';
+import { ASSET_DEFS } from '../../config/assets.config';
+import type { TileType } from '../../rendering/tiles';
+import { WORLD_CONFIG } from '../../config/game.config';
+// GRID_DIM is derived from WORLD_CONFIG — the source of truth for the
+// solver. stampWorldUnitGrid takes wuSize as an explicit parameter
+// (since the module shouldn't need to know WU_SIZE separately), but
+// solveWorldUnitGrid + enforceChainIntegrity + extractGridBorderEdges
+// all use GRID_DIM directly.
+const GRID_DIM = WORLD_CONFIG.chunkSize / WORLD_CONFIG.worldUnitSize;
+
+// Structural subset of gen.ts's `ChunkBorderEdges`. The full type is
+// still defined in gen.ts and re-exported there for backward compat;
+// here we just need the fields the solver produces and consumes.
+type BorderEdge = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore' | 'gate' | 'wall-cap' | 'fence-post';
+interface ChunkBorderEdges {
+  n: BorderEdge[];
+  s: BorderEdge[];
+  e: BorderEdge[];
+  w: BorderEdge[];
+  nTraversal?: boolean[];
+  sTraversal?: boolean[];
+  eTraversal?: boolean[];
+  wTraversal?: boolean[];
+}
+
+// Structural subset of gen.ts's `CellData` — only the fields that
+// stampWorldUnitGrid writes. The full CellData type still lives in
+// gen.ts and is re-exported.
+interface CellLike {
+  assetKey: string;
+  walkable: boolean;
+  interactable: boolean;
+}
 
 // --- Traversal Continuity Check (#42) ---
 // When both edges are 'open' or 'path', traversal channels must match.
@@ -74,6 +137,7 @@ const TRAVERSAL_EDGE_TYPES = new Set<EdgeTag>(['open', 'path']);
 interface EdgeProbe {
   edgeTags: RotatedTemplate['edgeTags'];
   traversalChannels: RotatedTemplate['traversalChannels'];
+  cornerCells: CornerCells;
 }
 
 export function traversalCompatible(
@@ -142,15 +206,18 @@ export function getCornerSurface(cellType: string): string {
 /**
  * Structural subset of the gen.ts `SlotState` that the corner governance +
  * propagation + collapse helpers actually read.
- * Decouples the module from the full type (which moves in micro-slice 8.5).
+ * Decouples the module from the full type.
  *
- * - `cornerCells`: used by corner governance (8.2)
- * - `collapsed` (with `edgeTags`, `traversalChannels`, `cornerCells`) /
- *   `candidates`: used by AC-3 propagation (8.3) and MRV collapse (8.4)
+ * - `cornerCells` (on collapsed): used by corner governance (8.2)
+ * - `edgeTags` (on collapsed): used by traversal check during propagation
+ *   (the corner governance helper also reads cornerCells)
+ * - `collapsed` is a full RotatedTemplate or null — the 8.5 orchestration
+ *   (build the result grid, enforce chain integrity, extract border
+ *   edges) needs the entire template, not just a subset
  * - `candidates[i].weight`: used by weighted selection during collapse (8.4)
  */
 interface SlotLike {
-  collapsed: { edgeTags: RotatedTemplate['edgeTags']; traversalChannels: RotatedTemplate['traversalChannels']; cornerCells: CornerCells } | null;
+  collapsed: RotatedTemplate | null;
   candidates: Array<{ template: RotatedTemplate; weight: number }>;
 }
 
@@ -560,4 +627,420 @@ function slotPriority(gy: number, gx: number, slots: SlotLike[][], gridDim: numb
   else tier = 4000;
 
   return tier + candidateCount;
+}
+
+// --- Biome Candidate Pool (#17 + #46) ---
+
+/**
+ * Structural subset of the gen.ts `BiomeDef` type that
+ * buildBiomeCandidatePool needs. Keeps the module decoupled from the
+ * full type (which lives in src/config/biomes.config.ts and is passed
+ * through by gen.ts).
+ */
+interface BiomeLike {
+  name: string;
+}
+
+/**
+ * Structural subset of the gen.ts `MoodProfile` type that
+ * buildBiomeCandidatePool reads. Only the modifiers map and the
+ * category are accessed.
+ */
+interface MoodLike {
+  category: string;
+  modifiers: Record<string, number>;
+}
+
+/**
+ * Build the per-biome weighted candidate pool. Iterates over every
+ * available template+rotation, assigns a base weight from
+ * `BIOME_TEMPLATE_WEIGHTS[biome.name]`, then layers:
+ *
+ *   - Mood modifiers (#46): additive bias per template; for "sparse"
+ *     mood, templates not explicitly boosted are penalized.
+ *   - Biome transition: low-weight templates get a small boost when
+ *     the chunk is at a biome border.
+ *   - Floor at 0.005 to keep all weights positive.
+ *
+ * Returns a flat array (one entry per (template, rotation) pair, with
+ * each entry carrying the same weight for all rotations of a given
+ * template) so the downstream AC-3 / collapse passes can pick via
+ * weightedSelectTemplate.
+ */
+export function buildBiomeCandidatePool(
+  biome: BiomeLike,
+  allRotations: Map<string, RotatedTemplate[]>,
+  mood?: MoodLike,
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
+): WeightedCandidate[] {
+  const pool: WeightedCandidate[] = [];
+  const biomeWeights = BIOME_TEMPLATE_WEIGHTS[biome.name] ?? {};
+  const hasTransition = biomeTransitions && (biomeTransitions.n || biomeTransitions.s || biomeTransitions.e || biomeTransitions.w);
+
+  for (const [templateName, rotations] of allRotations.entries()) {
+    let weight = biomeWeights[templateName] ?? 0.01;
+
+    // Apply mood modifiers (#46): additive bias from mood profile
+    if (mood) {
+      const mod = mood.modifiers[templateName];
+      if (mod !== undefined) {
+        weight += mod;
+      } else if (mood.category === 'sparse') {
+        // Sparse mood penalizes everything not explicitly boosted
+        weight = Math.max(0.005, weight - 0.1);
+      }
+    }
+
+    // Biome transition: slightly widen pool by boosting low-weight templates (#46)
+    if (hasTransition && weight < 0.02) {
+      weight += 0.01;
+    }
+
+    // Floor to prevent zero weights
+    weight = Math.max(0.005, weight);
+
+    for (const rot of rotations) {
+      pool.push({ template: rot, weight });
+    }
+  }
+  return pool;
+}
+
+/**
+ * Pick the meadow_base rotation as the recovery template. Called by
+ * solveWorldUnitGrid → collapseAllMRV when a slot has zero candidates
+ * (contradiction after AC-3 + border constraints). The meadow is the
+ * safest neutral fallback because it's the most common template and
+ * has the simplest edge set.
+ */
+export function findFallbackTemplate(
+  allRotations: Map<string, RotatedTemplate[]>,
+): RotatedTemplate | null {
+  const meadowRots = allRotations.get('meadow_base');
+  if (meadowRots && meadowRots.length > 0) return meadowRots[0];
+  return null;
+}
+
+// --- Border Constraint Application (#17) ---
+
+/**
+ * Structural subset of the gen.ts `BorderConstraints` type. Only the
+ * 4 directional EdgeTag arrays and the optional TraversalChannel
+ * arrays are read.
+ */
+interface BorderLike {
+  n?: EdgeTag[];
+  s?: EdgeTag[];
+  e?: EdgeTag[];
+  w?: EdgeTag[];
+  nTraversal?: boolean[];
+  sTraversal?: boolean[];
+  eTraversal?: boolean[];
+  wTraversal?: boolean[];
+}
+
+/**
+ * Filter each border slot's candidate list against the already-solved
+ * edges of the neighboring chunk. For each border direction (n/s/e/w)
+ * that has a constraint, drop any candidate whose edgeTag on the
+ * facing side is not edgesCompatible with the required tag, and whose
+ * traversalChannel doesn't match if one was specified.
+ *
+ * Called from solveWorldUnitGrid (Phase 2b) before AC-3 propagation
+ * so the solver starts from a state that's already consistent with
+ * the neighbors' solved edges (#17 edge contracts).
+ */
+export function applyBorderConstraints(
+  slots: SlotLike[][],
+  bc: BorderLike,
+  gridDim: number,
+): void {
+  // North border: our row 0 must match the south edge of the chunk above
+  if (bc.n) {
+    for (let gx = 0; gx < gridDim && gx < bc.n.length; gx++) {
+      const requiredTag = bc.n[gx];
+      const requiredTraversal = bc.nTraversal?.[gx];
+      slots[0][gx].candidates = slots[0][gx].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.n, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.n === requiredTraversal),
+      );
+    }
+  }
+  // South border: our last row must match the north edge of the chunk below
+  if (bc.s) {
+    const lastRow = gridDim - 1;
+    for (let gx = 0; gx < gridDim && gx < bc.s.length; gx++) {
+      const requiredTag = bc.s[gx];
+      const requiredTraversal = bc.sTraversal?.[gx];
+      slots[lastRow][gx].candidates = slots[lastRow][gx].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.s, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.s === requiredTraversal),
+      );
+    }
+  }
+  // West border: our column 0 must match the east edge of the chunk to the left
+  if (bc.w) {
+    for (let gy = 0; gy < gridDim && gy < bc.w.length; gy++) {
+      const requiredTag = bc.w[gy];
+      const requiredTraversal = bc.wTraversal?.[gy];
+      slots[gy][0].candidates = slots[gy][0].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.w, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.w === requiredTraversal),
+      );
+    }
+  }
+  // East border: our last column must match the west edge of the chunk to the right
+  if (bc.e) {
+    const lastCol = gridDim - 1;
+    for (let gy = 0; gy < gridDim && gy < bc.e.length; gy++) {
+      const requiredTag = bc.e[gy];
+      const requiredTraversal = bc.eTraversal?.[gy];
+      slots[gy][lastCol].candidates = slots[gy][lastCol].candidates.filter(
+        c => edgesCompatible(c.template.edgeTags.e, requiredTag) &&
+          (requiredTraversal === undefined || c.template.traversalChannels.e === requiredTraversal),
+      );
+    }
+  }
+}
+
+// --- AC-3 World Unit Grid Solver — Top-level Orchestration (#17) ---
+
+/**
+ * The return shape of `solveWorldUnitGrid`. Lives here (not in
+ * gen.ts) because the solver is owned by this module.
+ */
+interface SolveResult {
+  grid: (RotatedTemplate | null)[][];
+  borderEdges: ChunkBorderEdges;
+}
+
+/**
+ * Phase 2 of chunk generation: the AC-3 world unit grid solver
+ * orchestrator. This is the public face of the AC-3 algorithm
+ * implemented by 8.1–8.4 + this slice:
+ *
+ *   Phase 2a — initialize possibility sets
+ *   Phase 2b — apply border constraints from neighboring chunks
+ *   Phase 2c — build arc set and run full AC-3 propagation
+ *   Phase 2d — collapse slots via MRV (which itself runs partial
+ *              AC-3 propagation after each collapse)
+ *   Phase 2e — enforce chain integrity (replace dangling chain
+ *              features with terminators)
+ *   Phase 2f — extract border edges for downstream chunks
+ *
+ * Returns the solved (RotatedTemplate | null)[][] grid and the
+ * per-position border edge tags + traversal channels.
+ *
+ * Determinism invariant: every random decision here goes through
+ * the passed-in `rng` (#265). Same seed → same output.
+ */
+export function solveWorldUnitGrid(
+  biome: BiomeLike,
+  rng: () => number,
+  borderConstraints?: BorderLike,
+  mood?: MoodLike,
+  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
+): SolveResult {
+  const allRotations = getAllRotations();
+  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations, mood, biomeTransitions);
+  const fallback = findFallbackTemplate(allRotations);
+
+  // Phase 2a: Initialize possibility sets
+  const slots: SlotLike[][] = [];
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    slots[gy] = [];
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      slots[gy][gx] = {
+        candidates: biomeCandidates.map(c => ({ ...c })),
+        collapsed: null,
+      };
+    }
+  }
+
+  // Phase 2b: Apply border constraints from neighboring chunks
+  if (borderConstraints) {
+    applyBorderConstraints(slots, borderConstraints, GRID_DIM);
+  }
+
+  // Phase 2c: Build arc set and run initial AC-3 propagation
+  const arcs = buildAllArcs(GRID_DIM);
+  propagateAC3(slots, arcs);
+
+  // Phase 2d: Collapse slots using MRV heuristic + propagation
+  collapseAllMRV(slots, rng, fallback, arcs, GRID_DIM);
+
+  // Build result grid
+  const grid: (RotatedTemplate | null)[][] = [];
+  for (let gy = 0; gy < GRID_DIM; gy++) {
+    grid[gy] = [];
+    for (let gx = 0; gx < GRID_DIM; gx++) {
+      grid[gy][gx] = slots[gy][gx].collapsed;
+    }
+  }
+
+  enforceChainIntegrity(grid, allRotations, GRID_DIM);
+  const borderEdges = extractGridBorderEdges(grid, GRID_DIM);
+
+  return { grid, borderEdges };
+}
+
+// --- Phase 3: Stamp Solved Grid onto Cells ---
+
+/**
+ * Phase 3 of chunk generation: write the solved (RotatedTemplate|null)[][]
+ * grid into the concrete CellData[][] grid. Each (gx, gy) world unit
+ * template contributes a WU_SIZE × WU_SIZE block of cells.
+ *
+ * Micro-tile walkability from MICRO_TILE_DEFS takes precedence; falls
+ * back to ASSET_DEFS. Cells without a template entry (template.cells
+ * is null at that position) are left untouched.
+ */
+export function stampWorldUnitGrid(
+  cells: CellLike[][],
+  grid: (RotatedTemplate | null)[][],
+  gridDim: number,
+  wuSize: number,
+): void {
+  for (let gy = 0; gy < gridDim; gy++) {
+    for (let gx = 0; gx < gridDim; gx++) {
+      const template = grid[gy][gx];
+      if (!template) continue;
+
+      const baseX = gx * wuSize;
+      const baseY = gy * wuSize;
+
+      for (let ty = 0; ty < wuSize; ty++) {
+        for (let tx = 0; tx < wuSize; tx++) {
+          const cellKey = template.cells[ty]?.[tx];
+          if (cellKey === null || cellKey === undefined) continue;
+
+          const microDef = MICRO_TILE_DEFS[cellKey as TileType];
+          const def = ASSET_DEFS[cellKey];
+          cells[baseY + ty][baseX + tx] = {
+            assetKey: cellKey,
+            walkable: microDef?.walkable ?? def?.walkable ?? true,
+            interactable: def?.interactable ?? false,
+          };
+        }
+      }
+    }
+  }
+}
+
+// --- Border Edge Extraction ---
+
+/**
+ * Extract per-position border EdgeTags + TraversalChannels for the
+ * chunk's n/s/e/w edges. Each edge is an array of length GRID_DIM
+ * (one entry per world unit slot along that border).
+ *
+ * Used by downstream chunks to honor #17 edge contracts — when a
+ * neighbor requests a chunk, the constraint is the EdgeTag at the
+ * facing border position, plus (optionally) the TraversalChannel
+ * for continuous walkability (#42).
+ */
+export function extractGridBorderEdges(
+  grid: (RotatedTemplate | null)[][],
+  gridDim: number,
+): ChunkBorderEdges {
+  return {
+    n: Array.from({ length: gridDim }, (_, gx) => grid[0]?.[gx]?.edgeTags.n ?? 'open'),
+    s: Array.from({ length: gridDim }, (_, gx) => grid[gridDim - 1]?.[gx]?.edgeTags.s ?? 'open'),
+    e: Array.from({ length: gridDim }, (_, gy) => grid[gy]?.[gridDim - 1]?.edgeTags.e ?? 'open'),
+    w: Array.from({ length: gridDim }, (_, gy) => grid[gy]?.[0]?.edgeTags.w ?? 'open'),
+    // Traversal walkability per border position (#46)
+    nTraversal: Array.from({ length: gridDim }, (_, gx) => grid[0]?.[gx]?.traversalChannels.n ?? true),
+    sTraversal: Array.from({ length: gridDim }, (_, gx) => grid[gridDim - 1]?.[gx]?.traversalChannels.s ?? true),
+    eTraversal: Array.from({ length: gridDim }, (_, gy) => grid[gy]?.[gridDim - 1]?.traversalChannels.e ?? true),
+    wTraversal: Array.from({ length: gridDim }, (_, gy) => grid[gy]?.[0]?.traversalChannels.w ?? true),
+  };
+}
+
+// --- Chain Integrity (#42) ---
+
+/**
+ * Walk every cell in the grid and check for chain features that
+ * would dangle off the chunk border. For each chain feature with a
+ * non-open exit at a position where the neighbor is missing (off-grid
+ * or null), substitute an appropriate terminator (river_end_pond for
+ * rivers, wall_end for walls, path_dead_end for paths, meadow_base
+ * as the catch-all).
+ *
+ * The terminator must be edge-compatible with any already-placed
+ * north/west neighbors — otherwise the chain would visually break
+ * even at the chunk border.
+ *
+ * Called from solveWorldUnitGrid (Phase 2e). Grid dimension is
+ * passed explicitly so the module stays decoupled from gen.ts's
+ * GRID_DIM constant.
+ */
+export function enforceChainIntegrity(
+  grid: (RotatedTemplate | null)[][],
+  allRotations: Map<string, RotatedTemplate[]>,
+  gridDim: number,
+): void {
+  for (let gy = 0; gy < gridDim; gy++) {
+    for (let gx = 0; gx < gridDim; gx++) {
+      const template = grid[gy][gx];
+      if (!template) continue;
+
+      // Use chainPorts for precise chain edge detection (#42)
+      // Check exits first (must connect forward); fall back to entries for legacy
+      const ports = template.chainPorts;
+      const dirsToCheck = ports.exits.length > 0
+        ? ports.exits
+        : ports.entries;
+      if (dirsToCheck.length === 0) continue;
+
+      for (const dir of dirsToCheck) {
+        const tag = template.edgeTags[dir];
+        const nx = gx + (dir === 'e' ? 1 : dir === 'w' ? -1 : 0);
+        const ny = gy + (dir === 's' ? 1 : dir === 'n' ? -1 : 0);
+
+        const needsFix =
+          nx < 0 || nx >= gridDim || ny < 0 || ny >= gridDim ||
+          !grid[ny]?.[nx];
+
+        if (needsFix && tag !== 'open') {
+          const replacement = findTerminator(template.baseName, allRotations);
+          if (replacement) {
+            // Check that replacement is compatible with placed neighbors
+            const nTag = gy > 0 && grid[gy - 1][gx] ? grid[gy - 1][gx]!.edgeTags.s : undefined;
+            const wTag = gx > 0 && grid[gy][gx - 1] ? grid[gy][gx - 1]!.edgeTags.e : undefined;
+            if (
+              (!nTag || edgesCompatible(replacement.edgeTags.n, nTag)) &&
+              (!wTag || edgesCompatible(replacement.edgeTags.w, wTag))
+            ) {
+              grid[gy][gx] = replacement;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// --- Types (8.5) ---
+
+/**
+ * Structural shape of the gen.ts `WeightedCandidate` interface. The
+ * full type is defined in gen.ts and re-exported through the
+ * SlotLike structural subset (candidates[i] = { template, weight }).
+ * This interface is kept here for documentation and as a type
+ * narrowing target for the solver functions.
+ */
+export interface WeightedCandidate {
+  template: RotatedTemplate;
+  weight: number;
+}
+
+/**
+ * Structural shape of the gen.ts `SlotState` interface. SlotLike
+ * (file-private in this module) extends the same idea with just the
+ * fields the solver functions actually read; this is the full-shape
+ * alias for callers that want the canonical type.
+ */
+export interface SlotState {
+  candidates: WeightedCandidate[];
+  collapsed: RotatedTemplate | null;
 }
