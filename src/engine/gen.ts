@@ -84,7 +84,7 @@ export { placeQuizGates, placeBonfires, placeGatesInFenceRuns, promoteDoorGates,
 // countWalkableNeighbors was moved to world/GridUtils.ts (slice 5). Re-export kept
 // for backward compat (consumed via the public engine/gen surface by other tools/tests).
 export { countWalkableNeighbors } from './world/GridUtils';
-import { traversalCompatible, weightedSelectTemplate, findTerminator, validateCornerGovernance, OPPOSITES, buildAllArcs, propagateAC3, getArcsAffectedBy, propagateAC3Partial } from './world/WorldUnitSolver';
+import { findTerminator, buildAllArcs, propagateAC3, collapseAllMRV } from './world/WorldUnitSolver';
 import {
   edgesCompatible,
   getAllRotations,
@@ -93,7 +93,6 @@ import {
   tileMatchesClimate,
   type EdgeTag,
   type RotatedTemplate,
-  type Cardinal,
 } from '../config/tiles.config';
 import type { TileType } from '../rendering/tiles';
 
@@ -515,16 +514,11 @@ interface SlotState {
 }
 
 /** An arc connects two adjacent slots along a specific direction pair. */
-interface Arc {
-  fromY: number;
-  fromX: number;
-  toY: number;
-  toX: number;
-  /** Which edge of 'from' faces 'to' */
-  fromSide: Cardinal;
-  /** Which edge of 'to' faces 'from' */
-  toSide: Cardinal;
-}
+// `Arc` interface moved to ./world/WorldUnitSolver.ts as the structural
+// `ArcLike` type (B3 micro-slice 8.4 / #253). gen.ts continues to use the
+// local `Arc` shape for any remaining in-file references; if a future
+// slice needs the explicit interface here, re-introduce it as an alias
+// of the module's type.
 
 interface SolveResult {
   grid: (RotatedTemplate | null)[][];
@@ -577,7 +571,7 @@ function solveWorldUnitGrid(
   propagateAC3(slots, arcs);
 
   // Phase 2d: Collapse slots using MRV heuristic + propagation
-  collapseAllMRV(slots, rng, fallback, arcs);
+  collapseAllMRV(slots, rng, fallback, arcs, GRID_DIM);
 
   // Build result grid
   const grid: (RotatedTemplate | null)[][] = [];
@@ -702,133 +696,9 @@ function applyBorderConstraints(
 // moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).
 // Imported at top of file; used by solveWorldUnitGrid and collapseAllMRV.
 
-// --- Slot Selection Priority ---
-// Improved filling order: boundary-first → chain-continuation → MRV
-// This ensures border consistency with neighbors, then extends chain features,
-// then fills remaining slots by most-constrained heuristic.
-
-/** Score a slot for collapse priority. Lower = collapse sooner. */
-function slotPriority(gy: number, gx: number, slots: SlotState[][]): number {
-  const slot = slots[gy][gx];
-  if (slot.collapsed) return Infinity;
-  const candidateCount = slot.candidates.length;
-  if (candidateCount === 0) return -1; // Contradictions first (to degrade quickly)
-
-  const isBorder = gy === 0 || gy === GRID_DIM - 1 || gx === 0 || gx === GRID_DIM - 1;
-  const isCorner = (gy === 0 || gy === GRID_DIM - 1) && (gx === 0 || gx === GRID_DIM - 1);
-
-  // Check if adjacent to an already-collapsed chain feature
-  let adjacentToChain = false;
-  const dirs: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-  for (const [dy, dx] of dirs) {
-    const ny = gy + dy, nx = gx + dx;
-    if (ny >= 0 && ny < GRID_DIM && nx >= 0 && nx < GRID_DIM) {
-      const neighbor = slots[ny][nx];
-      if (neighbor.collapsed) {
-        // Check if neighbor has non-open edges facing us (chain connection)
-        const nEdges = neighbor.collapsed.edgeTags;
-        const facing = dy === -1 ? 'n' : dy === 1 ? 's' : dx === -1 ? 'w' : 'e';
-        const oppFacing = OPPOSITES[facing];
-        if (nEdges[oppFacing] !== 'open') {
-          adjacentToChain = true;
-          break;
-        }
-      }
-    }
-  }
-
-  // Priority tiers (lower number = higher priority):
-  // Tier 0: contradictions (candidateCount === 0)  → handled above
-  // Tier 1: corners (most constrained boundary)     → 1000 + MRV
-  // Tier 2: border edges                            → 2000 + MRV
-  // Tier 3: chain continuation (adjacent to chain)  → 3000 + MRV
-  // Tier 4: interior MRV                            → 4000 + MRV
-  let tier: number;
-  if (isCorner) tier = 1000;
-  else if (isBorder) tier = 2000;
-  else if (adjacentToChain) tier = 3000;
-  else tier = 4000;
-
-  return tier + candidateCount;
-}
-
-// --- MRV Collapse with Boundary-First Priority ---
-
-function collapseAllMRV(
-  slots: SlotState[][],
-  rng: () => number,
-  fallback: RotatedTemplate | null,
-  allArcs: Arc[],
-): void {
-  const totalSlots = GRID_DIM * GRID_DIM;
-
-  for (let step = 0; step < totalSlots; step++) {
-    // Find uncollapsed slot with best priority (boundary-first, then chain, then MRV)
-    let bestY = -1, bestX = -1, bestPriority = Infinity;
-    for (let gy = 0; gy < GRID_DIM; gy++) {
-      for (let gx = 0; gx < GRID_DIM; gx++) {
-        const slot = slots[gy][gx];
-        if (slot.collapsed) continue;
-        const priority = slotPriority(gy, gx, slots);
-        if (priority < bestPriority) {
-          bestPriority = priority;
-          bestY = gy;
-          bestX = gx;
-        }
-      }
-    }
-
-    if (bestY < 0) break; // All collapsed
-
-    const slot = slots[bestY][bestX];
-
-    // Collapse: pick from candidates (weighted) with corner governance (#42)
-    if (slot.candidates.length > 0) {
-      // Filter by corner governance first; fall back to unfiltered if all rejected
-      const governed = slot.candidates.filter(c =>
-        validateCornerGovernance(c.template, bestY, bestX, slots, GRID_DIM),
-      );
-      slot.collapsed = weightedSelectTemplate(
-        governed.length > 0 ? governed : slot.candidates, rng,
-      );
-    } else {
-      // Contradiction: use fallback (recovery strategy 1: degrade)
-      slot.collapsed = fallback;
-    }
-    slot.candidates = [];
-
-    // After collapsing, propagate constraints from this slot's neighbors
-    // Re-enqueue arcs involving this slot's neighbors
-    const affectedArcs = getArcsAffectedBy(bestY, bestX, allArcs);
-    // For each neighbor of the collapsed slot, filter their candidates
-    for (const arc of affectedArcs) {
-      const neighborSlot = slots[arc.fromY][arc.fromX];
-      if (neighborSlot.collapsed) continue;
-
-      const oppSide = OPPOSITES[arc.fromSide];
-      if (slot.collapsed) {
-        neighborSlot.candidates = neighborSlot.candidates.filter(c =>
-          edgesCompatible(c.template.edgeTags[arc.fromSide], slot.collapsed!.edgeTags[oppSide])
-          && traversalCompatible(c.template, slot.collapsed!, arc.fromSide, oppSide),
-        );
-      }
-    }
-
-    // Run AC-3 from the affected neighbors outward
-    const propagationQueue: Arc[] = [];
-    for (const arc of affectedArcs) {
-      if (!slots[arc.fromY][arc.fromX].collapsed) {
-        // Re-enqueue arcs pointing to the affected neighbor
-        for (const otherArc of allArcs) {
-          if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX) {
-            propagationQueue.push(otherArc);
-          }
-        }
-      }
-    }
-    propagateAC3Partial(slots, propagationQueue, allArcs);
-  }
-}
+// --- Slot Selection Priority + MRV Collapse ---
+// `slotPriority` and `collapseAllMRV` moved to ./world/WorldUnitSolver.ts
+// (B3 micro-slice 8.4 / #253). Imported at top of file; used by solveWorldUnitGrid.
 
 /** Partial AC-3 propagation from a specific worklist. */
 // `propagateAC3Partial` moved to ./world/WorldUnitSolver.ts (B3 micro-slice 8.3 / #253).

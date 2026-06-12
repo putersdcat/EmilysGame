@@ -28,17 +28,25 @@
  *   - propagateAC3Partial — partial AC-3 from a specific worklist (used by
  *     collapse after a slot is collapsed, to re-propagate from neighbors)
  *
- * These are pure, stateless helpers used by the still-in-gen.ts AC-3 machinery.
- * The full solver (`solveWorldUnitGrid`, `stampWorldUnitGrid`, collapse,
- * propagation orchestration, border constraint application, chain integrity
- * orchestration) remains in gen.ts and will move in later micro-slices
- * (8.4 → 8.6).
+ * Micro-slice 8.4 (added):
+ *   - collapseAllMRV — the MRV-with-priority-tiers collapse loop. Selects
+ *     the next uncollapsed slot by priority (corners → borders → chain
+ *     continuation → interior MRV), picks a weighted candidate filtered
+ *     through corner governance, then triggers partial AC-3 propagation
+ *     to the affected neighbors. See 8.4 notes for the structural-type
+ *     decoupling.
  *
- * `validateCornerGovernance` (8.2) and the propagation helpers (8.3) accept
- * structural `SlotLike` and `ArcLike` types so the module stays decoupled from
- * the full `SlotState` and `Arc` types (which still live in gen.ts and move
- * with micro-slice 8.4 / 8.5). The functions only read the fields they
- * actually need, so the structural subsets are sufficient.
+ * These are pure, stateless helpers used by the still-in-gen.ts AC-3 machinery.
+ * The full solver (`solveWorldUnitGrid`, `stampWorldUnitGrid`,
+ * border-constraint application, chain integrity orchestration) remains in
+ * gen.ts and will move in later micro-slices (8.5 → 8.6).
+ *
+ * `validateCornerGovernance` (8.2), the propagation helpers (8.3), and
+ * `collapseAllMRV` (8.4) accept structural `SlotLike` and `ArcLike` types so
+ * the module stays decoupled from the full `SlotState` and `Arc` types
+ * (which still live in gen.ts and move with micro-slice 8.5). The functions
+ * only read the fields they actually need, so the structural subsets are
+ * sufficient.
  *
  * Re-exports are intentionally minimal; gen.ts imports directly for internal use.
  * No new public API surface is added to the engine/gen barrel at this time.
@@ -133,16 +141,17 @@ export function getCornerSurface(cellType: string): string {
 
 /**
  * Structural subset of the gen.ts `SlotState` that the corner governance +
- * propagation helpers actually read.
- * Decouples the module from the full type (which moves in micro-slice 8.4).
+ * propagation + collapse helpers actually read.
+ * Decouples the module from the full type (which moves in micro-slice 8.5).
  *
  * - `cornerCells`: used by corner governance (8.2)
  * - `collapsed` (with `edgeTags`, `traversalChannels`, `cornerCells`) /
- *   `candidates`: used by AC-3 propagation (8.3)
+ *   `candidates`: used by AC-3 propagation (8.3) and MRV collapse (8.4)
+ * - `candidates[i].weight`: used by weighted selection during collapse (8.4)
  */
 interface SlotLike {
   collapsed: { edgeTags: RotatedTemplate['edgeTags']; traversalChannels: RotatedTemplate['traversalChannels']; cornerCells: CornerCells } | null;
-  candidates: Array<{ template: RotatedTemplate }>;
+  candidates: Array<{ template: RotatedTemplate; weight: number }>;
 }
 
 /**
@@ -396,4 +405,159 @@ export function propagateAC3Partial(
       }
     }
   }
+}
+
+// --- MRV Collapse with Boundary-First Priority (#17) ---
+
+/**
+ * Collapse every slot in the grid using MRV with a four-tier priority:
+ *
+ *   Tier 0: contradictions (candidateCount === 0) — handled inline
+ *   Tier 1: corners (most constrained boundary)     → 1000 + MRV
+ *   Tier 2: border edges                            → 2000 + MRV
+ *   Tier 3: chain continuation (adjacent to chain)  → 3000 + MRV
+ *   Tier 4: interior MRV                            → 4000 + MRV
+ *
+ * The boundary-first priority ensures chunk borders agree with neighbors
+ * (edge-contract consistency, #17) before we extend chain features inward,
+ * and only then fill the interior with the most-constrained heuristic.
+ *
+ * For each picked slot:
+ *   1. Filter candidates through corner governance (#42); fall back to the
+ *      unfiltered set if governance rejects all.
+ *   2. Pick one via weightedSelectTemplate.
+ *   3. If the slot had no candidates at all (contradiction), use the
+ *      fallback template passed in by the caller (recovery strategy 1).
+ *   4. Find the affected arcs (whose `to` is the collapsed slot), filter
+ *      each neighbor's candidates against the collapsed value, then run
+ *      partial AC-3 propagation from the affected queue to spread the
+ *      consequence outward.
+ *
+ * The function accepts structural SlotLike / ArcLike types so it can be
+ * called from gen.ts (which still owns the full SlotState / Arc types)
+ * without coupling this module to them. The gridDim parameter replaces
+ * the local GRID_DIM constant that lives in gen.ts.
+ */
+export function collapseAllMRV(
+  slots: SlotLike[][],
+  rng: () => number,
+  fallback: RotatedTemplate | null,
+  allArcs: ArcLike[],
+  gridDim: number,
+): void {
+  const totalSlots = gridDim * gridDim;
+
+  for (let step = 0; step < totalSlots; step++) {
+    // Find uncollapsed slot with best priority (boundary-first, then chain, then MRV)
+    let bestY = -1, bestX = -1, bestPriority = Infinity;
+    for (let gy = 0; gy < gridDim; gy++) {
+      for (let gx = 0; gx < gridDim; gx++) {
+        const slot = slots[gy][gx];
+        if (slot.collapsed) continue;
+        const priority = slotPriority(gy, gx, slots, gridDim);
+        if (priority < bestPriority) {
+          bestPriority = priority;
+          bestY = gy;
+          bestX = gx;
+        }
+      }
+    }
+
+    if (bestY < 0) break; // All collapsed
+
+    const slot = slots[bestY][bestX];
+
+    // Collapse: pick from candidates (weighted) with corner governance (#42)
+    if (slot.candidates.length > 0) {
+      // Filter by corner governance first; fall back to unfiltered if all rejected
+      const governed = slot.candidates.filter(c =>
+        validateCornerGovernance(c.template, bestY, bestX, slots, gridDim),
+      );
+      slot.collapsed = weightedSelectTemplate(
+        governed.length > 0 ? governed : slot.candidates, rng,
+      );
+    } else {
+      // Contradiction: use fallback (recovery strategy 1: degrade)
+      slot.collapsed = fallback;
+    }
+    slot.candidates = [];
+
+    // After collapsing, propagate constraints from this slot's neighbors
+    // Re-enqueue arcs involving this slot's neighbors
+    const affectedArcs = getArcsAffectedBy(bestY, bestX, allArcs);
+    // For each neighbor of the collapsed slot, filter their candidates
+    for (const arc of affectedArcs) {
+      const neighborSlot = slots[arc.fromY][arc.fromX];
+      if (neighborSlot.collapsed) continue;
+
+      const oppSide = OPPOSITES[arc.fromSide];
+      if (slot.collapsed) {
+        neighborSlot.candidates = neighborSlot.candidates.filter(c =>
+          edgesCompatible(c.template.edgeTags[arc.fromSide], slot.collapsed!.edgeTags[oppSide])
+          && traversalCompatible(c.template, slot.collapsed!, arc.fromSide, oppSide),
+        );
+      }
+    }
+
+    // Run AC-3 from the affected neighbors outward
+    const propagationQueue: ArcLike[] = [];
+    for (const arc of affectedArcs) {
+      if (!slots[arc.fromY][arc.fromX].collapsed) {
+        // Re-enqueue arcs pointing to the affected neighbor
+        for (const otherArc of allArcs) {
+          if (otherArc.toY === arc.fromY && otherArc.toX === arc.fromX) {
+            propagationQueue.push(otherArc);
+          }
+        }
+      }
+    }
+    propagateAC3Partial(slots, propagationQueue, allArcs);
+  }
+}
+
+/**
+ * Score a slot for collapse priority. Lower = collapse sooner.
+ * Mirrors the tier ordering in `collapseAllMRV`.
+ *
+ * Returns -1 for contradictions (zero candidates) so they get processed
+ * first, degrading quickly rather than continuing to refine a doomed
+ * position.
+ */
+function slotPriority(gy: number, gx: number, slots: SlotLike[][], gridDim: number): number {
+  const slot = slots[gy][gx];
+  if (slot.collapsed) return Infinity;
+  const candidateCount = slot.candidates.length;
+  if (candidateCount === 0) return -1; // Contradictions first (to degrade quickly)
+
+  const isBorder = gy === 0 || gy === gridDim - 1 || gx === 0 || gx === gridDim - 1;
+  const isCorner = (gy === 0 || gy === gridDim - 1) && (gx === 0 || gx === gridDim - 1);
+
+  // Check if adjacent to an already-collapsed chain feature
+  let adjacentToChain = false;
+  const dirs: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  for (const [dy, dx] of dirs) {
+    const ny = gy + dy, nx = gx + dx;
+    if (ny >= 0 && ny < gridDim && nx >= 0 && nx < gridDim) {
+      const neighbor = slots[ny][nx];
+      if (neighbor.collapsed) {
+        // Check if neighbor has non-open edges facing us (chain connection)
+        const nEdges = neighbor.collapsed.edgeTags;
+        const facing = dy === -1 ? 'n' : dy === 1 ? 's' : dx === -1 ? 'w' : 'e';
+        const oppFacing = OPPOSITES[facing];
+        if (nEdges[oppFacing] !== 'open') {
+          adjacentToChain = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Priority tiers (lower number = higher priority)
+  let tier: number;
+  if (isCorner) tier = 1000;
+  else if (isBorder) tier = 2000;
+  else if (adjacentToChain) tier = 3000;
+  else tier = 4000;
+
+  return tier + candidateCount;
 }
