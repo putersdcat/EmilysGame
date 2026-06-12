@@ -20,6 +20,11 @@ import { cellJitter } from '../engine/utils';
 import type { ChunkData } from '../engine/gen';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
+// B3 micro-slice 8.6 (#253): WU_SIZE is sourced from WorldGrid.ts (the
+// single source of truth shared with gen.ts, WorldUnitSolver.ts, and
+// Populator.ts). The terrain cache uses it for pixel layout of the
+// per-world-unit pre-rendered canvas.
+import { WU_SIZE } from '../engine/world/WorldGrid';
 
 // --- Chunk canvas cache ---
 
@@ -40,7 +45,6 @@ let cacheStamp = 0;
 
 // Chunk content dimensions (computed from chunk size & tile dims)
 const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
-const WU_SIZE = WORLD_CONFIG.worldUnitSize; // 5
 const TW = RENDER_CONFIG.tileWidth;  // 64
 const TH = RENDER_CONFIG.tileHeight; // 32
 const HALF_TW = TW / 2;             // 32

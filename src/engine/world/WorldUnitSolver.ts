@@ -92,13 +92,12 @@ import {
 } from '../../config/tiles.config';
 import { ASSET_DEFS } from '../../config/assets.config';
 import type { TileType } from '../../rendering/tiles';
-import { WORLD_CONFIG } from '../../config/game.config';
-// GRID_DIM is derived from WORLD_CONFIG — the source of truth for the
-// solver. stampWorldUnitGrid takes wuSize as an explicit parameter
-// (since the module shouldn't need to know WU_SIZE separately), but
-// solveWorldUnitGrid + enforceChainIntegrity + extractGridBorderEdges
-// all use GRID_DIM directly.
-const GRID_DIM = WORLD_CONFIG.chunkSize / WORLD_CONFIG.worldUnitSize;
+// B3 micro-slice 8.6 (#253): GRID_DIM is now sourced from WorldGrid.ts
+// (the single source of truth shared by gen.ts, Populator.ts, and
+// terrain-cache.ts). The solver uses GRID_DIM directly for slot
+// initialization + arc construction; stampWorldUnitGrid still takes
+// wuSize as an explicit parameter (it doesn't need WU_SIZE elsewhere).
+import { GRID_DIM } from './WorldGrid';
 
 // Structural subset of gen.ts's `ChunkBorderEdges`. The full type is
 // still defined in gen.ts and re-exported there for backward compat;

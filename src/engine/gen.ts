@@ -95,11 +95,21 @@ export { countWalkableNeighbors } from './world/GridUtils';
 // are also no longer imported here — they're called internally by the
 // orchestrator `solveWorldUnitGrid` inside WorldUnitSolver.ts.
 import { solveWorldUnitGrid, stampWorldUnitGrid } from './world/WorldUnitSolver';
+// B3 micro-slice 8.6 (#253): WU_SIZE + GRID_DIM are imported from
+// WorldGrid.ts (the single source of truth shared with
+// WorldUnitSolver.ts, Populator.ts, and terrain-cache.ts) and
+// re-exported for backward compat with consumers that still
+// `import { WU_SIZE, GRID_DIM } from '../engine/gen'`.
+import { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 import {
   tileMatchesClimate,
   type EdgeTag,
 } from '../config/tiles.config';
 import type { TileType } from '../rendering/tiles';
+
+// Re-export for backward compat — pre-8.6 consumers (e.g. tests) that
+// import WU_SIZE / GRID_DIM from gen.ts continue to work.
+export { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 
 // --- Types ---
 
@@ -172,9 +182,10 @@ export interface ChunkData {
 // Imported + re-exported above so importers (main.ts) are unaffected.
 
 // --- World Unit Grid Constants ---
-
-const WU_SIZE = WORLD_CONFIG.worldUnitSize;
-const GRID_DIM = WORLD_CONFIG.chunkSize / WU_SIZE;
+// B3 micro-slice 8.6 (#253): WU_SIZE + GRID_DIM moved to WorldGrid.ts.
+// They are imported at the top of this file and re-exported for backward
+// compat (legacy consumers that `import { WU_SIZE, GRID_DIM } from '../engine/gen'`).
+// Do NOT redeclare them here — they come from WorldGrid.ts.
 
 // --- Chunk Generation (async + LLM) ---
 

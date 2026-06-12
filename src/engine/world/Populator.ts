@@ -26,16 +26,17 @@
  * `CellData` is imported type-only from gen.ts (erased at runtime → no
  * module cycle); it will move to src/types/ in B4.
  */
-import { WORLD_CONFIG, type DifficultyProfile } from '../../config/game.config';
+import { type DifficultyProfile } from '../../config/game.config';
 import { ASSET_DEFS } from '../../config/assets.config';
 import { type BiomeDef } from '../../config/biomes.config';
 import { type RotatedTemplate } from '../../config/tiles.config';
 import type { CellData } from '../gen';
 import { countWalkableNeighbors } from './GridUtils';
-
-// --- Derived world-unit constants (mirror gen.ts's local WU_SIZE / GRID_DIM) ---
-const WU_SIZE = WORLD_CONFIG.worldUnitSize;
-const GRID_DIM = WORLD_CONFIG.chunkSize / WU_SIZE;
+// B3 micro-slice 8.6 (#253): WU_SIZE + GRID_DIM are now sourced from
+// WorldGrid.ts (single source of truth shared with gen.ts and
+// WorldUnitSolver.ts). Populator uses WU_SIZE for the per-template
+// world-unit grid loop and GRID_DIM for cluster spread calculations.
+import { WU_SIZE, GRID_DIM } from './WorldGrid';
 
 // --- Biome-specific lookup tables (moved from gen.ts) ---
 
