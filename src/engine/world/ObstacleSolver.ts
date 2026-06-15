@@ -39,7 +39,7 @@ import { type DifficultyProfile } from '../../config/game.config';
 import { ASSET_DEFS } from '../../config/assets.config';
 import { type BiomeDef } from '../../config/biomes.config';
 import { weightedPick } from '../utils';
-import type { CellData } from '../gen';
+import type { CellData } from '../../types/game.types';
 import { countWalkableNeighbors } from './GridUtils';
 
 // --- Lock-Key DAG types and module state ---

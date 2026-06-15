@@ -12,10 +12,10 @@
  *     for junction detection, clearance checks, and obstacle placement
  *     safety.
  *
- * `CellData` is imported type-only from gen.ts (erased at runtime → no
- * module cycle); it will move to src/types/ in B4.
+ * `CellData` is imported type-only from src/types/game.types.ts (erased at
+ * runtime → no module cycle). B4 (#253) moved it out of gen.ts.
  */
-import type { CellData } from '../gen';
+import type { CellData } from '../../types/game.types';
 
 /**
  * Count walkable cardinal neighbors of a cell.

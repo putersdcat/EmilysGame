@@ -65,13 +65,13 @@
  * glue (generateGridChunk, generateChunkSync, generateChunk) plus the
  * LLM entropy cell-flag pass (applyEntropyCellFlags, #4).
  *
- * These functions accept structural `SlotLike` / `ArcLike` /
- * `BiomeLike` / `MoodLike` / `BorderLike` types so the module stays
- * decoupled from the full `SlotState` / `Arc` / `BiomeDef` / `MoodProfile`
- * / `BorderConstraints` types (which all still live in gen.ts and
- * are forwarded through the structural subsets). The functions only
- * read the fields they actually need, so the structural subsets are
- * sufficient.
+ * B4 micro-slice 8.8 (#253): `ChunkBorderEdges`, `BorderConstraints`,
+ * and `CellData` are now imported directly from `src/types/game.types.ts`
+ * (the single source of truth shared by engine, rendering, and game
+ * layers). The structural `BorderLike` / `CellLike` subsets are gone.
+ * The solver still uses structural `SlotLike` / `ArcLike` / `BiomeLike`
+ * / `MoodLike` types for its private solver state — those are internal
+ * to the AC-3 algorithm and don't cross layer boundaries.
  *
  * Re-exports are intentionally minimal; gen.ts imports directly for internal use.
  * No new public API surface is added to the engine/gen barrel at this time.
@@ -98,30 +98,11 @@ import type { TileType } from '../../rendering/tiles';
 // initialization + arc construction; stampWorldUnitGrid still takes
 // wuSize as an explicit parameter (it doesn't need WU_SIZE elsewhere).
 import { GRID_DIM } from './WorldGrid';
-
-// Structural subset of gen.ts's `ChunkBorderEdges`. The full type is
-// still defined in gen.ts and re-exported there for backward compat;
-// here we just need the fields the solver produces and consumes.
-type BorderEdge = 'open' | 'wall' | 'water' | 'fence' | 'path' | 'shore' | 'gate' | 'wall-cap' | 'fence-post';
-interface ChunkBorderEdges {
-  n: BorderEdge[];
-  s: BorderEdge[];
-  e: BorderEdge[];
-  w: BorderEdge[];
-  nTraversal?: boolean[];
-  sTraversal?: boolean[];
-  eTraversal?: boolean[];
-  wTraversal?: boolean[];
-}
-
-// Structural subset of gen.ts's `CellData` — only the fields that
-// stampWorldUnitGrid writes. The full CellData type still lives in
-// gen.ts and is re-exported.
-interface CellLike {
-  assetKey: string;
-  walkable: boolean;
-  interactable: boolean;
-}
+// B4 micro-slice 8.8 (#253): ChunkBorderEdges, BorderConstraints, and
+// CellData now live in src/types/game.types.ts (the single source of
+// truth shared by engine, rendering, and game layers). The solver
+// imports them directly — no more structural subsets.
+import type { ChunkBorderEdges, BorderConstraints, CellData } from '../../types/game.types';
 
 // --- Traversal Continuity Check (#42) ---
 // When both edges are 'open' or 'path', traversal channels must match.
@@ -723,22 +704,6 @@ export function findFallbackTemplate(
 // --- Border Constraint Application (#17) ---
 
 /**
- * Structural subset of the gen.ts `BorderConstraints` type. Only the
- * 4 directional EdgeTag arrays and the optional TraversalChannel
- * arrays are read.
- */
-interface BorderLike {
-  n?: EdgeTag[];
-  s?: EdgeTag[];
-  e?: EdgeTag[];
-  w?: EdgeTag[];
-  nTraversal?: boolean[];
-  sTraversal?: boolean[];
-  eTraversal?: boolean[];
-  wTraversal?: boolean[];
-}
-
-/**
  * Filter each border slot's candidate list against the already-solved
  * edges of the neighboring chunk. For each border direction (n/s/e/w)
  * that has a constraint, drop any candidate whose edgeTag on the
@@ -751,7 +716,7 @@ interface BorderLike {
  */
 export function applyBorderConstraints(
   slots: SlotLike[][],
-  bc: BorderLike,
+  bc: BorderConstraints,
   gridDim: number,
 ): void {
   // North border: our row 0 must match the south edge of the chunk above
@@ -836,7 +801,7 @@ interface SolveResult {
 export function solveWorldUnitGrid(
   biome: BiomeLike,
   rng: () => number,
-  borderConstraints?: BorderLike,
+  borderConstraints?: BorderConstraints,
   mood?: MoodLike,
   biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
 ): SolveResult {
@@ -895,7 +860,7 @@ export function solveWorldUnitGrid(
  * is null at that position) are left untouched.
  */
 export function stampWorldUnitGrid(
-  cells: CellLike[][],
+  cells: CellData[][],
   grid: (RotatedTemplate | null)[][],
   gridDim: number,
   wuSize: number,

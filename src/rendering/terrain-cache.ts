@@ -17,7 +17,7 @@ import { drawNanoStack } from './nano-tile';
 import { getNanoStack } from './nano-tile-defs';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { cellJitter } from '../engine/utils';
-import type { ChunkData } from '../engine/gen';
+import type { ChunkData } from '../types/game.types';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
 // B3 micro-slice 8.6 (#253): WU_SIZE is sourced from WorldGrid.ts (the

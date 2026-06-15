@@ -12,7 +12,7 @@ import { getIsoTile, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
-import type { ChunkData } from '../engine/gen';
+import type { ChunkData } from '../types/game.types';
 import { cellJitter } from '../engine/utils';
 import { FIRE_VARIANTS, getFireAnimation } from '../config/fire.config';
 import { getTileLOD } from '../config/tiles.config';

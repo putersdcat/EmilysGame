@@ -30,7 +30,7 @@ import { type DifficultyProfile } from '../../config/game.config';
 import { ASSET_DEFS } from '../../config/assets.config';
 import { type BiomeDef } from '../../config/biomes.config';
 import { type RotatedTemplate } from '../../config/tiles.config';
-import type { CellData } from '../gen';
+import type { CellData } from '../../types/game.types';
 import { countWalkableNeighbors } from './GridUtils';
 // B3 micro-slice 8.6 (#253): WU_SIZE + GRID_DIM are now sourced from
 // WorldGrid.ts (single source of truth shared with gen.ts and

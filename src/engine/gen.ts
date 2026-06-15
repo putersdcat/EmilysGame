@@ -111,23 +111,14 @@ import type { TileType } from '../rendering/tiles';
 export { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 
 // --- Types ---
-// B4 micro-slice 8.7 (#253): CellData, ChunkBorderEdges, BorderConstraints,
-// ChunkData, and GridChunkResult moved to src/types/game.types.ts (the
-// single source of truth shared by engine, rendering, and game layers).
-// gen.ts imports them below and re-exports for backward compat with
-// existing consumers (main.ts, render.ts, terrain-cache.ts, wildlife.ts,
-// minimap.ts, particles.ts, wasm-bridge.ts, ui/ui.ts).
+// B4 micro-slice 8.7+8.8 (#253): CellData, ChunkBorderEdges, BorderConstraints,
+// ChunkData, and GridChunkResult live in src/types/game.types.ts (the single
+// source of truth shared by engine, rendering, and game layers). gen.ts
+// imports them below; consumers import directly from game.types.ts.
 // `MoodProfile` lives in ./world/BiomeSelector.ts (B3 / #253) and is
 // imported + re-exported above; game.types.ts re-imports it for ChunkData.
 import type {
   CellData,
-  BorderConstraints,
-  ChunkData,
-  GridChunkResult,
-} from '../types/game.types';
-export type {
-  CellData,
-  ChunkBorderEdges,
   BorderConstraints,
   ChunkData,
   GridChunkResult,

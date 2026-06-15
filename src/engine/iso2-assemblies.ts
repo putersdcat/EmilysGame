@@ -7,7 +7,7 @@
  */
 
 import { ASSET_DEFS } from '../config/assets.config';
-import type { ChunkData, CellData } from './gen';
+import type { ChunkData, CellData } from '../types/game.types';
 
 export type Iso2AssemblyId = 'homestead-small' | 'ruined-cathedral';
 

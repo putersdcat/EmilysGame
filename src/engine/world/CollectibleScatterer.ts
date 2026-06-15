@@ -19,7 +19,7 @@
  */
 import type { BiomeDef } from '../../config/biomes.config';
 import type { DifficultyProfile } from '../../config/game.config';
-import type { CellData } from '../gen';
+import type { CellData } from '../../types/game.types';
 
 /**
  * Phase 5c: Scatter coins on walkable base terrain (Doc 05 §5.1).

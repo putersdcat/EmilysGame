@@ -27,7 +27,7 @@
  */
 import { WORLD_CONFIG } from '../../config/game.config';
 import { bfsFloodFill } from '../utils';
-import type { CellData } from '../gen';
+import type { CellData } from '../../types/game.types';
 
 // --- Water debug state (read by getWaterDebugInfo, written by validateWaterIntegrity) ---
 
