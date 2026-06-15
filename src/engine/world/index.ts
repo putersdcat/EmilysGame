@@ -64,6 +64,14 @@ export {
 // --- Collectible Scatterer (slice 4) ---
 export { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 
+// --- Terrain Builder (B5 / #253) ---
+// Phase 1 of chunk generation: Perlin noise base terrain.
+export { buildPerlinBase } from './TerrainBuilder';
+
+// --- Entropy Cell Flags (B5 / #253) ---
+// Phase 5.5: LLM entropy → cell property variation (#4).
+export { applyEntropyCellFlags } from './EntropyCellFlags';
+
 // --- Entropy Pool (slice 0 + 8.1) ---
 export {
   setWordlist,
