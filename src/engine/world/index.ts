@@ -68,6 +68,12 @@ export { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 // Phase 1 of chunk generation: Perlin noise base terrain.
 export { buildPerlinBase } from './TerrainBuilder';
 
+// --- Chunk Generator (B6 / #253) ---
+// The chunk generation pipeline orchestrator — generateChunk (async, LLM),
+// generateChunkSync (sync, deterministic), and the internal pipeline
+// coordinator. This is the single entry point for generating a chunk.
+export { generateChunk, generateChunkSync } from './ChunkGenerator';
+
 // --- Entropy Cell Flags (B5 / #253) ---
 // Phase 5.5: LLM entropy → cell property variation (#4).
 export { applyEntropyCellFlags } from './EntropyCellFlags';
