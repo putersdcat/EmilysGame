@@ -12,7 +12,6 @@
  */
 
 import { WORLD_CONFIG, getDifficulty } from '../config/game.config';
-import { ASSET_DEFS } from '../config/assets.config';
 import { type BiomeDef } from '../config/biomes.config';
 import {
   sha256,
@@ -102,6 +101,9 @@ import { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 // B5 micro-slice 9.1 (#253): buildPerlinBase moved to
 // ./world/TerrainBuilder.ts (Phase 1: Perlin noise base terrain).
 import { buildPerlinBase } from './world/TerrainBuilder';
+// B5 micro-slice 9.2 (#253): applyEntropyCellFlags moved to
+// ./world/EntropyCellFlags.ts (Phase 5.5: LLM entropy cell flags, #4).
+import { applyEntropyCellFlags } from './world/EntropyCellFlags';
 
 // Re-export for backward compat — pre-8.6 consumers (e.g. tests) that
 // import WU_SIZE / GRID_DIM from gen.ts continue to work.
@@ -115,7 +117,6 @@ export { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 // `MoodProfile` lives in ./world/BiomeSelector.ts (B3 / #253) and is
 // imported + re-exported above; game.types.ts re-imports it for ChunkData.
 import type {
-  CellData,
   BorderConstraints,
   ChunkData,
   GridChunkResult,
@@ -317,65 +318,9 @@ function generateGridChunk(
 // gen.ts imports buildPerlinBase above and calls it from generateGridChunk.
 
 // --- Phase 5.5: LLM Entropy Cell Flags (#4) ---
-// Binary char code flags from entropy buffer/seed text.
-// Per the design doc: convert text chars to binary, use bits as cell property flags.
-// This creates subtle player-influenced variation: NPC chat → entropy pool → cell flags.
-
-function applyEntropyCellFlags(
-  cells: CellData[][],
-  size: number,
-  featureSeed: number,
-  chunkX: number,
-  chunkY: number,
-  biome: BiomeDef,
-): void {
-  // Build a flag source string from entropy buffer + chunk seed
-  const entropyBuffer = getEntropyBuffer();
-  const flagSource = entropyBuffer.length > 0
-    ? entropyBuffer.slice(-256)  // Use last 256 chars of pool
-    : `fallback_${chunkX}_${chunkY}_${featureSeed}`;
-
-  // Convert to byte array for bit extraction
-  const flagBytes: number[] = [];
-  for (let i = 0; i < flagSource.length; i++) {
-    flagBytes.push(flagSource.charCodeAt(i));
-  }
-  if (flagBytes.length === 0) return;
-
-  const rng = seededRandom(featureSeed + 777);
-  let byteIdx = 0;
-
-  // Scan cells and apply entropy-derived flags to a small percentage
-  // (~10% of cells get entropy overrides - enough for subtle variation)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (rng() > 0.10) continue; // Only process ~10% of cells
-
-      const cell = cells[y][x];
-      if (!cell.walkable) continue; // Don't modify obstacles
-
-      const byte = flagBytes[byteIdx % flagBytes.length];
-      byteIdx++;
-
-      // Bit 0: Spawn bonus collectible (coin/flower based on biome)
-      if ((byte & 0x01) && !cell.itemId) {
-        const collectibles = biome.id === 0 ? ['flower', 'coin'] :
-                            biome.id === 1 ? ['mushroom', 'coin'] :
-                            ['coin', 'gem'];
-        const pick = collectibles[byte % collectibles.length];
-        if (ASSET_DEFS[pick]) {
-          cell.itemId = pick;
-        }
-      }
-
-      // Bit 1: Mark cell as interactable (sign, decoration)
-      if ((byte & 0x02) && rng() < 0.02) {
-        // Very rare: entropy-placed signs with flavor text
-        cell.interactable = true;
-      }
-    }
-  }
-}
+// B5 micro-slice 9.2 (#253): applyEntropyCellFlags moved to
+// ./world/EntropyCellFlags.ts. gen.ts imports it above and calls it
+// from generateGridChunk (Phase 5.5, after population).
 
 // --- Phase 2: AC-3 World Unit Grid Solver (#17) ---
 // TODO: DOC — AC-3 constraint propagation solver for world unit placement.
