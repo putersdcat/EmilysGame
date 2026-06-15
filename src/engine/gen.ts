@@ -19,8 +19,6 @@ import {
   fastHash,
   asciiModulo,
   seededRandom,
-  PerlinNoise,
-  weightedPick,
 } from './utils';
 import { expandEntropy } from './llm';
 import {
@@ -101,10 +99,9 @@ import { solveWorldUnitGrid, stampWorldUnitGrid } from './world/WorldUnitSolver'
 // re-exported for backward compat with consumers that still
 // `import { WU_SIZE, GRID_DIM } from '../engine/gen'`.
 import { WU_SIZE, GRID_DIM } from './world/WorldGrid';
-import {
-  tileMatchesClimate,
-} from '../config/tiles.config';
-import type { TileType } from '../rendering/tiles';
+// B5 micro-slice 9.1 (#253): buildPerlinBase moved to
+// ./world/TerrainBuilder.ts (Phase 1: Perlin noise base terrain).
+import { buildPerlinBase } from './world/TerrainBuilder';
 
 // Re-export for backward compat — pre-8.6 consumers (e.g. tests) that
 // import WU_SIZE / GRID_DIM from gen.ts continue to work.
@@ -315,97 +312,9 @@ function generateGridChunk(
 // re-exported above.
 
 // --- Phase 1: Perlin Noise Base Terrain ---
-
-function buildPerlinBase(
-  size: number,
-  noiseSeed: number,
-  biome: BiomeDef,
-  chunkX: number,
-  chunkY: number,
-): CellData[][] {
-  const perlin = new PerlinNoise(noiseSeed);
-  // Second noise channel at lower frequency for spatially coherent terrain type selection.
-  // This replaces Math.random() so nearby cells get the same terrain type → larger patches.
-  const terrainTypeNoise = new PerlinNoise(noiseSeed + 7777);
-  // Third channel for obstacle selection — deterministic + spatially coherent so obstacles
-  // form patches instead of unseeded random scatter (#265 determinism, #261 coherence).
-  const obstacleTypeNoise = new PerlinNoise(noiseSeed + 9999);
-  const cells: CellData[][] = [];
-  // #101: chunk climate for tile affinity scoring
-  const climate = getChunkClimate(chunkX, chunkY);
-
-  for (let y = 0; y < size; y++) {
-    cells[y] = [];
-    for (let x = 0; x < size; x++) {
-      const gx = chunkX * size + x;
-      const gy = chunkY * size + y;
-      const density = perlin.noise100(gx * 0.1, gy * 0.1);
-      // Low-frequency noise (0.04) → large coherent patches of same terrain type
-      const typeNoise = terrainTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
-      const obstacleNoise = obstacleTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
-      cells[y][x] = assignTerrainCell(density, biome, typeNoise, climate, obstacleNoise);
-    }
-  }
-  return cells;
-}
-
-/**
- * Assign a terrain cell based on density, biome, and noise.
- * #101: Climate affinity check — if the biome-weighted pick doesn't match
- * the chunk climate, try the alternative terrain to find one that does.
- * Falls back gracefully if no climate-matching tile exists.
- */
-function assignTerrainCell(
-  density: number,
-  biome: BiomeDef,
-  typeNoise: number,
-  climate?: { moisture: number; temperature: number },
-  obstacleNoise?: number,
-): CellData {
-  const { terrain, obstacle } = WORLD_CONFIG.density;
-
-  if (density <= terrain.max) {
-    let assetKey = weightedPick(biome.terrainWeights, typeNoise);
-    // #101: climate-based tile affinity filtering
-    if (climate && !tileMatchesClimate(assetKey as TileType, climate.moisture, climate.temperature)) {
-      // Try a climate-compatible alternative from same biome terrain pool
-      const altKey = findClimateCompatibleTile(biome.terrainWeights, climate);
-      if (altKey) assetKey = altKey;
-    }
-    const def = ASSET_DEFS[assetKey];
-    return { assetKey, walkable: def?.walkable ?? true, interactable: false };
-  } else if (density <= obstacle.max) {
-    // #265: deterministic, spatially-coherent obstacle pick (was Math.random()).
-    const assetKey = weightedPick(biome.obstacleWeights, obstacleNoise ?? typeNoise);
-    const def = ASSET_DEFS[assetKey];
-    return { assetKey, walkable: def?.walkable ?? false, interactable: def?.interactable ?? false };
-  } else {
-    let assetKey = weightedPick(biome.terrainWeights, typeNoise);
-    if (climate && !tileMatchesClimate(assetKey as TileType, climate.moisture, climate.temperature)) {
-      const altKey = findClimateCompatibleTile(biome.terrainWeights, climate);
-      if (altKey) assetKey = altKey;
-    }
-    const def = ASSET_DEFS[assetKey];
-    return { assetKey, walkable: def?.walkable ?? true, interactable: false };
-  }
-}
-
-/**
- * Search biome terrain weights for a tile that matches the given climate.
- * Returns the first climate-compatible tile, or null if none match.
- * #101: biome-aware palette mapping via climate metadata.
- */
-function findClimateCompatibleTile(
-  terrainWeights: Record<string, number>,
-  climate: { moisture: number; temperature: number },
-): string | null {
-  for (const key of Object.keys(terrainWeights)) {
-    if (tileMatchesClimate(key as TileType, climate.moisture, climate.temperature)) {
-      return key;
-    }
-  }
-  return null; // No climate match → caller falls back to original pick
-}
+// B5 micro-slice 9.1 (#253): buildPerlinBase + assignTerrainCell +
+// findClimateCompatibleTile moved to ./world/TerrainBuilder.ts.
+// gen.ts imports buildPerlinBase above and calls it from generateGridChunk.
 
 // --- Phase 5.5: LLM Entropy Cell Flags (#4) ---
 // Binary char code flags from entropy buffer/seed text.
