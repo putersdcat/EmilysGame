@@ -103,7 +103,6 @@ import { solveWorldUnitGrid, stampWorldUnitGrid } from './world/WorldUnitSolver'
 import { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 import {
   tileMatchesClimate,
-  type EdgeTag,
 } from '../config/tiles.config';
 import type { TileType } from '../rendering/tiles';
 
@@ -112,64 +111,27 @@ import type { TileType } from '../rendering/tiles';
 export { WU_SIZE, GRID_DIM } from './world/WorldGrid';
 
 // --- Types ---
-
-// `MoodProfile` moved to ./world/BiomeSelector.ts (B3 / #253) and is imported +
-// re-exported above. ChunkData and the generation functions below use that type.
-
-export interface CellData {
-  assetKey: string;
-  walkable: boolean;
-  interactable: boolean;
-  npcId?: string;
-  npcFacing?: 'south' | 'north' | 'east' | 'west';  // NPC direction (#85)
-  itemId?: string;
-  resolved?: boolean;
-}
-
-/** Edge tags along each chunk border, one per world unit slot (GRID_DIM values). */
-export interface ChunkBorderEdges {
-  n: EdgeTag[];
-  s: EdgeTag[];
-  e: EdgeTag[];
-  w: EdgeTag[];
-  /** Traversal walkability per border position (#46) */
-  nTraversal?: boolean[];
-  sTraversal?: boolean[];
-  eTraversal?: boolean[];
-  wTraversal?: boolean[];
-}
-
-/** Constraints from already-generated neighboring chunks. */
-export interface BorderConstraints {
-  n?: EdgeTag[]; // south border Edge tags from chunk above
-  s?: EdgeTag[]; // north border edge tags from chunk below
-  e?: EdgeTag[]; // west border edge tags from chunk to the east
-  w?: EdgeTag[]; // east border edge tags from chunk to the west
-  /** Traversal continuity from neighbors (#46) */
-  nTraversal?: boolean[];
-  sTraversal?: boolean[];
-  eTraversal?: boolean[];
-  wTraversal?: boolean[];
-}
-
-export interface ChunkData {
-  chunkX: number;
-  chunkY: number;
-  biomeId: number;
-  /** Biome name for cross-chunk coherence queries */
-  biomeName: string;
-  cells: CellData[][];
-  seed: string;
-  generated: boolean;
-  /** World unit grid border edges for inter-chunk stitching (#17) */
-  borderEdges?: ChunkBorderEdges;
-  /** Chunk-level climate derived from noise fields (#101) */
-  climate?: { moisture: number; temperature: number };
-  /** Mood profile derived from entropy seed (#46) */
-  mood?: MoodProfile;
-  /** Biome transition flags for border zones (#46) */
-  biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean };
-}
+// B4 micro-slice 8.7 (#253): CellData, ChunkBorderEdges, BorderConstraints,
+// ChunkData, and GridChunkResult moved to src/types/game.types.ts (the
+// single source of truth shared by engine, rendering, and game layers).
+// gen.ts imports them below and re-exports for backward compat with
+// existing consumers (main.ts, render.ts, terrain-cache.ts, wildlife.ts,
+// minimap.ts, particles.ts, wasm-bridge.ts, ui/ui.ts).
+// `MoodProfile` lives in ./world/BiomeSelector.ts (B3 / #253) and is
+// imported + re-exported above; game.types.ts re-imports it for ChunkData.
+import type {
+  CellData,
+  BorderConstraints,
+  ChunkData,
+  GridChunkResult,
+} from '../types/game.types';
+export type {
+  CellData,
+  ChunkBorderEdges,
+  BorderConstraints,
+  ChunkData,
+  GridChunkResult,
+} from '../types/game.types';
 
 // --- Entropy State ---
 // Moved to ./world/Entropy.ts (B3 / #253). The entropy pool + wordlist + direction
@@ -273,11 +235,7 @@ export function generateChunkSync(
 }
 
 // --- Grid-based chunk generation (core pipeline) ---
-
-interface GridChunkResult {
-  cells: CellData[][];
-  borderEdges: ChunkBorderEdges;
-}
+// GridChunkResult moved to src/types/game.types.ts (B4 / #253); imported above.
 
 function generateGridChunk(
   size: number,
