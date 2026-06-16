@@ -9,20 +9,19 @@ import { perfStats, perfSmooth, recordFrameTime, resetFrameHistory, getFrameBenc
 import { getBiome, BIOME_DEFS } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { DIRECTION_WORDS } from './config/entropy.config';
-import { IsometricRenderer, setDialogNpc, type Camera } from './rendering/render';
+import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager, type TouchControlMode } from './game/input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './game/tutorial';
-import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './asset-pipeline/sprites';
+import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type FacingPose } from './asset-pipeline/sprites';
 import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats } from './engine/gen';
 import type { ChunkData, BorderConstraints } from './types/game.types';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './engine/mechanics';
-import { createInventory, type Inventory } from './game/inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './game/quiz';
-import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui/ui';
+import { createInventory } from './game/inventory';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo } from './game/quiz';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './game/save';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
@@ -44,7 +43,6 @@ import { initMinimap, renderMinimap } from './rendering/minimap';
 import {
   createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
   getQuizBias, openArticle,
-  type KnowledgeState,
 } from './game/knowledge';
 import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './ui/book-content';
 import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './game/age-profile';
@@ -75,7 +73,7 @@ import { HINTS } from './config/hints.config';
 import {
   createTradeState, openTrade, closeTrade, tradeNavigate,
   executeTrade, executeSell, toggleTradeMode, getSellPrice, getSellableItems,
-  syncTradeDOM, type TradeState,
+  syncTradeDOM,
   generateBarterQuiz, shouldTriggerBarter, barterNavigate, submitBarterAnswer,
   syncBarterQuizDOM, getTradeDialog,
 } from './game/trading';
@@ -83,7 +81,6 @@ import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
   serializeStatus, deserializeStatus, resetTickCounter,
   CRITICAL_THRESHOLD,
-  type PlayerStatus,
 } from './game/status';
 import {
   initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
@@ -94,7 +91,6 @@ import {
 import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
   getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
-  type InjuryState,
 } from './game/injury';
 import {
   createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
@@ -102,7 +98,6 @@ import {
   startDucking, stopDucking, setBiome as musicSetBiome,
   serializeMusicSettings, deserializeMusicSettings,
   getCurrentTrackInfo, initMidiTracks, getTotalTrackCount, updateMidiProgress,
-  type MusicState,
 } from './game/audio/music';
 import {
   createSfxState, playSfx, stopAmbience,
@@ -112,14 +107,11 @@ import {
   playFootstep, resetFootstepCounter,
   playPositionalSfx, getPositionalSourceCount,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
-  type SfxState,
 } from './game/audio/sfx';
 import {
   createVoiceState, speakLine, cancelSpeech, toggleVoice,
   setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
-  type VoiceState,
 } from './game/audio/npc-voice';
-import type { FacingPose } from './asset-pipeline/sprites';
 // B5 micro-slice 11.1 (#268): extra key queue extracted to
 // ./game/input-extra-keys.ts (quiz accessibility, #94).
 import {
@@ -132,92 +124,25 @@ import {
 import {
   DIARRHEA_CONFIG,
   createInitialDiarrheaState,
-  type DiarrheaState,
 } from './game/illness';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
-// ./game/expression.ts. Uses ExpressionStateSubset (structural) to avoid
 // circular dependency with main.ts GameState definition.
 import {
   setTransientExpression,
   tickExpressionOverride,
 } from './game/expression';
-
+// B5 micro-slice 11.4 (#268): GameState interface + createGameState factory
+// extracted to ./game/game-state.ts. init() uses the factory instead of
+// the inline 50-line object literal.
+import {
+  createGameState,
+  type GameState,
+} from './game/game-state';
 
 // ─── Game State ──────────────────────────────────────────────
-
-interface GameState {
-  player: {
-    x: number;
-    y: number;
-    direction: number;    // 1 = right, -1 = left (sprite flip)
-    facingDx: number;     // Last movement dx (-1/0/1)
-    facingDy: number;     // Last movement dy (-1/0/1)
-    facingPose: FacingPose; // 'front' or 'back' for sprite selection
-    speed: number;
-    isMoving: boolean;
-    animFrame: number;
-    sinkDepth?: number; // iso2: neg-Z sink (rivers/gates per #223 walk + AUTONOMOUS_LOOP.md)
-  };
-  playerVariation: CharacterVariation;
-  camera: Camera;
-  chunks: Map<string, ChunkData>;
-  inventory: Inventory;
-  quiz: QuizState;
-  ui: UIState;
-  knowledge: KnowledgeState;
-  quizStats: { answered: number; correct: number };
-  egoImg: HTMLImageElement | null;
-  frameCount: number;
-  fps: number;
-  lastFpsTime: number;
-  fpsCounter: number;
-  paused: boolean;          // True when dialog/quiz active
-  initialized: boolean;
-  // Perf tracking: avoid redundant work
-  lastAnimFrame: number;
-  lastFacingPose: FacingPose;
-  lastChunkX: number;
-  lastChunkY: number;
-  // Pending quiz triggered by NPC — starts when dialog closes
-  pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
-  // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
-  pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
-  // Active conditions for iso2 conditional walkables (e.g. 'quiz-gate' locked/unlocked per #223 + AUTONOMOUS_LOOP.md)
-  activeConditions: Map<string, 'locked' | 'unlocked'>;
-  // NPC trading state
-  trade: TradeState;
-  // Pending trade to open after dialog closes (NPC persona id)
-  pendingTrade: string | null;
-  // Player survival status (#70)
-  status: PlayerStatus;
-  // Injury state (#109)
-  injury: InjuryState;
-  // Unlocked cosmetic IDs (#66)
-  unlockedCosmetics: string[];
-  // Music state (#74)
-  music: MusicState;
-  // SFX & ambience state (#75)
-  sfx: SfxState;
-  // NPC voice state (#76)
-  voice: VoiceState;
-  // Quiz streak state (#103)
-  streak: StreakState;
-  // Age band profile (#92)
-  ageProfile: AgeProfile;
-  // Transient expression override (#102) — reverts after timer expires
-  expressionOverride: { expr: import('./asset-pipeline/sprites').Expression; until: number } | null;
-  // Base default expression to revert to after transient override (#102)
-  _baseExpression: import('./asset-pipeline/sprites').Expression;
-  // Diarrhea illness chain (#133) — see DiarrheaState in ./game/illness.ts
-  diarrhea: DiarrheaState;
-  // Quiz type flags — tracks which special quiz is active (#109, #110)
-  _woundCareQuiz: boolean;
-  _hygieneQuiz: boolean;
-  _insectQuiz: boolean;
-  _pendingInsectQuiz: boolean;
-  // Last time-of-day slot for dawn rooster detection (#108)
-  _lastTimeSlot: 'day' | 'dusk' | 'night';
-}
+// GameState interface and createGameState factory are in ./game/game-state.ts
+// (B5 micro-slice 11.4 / #268). The interface was previously inline here;
+// main.ts now imports the type and calls the factory.
 
 // Track NPC id for voice lines during dialog (#76)
 let _lastDialogNpcId: string | null = null;
@@ -735,67 +660,35 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   const startX = save?.player.x ?? PLAYER_CONFIG.startPosition.x;
   const startY = save?.player.y ?? PLAYER_CONFIG.startPosition.y;
-  const size = WORLD_CONFIG.chunkSize;
 
-  const state: GameState = {
-    player: {
-      x: startX,
-      y: startY,
-      direction: save?.player.direction ?? 1,
-      facingDx: 1,
-      facingDy: 0,
-      facingPose: 'front' as FacingPose,
-      speed: PLAYER_CONFIG.speed,
-      isMoving: false,
-      animFrame: 0,
-      sinkDepth: 0, // iso2: for negative Z (rivers) from walk integration
-    },
+  // B5 micro-slice 11.4 (#268): state init via createGameState factory.
+  // Save-specific fields (direction, quizStats, unlockedCosmetics) are
+  // restored after factory returns, keeping the factory pure/default-only.
+  const state: GameState = createGameState({
     playerVariation,
-    camera: {
-      x: startX,
-      y: startY,
-    },
-    chunks: new Map(),
-    inventory: createInventory(),
-    quiz: createQuizState(),
-    ui: createUIState(),
-    knowledge: createKnowledgeState(),
-    quizStats: save?.quizStats ?? { answered: 0, correct: 0 },
     egoImg,
-    frameCount: 0,
-    fps: 0,
-    lastFpsTime: performance.now(),
-    fpsCounter: 0,
-    paused: false,
-    initialized: true,
-    lastAnimFrame: -1,
-    lastFacingPose: 'front' as FacingPose,
-    lastChunkX: Math.floor(startX / size),
-    lastChunkY: Math.floor(startY / size),
-    pendingQuiz: null,
-    pendingGateQuiz: null,
-    activeConditions: new Map([['quiz-gate', 'locked' as const]]),
-    trade: createTradeState(),
-    pendingTrade: null,
-    status: createPlayerStatus(),
-    injury: createInjuryState(),
-    unlockedCosmetics: save?.unlockedCosmetics ?? [],
-    music: createMusicState(),
-    sfx: createSfxState(),
-    voice: createVoiceState(),
-    streak: createStreakState(),
-    ageProfile: createAgeProfile(),
-    expressionOverride: null,
-    _baseExpression: playerVariation.expression ?? 'happy',
-    // Diarrhea illness chain (#133) — B5.2: state factory extracted to illness.ts
-    diarrhea: createInitialDiarrheaState(),
-    // Quiz type flags (#109, #110)
-    _woundCareQuiz: false,
-    _hygieneQuiz: false,
-    _insectQuiz: false,
-    _pendingInsectQuiz: false,
-    _lastTimeSlot: 'day',
-  };
+    startX,
+    startY,
+    quizStats: { answered: 0, correct: 0 },
+    unlockedCosmetics: [],
+    createInventory,
+    createQuizState,
+    createUIState,
+    createKnowledgeState,
+    createTradeState,
+    createPlayerStatus,
+    createInjuryState,
+    createMusicState,
+    createSfxState,
+    createVoiceState,
+    createStreakState,
+    createAgeProfile,
+    createInitialDiarrheaState,
+  });
+  // Restore save-specific fields (factory uses defaults; save overrides)
+  state.player.direction = save?.player.direction ?? 1;
+  state.quizStats = save?.quizStats ?? { answered: 0, correct: 0 };
+  state.unlockedCosmetics = save?.unlockedCosmetics ?? [];
 
   // Sync unlocked cosmetics to customizer
   setUnlockedCosmetics(state.unlockedCosmetics);
