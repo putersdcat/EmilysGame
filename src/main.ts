@@ -35,7 +35,7 @@ import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
 import { initMinimap, renderMinimap } from './rendering/minimap';
 
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
-import { createKnowledgeState, syncBookUI, wireBookUI, showSubjectSelection, getQuizBias, openArticle, toggleBook } from './game/knowledge';
+import { createKnowledgeState, syncBookUI, showSubjectSelection, getQuizBias, openArticle, toggleBook } from './game/knowledge';
 import { createAgeProfile, setAgeBand, AGE_BANDS, type AgeProfile } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import { getCosmeticById } from './config/cosmetics.config';
@@ -86,14 +86,12 @@ import {
 } from './game/injury';
 import {
   createMusicState, play as musicPlay, stop as musicStop,
-  nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
   startDucking, stopDucking, setBiome as musicSetBiome,
   serializeMusicSettings, deserializeMusicSettings,
   initMidiTracks, getTotalTrackCount, updateMidiProgress,
 } from './game/audio/music';
 import {
   createSfxState, playSfx, stopAmbience,
-  setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
   serializeSfxSettings, deserializeSfxSettings,
   initSampledSfxPipeline, updateListenerPosition,
   playFootstep, resetFootstepCounter,
@@ -101,8 +99,8 @@ import {
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
 } from './game/audio/sfx';
 import {
-  createVoiceState, speakLine, cancelSpeech, toggleVoice,
-  setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
+  createVoiceState, speakLine, cancelSpeech,
+  serializeVoiceSettings, deserializeVoiceSettings,
 } from './game/audio/npc-voice';
 // B5 micro-slice 11.1 (#268): extra key queue extracted to
 // ./game/input-extra-keys.ts (quiz accessibility, #94).
@@ -134,6 +132,9 @@ import {
 // ./game/debug-api.ts. main() calls createGameDebug() once and assigns
 // the result to window.__gameDebug.
 import { createGameDebug } from './game/debug-api';
+// B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
+// ./game/dom-wiring.ts. main() calls wireHudEvents() once after state init.
+import { wireHudEvents } from './game/dom-wiring';
 
 // ─── Game State ──────────────────────────────────────────────
 // GameState interface and createGameState factory are in ./game/game-state.ts
@@ -3046,119 +3047,9 @@ async function main(): Promise<void> {
     addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
   }
 
-  // Wire Book of Knowledge UI
-  wireBookUI(state.knowledge, () => { state.paused = false; });
-
-  // Wire Quiz Repeat button (#94)
-  document.getElementById('quizRepeat')?.addEventListener('click', () => {
-    if (state.quiz.active && state.quiz.displayText) {
-      speakLine(state.voice, state.quiz.displayText, null);
-    }
-  });
-
-  // Wire HUD book button
-  document.getElementById('btnBook')?.addEventListener('click', () => {
-    if (!state.quiz.active && !state.ui.dialog.active) {
-      toggleBook(state.knowledge);
-      state.paused = state.knowledge.bookOpen;
-    }
-  });
-
-  // Wire HUD customize button
-  const openCustomizer = async () => {
-    if (state.paused || state.quiz.active || state.ui.dialog.active) return;
-    state.paused = true;
-    const newVariation = await showCustomizer(state.playerVariation, true);
-    if (!newVariation) {
-      // Cancelled — resume game
-      state.paused = false;
-      return;
-    }
-    clearVariationCache('custom'); // clear old cached sprites
-    state.playerVariation = newVariation;
-    state._baseExpression = newVariation.expression ?? 'happy';
-    state.expressionOverride = null;
-    state.egoImg = loadCharacterSprite(newVariation, 0, false);
-    state.lastAnimFrame = -1;
-    state.paused = false;
-    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
-  };
-  document.getElementById('btnCustomize')?.addEventListener('click', openCustomizer);
-
-  // Wire 'C' key to open customizer
-  window.addEventListener('keydown', (e) => {
-    if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
-      openCustomizer();
-    }
-  });
-
-  // ─── Wire Music Controls (#74) ─────────────────────────────
-  document.getElementById('btnMusicPlayPause')?.addEventListener('click', () => {
-    togglePlayPause(state.music);
-  });
-  document.getElementById('btnMusicNext')?.addEventListener('click', () => {
-    nextTrack(state.music);
-  });
-  document.getElementById('btnMusicPrev')?.addEventListener('click', () => {
-    prevTrack(state.music);
-  });
-  document.getElementById('btnMusicMute')?.addEventListener('click', () => {
-    toggleMute(state.music);
-  });
-  document.getElementById('musicVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    musicSetVolume(state.music, val / 100);
-  });
-  // 'M' key toggles play/pause
-  window.addEventListener('keydown', (e) => {
-    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey) {
-      togglePlayPause(state.music);
-    }
-  });
-
-  // ─── Wire SFX Controls (#75) ──────────────────────────────
-  document.getElementById('btnSfxMute')?.addEventListener('click', () => {
-    toggleSfxMute(state.sfx);
-  });
-  document.getElementById('btnAmbienceMute')?.addEventListener('click', () => {
-    toggleAmbienceMute(state.sfx);
-  });
-  document.getElementById('sfxVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setSfxVolume(state.sfx, val / 100);
-  });
-  document.getElementById('ambienceVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setAmbienceVolume(state.sfx, val / 100);
-  });
-
-  // ─── Wire Voice Controls (#76) ─────────────────────────────
-  document.getElementById('btnVoiceToggle')?.addEventListener('click', () => {
-    toggleVoice(state.voice);
-  });
-  document.getElementById('voiceVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setVoiceVolume(state.voice, val / 100);
-  });
-
-  // ─── Wire Touch Visibility (#144) ───────────────────────────
-  {
-    const TOUCH_VIS_KEY_INIT = 'emilys_game_touch_vis';
-    const savedMode = (localStorage.getItem(TOUCH_VIS_KEY_INIT) || 'whisper') as TouchControlMode;
-    input.setTouchControlMode(savedMode);
-    const sbVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
-    if (sbVis) {
-      sbVis.value = savedMode;
-      sbVis.onchange = () => {
-        const m = sbVis.value as TouchControlMode;
-        input.setTouchControlMode(m);
-        localStorage.setItem(TOUCH_VIS_KEY_INIT, m);
-        // Sync options dropdown if open
-        const optVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
-        if (optVis) optVis.value = m;
-      };
-    }
-  }
+  // B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
+  // ./game/dom-wiring.ts. See wireHudEvents() for the full wiring.
+  wireHudEvents({ state, input, onBookClose: () => { state.paused = false; } });
 
   // ─── Main Menu / New Game Flow ─────────────────────────────
   if (!isTestMode()) {
