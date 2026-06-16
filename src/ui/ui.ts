@@ -9,13 +9,7 @@ import { ASSET_DEFS } from '../config/assets.config';
 import { ITEM_DEFS } from '../config/items.config';
 import { WORLD_CONFIG, LLM_CONFIG } from '../config/game.config';
 import { getTerrainCacheSize, getTerrainCacheMemoryMB } from '../rendering/terrain-cache';
-import { getLlmTps, isTpsCutoverActive } from '../engine/llm';
 import { getPlayedSeconds } from '../rendering/lighting';
-import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from '../engine/gen';
-import { perfStats } from '../engine/perf';
-import { getParticleStats } from '../rendering/particles';
-import { getShadowDebugInfo } from '../rendering/shadows';
-import { getBlendIntensity } from '../rendering/terrain-cache';
 import { getAllSlotInfo } from '../game/save';
 import type { Inventory } from '../game/inventory';
 import type { QuizState } from '../game/quiz';
@@ -26,6 +20,8 @@ import type { SfxState } from '../game/audio/sfx';
 import { getDebuffs } from '../game/status';
 import { syncHUD } from './hud';
 import { syncDialog, syncQuiz } from './overlays';
+import { syncDebug } from './debug-overlay';
+import { syncInventoryTray } from './inventory-tray';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -131,105 +127,9 @@ export function renderUI(
 // --- Dialog + Quiz overlays ---
 // B7.2: syncDialog + syncQuiz moved to src/ui/overlays.ts.
 
-// --- Inventory tray ---
-
-function syncInventoryTray(show: boolean, inv: Inventory): void {
-  const overlay = document.getElementById('hudOverlay');
-  const list = document.getElementById('invList');
-  if (!overlay || !list) return;
-
-  if (show) {
-    overlay.classList.add('expanded');
-  } else {
-    overlay.classList.remove('expanded');
-  }
-
-  if (!show) return;
-
-  list.innerHTML = '';
-  if (inv.slots.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'inv-row';
-    empty.style.color = '#888';
-    empty.textContent = 'Inventory empty';
-    list.appendChild(empty);
-    return;
-  }
-
-  for (const slot of inv.slots) {
-    const row = document.createElement('div');
-    row.className = 'inv-row';
-
-    const def = ITEM_DEFS[slot.itemId];
-    const assetDef = ASSET_DEFS[slot.itemId];
-    const emoji = assetDef?.emoji || '❓';
-    const name = def?.displayName || slot.itemId;
-
-    row.innerHTML = `<span class="emoji">${emoji}</span> ${name} <span class="qty">×${slot.quantity}</span>`;
-    row.title = def?.description || name;
-    list.appendChild(row);
-  }
-}
-
-// --- Debug ---
-
-function syncDebug(show: boolean, pos: { x: number; y: number }, fps: number): void {
-  const el = document.getElementById('debugOverlay');
-  if (!el) return;
-  el.style.display = show ? 'block' : 'none';
-  if (!show) return;
-  const cs = WORLD_CONFIG.chunkSize;
-  const ws = WORLD_CONFIG.worldUnitSize;
-  const cx = Math.floor(pos.x / cs);
-  const cy = Math.floor(pos.y / cs);
-  // World unit within chunk
-  const localX = ((pos.x % cs) + cs) % cs;
-  const localY = ((pos.y % cs) + cs) % cs;
-  const wux = Math.floor(localX / ws);
-  const wuy = Math.floor(localY / ws);
-
-  const tps = getLlmTps();
-  const cutover = isTpsCutoverActive();
-  const tpsLabel = tps > 0
-    ? `LLM TPS: ${tps}${cutover ? ' ⚠ CUTOVER' : ''}`
-    : 'LLM TPS: —';
-
-  const entropy = getEntropyStats();
-  const entropyLabel = `Entropy: ${entropy.poolSize}ch/${entropy.feedCount}feeds`;
-
-  el.innerHTML = [
-    `FPS: ${fps}`,
-    `Pos: ${pos.x.toFixed(1)}, ${pos.y.toFixed(1)}`,
-    `Chunk: ${cx},${cy}`,
-    `WU: ${wux},${wuy}`,
-    `Cache: ${getTerrainCacheSize()} chunks (${getTerrainCacheMemoryMB().toFixed(1)}MB)`,
-    tpsLabel,
-    entropyLabel,
-    `Perf: R:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)} U:${perfStats.update.toFixed(1)} T:${perfStats.total.toFixed(1)}ms`,
-        getShadowDebugInfo(),
-    `Blend: intensity=${getBlendIntensity().toFixed(2)}`,
-    (() => { const ps = getParticleStats(); return `Particles: ${ps.total} (\u{1F98B}${ps.butterfly} \u{2728}${ps.sparkle} \u{1F343}${ps.leaf} \u{1F426}${ps.bird})`; })(),
-    // Streak debug (#103) — read from __gameDebug if available
-    (() => {
-      const dbg = (window as any).__gameDebug;
-      if (!dbg?.getStreakDebug) return '';
-      const s = dbg.getStreakDebug();
-      return `Streak: ${s.zone} cc:${s.consecutiveCorrect} cw:${s.consecutiveWrong} wr:${isNaN(s.windowRate) ? '-' : (s.windowRate * 100).toFixed(0) + '%'} [${s.lastReason}]`;
-    })(),
-    // Water/bridge debug (#100)
-    (() => {
-      const w = getWaterDebugInfo();
-      return w.waterCells > 0 ? `Water: ${w.waterCells}💧 ${w.bridgeCells}🌉 ${w.leaks > 0 ? `⚠${w.leaks} leaks` : '✓'}` : '';
-    })(),
-    // Lock-Key DAG debug (#98)
-    (() => {
-      const d = getLockKeyDebugInfo();
-      if (d.chunksValidated === 0) return '';
-      const status = d.dagValid ? '✓' : `⚠${d.locksRemoved}rm`;
-      return `DAG: ${d.totalLocks}🔒 ${d.keysPlaced}🔑 L${d.layers} ${d.chunksValidated}ch ${status}`;
-    })(),
-  ].filter(Boolean).map((l) => `<span>${l}</span>`).join('');
-}
+// --- Inventory tray + Debug overlay ---
+// B7.3: syncInventoryTray moved to src/ui/inventory-tray.ts
+//       syncDebug moved to src/ui/debug-overlay.ts
 
 // ─── Sidebar Sync ────────────────────────────────────────────
 
