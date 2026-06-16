@@ -26,6 +26,8 @@ import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 import { gridToScreen, isVisible } from './projection';
 import { ShadowSpriteCache } from './shadow-cache';
+import { getNpcMouthState, getHeadBob } from './mouth-animation';
+export { setDialogNpc } from './mouth-animation';
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -63,43 +65,9 @@ interface DrawCmd {
 }
 
 // ─── NPC Mouth Animation (#113) ─────────────────────────────
-// Terrence-and-Philip style mouth flapping during dialog.
-// Module-level state — zero allocation in hot path.
-const MOUTH_CYCLE: MouthState[] = ['closed', 'open', 'wide', 'open'];
-const MOUTH_FRAME_MS = 180; // ms per mouth frame
-let _dialogNpcId: string | null = null;    // npcId of NPC currently in dialog
-let _mouthCycleIdx = 0;                     // index into MOUTH_CYCLE
-let _mouthLastTick = 0;                     // timestamp of last mouth advance
-let _headBobPhase = 0;                      // head bob oscillation phase (radians)
-
-/** Set the NPC currently speaking (pass null when dialog closes). */
-export function setDialogNpc(npcId: string | null): void {
-  _dialogNpcId = npcId;
-  _mouthCycleIdx = 0;
-  _mouthLastTick = performance.now();
-  _headBobPhase = 0;
-}
-
-/** Get current mouth state for the given NPC cell (hot path — no alloc). */
-function getNpcMouthState(cellNpcId: string | undefined): MouthState {
-  if (!cellNpcId || cellNpcId !== _dialogNpcId) return 'closed';
-  // Advance mouth cycle based on elapsed time
-  const now = performance.now();
-  const elapsed = now - _mouthLastTick;
-  if (elapsed >= MOUTH_FRAME_MS) {
-    const steps = Math.floor(elapsed / MOUTH_FRAME_MS);
-    _mouthCycleIdx = (_mouthCycleIdx + steps) % MOUTH_CYCLE.length;
-    _mouthLastTick = now - (elapsed % MOUTH_FRAME_MS); // keep remainder
-  }
-  return MOUTH_CYCLE[_mouthCycleIdx];
-}
-
-/** Get head bob Y offset for speaking NPC (1-2px vertical oscillation). */
-function getHeadBob(cellNpcId: string | undefined): number {
-  if (!cellNpcId || cellNpcId !== _dialogNpcId) return 0;
-  _headBobPhase += 0.05; // advance per render call
-  return Math.sin(_headBobPhase) * 1.5; // ±1.5px
-}
+// B6.4: state and helpers moved to src/rendering/mouth-animation.ts.
+// The renderer imports `getNpcMouthState` / `getHeadBob` and re-exports
+// `setDialogNpc` for the dialog code in main.ts.
 
 // Pre-allocated DrawCmd pool for JS render path (avoids GC pressure)
 const JS_CMD_POOL_SIZE = 8192;
