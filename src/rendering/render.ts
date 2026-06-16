@@ -25,6 +25,7 @@ import {
 import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-pipeline/asset-sprites';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 import { gridToScreen, isVisible } from './projection';
+import { ShadowSpriteCache } from './shadow-cache';
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -271,45 +272,12 @@ export class IsometricRenderer {
     return isVisible(sx, sy, margin);
   }
 
-  // --- Dynamic Shadow Sprite Cache ---
-  // Pre-rendered shadow ellipses, angle baked in from dynamic shadow system (#83).
-  // Cache invalidated when sun angle changes >15° — happens roughly every ~30s.
-  private shadowCache = new Map<number, HTMLCanvasElement>();
-  private _shadowAngle = 0.26;   // current baked angle (radians)
-  private _shadowStretch = 1.0;  // current baked stretch multiplier
+  // --- Dynamic Shadow Sprite Cache (#83) ---
+  // B6.3: state moved to ShadowSpriteCache class.
+  private shadowCache = new ShadowSpriteCache();
 
   private getShadowSprite(scale: number): HTMLCanvasElement {
-    const params = getShadowParams(_renderFrameCount);
-
-    // Invalidate cache if shadow angle or stretch changed significantly
-    if (Math.abs(params.angle - this._shadowAngle) > 0.25 ||
-        Math.abs(params.stretch - this._shadowStretch) > 0.15) {
-      this.shadowCache.clear();
-      this._shadowAngle = params.angle;
-      this._shadowStretch = params.stretch;
-    }
-
-    // Quantize scale to reduce cache entries (0.1 increments)
-    const qScale = Math.round(scale * 10) / 10;
-    let cached = this.shadowCache.get(qScale);
-    if (cached) return cached;
-    const rw = Math.ceil(qScale * RENDER_CONFIG.shadowScale.width);
-    const rh = Math.ceil(qScale * RENDER_CONFIG.shadowScale.height);
-    // Elongate shadow based on dynamic stretch factor
-    const stretchX = Math.ceil(rw * (1.0 + this._shadowStretch * 0.3));
-    // Canvas large enough for rotated ellipse
-    const maxDim = Math.max(stretchX, rh) * 2 + 8;
-    cached = document.createElement('canvas');
-    cached.width = maxDim;
-    cached.height = maxDim;
-    const sctx = cached.getContext('2d')!;
-    // Fill solid black; opacity controlled at draw time via globalAlpha
-    sctx.fillStyle = 'rgb(0,0,0)';
-    sctx.beginPath();
-    sctx.ellipse(maxDim / 2, maxDim / 2, stretchX, rh, this._shadowAngle, 0, Math.PI * 2);
-    sctx.fill();
-    this.shadowCache.set(qScale, cached);
-    return cached;
+    return this.shadowCache.getShadowSprite(scale, _renderFrameCount);
   }
 
   // --- Drawing Primitives ---
