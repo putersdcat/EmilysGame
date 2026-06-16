@@ -7,12 +7,10 @@
 
 import { ASSET_DEFS } from '../config/assets.config';
 import { ITEM_DEFS } from '../config/items.config';
-import { WORLD_CONFIG, LLM_CONFIG, getDifficulty } from '../config/game.config';
+import { WORLD_CONFIG, LLM_CONFIG } from '../config/game.config';
 import { getTerrainCacheSize, getTerrainCacheMemoryMB } from '../rendering/terrain-cache';
-import { isLlmAvailable, getLlmTps, isTpsCutoverActive } from '../engine/llm';
-import { getTimeOfDay, getPlayedSeconds } from '../rendering/lighting';
-import { getWeatherInfo } from '../rendering/weather';
-import { isFlashlightOn } from '../rendering/local-lights';
+import { getLlmTps, isTpsCutoverActive } from '../engine/llm';
+import { getPlayedSeconds } from '../rendering/lighting';
 import { getEntropyStats, getWaterDebugInfo, getLockKeyDebugInfo } from '../engine/gen';
 import { perfStats } from '../engine/perf';
 import { getParticleStats } from '../rendering/particles';
@@ -26,6 +24,7 @@ import type { InjuryState } from '../game/injury';
 import type { MusicState } from '../game/audio/music';
 import type { SfxState } from '../game/audio/sfx';
 import { getDebuffs } from '../game/status';
+import { syncHUD } from './hud';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -126,52 +125,7 @@ export function renderUI(
 }
 
 // --- HUD bar (coins, keys, difficulty, LLM dot) ---
-
-const TIER_EMOJI: Record<number, string> = { 0: '🟢', 1: '🟡', 2: '🟠', 3: '🔴', 4: '💀' };
-const TIER_CLASS: Record<number, string> = { 0: 'tier-safe', 1: 'tier-easy', 2: 'tier-medium', 3: 'tier-hard', 4: 'tier-extreme' };
-
-function syncHUD(inv: Inventory, playerPos: { x: number; y: number }): void {
-  const coinEl = document.getElementById('coinStat');
-  const keyEl = document.getElementById('keyStat');
-  const llmDot = document.getElementById('llmDot');
-  const diffEl = document.getElementById('difficultyBadge');
-  if (coinEl) coinEl.textContent = `💰 ${inv.countItem('coin')}`;
-  if (keyEl) keyEl.textContent = `🔑 ${inv.countItem('key')}`;
-  if (diffEl) {
-    const chunkSize = WORLD_CONFIG.chunkSize;
-    const cx = Math.floor(playerPos.x / chunkSize);
-    const cy = Math.floor(playerPos.y / chunkSize);
-    const dist = Math.abs(cx) + Math.abs(cy);
-    const diff = getDifficulty(dist);
-    const emoji = TIER_EMOJI[diff.tier] ?? '🟢';
-    const cls = TIER_CLASS[diff.tier] ?? 'tier-safe';
-    diffEl.textContent = `${emoji} ${diff.tierName}`;
-    diffEl.className = `hud-stat ${cls}`;
-  }
-  if (llmDot) {
-    const ok = isLlmAvailable();
-    llmDot.className = ok ? '' : 'off';
-    llmDot.id = 'llmDot';
-    llmDot.title = ok ? 'LLM: connected' : 'LLM: disconnected';
-  }
-  // Time of day badge
-  const timeEl = document.getElementById('timeBadge');
-  if (timeEl) {
-    timeEl.textContent = getTimeOfDay();
-  }
-  // Weather badge
-  const weatherEl = document.getElementById('weatherBadge');
-  if (weatherEl) {
-    const w = getWeatherInfo();
-    weatherEl.textContent = `${w.emoji} ${w.label}`;
-  }
-  // Flashlight badge
-  const flashEl = document.getElementById('flashlightBadge');
-  if (flashEl) {
-    flashEl.textContent = isFlashlightOn() ? '🔦 On' : '🔦 Off';
-    flashEl.style.opacity = isFlashlightOn() ? '1' : '0.5';
-  }
-}
+// B7.1: syncHUD + TIER_EMOJI / TIER_CLASS moved to src/ui/hud.ts.
 
 // --- Dialog ---
 
