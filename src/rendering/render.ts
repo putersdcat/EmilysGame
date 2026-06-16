@@ -24,6 +24,7 @@ import {
 } from './wasm-bridge';
 import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-pipeline/asset-sprites';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
+import { gridToScreen, isVisible } from './projection';
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -262,25 +263,12 @@ export class IsometricRenderer {
 
   /** Convert grid coords → screen pixel coords, offset by camera. */
   public gridToScreen(gx: number, gy: number, camera: Camera): { x: number; y: number } {
-    const tw = RENDER_CONFIG.tileWidth;
-    const th = RENDER_CONFIG.tileHeight;
-    // Relative to camera
-    const rx = gx - camera.x;
-    const ry = gy - camera.y;
-    return {
-      x: (rx - ry) * (tw / 2) + RENDER_CONFIG.canvasWidth / 2,
-      y: (rx + ry) * (th / 2) + RENDER_CONFIG.canvasHeight / 3,
-    };
+    return gridToScreen(gx, gy, camera);
   }
 
   /** Check if screen pos is within visible canvas (with margin). */
   private isVisible(sx: number, sy: number, margin = 64): boolean {
-    return (
-      sx > -margin &&
-      sx < RENDER_CONFIG.canvasWidth + margin &&
-      sy > -margin &&
-      sy < RENDER_CONFIG.canvasHeight + margin
-    );
+    return isVisible(sx, sy, margin);
   }
 
   // --- Dynamic Shadow Sprite Cache ---
