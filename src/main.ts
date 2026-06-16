@@ -127,6 +127,13 @@ import {
   consumeExtraKey as _consumeExtraKey,
   clearExtraKeys as _clearExtraKeys,
 } from './game/input-extra-keys';
+// B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
+// extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
+import {
+  DIARRHEA_CONFIG,
+  createInitialDiarrheaState,
+  type DiarrheaState,
+} from './game/illness';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -194,13 +201,8 @@ interface GameState {
   expressionOverride: { expr: import('./asset-pipeline/sprites').Expression; until: number } | null;
   // Base default expression to revert to after transient override (#102)
   _baseExpression: import('./asset-pipeline/sprites').Expression;
-  // Diarrhea illness chain (#133)
-  streamDrinkCount: number;
-  diarrheaUntil: number;       // frameCount when speed-debuff ends (0 = inactive)
-  diarrheaLocked: boolean;     // true = control locked during acute event
-  diarrheaLockUntil: number;   // frameCount when lock ends
-  diarrheaLastTrigger: number; // frameCount of last trigger (cooldown)
-  poopMarkers: { x: number; y: number; placedAt: number }[];
+  // Diarrhea illness chain (#133) — see DiarrheaState in ./game/illness.ts
+  diarrhea: DiarrheaState;
   // Quiz type flags — tracks which special quiz is active (#109, #110)
   _woundCareQuiz: boolean;
   _hygieneQuiz: boolean;
@@ -214,18 +216,8 @@ interface GameState {
 let _lastDialogNpcId: string | null = null;
 
 // ─── Diarrhea Illness Config (#133) ─────────────────────────
-
-const DIARRHEA_CONFIG = {
-  DRINK_THRESHOLD: 3,         // Min drinks before risk starts
-  BASE_CHANCE: 0.20,          // 20% per drink after threshold
-  GUARANTEED_AT: 6,           // 100% chance at this many drinks
-  LOCK_DURATION_FRAMES: 1500, // ~25s at 60fps: player can't move
-  DEBUFF_DURATION_FRAMES: 1800, // ~30s speed debuff after lock ends
-  SPEED_DEBUFF: 0.7,          // Speed multiplier during non-locked diarrhea
-  COOLDOWN_FRAMES: 3600,      // 60s cooldown between events
-  MARKER_DURATION_FRAMES: 3600, // 60s poop marker persistence
-  PARTICLE_COUNT: 18,         // Poop VFX particle count
-} as const;
+// B5 micro-slice 11.2 (#268): DIARRHEA_CONFIG moved to ./game/illness.ts.
+// Imported above. State is accessed via state.diarrhea.*
 
 // ─── Transient Expression System (#102) ─────────────────────
 
@@ -807,13 +799,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     ageProfile: createAgeProfile(),
     expressionOverride: null,
     _baseExpression: playerVariation.expression ?? 'happy',
-    // Diarrhea illness chain (#133)
-    streamDrinkCount: 0,
-    diarrheaUntil: 0,
-    diarrheaLocked: false,
-    diarrheaLockUntil: 0,
-    diarrheaLastTrigger: 0,
-    poopMarkers: [],
+    // Diarrhea illness chain (#133) — B5.2: state factory extracted to illness.ts
+    diarrhea: createInitialDiarrheaState(),
     // Quiz type flags (#109, #110)
     _woundCareQuiz: false,
     _hygieneQuiz: false,
@@ -1213,10 +1200,10 @@ function update(state: GameState, input: InputManager): void {
   }
 
   // --- Diarrhea control lock check (#133) ---
-  if (state.diarrheaLocked) {
-    if (state.frameCount >= state.diarrheaLockUntil) {
+  if (state.diarrhea.diarrheaLocked) {
+    if (state.frameCount >= state.diarrhea.diarrheaLockUntil) {
       // Lock expired — recover
-      state.diarrheaLocked = false;
+      state.diarrhea.diarrheaLocked = false;
       setDiarrheaOverlay(false);
       addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
       playSfx(state.sfx, 'pickup_item'); // relief SFX
@@ -1235,7 +1222,7 @@ function update(state: GameState, input: InputManager): void {
     // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = state.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
+    const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
     const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
     const dx = mv.dx * effectiveSpeed;
     const dy = mv.dy * effectiveSpeed;
@@ -1648,25 +1635,25 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
       state.status.hydration = Math.min(100, state.status.hydration + hydrationGain);
 
       // Track stream drink count for diarrhea risk (#133)
-      state.streamDrinkCount++;
-      const drinkCount = state.streamDrinkCount;
+      state.diarrhea.streamDrinkCount++;
+      const drinkCount = state.diarrhea.streamDrinkCount;
 
       // Diarrhea roll: 20% after threshold, guaranteed at 6+ drinks, with cooldown
       const pastThreshold = drinkCount >= DIARRHEA_CONFIG.DRINK_THRESHOLD;
-      const offCooldown = (state.frameCount - state.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
+      const offCooldown = (state.frameCount - state.diarrhea.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
       const chance = drinkCount >= DIARRHEA_CONFIG.GUARANTEED_AT
         ? 1.0
         : DIARRHEA_CONFIG.BASE_CHANCE;
 
       if (pastThreshold && offCooldown && Math.random() < chance) {
         // --- Trigger diarrhea illness event (#133) ---
-        state.diarrheaLocked = true;
-        state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-        state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-        state.diarrheaLastTrigger = state.frameCount;
+        state.diarrhea.diarrheaLocked = true;
+        state.diarrhea.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
+        state.diarrhea.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
+        state.diarrhea.diarrheaLastTrigger = state.frameCount;
 
         // Spawn poop marker at current position
-        state.poopMarkers.push({
+        state.diarrhea.poopMarkers.push({
           x: Math.round(state.player.x),
           y: Math.round(state.player.y),
           placedAt: state.frameCount,
@@ -2233,12 +2220,7 @@ function resetGameState(state: GameState): void {
   state.unlockedCosmetics = [];
   setUnlockedCosmetics([]);
   // Reset diarrhea illness chain (#133)
-  state.streamDrinkCount = 0;
-  state.diarrheaUntil = 0;
-  state.diarrheaLocked = false;
-  state.diarrheaLockUntil = 0;
-  state.diarrheaLastTrigger = 0;
-  state.poopMarkers.length = 0;
+  state.diarrhea = createInitialDiarrheaState();
   setDiarrheaOverlay(false);
   // Reset quiz type flags (#109, #110)
   state._woundCareQuiz = false;
@@ -2785,7 +2767,7 @@ function renderFrame(
   const cam = state.camera;
   renderPoopMarkers(
     renderer.getCtx(),
-    state.poopMarkers,
+    state.diarrhea.poopMarkers,
     state.frameCount,
     DIARRHEA_CONFIG.MARKER_DURATION_FRAMES,
     (gx: number, gy: number) => renderer.gridToScreen(gx, gy, cam),
@@ -3343,25 +3325,25 @@ async function main(): Promise<void> {
     // Stream/worm debug (#110 Phase 3, #133 illness chain)
     getInsectQuestions: () => INSECT_QUESTIONS,
     startInsectQuiz: () => _startInsectQuiz(state),
-    getStreamDrinkCount: () => state.streamDrinkCount,
-    getDiarrheaActive: () => state.diarrheaUntil > state.frameCount,
-    getDiarrheaLocked: () => state.diarrheaLocked,
+    getStreamDrinkCount: () => state.diarrhea.streamDrinkCount,
+    getDiarrheaActive: () => state.diarrhea.diarrheaUntil > state.frameCount,
+    getDiarrheaLocked: () => state.diarrhea.diarrheaLocked,
     getDiarrheaState: () => ({
-      streamDrinkCount: state.streamDrinkCount,
-      diarrheaUntil: state.diarrheaUntil,
-      diarrheaLocked: state.diarrheaLocked,
-      diarrheaLockUntil: state.diarrheaLockUntil,
-      diarrheaLastTrigger: state.diarrheaLastTrigger,
-      poopMarkerCount: state.poopMarkers.length,
+      streamDrinkCount: state.diarrhea.streamDrinkCount,
+      diarrheaUntil: state.diarrhea.diarrheaUntil,
+      diarrheaLocked: state.diarrhea.diarrheaLocked,
+      diarrheaLockUntil: state.diarrhea.diarrheaLockUntil,
+      diarrheaLastTrigger: state.diarrhea.diarrheaLastTrigger,
+      poopMarkerCount: state.diarrhea.poopMarkers.length,
       frameCount: state.frameCount,
     }),
     // Force-trigger diarrhea event for testing (#133)
     triggerDiarrhea: () => {
-      state.diarrheaLocked = true;
-      state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-      state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-      state.diarrheaLastTrigger = state.frameCount;
-      state.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: state.frameCount });
+      state.diarrhea.diarrheaLocked = true;
+      state.diarrhea.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
+      state.diarrhea.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
+      state.diarrhea.diarrheaLastTrigger = state.frameCount;
+      state.diarrhea.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: state.frameCount });
       _pendingPoopBurst = true;
       setDiarrheaOverlay(true);
       playSfx(state.sfx, 'diarrhea_gurgle');
