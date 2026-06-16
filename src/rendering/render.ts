@@ -12,7 +12,7 @@ import { getIsoTile, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
-import type { ChunkData } from '../types/game.types';
+import type { ChunkData, Camera } from '../types/game.types';
 import { cellJitter } from '../engine/utils';
 import { FIRE_VARIANTS, getFireAnimation } from '../config/fire.config';
 import { getTileLOD } from '../config/tiles.config';
@@ -25,12 +25,10 @@ import {
 import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-pipeline/asset-sprites';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
 
-// ─── Types ───────────────────────────────────────────────────
-
-export interface Camera {
-  x: number;   // World-space center X (grid units)
-  y: number;   // World-space center Y (grid units)
-}
+// ─── Re-exports ──────────────────────────────────────────────
+// Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
+// with `local-lights.ts`. Re-exported here for backward compatibility.
+export type { Camera } from '../types/game.types';
 
 // Draw command types for zero-closure rendering
 const CMD_EMOJI = 0;

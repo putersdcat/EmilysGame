@@ -15,6 +15,21 @@
 import type { EdgeTag } from '../config/tiles.config';
 import type { MoodProfile } from '../engine/world/BiomeSelector';
 
+// ─── Viewport & Camera ────────────────────────────────────────────────────────
+
+/**
+ * World-space camera position in world-units (NOT pixel coords, NOT tile coords).
+ * The renderer projects (camera.x, camera.y) to screen center using the
+ * isometric tile dimensions. Used by the main renderer, fog, local-lights,
+ * and the WASM bridge.
+ *
+ * B6.1 (#269) — centralized here from `render.ts` and `local-lights.ts`.
+ */
+export interface Camera {
+  x: number;
+  y: number;
+}
+
 // ─── Cell & Chunk Data ────────────────────────────────────────────────────────
 
 /**

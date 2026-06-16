@@ -7,6 +7,7 @@
 
 import { RENDER_CONFIG } from '../config/game.config';
 import { getCycleProgress, getCurrentLighting } from './lighting';
+import type { Camera } from '../types/game.types';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -42,11 +43,6 @@ export interface ConeLight {
   color: [number, number, number];
   /** Base intensity 0-1 */
   intensity: number;
-}
-
-export interface Camera {
-  x: number;
-  y: number;
 }
 
 // ─── Config ─────────────────────────────────────────────────
