@@ -134,6 +134,13 @@ import {
   createInitialDiarrheaState,
   type DiarrheaState,
 } from './game/illness';
+// B5 micro-slice 11.3 (#268): transient expression system extracted to
+// ./game/expression.ts. Uses ExpressionStateSubset (structural) to avoid
+// circular dependency with main.ts GameState definition.
+import {
+  setTransientExpression,
+  tickExpressionOverride,
+} from './game/expression';
 
 
 // ─── Game State ──────────────────────────────────────────────
@@ -220,27 +227,8 @@ let _lastDialogNpcId: string | null = null;
 // Imported above. State is accessed via state.diarrhea.*
 
 // ─── Transient Expression System (#102) ─────────────────────
-
-import type { Expression as SpriteExpression } from './asset-pipeline/sprites';
-
-/** Temporarily override player expression — reverts automatically */
-function setTransientExpression(state: GameState, expr: SpriteExpression, durationMs: number): void {
-  state.expressionOverride = { expr, until: performance.now() + durationMs };
-  // Apply immediately to playerVariation so next sprite load uses it
-  state.playerVariation.expression = expr;
-  state.lastAnimFrame = -1; // force sprite reload
-}
-
-/** Tick the expression override timer; revert when expired */
-function tickExpressionOverride(state: GameState): void {
-  if (!state.expressionOverride) return;
-  if (performance.now() >= state.expressionOverride.until) {
-    // Revert to base expression (from save / customizer default)
-    state.playerVariation.expression = state._baseExpression ?? 'happy';
-    state.expressionOverride = null;
-    state.lastAnimFrame = -1; // force sprite reload
-  }
-}
+// B5 micro-slice 11.3 (#268): setTransientExpression + tickExpressionOverride
+// moved to ./game/expression.ts. Imported above.
 
 // ─── Wound-Care Quiz (#109) ─────────────────────────────────
 
