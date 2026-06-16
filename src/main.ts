@@ -120,33 +120,13 @@ import {
   type VoiceState,
 } from './game/audio/npc-voice';
 import type { FacingPose } from './asset-pipeline/sprites';
-
-
-// ─── Extra Key Queue (numeric + R for quiz accessibility, #94) ───
-
-/** Keys pressed this frame — consumed by quiz input block, cleared each frame */
-const _extraKeyQueue: Set<string> = new Set();
-
-function _setupExtraKeyCapture(): void {
-  window.addEventListener('keydown', (e) => {
-    // Capture 1-9 and R/r for quiz accessibility
-    if (/^[1-9r]$/i.test(e.key)) {
-      _extraKeyQueue.add(e.key.toLowerCase());
-    }
-  });
-}
-
-function _consumeExtraKey(key: string): boolean {
-  if (_extraKeyQueue.has(key)) {
-    _extraKeyQueue.delete(key);
-    return true;
-  }
-  return false;
-}
-
-function _clearExtraKeys(): void {
-  _extraKeyQueue.clear();
-}
+// B5 micro-slice 11.1 (#268): extra key queue extracted to
+// ./game/input-extra-keys.ts (quiz accessibility, #94).
+import {
+  setupExtraKeyCapture as _setupExtraKeyCapture,
+  consumeExtraKey as _consumeExtraKey,
+  clearExtraKeys as _clearExtraKeys,
+} from './game/input-extra-keys';
 
 
 // ─── Game State ──────────────────────────────────────────────
