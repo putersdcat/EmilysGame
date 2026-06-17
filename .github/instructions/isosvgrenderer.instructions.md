@@ -143,3 +143,9 @@ echo '{"kind":"stone-wall","variant":"corner-br","width":320,"height":320}' |
 - [ ] Assembly/scene context validated.
 - [ ] Any animation frames validated (if relevant).
 - [ ] Issue/PR note includes renderer tool(s) used.
+
+## Cross-References
+
+- `.github/instructions/architecture.instructions.md` — god-file prevention (applies here too — keep AiTools files focused)
+- `.github/instructions/iso2-texture-factories.instructions.md` — material factory source-of-truth
+- `.github/instructions/iso2-main-port.instructions.md` — porting contract to main engine
