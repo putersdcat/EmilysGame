@@ -22,7 +22,10 @@ import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt,
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './game/save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, type SaveData, type ResolvedCell } from './game/save';
+// B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
+// The Options callback is wired here so this module stays decoupled.
+import { showMainMenu } from './game/main-menu';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
@@ -82,8 +85,13 @@ import {
 } from './rendering/debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
-  getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
+  getWoundCareQuestion, startWoundCareQuiz, getInjurySpeedMult, serializeInjury, deserializeInjury,
 } from './game/injury';
+// B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
+// _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
+// ./game/quiz-specials.ts. startWoundCareQuiz now lives in ./game/injury.ts
+// next to its WOUND_CARE_QUESTIONS data + getWoundCareQuestion shuffler.
+import { startHygieneQuiz, startInsectQuiz } from './game/quiz-specials';
 import {
   createMusicState, play as musicPlay, stop as musicStop,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -95,9 +103,12 @@ import {
   serializeSfxSettings, deserializeSfxSettings,
   initSampledSfxPipeline, updateListenerPosition,
   playFootstep, resetFootstepCounter,
-  playPositionalSfx,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
 } from './game/audio/sfx';
+// B5 micro-slice 11.9 (#268): positional-audio data + scanner extracted
+// from main.ts to ./game/audio/positional-sources.ts. playPositionalSfx
+// also moved there (used internally by scanPositionalAudioSources).
+import { scanPositionalAudioSources } from './game/audio/positional-sources';
 import {
   createVoiceState, speakLine, cancelSpeech,
   serializeVoiceSettings, deserializeVoiceSettings,
@@ -152,161 +163,11 @@ let _lastDialogNpcId: string | null = null;
 // B5 micro-slice 11.3 (#268): setTransientExpression + tickExpressionOverride
 // moved to ./game/expression.ts. Imported above.
 
-// ─── Wound-Care Quiz (#109) ─────────────────────────────────
-
-import type { WoundCareQuestion } from './game/injury';
-
-/**
- * Start a wound-care mini-quiz after bandaid use.
- * Uses the regular quiz UI but with a custom wound-care question.
- */
-function _startWoundCareQuiz(state: GameState, wq: WoundCareQuestion): void {
-  // Populate quiz state directly (bypass normal startQuiz which loads from content packs)
-  state.quiz.active = true;
-  state.quiz.displayText = `🩹 Wound Care: ${wq.question}`;
-  state.quiz.choices = [...wq.answers, "I don't know 📖"];
-  state.quiz.correctIndex = wq.correctIndex;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `wound_care_${Date.now()}`,
-    question: wq.question,
-    answers: wq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about first aid!',
-  };
-  state.paused = true;
-  // Mark this as a wound-care quiz for bonus logic
-  state._woundCareQuiz = true;
-}
-
-// ─── Hygiene Quiz (#110 Phase 2) ─────────────────────────────
-
-/** Hygiene quiz questions for outhouse interaction */
-const HYGIENE_QUESTIONS = [
-  {
-    question: 'When should you wash your hands?',
-    answers: ['Before eating and after using the bathroom', 'Only when they look dirty', 'Once a week', 'Never'],
-  },
-  {
-    question: 'How long should you wash your hands with soap?',
-    answers: ['At least 20 seconds', '2 seconds', '1 minute', 'Just rinse with water'],
-  },
-  {
-    question: 'What kills germs on your hands?',
-    answers: ['Soap and water', 'Just water', 'Blowing on them', 'Wiping on your shirt'],
-  },
-  {
-    question: 'Why do we brush our teeth?',
-    answers: ['To remove bacteria and prevent cavities', 'To make them shiny', 'Because adults say so', 'To wake up faster'],
-  },
-  {
-    question: 'What should you do after sneezing?',
-    answers: ['Wash your hands or use sanitizer', 'Wipe on your sleeve and forget about it', 'Nothing', 'Sneeze again to clear it'],
-  },
-  {
-    question: 'How often should you take a bath or shower?',
-    answers: ['Every day or every other day', 'Once a month', 'Only in summer', 'When someone tells you'],
-  },
-];
-
-/**
- * Start a hygiene mini-quiz after outhouse interaction.
- * Correct → full cleanliness restore; Wrong → keep partial restore only.
- */
-function _startHygieneQuiz(state: GameState): void {
-  const hq = HYGIENE_QUESTIONS[Math.floor(Math.random() * HYGIENE_QUESTIONS.length)];
-  // Shuffle answers (correct is always index 0 in source)
-  const shuffled = [...hq.answers];
-  const correctAnswer = shuffled[0];
-  // Fisher-Yates shuffle
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const correctIdx = shuffled.indexOf(correctAnswer);
-
-  state.quiz.active = true;
-  state.quiz.displayText = `🚽 Hygiene Quiz: ${hq.question}`;
-  state.quiz.choices = [...shuffled, "I don't know 📖"];
-  state.quiz.correctIndex = correctIdx;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `hygiene_${Date.now()}`,
-    question: hq.question,
-    answers: hq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about hygiene and health!',
-  };
-  state.paused = true;
-  state._hygieneQuiz = true;
-}
-
-// ─── Insect Safety Quiz (#110 Phase 3) ───────────────────────
-
-/** Insect safety quiz questions for eat worms interaction */
-const INSECT_QUESTIONS = [
-  {
-    question: 'Is it safe to eat insects?',
-    answers: ['Some insects are safe if cooked, but many are not', 'All insects are safe to eat', 'No insects are ever safe', 'Only butterflies are safe'],
-  },
-  {
-    question: 'Why do some people eat insects?',
-    answers: ['They are high in protein and sustainable', 'They taste like candy', 'There is no reason', 'Insects have magic powers'],
-  },
-  {
-    question: 'What should you NEVER eat from the ground?',
-    answers: ['Unknown berries, mushrooms, or bugs', 'Grass', 'Dirt', 'Leaves'],
-  },
-  {
-    question: 'What is the safest way to prepare insects for eating?',
-    answers: ['Cook them thoroughly first', 'Eat them raw and alive', 'Wash them with soap', 'Freeze them for a minute'],
-  },
-];
-
-/**
- * Start an insect safety quiz after eating worms.
- * Correct → bonus energy; Wrong → just the tiny +5
- */
-function _startInsectQuiz(state: GameState): void {
-  const iq = INSECT_QUESTIONS[Math.floor(Math.random() * INSECT_QUESTIONS.length)];
-  const shuffled = [...iq.answers];
-  const correctAnswer = shuffled[0];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const correctIdx = shuffled.indexOf(correctAnswer);
-
-  state.quiz.active = true;
-  state.quiz.displayText = `🐛 Insect Safety: ${iq.question}`;
-  state.quiz.choices = [...shuffled, "I don't know 📖"];
-  state.quiz.correctIndex = correctIdx;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `insect_${Date.now()}`,
-    question: iq.question,
-    answers: iq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about food safety!',
-  };
-  state.paused = true;
-  state._insectQuiz = true;
-}
+// ─── Wound-Care / Hygiene / Insect Quizzes (#109, #110) ──────
+// B5 micro-slice 11.8 (#268): inline data + start functions extracted
+// to ./game/quiz-specials.ts (hygiene + insect) and ./game/injury.ts
+// (wound care). Imported at the top of this file. Each module co-locates
+// its question pool, Fisher-Yates shuffler, and startQuiz(state) helper.
 
 // ─── Chunk Management ────────────────────────────────────────
 
@@ -426,56 +287,9 @@ function collectResolvedCells(chunks: Map<string, ChunkData>): ResolvedCell[] {
 }
 
 // ─── Positional Audio Source Scanner (#108) ─────────────────
-// Scans nearby chunks for campfire & water tiles; starts positional loops.
-// Assets that emit positional audio:
-const POSITIONAL_AUDIO_ASSETS: Record<string, { sampleId: string; maxDist: number; volume: number }> = {
-  campfire:    { sampleId: 'campfire_loop', maxDist: 8,  volume: 0.5 },
-  water:       { sampleId: 'waterfall_loop', maxDist: 12, volume: 0.3 },
-};
-
-/** Track which positional IDs we've attempted so we don't spam attempts */
-const _positionalScanned = new Set<string>();
-
-function _scanPositionalAudioSources(state: GameState): void {
-  const size = WORLD_CONFIG.chunkSize;
-  const pcx = Math.floor(state.player.x / size);
-  const pcy = Math.floor(state.player.y / size);
-
-  // Scan player's chunk and immediate neighbors (3x3 grid)
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      const key = `${pcx + dx},${pcy + dy}`;
-      const chunk = state.chunks.get(key);
-      if (!chunk) continue;
-
-      const baseX = (pcx + dx) * size;
-      const baseY = (pcy + dy) * size;
-
-      for (let ly = 0; ly < size; ly++) {
-        for (let lx = 0; lx < size; lx++) {
-          const cell = chunk.cells[ly][lx];
-          const audioDef = POSITIONAL_AUDIO_ASSETS[cell.assetKey];
-          if (!audioDef) continue;
-
-          const wx = baseX + lx;
-          const wy = baseY + ly;
-          const id = `pos_${audioDef.sampleId}_${wx}_${wy}`;
-
-          // Skip if already started or attempted
-          if (_positionalScanned.has(id)) continue;
-          _positionalScanned.add(id);
-
-          playPositionalSfx(state.sfx, audioDef.sampleId, wx, wy, audioDef.maxDist, audioDef.volume);
-        }
-      }
-    }
-  }
-
-  // Clean up scanned set for distant chunks (avoid unbounded growth)
-  if (_positionalScanned.size > 500) {
-    _positionalScanned.clear();
-  }
-}
+// B5 micro-slice 11.9 (#268): scanPositionalAudioSources + the
+// POSITIONAL_AUDIO_ASSETS registry moved to ./game/audio/positional-sources.ts.
+// Imported above. Call once per frame from update().
 
 /** Only call ensureChunksAround when player crosses a chunk boundary */
 function maybeLoadChunks(state: GameState): void {
@@ -975,7 +789,7 @@ function update(state: GameState, input: InputManager): void {
         } else if (state._pendingInsectQuiz) {
           // Insect safety quiz after eating worms (#110 Phase 3)
           state._pendingInsectQuiz = false;
-          _startInsectQuiz(state);
+          startInsectQuiz(state);
           playSfx(state.sfx, 'quiz_start');
           _autoReadQuizQuestion(state);
         } else if (state.pendingTrade) {
@@ -1358,7 +1172,7 @@ function update(state: GameState, input: InputManager): void {
   // --- Positional audio source scan (#108) — every 120 frames (~2s) ---
   // Scans nearby chunks for campfire/waterfall and starts positional loops
   if (state.frameCount % 120 === 0 && state.sfx.sampledReady) {
-    _scanPositionalAudioSources(state);
+    scanPositionalAudioSources(state);
   }
 
   // --- Auto-save every 30s ---
@@ -1502,7 +1316,7 @@ function handleInteraction(result: InteractionResult, state: GameState): void {
         addToast(state.ui, cleanMsg, '#4caf50', 2000);
       }
       // Start hygiene quiz for bonus full restore
-      _startHygieneQuiz(state);
+      startHygieneQuiz(state);
       break;
     }
 
@@ -1985,90 +1799,11 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
   });
 }
 
-function showMainMenu(hasSaveData: boolean): Promise<string> {
-  return new Promise((resolve) => {
-    const menu = document.getElementById('mainMenu')!;
-    const buttonsPanel = document.getElementById('menuButtonsPanel')!;
-    const loadPanel = document.getElementById('menuLoadPanel')!;
-    const continueBtn = document.getElementById('menuContinue') as HTMLButtonElement;
-    const newGameBtn = document.getElementById('menuNewGame') as HTMLButtonElement;
-    const loadGameBtn = document.getElementById('menuLoadGame') as HTMLButtonElement;
-    const loadBackBtn = document.getElementById('menuLoadBack') as HTMLButtonElement;
-    const slotList = document.getElementById('menuSlotList')!;
+// B5 micro-slice 11.10 (#268): showMainMenu extracted from main.ts
+// to ./game/main-menu.ts. The Options button inside the menu
+// delegates to a caller-supplied callback so this module stays
+// independent of showOptionsOverlay.
 
-    // Show/hide continue based on auto-save
-    continueBtn.style.display = hasSaveData ? 'block' : 'none';
-
-    // Show/hide load based on any save existing
-    const slots = getAllSlotInfo();
-    const anySlots = hasSaveData || slots.some((s) => s.hasData);
-    loadGameBtn.style.display = anySlots ? 'block' : 'none';
-
-    // Reset to buttons view
-    buttonsPanel.style.display = 'flex';
-    loadPanel.style.display = 'none';
-    menu.style.display = 'flex';
-
-    const cleanup = () => { menu.style.display = 'none'; };
-
-    continueBtn.onclick = () => { cleanup(); resolve('continue'); };
-    newGameBtn.onclick = () => { cleanup(); resolve('new-game'); };
-
-    loadGameBtn.onclick = () => {
-      buttonsPanel.style.display = 'none';
-      loadPanel.style.display = 'block';
-      slotList.innerHTML = '';
-
-      // Auto-save slot
-      if (hasSaveData) {
-        const autoSave = loadGame();
-        const autoEl = document.createElement('div');
-        autoEl.className = 'menu-slot';
-        autoEl.innerHTML = `
-          <div class="menu-slot-info">
-            <div class="menu-slot-name">💾 Auto-Save</div>
-            <div class="menu-slot-time">${autoSave?.timestamp ? new Date(autoSave.timestamp).toLocaleString() : 'Unknown'}</div>
-          </div>
-          <div class="menu-slot-icon">▶</div>`;
-        autoEl.onclick = () => { cleanup(); resolve('continue'); };
-        slotList.appendChild(autoEl);
-      }
-
-      // Manual save slots
-      for (const info of slots) {
-        const el = document.createElement('div');
-        el.className = 'menu-slot' + (info.hasData ? '' : ' empty');
-        if (info.hasData) {
-          el.innerHTML = `
-            <div class="menu-slot-info">
-              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
-              <div class="menu-slot-time">${info.timestamp ? new Date(info.timestamp).toLocaleString() : '—'}</div>
-            </div>
-            <div class="menu-slot-icon">▶</div>`;
-          const slotIdx = info.slot;
-          el.onclick = () => { cleanup(); resolve(`load-slot-${slotIdx}`); };
-        } else {
-          el.innerHTML = `
-            <div class="menu-slot-info">
-              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
-              <div class="menu-slot-time">Empty</div>
-            </div>`;
-        }
-        slotList.appendChild(el);
-      }
-    };
-
-    loadBackBtn.onclick = () => {
-      loadPanel.style.display = 'none';
-      buttonsPanel.style.display = 'flex';
-    };
-
-    // Options button (#117 Phase 3)
-    document.getElementById('menuOptions')!.onclick = () => {
-      showOptionsOverlay(null); // null = no game state (main menu context)
-    };
-  });
-}
 
 /** Reset game state for a new game */
 function resetGameState(state: GameState): void {
@@ -2946,7 +2681,7 @@ function setupExtraKeys(state: GameState, input?: InputManager): void {
               state.injury.pendingWoundQuiz = false;
               const wq = getWoundCareQuestion();
               // Use quiz system with custom wound-care question
-              _startWoundCareQuiz(state, wq);
+              startWoundCareQuiz(state, wq);
             }
             break;
           }
@@ -3035,9 +2770,6 @@ async function main(): Promise<void> {
     chunkKey,
     checkCosmeticUnlocks,
     shouldAutoRead: _shouldAutoRead,
-    startHygieneQuiz: _startHygieneQuiz,
-    startInsectQuiz: _startInsectQuiz,
-    getInsectQuestions: () => INSECT_QUESTIONS,
   });
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
@@ -3056,7 +2788,7 @@ async function main(): Promise<void> {
     // Welcome splash for first-time players (#117)
     await showWelcomeSplash();
 
-    const choice = await showMainMenu(hasSaveData);
+    const choice = await showMainMenu(hasSaveData, () => showOptionsOverlay(null));
 
     if (choice === 'new-game') {
       resetGameState(state);
