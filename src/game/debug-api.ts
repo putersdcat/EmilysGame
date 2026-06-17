@@ -38,6 +38,7 @@ import { addToast } from '../ui/ui';
 import { checkHazardInjury, applyBandaid, getWoundCareQuestion } from './injury';
 // B5 micro-slice 11.8 (#268): quiz-specials content moved here.
 import { startHygieneQuiz, startInsectQuiz, getInsectQuestions } from './quiz-specials';
+import { chunkKey } from './chunk-lifecycle';
 import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from '../ui/customizer';
 import { getCosmeticById } from '../config/cosmetics.config';
 import {
@@ -103,7 +104,6 @@ export interface DebugApiDeps {
   setPendingPoopBurst: (v: boolean) => void;
   /** Helper functions from main.ts */
   doSave: (state: GameState) => void;
-  chunkKey: (cx: number, cy: number) => string;
   checkCosmeticUnlocks: (state: GameState) => void;
   shouldAutoRead: (state: GameState) => boolean;
 }
@@ -121,7 +121,6 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     getLastDialogNpcId,
     setPendingPoopBurst,
     doSave,
-    chunkKey,
     checkCosmeticUnlocks,
     shouldAutoRead,
   } = deps;

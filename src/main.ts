@@ -8,21 +8,19 @@ import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './con
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { getBiome } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
-import { DIRECTION_WORDS } from './config/entropy.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager, type TouchControlMode } from './game/input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, clearVariationCache, type FacingPose } from './asset-pipeline/sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
-import type { ChunkData, BorderConstraints } from './types/game.types';
+import { setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './engine/mechanics';
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, type SaveData, type ResolvedCell } from './game/save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, type SaveData } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -41,8 +39,8 @@ import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './rendering/wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './rendering/terrain-cache';
-import { clearObjectCache, invalidateObjectCache } from './rendering/render';
+import { clearTerrainCache, tickWaterAnimation, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './rendering/terrain-cache';
+import { clearObjectCache } from './rendering/render';
 import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
 import { preloadAssetSprites } from './asset-pipeline/asset-sprites';
 import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
@@ -103,6 +101,17 @@ import {
 // ./game/quiz-specials.ts. startWoundCareQuiz now lives in ./game/injury.ts
 // next to its WOUND_CARE_QUESTIONS data + getWoundCareQuestion shuffler.
 import { startHygieneQuiz, startInsectQuiz } from './game/quiz-specials';
+// B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + _pendingResolved
+// module-level state extracted from main.ts to ./game/chunk-lifecycle.ts.
+// Maintained as a thin wrapper in main.ts (see maybeLoadChunks) because it
+// chains eviction + auto-save on chunk exit.
+import {
+  loadChunksOnBoundaryCross,
+  ensureChunksAround,
+  setPendingResolvedCells,
+  collectResolvedCells,
+  clearPendingResolved,
+} from './game/chunk-lifecycle';
 import {
   createMusicState, play as musicPlay, stop as musicStop,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -180,155 +189,29 @@ let _lastDialogNpcId: string | null = null;
 // (wound care). Imported at the top of this file. Each module co-locates
 // its question pool, Fisher-Yates shuffler, and startQuiz(state) helper.
 
-// ─── Chunk Management ────────────────────────────────────────
-
-function chunkKey(cx: number, cy: number): string {
-  return `${cx},${cy}`;
-}
-
-function ensureChunksAround(state: GameState): void {
-  const size = WORLD_CONFIG.chunkSize;
-  const pcx = Math.floor(state.player.x / size);
-  const pcy = Math.floor(state.player.y / size);
-  const buf = WORLD_CONFIG.viewportBuffer;
-
-  for (let dy = -buf; dy <= buf; dy++) {
-    for (let dx = -buf; dx <= buf; dx++) {
-      const cx = pcx + dx;
-      const cy = pcy + dy;
-      const key = chunkKey(cx, cy);
-      if (!state.chunks.has(key)) {
-        // Collect border constraints from already-generated neighbors (#17)
-        const bc = collectBorderConstraints(state.chunks, cx, cy);
-        const chunk = generateChunkSync(cx, cy, bc);
-        state.chunks.set(key, chunk);
-        // Re-apply any resolved cells from save data
-        applyResolvedToChunk(key, chunk);
-        // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
-        invalidateChunkTerrain(chunkKey(cx - 1, cy));
-        invalidateChunkTerrain(chunkKey(cx + 1, cy));
-        invalidateChunkTerrain(chunkKey(cx, cy - 1));
-        invalidateChunkTerrain(chunkKey(cx, cy + 1));
-      }
-    }
-  }
-}
-
-/** Read edge tags from adjacent chunks' borderEdges for inter-chunk stitching. */
-function collectBorderConstraints(
-  chunks: Map<string, ChunkData>,
-  cx: number,
-  cy: number,
-): BorderConstraints | undefined {
-  const northChunk = chunks.get(chunkKey(cx, cy - 1));
-  const southChunk = chunks.get(chunkKey(cx, cy + 1));
-  const eastChunk = chunks.get(chunkKey(cx + 1, cy));
-  const westChunk = chunks.get(chunkKey(cx - 1, cy));
-
-  const hasAny = northChunk?.borderEdges || southChunk?.borderEdges ||
-                 eastChunk?.borderEdges || westChunk?.borderEdges;
-  if (!hasAny) return undefined;
-
-  return {
-    n: northChunk?.borderEdges?.s,  // south border of chunk above
-    s: southChunk?.borderEdges?.n,  // north border of chunk below
-    e: eastChunk?.borderEdges?.w,   // west border of chunk to the east
-    w: westChunk?.borderEdges?.e,   // east border of chunk to the west
-    // Traversal continuity from neighbors (#46)
-    nTraversal: northChunk?.borderEdges?.sTraversal,
-    sTraversal: southChunk?.borderEdges?.nTraversal,
-    eTraversal: eastChunk?.borderEdges?.wTraversal,
-    wTraversal: westChunk?.borderEdges?.eTraversal,
-  };
-}
-
-// ─── Resolved Cells Persistence ──────────────────────────────
-// Tracks cells mutated during gameplay (chests opened, doors unlocked, quiz gates passed)
-// so they survive save/load across chunk regeneration.
-
-/** Pending resolved cells keyed by chunkKey, applied after chunk generation */
-const _pendingResolved = new Map<string, ResolvedCell[]>();
-
-/** Store resolved cells from save data for deferred application after chunk gen */
-function setPendingResolvedCells(cells: ResolvedCell[]): void {
-  _pendingResolved.clear();
-  for (const rc of cells) {
-    let arr = _pendingResolved.get(rc.chunkKey);
-    if (!arr) {
-      arr = [];
-      _pendingResolved.set(rc.chunkKey, arr);
-    }
-    arr.push(rc);
-  }
-}
-
-/** Apply any pending resolved cells to a freshly generated chunk */
-function applyResolvedToChunk(key: string, chunk: ChunkData): void {
-  const cells = _pendingResolved.get(key);
-  if (!cells) return;
-  for (const rc of cells) {
-    if (rc.ly >= 0 && rc.ly < chunk.cells.length &&
-        rc.lx >= 0 && rc.lx < chunk.cells[0].length) {
-      const def = ASSET_DEFS[rc.newAssetKey];
-      chunk.cells[rc.ly][rc.lx] = {
-        assetKey: rc.newAssetKey,
-        walkable: def?.walkable ?? true,
-        interactable: false,
-        resolved: true,
-      };
-    }
-  }
-  invalidateObjectCache(key);
-}
-
-/** Scan all loaded chunks and collect cells with resolved=true */
-function collectResolvedCells(chunks: Map<string, ChunkData>): ResolvedCell[] {
-  const result: ResolvedCell[] = [];
-  for (const [key, chunk] of chunks) {
-    for (let ly = 0; ly < chunk.cells.length; ly++) {
-      for (let lx = 0; lx < chunk.cells[ly].length; lx++) {
-        const cell = chunk.cells[ly][lx];
-        if (cell.resolved) {
-          result.push({ chunkKey: key, lx, ly, newAssetKey: cell.assetKey });
-        }
-      }
-    }
-  }
-  return result;
-}
+// ─── Chunk Lifecycle ──────────────────────────────────────────
+// B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + the
+// _pendingResolved module-level state extracted to
+// ./game/chunk-lifecycle.ts. Thin wrapper `maybeLoadChunks` stays here
+// because it also drives terrain eviction + auto-save (doSave lives in
+// this file), chained off the boundary-cross boolean returned by
+// `loadChunksOnBoundaryCross`.
 
 // ─── Positional Audio Source Scanner (#108) ─────────────────
 // B5 micro-slice 11.9 (#268): scanPositionalAudioSources + the
 // POSITIONAL_AUDIO_ASSETS registry moved to ./game/audio/positional-sources.ts.
 // Imported above. Call once per frame from update().
 
-/** Only call ensureChunksAround when player crosses a chunk boundary */
+/** Thin wrapper: boundary-cross chunk load + terrain eviction + auto-save. */
 function maybeLoadChunks(state: GameState): void {
+  if (!loadChunksOnBoundaryCross(state)) return;
   const size = WORLD_CONFIG.chunkSize;
   const pcx = Math.floor(state.player.x / size);
   const pcy = Math.floor(state.player.y / size);
-  if (pcx !== state.lastChunkX || pcy !== state.lastChunkY) {
-    // Determine crossing direction and feed entropy (#4)
-    const dx = pcx - state.lastChunkX;
-    const dy = pcy - state.lastChunkY;
-    const dir = Math.abs(dx) >= Math.abs(dy)
-      ? (dx > 0 ? 'right' : 'left')
-      : (dy > 0 ? 'down' : 'up');
-    const table = DIRECTION_WORDS[dir];
-    if (table) {
-      const verb = table.verbs[Math.floor(Math.random() * table.verbs.length)];
-      const noun = table.nouns[Math.floor(Math.random() * table.nouns.length)];
-      feedEntropy(`move:${verb} ${noun}`);
-    }
-
-    state.lastChunkX = pcx;
-    state.lastChunkY = pcy;
-    ensureChunksAround(state);
-    // Evict distant terrain caches to stay under memory budget (#47)
-    evictDistantChunks(pcx, pcy, 3);
-    // Auto-save on chunk exit
-    doSave(state);
-  }
+  // Evict distant terrain caches to stay under memory budget (#47)
+  evictDistantChunks(pcx, pcy, 3);
+  // Auto-save on chunk exit
+  doSave(state);
 }
 
 // ─── LLM Connection Gate ─────────────────────────────────────
@@ -1808,7 +1691,7 @@ function resetGameState(state: GameState): void {
   clearParticles();
   clearWeather();
   clearBubbles();
-  _pendingResolved.clear(); // Clear resolved cells for fresh game
+  clearPendingResolved(); // Clear resolved cells for fresh game (B5.14)
   deleteSave();
   ensureChunksAround(state);
 }
@@ -2509,7 +2392,6 @@ async function main(): Promise<void> {
     getPendingPoopBurst: () => _pendingPoopBurst,
     setPendingPoopBurst: (v: boolean) => { _pendingPoopBurst = v; },
     doSave,
-    chunkKey,
     checkCosmeticUnlocks,
     shouldAutoRead: _shouldAutoRead,
   });
