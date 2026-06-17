@@ -12,7 +12,7 @@ import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager, type TouchControlMode } from './game/input';
 import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial } from './game/tutorial';
-import { characterVariations, loadCharacterSprite, clearVariationCache, type FacingPose } from './asset-pipeline/sprites';
+import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
 import { setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
@@ -20,7 +20,7 @@ import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt,
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, type SaveData } from './game/save';
+import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -53,9 +53,9 @@ import { showCustomizer, createDefaultVariation, serializeVariation, deserialize
 import { getCosmeticById } from './config/cosmetics.config';
 import type { AgeBand } from './types/content-pack.types';
 import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config';
-import { updateAndRenderParticles, clearParticles } from './rendering/particles';
+import { updateAndRenderParticles } from './rendering/particles';
 import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
-import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './rendering/weather';
+import { updateAndRenderWeather, setWeather, getWeatherInfo, didLightningStrike } from './rendering/weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 import { invalidateShadowCache } from './rendering/shadows';
@@ -83,7 +83,7 @@ import {
 } from './game/trading';
 import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
-  serializeStatus, resetTickCounter,
+  serializeStatus,
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
@@ -110,21 +110,24 @@ import {
   ensureChunksAround,
   setPendingResolvedCells,
   collectResolvedCells,
-  clearPendingResolved,
 } from './game/chunk-lifecycle';
 // B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
 // ./game/save-apply.ts. Pure orchestration — sequences deserializers across
 // ~15 subsystems (entropy, cosmetics, status, injury, music, sfx, voice,
 // streak, fog, age, playtime, touch mode, resolved cells, chunk regen).
 import { applySaveData } from './game/save-apply';
+// B5 micro-slice 11.16 (#268): resetGameState extracted from main.ts to
+// ./game/game-reset.ts. Sibling to save-apply — both orchestrate calls
+// into already-extracted factory/clear functions across subsystems.
+import { resetGameState } from './game/game-reset';
 import {
-  createMusicState, play as musicPlay, stop as musicStop,
+  createMusicState, play as musicPlay,
   startDucking, stopDucking, setBiome as musicSetBiome,
   serializeMusicSettings, deserializeMusicSettings,
   initMidiTracks, getTotalTrackCount, updateMidiProgress,
 } from './game/audio/music';
 import {
-  createSfxState, playSfx, stopAmbience,
+  createSfxState, playSfx,
   serializeSfxSettings, deserializeSfxSettings,
   initSampledSfxPipeline, updateListenerPosition,
   playFootstep, resetFootstepCounter,
@@ -1569,60 +1572,9 @@ function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): 
 
 
 /** Reset game state for a new game */
-function resetGameState(state: GameState): void {
-  state.player.x = PLAYER_CONFIG.startPosition.x;
-  state.player.y = PLAYER_CONFIG.startPosition.y;
-  state.player.direction = 1;
-  state.player.facingDx = 1;
-  state.player.facingDy = 0;
-  state.player.facingPose = 'front' as FacingPose;
-  state.player.isMoving = false;
-  state.player.animFrame = 0;
-  state.camera.x = state.player.x;
-  state.camera.y = state.player.y;
-  state.chunks.clear();
-  state.inventory = createInventory();
-  state.quiz = createQuizState();
-  state.knowledge = createKnowledgeState();
-  state.quizStats = { answered: 0, correct: 0 };
-  state.streak = createStreakState(); // #103 reset streak
-  state.pendingQuiz = null;
-  state.pendingGateQuiz = null;
-  state.trade = createTradeState();
-  state.pendingTrade = null;
-  state.status = createPlayerStatus();
-  state.injury = createInjuryState();
-  resetTickCounter();
-  state.unlockedCosmetics = [];
-  setUnlockedCosmetics([]);
-  // Reset diarrhea illness chain (#133)
-  state.diarrhea = createInitialDiarrheaState();
-  setDiarrheaOverlay(false);
-  // Reset quiz type flags (#109, #110)
-  state._woundCareQuiz = false;
-  state._hygieneQuiz = false;
-  state._insectQuiz = false;
-  state._pendingInsectQuiz = false;
-  // Keep music settings across new game — just stop playback
-  musicStop(state.music);
-  // Keep SFX settings across new game — just stop ambience
-  stopAmbience(state.sfx);
-  // Keep voice settings across new game — just cancel speech
-  cancelSpeech(state.voice);
-  state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
-  state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
-  state.playerVariation = createDefaultVariation();
-  state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
-  state.lastAnimFrame = -1;
-  clearTerrainCache();
-  clearObjectCache();
-  clearParticles();
-  clearWeather();
-  clearBubbles();
-  clearPendingResolved(); // Clear resolved cells for fresh game (B5.14)
-  deleteSave();
-  ensureChunksAround(state);
-}
+// B5 micro-slice 11.16 (#268): resetGameState (54 lines) extracted to
+// ./game/game-reset.ts. Sibling to save-apply.ts; both are pure
+// orchestration. No module-level state moves.
 
 // ─── Bug Report Capture (#117) ──────────────────────────────
 
