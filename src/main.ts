@@ -13,14 +13,14 @@ import { InputManager } from './game/input';
 import { isTeslaMode } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
-import { setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
+import { setWordlist, setBiomeNoiseSeed, feedEntropy, restoreEntropyBuffer } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './game/save';
+import { loadGame, saveToSlot, loadFromSlot, deleteSlot } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -55,7 +55,7 @@ import { initMinimap, renderMinimap } from './rendering/minimap';
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
 import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
-import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
+import { showCustomizer, createDefaultVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import { getCosmeticById } from './config/cosmetics.config';
 import type { AgeBand } from './types/content-pack.types';
 import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config';
@@ -65,7 +65,7 @@ import { updateAndRenderWeather, getWeatherInfo, didLightningStrike } from './re
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 // invalidateShadowCache now called from input-extra-keys.ts (B5.20)
-import { updateFog, renderFog, setFogEnabled, serializeVisited, deserializeVisited } from './rendering/fog';
+import { updateFog, renderFog, setFogEnabled, deserializeVisited } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -89,7 +89,6 @@ import {
 } from './game/trading';
 import {
   createPlayerStatus, tickStatus, getDebuffs,
-  serializeStatus,
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
@@ -100,7 +99,7 @@ import {
 } from './rendering/debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyWoundQuizBonus,
-  getInjurySpeedMult, serializeInjury,
+  getInjurySpeedMult,
 } from './game/injury';
 // B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
@@ -115,13 +114,17 @@ import {
   loadChunksOnBoundaryCross,
   ensureChunksAround,
   setPendingResolvedCells,
-  collectResolvedCells,
 } from './game/chunk-lifecycle';
 // B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
 // ./game/save-apply.ts. Pure orchestration — sequences deserializers across
 // ~15 subsystems (entropy, cosmetics, status, injury, music, sfx, voice,
 // streak, fog, age, playtime, touch mode, resolved cells, chunk regen).
 import { applySaveData } from './game/save-apply';
+// B5 micro-slice 11.21 (#268): buildSaveData + doSave extracted from
+// main.ts to ./game/save-build.ts. Sibling to save-apply.ts. Re-imported
+// here so main.ts can pass doSave as a callback to setupExtraKeys +
+// debug-api without the new module depending on main.ts.
+import { buildSaveData, doSave } from './game/save-build';
 // B5 micro-slice 11.16 (#268): resetGameState extracted from main.ts to
 // ./game/game-reset.ts. Sibling to save-apply — both orchestrate calls
 // into already-extracted factory/clear functions across subsystems.
@@ -147,12 +150,12 @@ import {
 import {
   createMusicState, play as musicPlay,
   startDucking, stopDucking, setBiome as musicSetBiome,
-  serializeMusicSettings, deserializeMusicSettings,
+  deserializeMusicSettings,
   initMidiTracks, getTotalTrackCount, updateMidiProgress,
 } from './game/audio/music';
 import {
   createSfxState, playSfx,
-  serializeSfxSettings, deserializeSfxSettings,
+  deserializeSfxSettings,
   initSampledSfxPipeline, updateListenerPosition,
   playFootstep, resetFootstepCounter,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
@@ -163,7 +166,7 @@ import {
 import { scanPositionalAudioSources } from './game/audio/positional-sources';
 import {
   createVoiceState, speakLine, cancelSpeech,
-  serializeVoiceSettings, deserializeVoiceSettings,
+  deserializeVoiceSettings,
 } from './game/audio/npc-voice';
 // B5 micro-slice 11.1 (#268): extra key queue extracted to
 // ./game/input-extra-keys.ts (quiz accessibility, #94).
@@ -1147,50 +1150,11 @@ function update(state: GameState, input: InputManager): void {
 // ─── Save ────────────────────────────────────────────────────
 
 /** Build SaveData from current game state */
-function buildSaveData(state: GameState): SaveData {
-  return {
-    version: 1,
-    timestamp: Date.now(),
-    player: {
-      x: state.player.x,
-      y: state.player.y,
-      direction: state.player.direction,
-    },
-    inventory: state.inventory.serialize(),
-    visitedChunks: Array.from(state.chunks.keys()),
-    resolvedCells: collectResolvedCells(state.chunks),
-    quizStats: state.quizStats,
-    wordlistSeed: '',
-    entropyBuffer: getEntropyBuffer(), // Persist entropy pool (#4)
-    selectedSubjects: state.knowledge.selectedSubjects,
-    wordBag: state.knowledge.wordBag,
-    readArticles: [...state.knowledge.readArticles],
-    discoveryPoints: state.knowledge.discoveryPoints,
-    playerVariation: serializeVariation(state.playerVariation),
-    discoveredWildlife: getDiscoveredSpeciesArray(),
-    playerStatus: serializeStatus(state.status),
-    injuryState: serializeInjury(state.injury),
-    unlockedCosmetics: state.unlockedCosmetics,
-    musicSettings: serializeMusicSettings(state.music),
-    sfxSettings: serializeSfxSettings(state.sfx),
-    voiceSettings: serializeVoiceSettings(state.voice),
-    streakHistory: [...state.streak.history],
-    visitedFog: serializeVisited(),
-    ageBand: state.ageProfile.ageBand ?? undefined,
-    playedSeconds: getPlayedSeconds(),
-    touchControlMode: localStorage.getItem('emilys_game_touch_vis') ?? 'whisper',
-  };
-}
-
-/** Apply loaded save data to current game state */
-// B5 micro-slice 11.15 (#268): applySaveData (80 lines) extracted to
-// ./game/save-apply.ts. Pure orchestration — sequences deserializer calls
-// across ~15 subsystems and regenerates chunks. No module-level state.
-
-function doSave(state: GameState): void {
-  saveGame(buildSaveData(state));
-  markSaveSlotsDirty();
-}
+// B5 micro-slice 11.21 (#268): buildSaveData (33 lines) + doSave (3 lines)
+// extracted from main.ts to ./game/save-build.ts. Sibling to
+// ./game/save-apply.ts (B5.15). Pure data serialization — no module-level
+// state. main.ts imports both and re-passes doSave to setupExtraKeys +
+// debug-api as a function reference.
 
 // ─── Cosmetic Unlock Check (#66) ────────────────────────────────
 /** Check progression and grant newly unlocked cosmetics */
