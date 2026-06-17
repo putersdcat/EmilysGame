@@ -49,6 +49,7 @@ import { clearParticles } from '../rendering/particles';
 import { clearWeather } from '../rendering/weather';
 import { deleteSave } from './save';
 import { ensureChunksAround, clearPendingResolved } from './chunk-lifecycle';
+import { resetBubbleTriggerState } from './bubble-triggers';
 import { type GameState } from './game-state';
 
 // ─── Public API ──────────────────────────────────────────────
@@ -113,6 +114,7 @@ export function resetGameState(state: GameState): void {
   clearWeather();
   clearBubbles();
   clearPendingResolved(); // Clear resolved cells for fresh game (B5.14)
+  resetBubbleTriggerState(); // Reset bubble "last seen" state for fresh game (B5.18)
   deleteSave();
   ensureChunksAround(state);
 }
