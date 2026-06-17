@@ -54,7 +54,7 @@ import { getCosmeticById } from './config/cosmetics.config';
 import type { AgeBand } from './types/content-pack.types';
 import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles, clearParticles } from './rendering/particles';
-import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './rendering/lighting';
+import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './rendering/weather';
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
@@ -83,7 +83,7 @@ import {
 } from './game/trading';
 import {
   createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
-  serializeStatus, deserializeStatus, resetTickCounter,
+  serializeStatus, resetTickCounter,
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
@@ -94,7 +94,7 @@ import {
 } from './rendering/debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
-  getWoundCareQuestion, startWoundCareQuiz, getInjurySpeedMult, serializeInjury, deserializeInjury,
+  getWoundCareQuestion, startWoundCareQuiz, getInjurySpeedMult, serializeInjury,
 } from './game/injury';
 // B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
@@ -112,6 +112,11 @@ import {
   collectResolvedCells,
   clearPendingResolved,
 } from './game/chunk-lifecycle';
+// B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
+// ./game/save-apply.ts. Pure orchestration — sequences deserializers across
+// ~15 subsystems (entropy, cosmetics, status, injury, music, sfx, voice,
+// streak, fog, age, playtime, touch mode, resolved cells, chunk regen).
+import { applySaveData } from './game/save-apply';
 import {
   createMusicState, play as musicPlay, stop as musicStop,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -1338,86 +1343,9 @@ function buildSaveData(state: GameState): SaveData {
 }
 
 /** Apply loaded save data to current game state */
-function applySaveData(state: GameState, data: SaveData): void {
-  state.player.x = data.player.x;
-  state.player.y = data.player.y;
-  state.player.direction = data.player.direction;
-  state.inventory.deserialize(data.inventory);
-  state.quizStats = { ...data.quizStats };
-  // Restore knowledge state
-  if (data.selectedSubjects) state.knowledge.selectedSubjects = data.selectedSubjects as any;
-  if (data.wordBag) state.knowledge.wordBag = data.wordBag;
-  if (data.readArticles) state.knowledge.readArticles = new Set(data.readArticles);
-  if (data.discoveryPoints) state.knowledge.discoveryPoints = data.discoveryPoints;
-  state.knowledge.subjectsChosen = true;
-  // Restore entropy buffer (#4)
-  if (data.entropyBuffer) {
-    restoreEntropyBuffer(data.entropyBuffer);
-  }
-  // Restore player variation
-  if (data.playerVariation) {
-    state.playerVariation = deserializeVariation(data.playerVariation);
-    state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
-    state.lastAnimFrame = -1; // force sprite reload
-  }
-  // Restore discovered wildlife
-  if (data.discoveredWildlife) {
-    restoreDiscoveredSpecies(data.discoveredWildlife);
-  }
-  // Restore survival status (#70)
-  state.status = deserializeStatus(data.playerStatus);
-  resetTickCounter();
-  // Restore injury state (#109)
-  state.injury = deserializeInjury(data.injuryState);
-  // Restore unlocked cosmetics (#66)
-  state.unlockedCosmetics = data.unlockedCosmetics ?? [];
-  setUnlockedCosmetics(state.unlockedCosmetics);
-  // Restore music settings (#74)
-  state.music.settings = deserializeMusicSettings(data.musicSettings);
-  // Restore SFX settings (#75)
-  if (data.sfxSettings) deserializeSfxSettings(state.sfx, data.sfxSettings);
-  // Restore voice settings (#76)
-  if (data.voiceSettings) deserializeVoiceSettings(state.voice, data.voiceSettings);
-  // Restore streak history (#103)
-  if (data.streakHistory) {
-    state.streak = createStreakState();
-    for (const outcome of data.streakHistory) {
-      recordQuizResult(state.streak, outcome);
-    }
-  }
-  // Restore fog-of-war visited cells (#114)
-  if (data.visitedFog) {
-    deserializeVisited(data.visitedFog);
-  }
-  // Restore age band profile (#92)
-  if (data.ageBand) {
-    setAgeBand(state.ageProfile, data.ageBand as AgeBand);
-  }
-  // Restore cumulative playtime (#136)
-  if (data.playedSeconds != null) {
-    setPlayedSeconds(data.playedSeconds);
-  }
-  // Restore touch control visibility mode (#144)
-  if (data.touchControlMode) {
-    localStorage.setItem('emilys_game_touch_vis', data.touchControlMode);
-  }
-  // Force camera + chunk reload
-  state.camera.x = data.player.x;
-  state.camera.y = data.player.y;
-  // Store resolved cells for deferred application after chunk regeneration
-  setPendingResolvedCells(data.resolvedCells ?? []);
-  // Clear chunks so they regenerate with resolved cells applied
-  state.chunks.clear();
-  clearTerrainCache();
-  clearObjectCache();
-  clearParticles();
-  clearWeather();
-  clearWildlife();
-  // Regenerate chunks around new player position
-  state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
-  state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
-  ensureChunksAround(state);
-}
+// B5 micro-slice 11.15 (#268): applySaveData (80 lines) extracted to
+// ./game/save-apply.ts. Pure orchestration — sequences deserializer calls
+// across ~15 subsystems and regenerates chunks. No module-level state.
 
 function doSave(state: GameState): void {
   saveGame(buildSaveData(state));
