@@ -29,6 +29,9 @@ import { showMainMenu } from './game/main-menu';
 // B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
 // with dependency-inversion for save/options/bug-report/main-menu actions.
 import { showPauseMenu } from './game/pause-menu';
+// B5 micro-slice 11.12 (#268): showAgeSelection extracted to
+// ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
+import { showAgeSelection } from './game/age-selection';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
@@ -42,7 +45,7 @@ import { initMinimap, renderMinimap } from './rendering/minimap';
 
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
 import { createKnowledgeState, syncBookUI, showSubjectSelection, getQuizBias, openArticle, toggleBook } from './game/knowledge';
-import { createAgeProfile, setAgeBand, AGE_BANDS, type AgeProfile } from './game/age-profile';
+import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import { getCosmeticById } from './config/cosmetics.config';
 import type { AgeBand } from './types/content-pack.types';
@@ -1558,69 +1561,10 @@ function checkCosmeticUnlocks(state: GameState): void {
 // ─── Menu System ───────────────────────────────────────────────────
 // TODO: DOC - menu flow state diagram
 
-// ─── Age Band Selection (#92) ───────────────────────────────────
+// B5 micro-slice 11.12 (#268): showAgeSelection extracted to
+// ./game/age-selection.ts (58 lines). Pure DOM overlay, no callbacks.
 
-/** Show age band selection overlay. Resolves when player picks or skips. */
-function showAgeSelection(profile: AgeProfile): Promise<void> {
-  return new Promise(resolve => {
-    const overlay = document.getElementById('ageOverlay');
-    if (!overlay) { resolve(); return; }
-
-    const list = document.getElementById('ageBandList');
-    const confirmBtn = document.getElementById('ageConfirm') as HTMLButtonElement;
-    const skipBtn = document.getElementById('ageSkip');
-
-    if (!list || !confirmBtn) { resolve(); return; }
-
-    let selected: AgeBand | null = null;
-
-    function renderOptions(): void {
-      list!.innerHTML = AGE_BANDS.map(b => {
-        const sel = selected === b.id;
-        return `<div class="age-band-option ${sel ? 'selected' : ''}" data-band="${b.id}">
-          <span class="age-band-icon">${b.icon}</span>
-          <div class="age-band-info">
-            <span class="age-band-label">${b.label}</span>
-            <span class="age-band-range">${b.range}</span>
-          </div>
-        </div>`;
-      }).join('');
-
-      // Wire option clicks
-      list!.querySelectorAll('.age-band-option').forEach(el => {
-        el.addEventListener('click', () => {
-          selected = (el as HTMLElement).dataset.band as AgeBand;
-          confirmBtn.disabled = false;
-          renderOptions();
-        });
-      });
-    }
-
-    renderOptions();
-    overlay.style.display = 'flex';
-
-    const onConfirm = () => {
-      if (selected) setAgeBand(profile, selected);
-      overlay.style.display = 'none';
-      confirmBtn.removeEventListener('click', onConfirm);
-      skipBtn?.removeEventListener('click', onSkip);
-      resolve();
-    };
-
-    const onSkip = () => {
-      // Skip = no age band, show everything
-      overlay.style.display = 'none';
-      confirmBtn.removeEventListener('click', onConfirm);
-      skipBtn?.removeEventListener('click', onSkip);
-      resolve();
-    };
-
-    confirmBtn.addEventListener('click', onConfirm);
-    skipBtn?.addEventListener('click', onSkip);
-  });
-}
-
-/** Show main menu overlay. Returns promise resolving to player choice. */
+// ─── Options Overlay (#117 Phase 3) ──────────────────────────
 // ─── Options Overlay (#117 Phase 3) ──────────────────────────
 
 /**
