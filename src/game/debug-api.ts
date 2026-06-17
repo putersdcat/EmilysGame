@@ -72,6 +72,9 @@ import {
   toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, getFogDebugInfo,
 } from '../rendering/fog';
 import { getTimeSlot } from './wildlife';
+// B5 micro-slice 11.13 (#268): getRevealedCreatures moved to
+// ./game/wildlife-render.ts and imported directly here (DI removed).
+import { getRevealedCreatures } from './wildlife-render';
 import { getBookContentStats, isPackContentLoaded } from '../ui/book-content';
 import { toggleBook, openArticle } from './knowledge';
 import { getAgeProfileDebug, setAgeBand } from './age-profile';
@@ -95,8 +98,6 @@ export interface DebugApiDeps {
   input: InputManager;
   /** Get the last dialog NPC id (for mouth animation) */
   getLastDialogNpcId: () => string | null;
-  /** Get the revealed creatures set (night mode) */
-  getRevealedCreatures: () => Set<string>;
   /** Get/set the pending poop burst flag */
   getPendingPoopBurst: () => boolean;
   setPendingPoopBurst: (v: boolean) => void;
@@ -118,7 +119,6 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     state,
     input,
     getLastDialogNpcId,
-    getRevealedCreatures,
     setPendingPoopBurst,
     doSave,
     chunkKey,

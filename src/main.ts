@@ -32,6 +32,11 @@ import { showPauseMenu } from './game/pause-menu';
 // B5 micro-slice 11.12 (#268): showAgeSelection extracted to
 // ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
 import { showAgeSelection } from './game/age-selection';
+// B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
+// _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
+// ./game/wildlife-render.ts. getRevealedCreatures() lives there too
+// and is imported directly by debug-api.ts (no DI needed).
+import { renderWildlife } from './game/wildlife-render';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
@@ -53,17 +58,17 @@ import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config
 import { updateAndRenderParticles, clearParticles } from './rendering/particles';
 import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './rendering/lighting';
 import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './rendering/weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './rendering/local-lights';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 import { invalidateShadowCache } from './rendering/shadows';
 import { updateFog, renderFog, isFogEnabled, setFogEnabled, serializeVisited, deserializeVisited } from './rendering/fog';
 import {
-  updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
+  updateWildlife, getVisibleWildlife, interactWithWildlife,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
-  getTimeSlot,
 } from './game/wildlife';
-import { getSpecies } from './config/wildlife.config';
-import { getEmojiSprite } from './asset-pipeline/emoji-cache';
+// B5 micro-slice 11.13 (#268): getAnimationOffset, getTimeSlot, getSpecies,
+// getEmojiSprite, and the _revealedCreatures state moved to
+// ./game/wildlife-render.ts (only used inside renderWildlife).
 
 import {
   triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
@@ -2062,155 +2067,8 @@ function checkBubbleTriggers(state: GameState): void {
   }
 }
 
-// ─── Wildlife Rendering ──────────────────────────────────────
-
-// Track creatures revealed by flashlight this session (#114)
-const _revealedCreatures = new Set<string>(); // chunkKey_localId keys
-
-// Glowing eyes animation state (module-level, avoid per-frame alloc)
-let _eyeBlinkTimer = 0;
-let _eyeSwayPhase = 0;
-
-function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
-  const wildlife = getVisibleWildlife(state.camera, state.player.x, state.player.y);
-  if (wildlife.length === 0) return;
-
-  const ctx = renderer.getCtx();
-  const cw = RENDER_CONFIG.canvasWidth;
-  const ch = RENDER_CONFIG.canvasHeight;
-  const timeSlot = getTimeSlot();
-  const isNight = timeSlot === 'night';
-
-  // Advance eye animation
-  _eyeBlinkTimer = (_eyeBlinkTimer + 1) % 240; // blink every ~4s at 60fps
-  _eyeSwayPhase += 0.03;
-
-  for (const entity of wildlife) {
-    const species = getSpecies(entity.speciesId);
-    if (!species) continue;
-
-    const anim = getAnimationOffset(entity);
-    const { x: sx, y: sy } = renderer.gridToScreen(entity.worldX, entity.worldY, state.camera);
-
-    // Viewport cull
-    if (sx < -64 || sx > cw + 64 || sy < -64 || sy > ch + 64) continue;
-
-    // Glowing eyes mechanic: nocturnal creatures at night (#114)
-    const isNocturnal = species.time.includes('night');
-    const entityKey = `${entity.chunkKey}_${entity.localId}`;
-    const wasRevealed = _revealedCreatures.has(entityKey);
-
-    if (isNight && isNocturnal && !wasRevealed) {
-      // Check if flashlight is revealing this creature
-      const inCone = isInFlashlightCone(
-        entity.worldX, entity.worldY,
-        state.player.x, state.player.y,
-        state.player.facingDx, state.player.facingDy,
-      );
-
-      if (inCone) {
-        // Reveal! Flash of discovery
-        _revealedCreatures.add(entityKey);
-        // Brief bright aura
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = '#ffffaa';
-        ctx.beginPath();
-        ctx.arc(sx, sy, 20, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-        // Show discovery toast
-        addToast(state.ui, `👀 You spotted a ${species.name}! ${species.emoji}`, '#ffee44', 3000);
-      } else {
-        // Draw glowing eyes (two small dots)
-        const eyeSize = 2.5;
-        const eyeSpacing = 5;
-        const eyeY = sy + anim.dy - 4;
-        const eyeX = sx + anim.dx;
-        // Slight sway
-        const sway = Math.sin(_eyeSwayPhase + entity.localId * 1.7) * 1.2;
-        // Blink: briefly close eyes (~12 frames every ~240 frames)
-        const blinkOffset = (entity.localId * 37) % 240;
-        const blinkPhase = (_eyeBlinkTimer + blinkOffset) % 240;
-        const isBlinking = blinkPhase > 228;
-
-        if (!isBlinking) {
-          ctx.save();
-          // Additive blend for glow effect
-          ctx.globalCompositeOperation = 'lighter';
-          // Outer glow
-          ctx.globalAlpha = 0.35;
-          ctx.fillStyle = '#ffdd44';
-          ctx.beginPath();
-          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
-          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
-          ctx.fill();
-          // Inner bright
-          ctx.globalAlpha = 0.9;
-          ctx.fillStyle = '#ffff88';
-          ctx.beginPath();
-          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
-          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-        continue; // Don't render full sprite
-      }
-    }
-
-    // Normal sprite rendering (day, or revealed creatures)
-    const sprite = getEmojiSprite(species.emoji, 0);
-    const size = sprite.width * species.scale;
-    const drawX = sx + anim.dx - size / 2;
-    const drawY = sy + anim.dy - size / 2;
-
-    // Fleeing creatures fade out
-    if (entity.behavior === 'flee') {
-      const fadeT = entity.fleeCooldown / 120;
-      ctx.globalAlpha = Math.max(0.15, fadeT);
-    }
-
-    // Directional flip based on facingDir (#80)
-    if (entity.facingDir === -1) {
-      ctx.save();
-      ctx.translate(drawX + size, drawY);
-      ctx.scale(-1, 1);
-      ctx.drawImage(sprite, 0, 0, size, size);
-      ctx.restore();
-    } else {
-      ctx.drawImage(sprite, drawX, drawY, size, size);
-    }
-
-    // Behavior indicator particles (#142: visual cues for sit/groom)
-    if (entity.behavior === 'groom') {
-      // Tiny sparkle dots for grooming
-      const sparkT = entity.animPhase * 4;
-      ctx.save();
-      ctx.globalAlpha = 0.5 + Math.sin(sparkT) * 0.3;
-      ctx.fillStyle = '#fff8e0';
-      for (let i = 0; i < 3; i++) {
-        const px = sx + Math.sin(sparkT + i * 2.1) * 6;
-        const py = sy + anim.dy - 8 + Math.cos(sparkT + i * 1.7) * 4;
-        ctx.fillRect(px - 1, py - 1, 2, 2);
-      }
-      ctx.restore();
-    } else if (entity.behavior === 'sit') {
-      // Tiny "Zzz" indicator when sitting still long enough
-      if (entity.behaviorTimer < 60) { // last second of sitting
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.font = '8px sans-serif';
-        ctx.fillStyle = '#aaccff';
-        ctx.fillText('z', sx + 8, sy + anim.dy - 12 + Math.sin(entity.animPhase * 2) * 2);
-        ctx.restore();
-      }
-    }
-
-    if (entity.behavior === 'flee') {
-      ctx.globalAlpha = 1.0;
-    }
-  }
-}
+// B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
+// _eyeBlinkTimer / _eyeSwayPhase state moved to ./game/wildlife-render.ts.
 
 // ─── Render ──────────────────────────────────────────────────
 
@@ -2648,7 +2506,6 @@ async function main(): Promise<void> {
     state,
     input,
     getLastDialogNpcId: () => _lastDialogNpcId,
-    getRevealedCreatures: () => _revealedCreatures,
     getPendingPoopBurst: () => _pendingPoopBurst,
     setPendingPoopBurst: (v: boolean) => { _pendingPoopBurst = v; },
     doSave,
