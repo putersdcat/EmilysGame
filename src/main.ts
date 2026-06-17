@@ -26,7 +26,7 @@ import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData
 import { showMainMenu } from './game/main-menu';
 // B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
 // with dependency-inversion for save/options/bug-report/main-menu actions.
-import { showPauseMenu } from './game/pause-menu';
+// (showPauseMenu unused in main.ts — called from input-extra-keys.ts)
 // B5 micro-slice 11.12 (#268): showAgeSelection extracted to
 // ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
 import { showAgeSelection } from './game/age-selection';
@@ -45,7 +45,7 @@ import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
 import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './rendering/wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './rendering/terrain-cache';
+import { clearTerrainCache, tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 import { clearObjectCache } from './rendering/render';
 import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
 import { preloadAssetSprites } from './asset-pipeline/asset-sprites';
@@ -53,7 +53,7 @@ import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
 import { initMinimap, renderMinimap } from './rendering/minimap';
 
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
-import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle, toggleBook } from './game/knowledge';
+import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import { getCosmeticById } from './config/cosmetics.config';
@@ -61,10 +61,10 @@ import type { AgeBand } from './types/content-pack.types';
 import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles } from './rendering/particles';
 import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
-import { updateAndRenderWeather, setWeather, getWeatherInfo, didLightningStrike } from './rendering/weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './rendering/local-lights';
+import { updateAndRenderWeather, getWeatherInfo, didLightningStrike } from './rendering/weather';
+import { clearLights, addPointLight, addFlashlight, renderLocalLights, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
-import { invalidateShadowCache } from './rendering/shadows';
+// invalidateShadowCache now called from input-extra-keys.ts (B5.20)
 import { updateFog, renderFog, setFogEnabled, serializeVisited, deserializeVisited } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife,
@@ -88,7 +88,7 @@ import {
   syncBarterQuizDOM, getTradeDialog,
 } from './game/trading';
 import {
-  createPlayerStatus, tickStatus, getDebuffs, useStatusItem,
+  createPlayerStatus, tickStatus, getDebuffs,
   serializeStatus,
   CRITICAL_THRESHOLD,
 } from './game/status';
@@ -99,8 +99,8 @@ import {
   spawnPoopBurst, updateAndRenderPoopParticles, renderPoopMarkers,
 } from './rendering/debuff-visuals';
 import {
-  createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
-  getWoundCareQuestion, startWoundCareQuiz, getInjurySpeedMult, serializeInjury,
+  createInjuryState, checkHazardInjury, applyWoundQuizBonus,
+  getInjurySpeedMult, serializeInjury,
 } from './game/injury';
 // B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
@@ -171,6 +171,7 @@ import {
   setupExtraKeyCapture as _setupExtraKeyCapture,
   consumeExtraKey as _consumeExtraKey,
   clearExtraKeys as _clearExtraKeys,
+  setupExtraKeys,
 } from './game/input-extra-keys';
 // B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
 // extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
@@ -1552,165 +1553,17 @@ function gameLoop(
 
 // ─── Extended Input (F3 debug, I inventory, Esc) ─────────────
 
-function setupExtraKeys(state: GameState, input?: InputManager): void {
-  window.addEventListener('keydown', (e) => {
-    switch (e.key) {
-      case 'F3':
-        e.preventDefault();
-        state.ui.showDebug = !state.ui.showDebug;
-        break;
-      case 'i':
-      case 'I':
-        if (!state.quiz.active && !state.ui.dialog.active) {
-          state.ui.showInventory = !state.ui.showInventory;
-        }
-        break;
-      case 'b':
-      case 'B':
-        if (e.shiftKey) {
-          // Shift+B: cycle terrain blend intensity (#84)
-          const steps = [0, 0.5, 1.0, 1.5, 2.0];
-          const curBlend = getBlendIntensity();
-          let nextIdx = 0;
-          for (let i = 0; i < steps.length; i++) {
-            if (curBlend < steps[i] + 0.01) { nextIdx = i; break; }
-            if (i === steps.length - 1) nextIdx = 0;
-          }
-          nextIdx = (nextIdx + 1) % steps.length;
-          setBlendIntensity(steps[nextIdx]);
-        } else if (!state.quiz.active && !state.ui.dialog.active) {
-          toggleBook(state.knowledge);
-          state.paused = state.knowledge.bookOpen;
-          // Close inventory if book opens
-          if (state.knowledge.bookOpen && state.ui.showInventory) {
-            state.ui.showInventory = false;
-          }
-        }
-        break;
-      case 'Escape': {
-        // Guard: don't show pause menu if full-screen modal or quiz is active
-        const overlayBlocks =
-          document.getElementById('customizerOverlay')?.style.display === 'flex' ||
-          document.getElementById('subjectOverlay')?.style.display === 'flex' ||
-          document.getElementById('mainMenu')?.style.display === 'flex' ||
-          state.quiz.active;
-        if (overlayBlocks) break;
-
-        if (state.trade.active) {
-          // If barter quiz is showing, escape closes just the quiz (#112 Phase 3)
-          if (state.trade.barterQuiz) {
-            state.trade.barterQuiz = null;
-            state.trade.barterSelectedIndex = 0;
-            syncBarterQuizDOM(state.trade);
-          } else {
-            closeTrade(state.trade);
-            syncTradeDOM(state.trade, state.inventory);
-            syncBarterQuizDOM(state.trade);
-            state.paused = false;
-          }
-        } else if (state.knowledge.bookOpen) {
-          state.knowledge.bookOpen = false;
-          state.knowledge.currentArticleId = null;
-          state.paused = false;
-        } else if (state.ui.showInventory) {
-          state.ui.showInventory = false;
-        } else if (state.ui.dialog.active) {
-          closeDialog(state.ui);
-          cancelSpeech(state.voice); // Cancel voice on escape close (#76)
-          state.pendingQuiz = null;
-          state.pendingGateQuiz = null;
-          state.pendingTrade = null;
-          state.paused = false;
-        } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
-          document.getElementById('pauseMenu')!.style.display = 'none';
-          state.paused = false;
-        } else {
-          showPauseMenu(state, input, {
-            onSave: () => doSave(state),
-            onMainMenu: () => { doSave(state); window.location.reload(); },
-            onOptions: () => showOptionsOverlay(state, input),
-            onBugReport: (desc) => captureBugReport(state, desc),
-          });
-        }
-        break;
-      }
-      case 'T': // Shift+T: advance day/night by 10%
-        if (e.shiftKey) {
-          setTimeOfDay(getCycleProgress() + 0.1);
-          invalidateShadowCache(); // #83 - force shadow recalc after time jump
-        }
-        break;
-      case 'Tab': // Toggle buy/sell mode in trade panel (#112)
-        if (state.trade.active && !state.trade.barterQuiz) {
-          e.preventDefault();
-          toggleTradeMode(state.trade);
-          syncTradeDOM(state.trade, state.inventory);
-          playSfx(state.sfx, 'menu_navigate');
-        }
-        break;
-      case 'W': // Shift+W: cycle weather
-        if (e.shiftKey) {
-          const types: Array<'clear' | 'cloudy' | 'rain' | 'storm' | 'fog'> = ['clear', 'cloudy', 'rain', 'storm', 'fog'];
-          const cur = getWeatherInfo().type;
-          const idx = types.indexOf(cur);
-          setWeather(types[(idx + 1) % types.length]);
-          invalidateShadowCache(); // #83 - weather affects shadow opacity
-        }
-        break;
-      case 'f':
-      case 'F':
-        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active) {
-          toggleFlashlight();
-        }
-        break;
-      case 'e':
-      case 'E':
-        // Use/consume best available status item (#70, #109)
-        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active && !state.trade.active) {
-          // Priority: if injured and have bandage, use bandage first (#109)
-          if (state.injury.injured && state.inventory.hasItem('bandage')) {
-            state.inventory.removeItem('bandage', 1);
-            const healAmt = applyBandaid(state.injury, state.status);
-            playSfx(state.sfx, 'bandaid_use');
-            addToast(state.ui, `🩹 Applied bandage! +${healAmt} energy`, '#88ccff', 2000);
-            setTransientExpression(state, 'happy', 2000);
-            // Start wound-care quiz after brief delay
-            if (state.injury.pendingWoundQuiz) {
-              state.injury.pendingWoundQuiz = false;
-              const wq = getWoundCareQuestion();
-              // Use quiz system with custom wound-care question
-              startWoundCareQuiz(state, wq);
-            }
-            break;
-          }
-          // Normal consumable path
-          const consumables = ['snack', 'water_flask', 'soap', 'mushroom', 'bandage', 'potion'];
-          for (const itemId of consumables) {
-            if (state.inventory.hasItem(itemId)) {
-              const result = useStatusItem(state.status, itemId);
-              if (result && result !== 'Already at full status!') {
-                state.inventory.removeItem(itemId, 1);
-                addToast(state.ui, result, '#88ccff', 2000);
-                // SFX based on consumable type (#75)
-                playSfx(state.sfx, itemId === 'water_flask' ? 'drink_water' : 'eat_food');
-                break;
-              } else if (result === 'Already at full status!') {
-                addToast(state.ui, '✨ All stats are full!', '#aaa', 1200);
-                break;
-              }
-            }
-          }
-        }
-        break;
-    }
-  });
-}
+// B5 micro-slice 11.20 (#268): setupExtraKeys (152 lines, hot-keys for
+// F3/i/B/Escape/Shift+T/Tab/Shift+W/F/E) extracted from main.ts to
+// ./game/input-extra-keys.ts. The existing quiz-accessibility helpers
+// (setupExtraKeyCapture, consumeExtraKey, clearExtraKeys) stay in the
+// same module. main.ts wires doSave + captureBugReport via SetupExtraKeysDeps.
 
 // ─── Entry Point ─────────────────────────────────────────────
 
 async function main(): Promise<void> {
   const { state, renderer, input, hasSaveData } = await init();
-  setupExtraKeys(state, input);
+  setupExtraKeys(state, input, { doSave, captureBugReport });
   _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
   // Restore fog-of-war preference from localStorage (#127)
