@@ -39,6 +39,8 @@ import { checkHazardInjury, applyBandaid, getWoundCareQuestion } from './injury'
 // B5 micro-slice 11.8 (#268): quiz-specials content moved here.
 import { startHygieneQuiz, startInsectQuiz, getInsectQuestions } from './quiz-specials';
 import { chunkKey } from './chunk-lifecycle';
+import { getLastDialogNpcId, setPendingPoopBurst } from './interaction-handler';
+// (getPendingPoopBurst removed — debug-api only sets the flag, doesn't read it)
 import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from '../ui/customizer';
 import { getCosmeticById } from '../config/cosmetics.config';
 import {
@@ -97,11 +99,6 @@ import { hasAssetSprite } from '../asset-pipeline/asset-sprites';
 export interface DebugApiDeps {
   state: GameState;
   input: InputManager;
-  /** Get the last dialog NPC id (for mouth animation) */
-  getLastDialogNpcId: () => string | null;
-  /** Get/set the pending poop burst flag */
-  getPendingPoopBurst: () => boolean;
-  setPendingPoopBurst: (v: boolean) => void;
   /** Helper functions from main.ts */
   doSave: (state: GameState) => void;
   checkCosmeticUnlocks: (state: GameState) => void;
@@ -118,8 +115,6 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
   const {
     state,
     input,
-    getLastDialogNpcId,
-    setPendingPoopBurst,
     doSave,
     checkCosmeticUnlocks,
     shouldAutoRead,

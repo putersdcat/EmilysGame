@@ -16,9 +16,9 @@ import { characterVariations, loadCharacterSprite, clearVariationCache } from '.
 import { setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
-import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './engine/mechanics';
+import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { createInventory } from './game/inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
+import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
 import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, type SaveData } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
@@ -53,7 +53,7 @@ import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
 import { initMinimap, renderMinimap } from './rendering/minimap';
 
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
-import { createKnowledgeState, syncBookUI, showSubjectSelection, getQuizBias, openArticle, toggleBook } from './game/knowledge';
+import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle, toggleBook } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import { getCosmeticById } from './config/cosmetics.config';
@@ -88,7 +88,7 @@ import {
   syncBarterQuizDOM, getTradeDialog,
 } from './game/trading';
 import {
-  createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
+  createPlayerStatus, tickStatus, getDebuffs, useStatusItem,
   serializeStatus,
   CRITICAL_THRESHOLD,
 } from './game/status';
@@ -106,7 +106,7 @@ import {
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
 // ./game/quiz-specials.ts. startWoundCareQuiz now lives in ./game/injury.ts
 // next to its WOUND_CARE_QUESTIONS data + getWoundCareQuestion shuffler.
-import { startHygieneQuiz, startInsectQuiz } from './game/quiz-specials';
+import { startInsectQuiz } from './game/quiz-specials';
 // B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + _pendingResolved
 // module-level state extracted from main.ts to ./game/chunk-lifecycle.ts.
 // Maintained as a thin wrapper in main.ts (see maybeLoadChunks) because it
@@ -132,6 +132,18 @@ import { resetGameState } from './game/game-reset';
 // lastBubbleDiffTier "last seen" state moved with the function.
 // resetBubbleTriggerState() is called by resetGameState (in game-reset.ts).
 import { checkBubbleTriggers } from './game/bubble-triggers';
+// B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
+// to ./game/interaction-handler.ts. The _lastDialogNpcId +
+// _pendingPoopBurst module-level state moved with the function
+// (state-moves-with-consumer pattern). main.ts uses these accessors
+// from the dialog queue (update ~L725) and render path (~L1559).
+import {
+  handleInteraction,
+  getLastDialogNpcId,
+  setLastDialogNpcId,
+  getPendingPoopBurst,
+  setPendingPoopBurst,
+} from './game/interaction-handler';
 import {
   createMusicState, play as musicPlay,
   startDucking, stopDucking, setBiome as musicSetBiome,
@@ -192,8 +204,9 @@ import { wireHudEvents } from './game/dom-wiring';
 // (B5 micro-slice 11.4 / #268). The interface was previously inline here;
 // main.ts now imports the type and calls the factory.
 
-// Track NPC id for voice lines during dialog (#76)
-let _lastDialogNpcId: string | null = null;
+// Track NPC id for voice lines during dialog (#76) — B5.19: moved to
+// ./game/interaction-handler.ts with getLastDialogNpcId/setLastDialogNpcId
+// accessors
 
 // ─── Diarrhea Illness Config (#133) ─────────────────────────
 // B5 micro-slice 11.2 (#268): DIARRHEA_CONFIG moved to ./game/illness.ts.
@@ -722,9 +735,9 @@ function update(state: GameState, input: InputManager): void {
       } else {
         playSfx(state.sfx, 'dialog_advance');
         // Speak the new dialog line (#76)
-        setDialogNpc(_lastDialogNpcId); // Reset mouth cycle for new line (#113)
+        setDialogNpc(getLastDialogNpcId()); // Reset mouth cycle for new line (#113)
         const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
-        if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : _lastDialogNpcId);
+        if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : getLastDialogNpcId());
       }
     }
     input.endFrame();
@@ -988,7 +1001,7 @@ function update(state: GameState, input: InputManager): void {
       state.paused = true;
       playSfx(state.sfx, 'wildlife_discover');
       // Speak wildlife discovery (#76)
-      _lastDialogNpcId = null;
+      setLastDialogNpcId(null);
       speakLine(state.voice, wildlifeLine, null);
       // Make creature flee after inspection
       entity.behavior = 'flee';
@@ -1123,201 +1136,12 @@ function update(state: GameState, input: InputManager): void {
   _clearExtraKeys(); // Clear numeric/R key queue (#94)
 }
 
-function handleInteraction(result: InteractionResult, state: GameState): void {
-  switch (result.type) {
-    case 'collect':
-      state.inventory.addItem(result.itemId, 1);
-      addToast(state.ui, result.message, '#ffd700');
-      playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
-      break;
-
-    case 'chest':
-      for (const itemId of result.items) state.inventory.addItem(itemId, 1);
-      addToast(state.ui, result.message, '#ffaa00');
-      playSfx(state.sfx, 'open_chest');
-      break;
-
-    case 'obstacle':
-      if (result.resolved) {
-        addToast(state.ui, result.message, '#4caf50');
-        playSfx(state.sfx, 'obstacle_resolved');
-      } else {
-        addToast(state.ui, result.message, '#f44336');
-        playSfx(state.sfx, 'obstacle_blocked');
-      }
-      break;
-
-    case 'npc': {
-      const persona = getNpcPersona(result.npcId);
-      const npcName = persona?.displayName || 'Stranger';
-      showDialog(state.ui, npcName, [result.greeting]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      // Speak greeting line (#76)
-      _lastDialogNpcId = result.npcId;
-      setDialogNpc(result.npcId); // Start mouth animation (#113)
-      speakLine(state.voice, result.greeting, result.npcId);
-
-      // Feed NPC greeting into entropy pool (#4)
-      feedEntropy(result.greeting);
-
-      // If NPC can quiz, queue quiz to start when dialog closes (not via setTimeout race)
-      // Difficulty = max(NPC preference, distance-based scaling) — Doc 05 §9.1
-      // Then modulate via streak (#103)
-      if (persona?.canQuiz) {
-        const bias = getQuizBias(state.knowledge);
-        const distDiff = getDifficultyForPosition(state.player.x, state.player.y);
-        const baseDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
-        const finalDifficulty = modulateDifficulty(baseDifficulty, state.streak);
-        state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
-      }
-
-      // If NPC has trades, queue trade panel to open after dialog + optional quiz
-      if (persona && persona.trades.length > 0) {
-        state.pendingTrade = result.npcId;
-      }
-      break;
-    }
-
-    case 'sign':
-      showDialog(state.ui, 'Sign', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      break;
-
-    case 'quiz_gate': {
-      // Quiz gate — show dialog then trigger distance-based quiz (Doc 05 §3.5)
-      showDialog(state.ui, 'Quiz Gate', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
-      const gateDiff = modulateDifficulty(baseGateDiff, state.streak); // #103 streak modulation
-      const gateBias = getQuizBias(state.knowledge);
-      state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
-      state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
-      break;
-    }
-
-    // --- Shop structure interaction (#77, #112 themed variants) ---
-    case 'shop': {
-      const shopPersona = getShopPersona(result.shopAsset);
-      showDialog(state.ui, shopPersona.displayName, [shopPersona.greetings[Math.floor(Math.random() * shopPersona.greetings.length)]]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      // Queue trade panel to open after dialog closes
-      state.pendingTrade = shopPersona.id;
-      break;
-    }
-
-    // --- Outhouse hygiene interaction (#110 Phase 2) ---
-    case 'outhouse': {
-      playSfx(state.sfx, 'outhouse_enter');
-      // Immediate partial cleanliness restore
-      const cleanBefore = state.status.cleanliness;
-      const partialRestore = Math.min(100 - cleanBefore, 40);
-      state.status.cleanliness = Math.min(100, cleanBefore + partialRestore);
-      const cleanMsg = partialRestore > 0
-        ? `🧼 +${Math.round(partialRestore)} cleanliness!`
-        : '✨ Already squeaky clean!';
-      addToast(state.ui, `🚽 ${result.message}`, '#88ccff', 2500);
-      if (partialRestore > 0) {
-        addToast(state.ui, cleanMsg, '#4caf50', 2000);
-      }
-      // Start hygiene quiz for bonus full restore
-      startHygieneQuiz(state);
-      break;
-    }
-
-    // --- Stream drinking (#110 Phase 3, #133 illness chain) ---
-    case 'stream_drink': {
-      playSfx(state.sfx, 'stream_drink');
-      const hydrationGain = 20;
-      state.status.hydration = Math.min(100, state.status.hydration + hydrationGain);
-
-      // Track stream drink count for diarrhea risk (#133)
-      state.diarrhea.streamDrinkCount++;
-      const drinkCount = state.diarrhea.streamDrinkCount;
-
-      // Diarrhea roll: 20% after threshold, guaranteed at 6+ drinks, with cooldown
-      const pastThreshold = drinkCount >= DIARRHEA_CONFIG.DRINK_THRESHOLD;
-      const offCooldown = (state.frameCount - state.diarrhea.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
-      const chance = drinkCount >= DIARRHEA_CONFIG.GUARANTEED_AT
-        ? 1.0
-        : DIARRHEA_CONFIG.BASE_CHANCE;
-
-      if (pastThreshold && offCooldown && Math.random() < chance) {
-        // --- Trigger diarrhea illness event (#133) ---
-        state.diarrhea.diarrheaLocked = true;
-        state.diarrhea.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-        state.diarrhea.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-        state.diarrhea.diarrheaLastTrigger = state.frameCount;
-
-        // Spawn poop marker at current position
-        state.diarrhea.poopMarkers.push({
-          x: Math.round(state.player.x),
-          y: Math.round(state.player.y),
-          placedAt: state.frameCount,
-        });
-
-        // Poop particle burst VFX (uses screen coords — resolved in render)
-        _pendingPoopBurst = true;
-
-        // Green illness overlay
-        setDiarrheaOverlay(true);
-
-        // SFX + UI feedback
-        playSfx(state.sfx, 'diarrhea_gurgle');
-        addToast(state.ui, '🤢 Oh no! Stomach emergency... can\'t move!', '#ff4444', 4000);
-        triggerHint('stream_eww');
-        setTransientExpression(state, 'surprised', 5000);
-      } else {
-        addToast(state.ui, `💧 Refreshing stream water! +${hydrationGain} hydration`, '#4fc3f7', 2500);
-      }
-      break;
-    }
-
-    // --- Eat worms desperation (#110 Phase 3) ---
-    case 'eat_worms': {
-      playSfx(state.sfx, 'eat_worms');
-      const energyGain = 5;
-      state.status.energy = Math.min(100, state.status.energy + energyGain);
-      addToast(state.ui, '🐛 Gross! But you got a tiny bit of energy... +5', '#8bc34a', 3000);
-
-      // Queue insect safety quiz
-      state._pendingInsectQuiz = true;
-      showDialog(state.ui, '🐛 Yuck!', ['That was disgusting... but is it actually safe to eat insects?']);
-      state.paused = true;
-      _lastDialogNpcId = null;
-      break;
-    }
-
-    // --- Campfire rest interaction (#77) ---
-    case 'campfire': {
-      const changes = applyStatusEffect(state.status, { energy: 25, hydration: 10 });
-      const msg = changes.length > 0
-        ? `${result.message} ${changes.join(', ')}`
-        : `${result.message} You feel refreshed!`;
-      addToast(state.ui, msg, '#ff8844', 3000);
-      playSfx(state.sfx, 'pickup_item');
-      break;
-    }
-
-    // --- Structure flavor text (#77) ---
-    case 'structure':
-      showDialog(state.ui, '🏠 Structure', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      break;
-  }
-}
+// B5 micro-slice 11.19 (#268): handleInteraction (195 lines) + 2
+// module-level vars (_lastDialogNpcId, _pendingPoopBurst) extracted
+// to ./game/interaction-handler.ts. State-moves-with-consumer pattern
+// (B5.13/B5.18). main.ts uses getLastDialogNpcId/setLastDialogNpcId
+// from dialog queue (update ~L725), getPendingPoopBurst/setPendingPoopBurst
+// from render path (~L1559).
 
 // ─── Save ────────────────────────────────────────────────────
 
@@ -1502,9 +1326,9 @@ function showWelcomeSplash(): Promise<void> {
 // _eyeBlinkTimer / _eyeSwayPhase state moved to ./game/wildlife-render.ts.
 
 // ─── Render ──────────────────────────────────────────────────
-
-// Deferred poop burst — set in tick, resolved in render with screen coords (#133)
-let _pendingPoopBurst = false;
+// B5 micro-slice 11.19 (#268): _pendingPoopBurst state moved to
+// ./game/interaction-handler.ts. renderFrame uses getPendingPoopBurst()
+// + setPendingPoopBurst(false) to drain the flag after spawning the VFX.
 
 function renderFrame(
   renderer: IsometricRenderer,
@@ -1556,8 +1380,8 @@ function renderFrame(
   );
 
   // Poop particle burst (#133): resolve deferred burst with screen coords
-  if (_pendingPoopBurst) {
-    _pendingPoopBurst = false;
+  if (getPendingPoopBurst()) {
+    setPendingPoopBurst(false);
     spawnPoopBurst(playerScreenDbf.x, playerScreenDbf.y, DIARRHEA_CONFIG.PARTICLE_COUNT);
   }
   updateAndRenderPoopParticles(renderer.getCtx());
@@ -1936,9 +1760,6 @@ async function main(): Promise<void> {
   (window as any).__gameDebug = createGameDebug({
     state,
     input,
-    getLastDialogNpcId: () => _lastDialogNpcId,
-    getPendingPoopBurst: () => _pendingPoopBurst,
-    setPendingPoopBurst: (v: boolean) => { _pendingPoopBurst = v; },
     doSave,
     checkCosmeticUnlocks,
     shouldAutoRead: _shouldAutoRead,

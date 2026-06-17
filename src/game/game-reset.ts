@@ -50,6 +50,7 @@ import { clearWeather } from '../rendering/weather';
 import { deleteSave } from './save';
 import { ensureChunksAround, clearPendingResolved } from './chunk-lifecycle';
 import { resetBubbleTriggerState } from './bubble-triggers';
+import { resetInteractionState } from './interaction-handler';
 import { type GameState } from './game-state';
 
 // ─── Public API ──────────────────────────────────────────────
@@ -115,6 +116,7 @@ export function resetGameState(state: GameState): void {
   clearBubbles();
   clearPendingResolved(); // Clear resolved cells for fresh game (B5.14)
   resetBubbleTriggerState(); // Reset bubble "last seen" state for fresh game (B5.18)
+  resetInteractionState();   // Reset dialog + poop-burst flags for fresh game (B5.19)
   deleteSave();
   ensureChunksAround(state);
 }
