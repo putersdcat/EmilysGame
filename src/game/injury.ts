@@ -152,6 +152,42 @@ export function getWoundCareQuestion(): WoundCareQuestion {
 }
 
 /**
+ * Start a wound-care mini-quiz after bandaid use.
+ * Uses the regular quiz UI but with a custom wound-care question.
+ *
+ * B5 micro-slice 11.8 (#268): extracted from main.ts. Co-located with
+ * `WOUND_CARE_QUESTIONS` + `getWoundCareQuestion()` so the entire
+ * wound-care quiz flow lives in one file. Hygiene + insect variants
+ * live in `./quiz-specials.ts` using the same pattern.
+ *
+ * Sets `state._woundCareQuiz = true` so the bonus-logic branch in
+ * `update()` (main.ts L861) can grant `WOUND_QUIZ_BONUS_HEAL` energy.
+ */
+export function startWoundCareQuiz(state: import('./game-state').GameState, wq: WoundCareQuestion): void {
+  // Populate quiz state directly (bypass normal startQuiz which loads from content packs)
+  state.quiz.active = true;
+  state.quiz.displayText = `🩹 Wound Care: ${wq.question}`;
+  state.quiz.choices = [...wq.answers, "I don't know 📖"];
+  state.quiz.correctIndex = wq.correctIndex;
+  state.quiz.selectedIndex = 0;
+  state.quiz.result = 'pending';
+  state.quiz.npcId = null;
+  state.quiz.difficulty = 'easy';
+  state.quiz.question = {
+    id: `wound_care_${Date.now()}`,
+    question: wq.question,
+    answers: wq.answers,
+    category: 'science',
+    difficulty: 'easy',
+    correctIndex: 0 as const,
+    hint: 'Think about first aid!',
+  };
+  state.paused = true;
+  // Mark this as a wound-care quiz for bonus logic
+  state._woundCareQuiz = true;
+}
+
+/**
  * Get injury speed multiplier (stacks with status debuffs).
  */
 export function getInjurySpeedMult(injury: InjuryState): number {

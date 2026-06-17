@@ -36,6 +36,8 @@ import {
 } from '../rendering/debuff-visuals';
 import { addToast } from '../ui/ui';
 import { checkHazardInjury, applyBandaid, getWoundCareQuestion } from './injury';
+// B5 micro-slice 11.8 (#268): quiz-specials content moved here.
+import { startHygieneQuiz, startInsectQuiz, getInsectQuestions } from './quiz-specials';
 import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from '../ui/customizer';
 import { getCosmeticById } from '../config/cosmetics.config';
 import {
@@ -103,10 +105,6 @@ export interface DebugApiDeps {
   chunkKey: (cx: number, cy: number) => string;
   checkCosmeticUnlocks: (state: GameState) => void;
   shouldAutoRead: (state: GameState) => boolean;
-  startHygieneQuiz: (state: GameState) => void;
-  startInsectQuiz: (state: GameState) => void;
-  /** Insect questions (constant from main.ts) */
-  getInsectQuestions: () => readonly unknown[];
 }
 
 // ─── Factory ─────────────────────────────────────────────────
@@ -126,9 +124,6 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     chunkKey,
     checkCosmeticUnlocks,
     shouldAutoRead,
-    startHygieneQuiz,
-    startInsectQuiz,
-    getInsectQuestions,
   } = deps;
 
   return {
