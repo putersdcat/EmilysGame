@@ -9,9 +9,9 @@ import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { getBiome } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
-import { InputManager, type TouchControlMode } from './game/input';
-import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './game/platform';
-import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial } from './game/tutorial';
+import { InputManager } from './game/input';
+import { isTeslaMode } from './game/platform';
+import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
 import { setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer } from './engine/gen';
 import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
@@ -30,6 +30,12 @@ import { showPauseMenu } from './game/pause-menu';
 // B5 micro-slice 11.12 (#268): showAgeSelection extracted to
 // ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
 import { showAgeSelection } from './game/age-selection';
+// B5 micro-slice 11.17 (#268): showOptionsOverlay extracted from main.ts
+// to ./game/options-overlay.ts. Pure DOM (volume sliders, touch controls,
+// fog, Tesla mode, replay tutorial). Takes optional state + inputMgr.
+// The two existing call sites (pause menu, main menu) pass them through
+// unchanged — the new module's signature is identical.
+import { showOptionsOverlay } from './game/options-overlay';
 // B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
 // _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
 // ./game/wildlife-render.ts. getRevealedCreatures() lives there too
@@ -59,7 +65,7 @@ import { updateAndRenderWeather, setWeather, getWeatherInfo, didLightningStrike 
 import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn } from './rendering/local-lights';
 import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
 import { invalidateShadowCache } from './rendering/shadows';
-import { updateFog, renderFog, isFogEnabled, setFogEnabled, serializeVisited, deserializeVisited } from './rendering/fog';
+import { updateFog, renderFog, setFogEnabled, serializeVisited, deserializeVisited } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -1390,180 +1396,9 @@ function checkCosmeticUnlocks(state: GameState): void {
  * Show options overlay. Syncs with sidebar sliders bidirectionally.
  * If state is null, we're in main menu context (audio controls only affect sidebar defaults).
  */
-function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): void {
-  const overlay = document.getElementById('optionsOverlay')!;
-  overlay.style.display = 'flex';
-
-  // Sync options sliders FROM sidebar current values
-  const sidebarMusic = document.getElementById('musicVolume') as HTMLInputElement | null;
-  const sidebarSfx = document.getElementById('sfxVolume') as HTMLInputElement | null;
-  const sidebarAmbience = document.getElementById('ambienceVolume') as HTMLInputElement | null;
-  const sidebarVoice = document.getElementById('voiceVolume') as HTMLInputElement | null;
-
-  const optMusic = document.getElementById('optMusicVol') as HTMLInputElement;
-  const optSfx = document.getElementById('optSfxVol') as HTMLInputElement;
-  const optAmbience = document.getElementById('optAmbienceVol') as HTMLInputElement;
-  const optVoice = document.getElementById('optVoiceVol') as HTMLInputElement;
-
-  // Read current values from sidebar/popup controls
-  if (sidebarMusic) optMusic.value = sidebarMusic.value;
-  if (sidebarSfx) optSfx.value = sidebarSfx.value;
-  if (sidebarAmbience) optAmbience.value = sidebarAmbience.value;
-  if (sidebarVoice) optVoice.value = sidebarVoice.value;
-
-  // Update display values
-  const updateDisplay = () => {
-    document.getElementById('optMusicVal')!.textContent = optMusic.value;
-    document.getElementById('optSfxVal')!.textContent = optSfx.value;
-    document.getElementById('optAmbienceVal')!.textContent = optAmbience.value;
-    document.getElementById('optVoiceVal')!.textContent = optVoice.value;
-  };
-  updateDisplay();
-
-  // Sync options → sidebar on input (live preview)
-  const syncToSidebar = (optEl: HTMLInputElement, sidebarEl: HTMLInputElement | null) => {
-    if (sidebarEl) {
-      sidebarEl.value = optEl.value;
-      sidebarEl.dispatchEvent(new Event('input'));
-    }
-    updateDisplay();
-  };
-
-  optMusic.oninput = () => syncToSidebar(optMusic, sidebarMusic);
-  optSfx.oninput = () => syncToSidebar(optSfx, sidebarSfx);
-  optAmbience.oninput = () => syncToSidebar(optAmbience, sidebarAmbience);
-  optVoice.oninput = () => syncToSidebar(optVoice, sidebarVoice);
-
-  // #138: LLM config is now Options-only (no sidebar sync needed)
-  // LLM settings load/applied via initLlmConfigPanel() in ui.ts
-
-  // Touch controls toggle (#124, #126 — UA-based auto-show)
-  const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
-
-  // Touch visibility mode (#144 — 3-way: whisper/slide/visible)
-  const TOUCH_VIS_KEY = 'emilys_game_touch_vis';
-  const optTouchVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
-  const sbTouchVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
-  const savedTouchVis = (localStorage.getItem(TOUCH_VIS_KEY) || 'whisper') as TouchControlMode;
-  if (inputMgr) inputMgr.setTouchControlMode(savedTouchVis);
-  const syncTouchVis = (mode: TouchControlMode) => {
-    if (inputMgr) inputMgr.setTouchControlMode(mode);
-    localStorage.setItem(TOUCH_VIS_KEY, mode);
-    if (optTouchVis) optTouchVis.value = mode;
-    if (sbTouchVis) sbTouchVis.value = mode;
-  };
-  if (optTouchVis) {
-    optTouchVis.value = savedTouchVis;
-    optTouchVis.onchange = () => syncTouchVis(optTouchVis.value as TouchControlMode);
-  }
-  if (sbTouchVis) {
-    sbTouchVis.value = savedTouchVis;
-    sbTouchVis.onchange = () => syncTouchVis(sbTouchVis.value as TouchControlMode);
-  }
-
-  // Fog of War toggle (#127)
-  const FOG_PREF_KEY = 'emilys_game_fog_enabled';
-  const optFog = document.getElementById('optFogOfWar') as HTMLSelectElement | null;
-  if (optFog) {
-    optFog.value = isFogEnabled() ? 'on' : 'off';
-    optFog.onchange = () => {
-      const enabled = optFog.value === 'on';
-      setFogEnabled(enabled);
-      localStorage.setItem(FOG_PREF_KEY, enabled ? '1' : '0');
-    };
-  }
-  const optGamepadStatus = document.getElementById('optGamepadStatus');
-  if (optTouch && inputMgr) {
-    // (#126) Determine current state: 'auto' means UA-matched, 'on' means forced, 'off' means disabled
-    if (inputMgr.touchEnabled) {
-      optTouch.value = shouldAutoShowTouchOverlay() ? 'auto' : 'on';
-    } else {
-      optTouch.value = 'off';
-    }
-    optTouch.onchange = () => {
-      if (!inputMgr) return;
-      if (optTouch.value === 'on') {
-        inputMgr.enableTouchControls();
-      } else if (optTouch.value === 'off') {
-        inputMgr.disableTouchControls();
-      } else {
-        // Auto: only enable if UA matches (#126)
-        if (shouldAutoShowTouchOverlay()) {
-          inputMgr.enableTouchControls();
-        } else {
-          inputMgr.disableTouchControls();
-        }
-      }
-    };
-  }
-  if (optGamepadStatus && inputMgr) {
-    optGamepadStatus.textContent = inputMgr.gamepadConnected ? '✅ Connected' : '❌ Not connected';
-    optGamepadStatus.style.color = inputMgr.gamepadConnected ? '#88ff88' : '#888';
-  }
-
-  // Tesla Mode (#185)
-  const optTesla = document.getElementById('optTeslaMode') as HTMLSelectElement | null;
-  const teslaBadge = document.getElementById('teslaBadge');
-  const applyTeslaMode = (active: boolean) => {
-    // Show/hide Tesla "T" badge
-    if (teslaBadge) {
-      teslaBadge.classList.toggle('active', active);
-    }
-    // Auto-enable/disable touch controls when Tesla mode changes
-    if (inputMgr) {
-      if (active && !inputMgr.touchEnabled) {
-        inputMgr.enableTouchControls();
-        if (optTouch) optTouch.value = 'on';
-      }
-    }
-  };
-  if (optTesla) {
-    // Determine initial state
-    const teslaActive = isTeslaMode();
-    const teslaAutoDetected = detectTeslaBrowser();
-    if (teslaActive) {
-      optTesla.value = 'on';
-    } else if (teslaAutoDetected) {
-      optTesla.value = 'auto';
-    } else {
-      optTesla.value = 'off';
-    }
-    applyTeslaMode(teslaActive);
-
-    optTesla.onchange = () => {
-      if (optTesla.value === 'on') {
-        setTeslaMode(true);
-        applyTeslaMode(true);
-      } else if (optTesla.value === 'off') {
-        setTeslaMode(false);
-        applyTeslaMode(false);
-      } else {
-        // Auto: enable only if auto-detected
-        const auto = detectTeslaBrowser();
-        setTeslaMode(auto);
-        applyTeslaMode(auto);
-      }
-    };
-  } else {
-    // No settings element — still apply if Tesla mode active (e.g. ?tesla=1)
-    if (isTeslaMode()) {
-      applyTeslaMode(true);
-    }
-  }
-
-  // Close button
-  document.getElementById('optionsClose')!.onclick = () => {
-    overlay.style.display = 'none';
-  };
-
-  // Replay Tutorial (#186)
-  document.getElementById('optReplayTutorial')?.addEventListener('click', () => {
-    resetTutorial();
-    initTutorial();
-    overlay.style.display = 'none';
-    if (_state) _state.paused = false;
-  });
-}
+// B5 micro-slice 11.17 (#268): showOptionsOverlay (174 lines) extracted
+// to ./game/options-overlay.ts. Pure DOM manipulation with optional
+// game-state + input-mgr coupling. No module-level state moves.
 
 // B5 micro-slice 11.10 (#268): showMainMenu extracted from main.ts
 // to ./game/main-menu.ts. The Options button inside the menu
