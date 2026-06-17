@@ -28,6 +28,9 @@ import { ShadowSpriteCache } from './shadow-cache';
 import { getNpcMouthState, getHeadBob } from './mouth-animation';
 import { drawDebugGrid as drawDebugGridImpl } from './debug-grid';
 export { setDialogNpc } from './mouth-animation';
+// B6.1 (#272): tile variant inference + object-cell cache extracted to tile-variants.ts
+import { inferTileVariant, getObjectCells, clearObjectCache, invalidateObjectCache } from './tile-variants';
+export { clearObjectCache, invalidateObjectCache };
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -101,121 +104,18 @@ for (let i = 0; i < MAX_OCCLUDERS; i++) {
 }
 let occluderCount = 0;
 
-// ─── Object Cell Cache ──────────────────────────────────────
-// Pre-computed sparse list of non-base cells per chunk.
-// Instead of iterating all 1024 cells per chunk per frame,
-// we iterate only ~50-100 non-base objects. Huge perf win.
-interface ObjectCellRef { cx: number; cy: number; }
-let _renderFrameCount = 0;
-const objectCellCache = new Map<string, ObjectCellRef[]>();
-
-function getObjectCells(key: string, chunk: ChunkData): ObjectCellRef[] {
-  let list = objectCellCache.get(key);
-  if (list) return list;
-  list = [];
-  const size = WORLD_CONFIG.chunkSize;
-  for (let cy = 0; cy < size; cy++) {
-    for (let cx = 0; cx < size; cx++) {
-      const cell = chunk.cells[cy][cx];
-      const def = ASSET_DEFS[cell.assetKey];
-      if (!def) continue;
-      if (def.layer === 'base' && !cell.itemId) continue;
-      list.push({ cx, cy });
-    }
-  }
-  objectCellCache.set(key, list);
-  return list;
-}
-
-function nanoConnectionFamily(tileType: TileType): 'wall' | 'fence' | 'water' | 'bridge' | TileType {
-  switch (tileType) {
-    case 'stone_wall':
-    case 'door_gate':
-    case 'quiz_gate':
-    case 'homestead_wall':
-    case 'cathedral_wall':
-      return 'wall';
-    case 'wooden_fence':
-      return 'fence';
-    case 'water':
-      return 'water';
-    case 'bridge':
-    case 'troll_bridge':
-      return 'bridge';
-    default:
-      return tileType;
-  }
-}
-
-function sameFeatureNeighbor(
-  chunks: Map<string, ChunkData>,
-  chunk: ChunkData,
-  cx: number,
-  cy: number,
-  tileType: TileType,
-): boolean {
-  let localX = cx;
-  let localY = cy;
-  let chunkX = chunk.chunkX;
-  let chunkY = chunk.chunkY;
-  const size = WORLD_CONFIG.chunkSize;
-  if (localX < 0) { chunkX--; localX = size - 1; }
-  else if (localX >= size) { chunkX++; localX = 0; }
-  if (localY < 0) { chunkY--; localY = size - 1; }
-  else if (localY >= size) { chunkY++; localY = 0; }
-  const target = chunks.get(`${chunkX},${chunkY}`);
-  if (!target) return false;
-  const cell = target.cells[localY]?.[localX];
-  if (!cell) return false;
-  const neighborTileType = ASSET_DEFS[cell.assetKey]?.tileType;
-  return !!neighborTileType && nanoConnectionFamily(neighborTileType) === nanoConnectionFamily(tileType);
-}
-
-function variantFromConnections(top: boolean, right: boolean, bottom: boolean, left: boolean): FeatureVariant {
-  const count = (top ? 1 : 0) + (right ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0);
-  if (count === 0) return 'isolated';
-  if (count === 4) return 'cross';
-  if (count === 1) return top ? 'end-t' : right ? 'end-r' : bottom ? 'end-b' : 'end-l';
-  if (count === 2) {
-    if (left && right) return 'straight-h';
-    if (top && bottom) return 'straight-v';
-    if (top && right) return 'corner-tr';
-    if (top && left) return 'corner-tl';
-    if (bottom && right) return 'corner-br';
-    return 'corner-bl';
-  }
-  if (!top) return 'tee-t';
-  if (!right) return 'tee-r';
-  if (!bottom) return 'tee-b';
-  return 'tee-l';
-}
-
-function inferTileVariant(
-  chunks: Map<string, ChunkData>,
-  chunk: ChunkData,
-  cx: number,
-  cy: number,
-  tileType: TileType,
-): FeatureVariant {
-  return variantFromConnections(
-    sameFeatureNeighbor(chunks, chunk, cx, cy - 1, tileType),
-    sameFeatureNeighbor(chunks, chunk, cx + 1, cy, tileType),
-    sameFeatureNeighbor(chunks, chunk, cx, cy + 1, tileType),
-    sameFeatureNeighbor(chunks, chunk, cx - 1, cy, tileType),
-  );
-}
-
-/** Invalidate a chunk's object cache (e.g. when items collected, obstacles resolved) */
-export function invalidateObjectCache(chunkKey: string): void {
-  objectCellCache.delete(chunkKey);
-}
-
-/** Clear all object cell caches */
-export function clearObjectCache(): void {
-  objectCellCache.clear();
-}
+// ─── Object Cell Cache & Variant Inference ──────────────────
+// Moved to `./tile-variants.ts` in B6.1 (#272).
+// See tile-variants.ts for: nanoConnectionFamily, sameFeatureNeighbor,
+// variantFromConnections, inferTileVariant, getObjectCells,
+// invalidateObjectCache, clearObjectCache.
 
 // ─── Renderer ────────────────────────────────────────────────
+
+// Monotonic frame counter — incremented at the top of every render call.
+// Used to throttle animations (shadow cache, fire sprites) so we don't
+// pay the per-frame sprite rebuild cost on every rAF tick.
+let _renderFrameCount = 0;
 
 export class IsometricRenderer {
   private ctx: CanvasRenderingContext2D;

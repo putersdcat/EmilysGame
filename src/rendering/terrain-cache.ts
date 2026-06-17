@@ -19,6 +19,7 @@ import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { cellJitter } from '../engine/utils';
 import type { ChunkData } from '../types/game.types';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
+import { variantFromConnections as sharedVariantFromConnections } from './tile-variants';
 import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #223 walkableMap on chunks with gates/fence (per AUTONOMOUS_LOOP.md + terrain cache prep)
 // B3 micro-slice 8.6 (#253): WU_SIZE is sourced from WorldGrid.ts (the
 // single source of truth shared with gen.ts, WorldUnitSolver.ts, and
@@ -468,37 +469,13 @@ function isWaterBase(
   return getBaseTileType(chunk, cx, cy, allChunks) === 'water';
 }
 
-function variantFromConnections(top: boolean, right: boolean, bottom: boolean, left: boolean): FeatureVariant {
-  const count = (top ? 1 : 0) + (right ? 1 : 0) + (bottom ? 1 : 0) + (left ? 1 : 0);
-  if (count === 0) return 'isolated';
-  if (count === 4) return 'cross';
-  if (count === 1) {
-    if (top) return 'end-t';
-    if (right) return 'end-r';
-    if (bottom) return 'end-b';
-    return 'end-l';
-  }
-  if (count === 2) {
-    if (left && right) return 'straight-h';
-    if (top && bottom) return 'straight-v';
-    if (top && right) return 'corner-tr';
-    if (top && left) return 'corner-tl';
-    if (bottom && right) return 'corner-br';
-    return 'corner-bl';
-  }
-  if (!top) return 'tee-t';
-  if (!right) return 'tee-r';
-  if (!bottom) return 'tee-b';
-  return 'tee-l';
-}
-
 function inferWaterVariant(
   chunk: ChunkData,
   cx: number,
   cy: number,
   allChunks?: Map<string, ChunkData>,
 ): FeatureVariant {
-  return variantFromConnections(
+  return sharedVariantFromConnections(
     isWaterBase(chunk, cx, cy - 1, allChunks),
     isWaterBase(chunk, cx + 1, cy, allChunks),
     isWaterBase(chunk, cx, cy + 1, allChunks),
