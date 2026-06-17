@@ -26,6 +26,9 @@ import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, t
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
+// B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
+// with dependency-inversion for save/options/bug-report/main-menu actions.
+import { showPauseMenu } from './game/pause-menu';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
@@ -1932,77 +1935,10 @@ function showWelcomeSplash(): Promise<void> {
   });
 }
 
-/** Show pause menu overlay (Escape during gameplay) */
-function showPauseMenu(state: GameState, inputMgr?: InputManager): void {
-  state.paused = true;
-  const menu = document.getElementById('pauseMenu')!;
-  menu.style.display = 'flex';
+// B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
+// (76 lines). Handlers for save/options/bug-report/main-menu are wired
+// at the call site below to keep this module decoupled.
 
-  document.getElementById('pauseResume')!.onclick = () => {
-    menu.style.display = 'none';
-    state.paused = false;
-  };
-
-  document.getElementById('pauseSave')!.onclick = () => {
-    doSave(state);
-    addToast(state.ui, 'Game saved!', '#4caf50', 1500);
-  };
-
-  document.getElementById('pauseCustomize')!.onclick = async () => {
-    menu.style.display = 'none';
-    const newVariation = await showCustomizer(state.playerVariation, true);
-    if (!newVariation) {
-      // Cancelled — reopen pause menu
-      menu.style.display = 'flex';
-      return;
-    }
-    clearVariationCache('custom');
-    state.playerVariation = newVariation;
-    state._baseExpression = newVariation.expression ?? 'happy';
-    state.expressionOverride = null;
-    state.egoImg = loadCharacterSprite(newVariation, 0, false);
-    state.lastAnimFrame = -1;
-    state.paused = false;
-    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
-  };
-
-  document.getElementById('pauseMainMenu')!.onclick = () => {
-    doSave(state);
-    window.location.reload();
-  };
-
-  // Controls guide (#117)
-  document.getElementById('pauseControls')!.onclick = () => {
-    const guide = document.getElementById('controlsGuide')!;
-    guide.style.display = 'flex';
-    document.getElementById('controlsClose')!.onclick = () => {
-      guide.style.display = 'none';
-    };
-  };
-
-  // Options (#117 Phase 3)
-  document.getElementById('pauseOptions')!.onclick = () => {
-    showOptionsOverlay(state, inputMgr);
-  };
-
-  // Bug reporter (#117)
-  document.getElementById('pauseBugReport')!.onclick = () => {
-    const modal = document.getElementById('bugReportModal')!;
-    modal.style.display = 'flex';
-    const descEl = document.getElementById('bugDescription') as HTMLTextAreaElement;
-    descEl.value = '';
-
-    document.getElementById('bugCancel')!.onclick = () => {
-      modal.style.display = 'none';
-    };
-
-    document.getElementById('bugSubmit')!.onclick = () => {
-      captureBugReport(state, descEl.value);
-      modal.style.display = 'none';
-      addToast(state.ui, '🐛 Bug report downloaded!', '#ff8888', 2500);
-    };
-  };
-}
 // ─── Thought Bubble Triggers ─────────────────────────────────
 
 let lastBubbleBiomeId = -1;
@@ -2632,7 +2568,12 @@ function setupExtraKeys(state: GameState, input?: InputManager): void {
           document.getElementById('pauseMenu')!.style.display = 'none';
           state.paused = false;
         } else {
-          showPauseMenu(state, input);
+          showPauseMenu(state, input, {
+            onSave: () => doSave(state),
+            onMainMenu: () => { doSave(state); window.location.reload(); },
+            onOptions: () => showOptionsOverlay(state, input),
+            onBugReport: (desc) => captureBugReport(state, desc),
+          });
         }
         break;
       }
