@@ -1142,7 +1142,9 @@ function update(state: GameState, input: InputManager): void {
   // Handled in extended input listener below
 
   // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
-  tickSubsystems(state, justKeys);  // Snapshot input for edge detection next frame
+  tickSubsystems(state, justKeys);
+
+  // Snapshot input for edge detection next frame
   input.endFrame();
   _clearExtraKeys(); // Clear numeric/R key queue (#94)
 }
