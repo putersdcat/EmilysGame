@@ -872,6 +872,25 @@ function tickSubsystems(state: GameState, justKeys: any): void {
 
 }
 
+/**
+ * Check the diarrhea control lock (#133): when locked, the player
+ * cannot move or interact until the lock expires. B5 micro-slice 11.32 (#268).
+ * Returns true if input should be absorbed (caller must endFrame + return).
+ */
+function handleDiarrheaControlLock(state: GameState): boolean {
+  if (!state.diarrhea.diarrheaLocked) return false;
+  if (state.frameCount >= state.diarrhea.diarrheaLockUntil) {
+    // Lock expired — recover
+    state.diarrhea.diarrheaLocked = false;
+    setDiarrheaOverlay(false);
+    addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
+    playSfx(state.sfx, 'pickup_item'); // relief SFX
+    return false;
+  }
+  // Still locked — caller will skip the rest of the frame
+  return true;
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -912,18 +931,9 @@ function update(state: GameState, input: InputManager): void {
   }
 
   // --- Diarrhea control lock check (#133) ---
-  if (state.diarrhea.diarrheaLocked) {
-    if (state.frameCount >= state.diarrhea.diarrheaLockUntil) {
-      // Lock expired — recover
-      state.diarrhea.diarrheaLocked = false;
-      setDiarrheaOverlay(false);
-      addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
-      playSfx(state.sfx, 'pickup_item'); // relief SFX
-    } else {
-      // Still locked — skip all movement and interaction, just render
-      input.endFrame();
-      return;
-    }
+  if (handleDiarrheaControlLock(state)) {
+    input.endFrame();
+    return;
   }
 
   // --- Movement ---
