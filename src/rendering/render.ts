@@ -398,44 +398,80 @@ export class IsometricRenderer {
           biome.tintHue, depthKey, drawScale, fireVariant,
         );
 
-        // Track occluder objects near the player for partial-hide pass (#181)
-        const occRatio = def.occluderRatio;
-        if (occRatio && occRatio > 0 && occluderCount < MAX_OCCLUDERS) {
-          // Only track objects within ±2 grid units of the player
-          const dyGY = egoPos.y - gy;
-          const dxGX = egoPos.x - gx;
-          if (dyGY > -0.5 && dyGY < 2.0 && dxGX > -2.0 && dxGX < 2.0) {
-            const occ = occluderPool[occluderCount++];
-            occ.sx = jsx; occ.sy = drawSy;
-            occ.gy = gy; occ.scale = drawScale;
-            occ.ratio = occRatio;
-            occ.sortKey = depthKey;
-            // Resolve the asset canvas or emoji for re-draw
-            if (hasAssetSprite(cell.assetKey)) {
-              occ.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
-            } else {
-              occ.assetCanvas = null;
-            }
-            occ.emoji = def.emoji;
-            occ.tint = biome.tintHue;
-          }
-        }
+        // Occluder tracking for partial-hide pass (#181, B6.6)
+        this.trackOccluder(def, cell, jsx, drawSy, gx, gy, depthKey, drawScale, biome.tintHue, egoPos);
       }
 
-      // Draw collectible overlay if present (on any cell layer)
-      // Items sit ON the ground (no vertical lift) — prevents floating appearance
-      if (cell.itemId) {
-        const itemDef = ASSET_DEFS[cell.itemId];
-        if (itemDef) {
-          const cmd = jsPool[jsPoolIdx++];
-          // Item jitter uses item's own jitter range (#82)
-          const ijr = itemDef.jitter ?? 0;
-          const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
-          cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
-          cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
-        }
-      }
+      // Collectible overlay (B6.6) — items sit ON the ground (no vertical lift)
+      this.emitItemOverlay(cell, sx, sy, gx, gy);
     }
+  }
+
+  /**
+   * Track tall objects near the player for the partial-hide occluder
+   * pass (#181). Only objects within ±2 grid units of the player AND
+   * within the south-of-player window (dyGY ∈ [-0.5, 2.0]) are tracked,
+   * since that's when partial occlusion actually happens.
+   *
+   * Extracted from `iterateObjectCells` in B6.6 (#272) so the per-cell
+   * loop stays focused on sprite emission.
+   */
+  private trackOccluder(
+    def: typeof ASSET_DEFS[string],
+    cell: ChunkData['cells'][number][number],
+    jsx: number,
+    drawSy: number,
+    gx: number,
+    gy: number,
+    depthKey: number,
+    drawScale: number,
+    tintHue: number,
+    egoPos: { x: number; y: number },
+  ): void {
+    const occRatio = def.occluderRatio;
+    if (!occRatio || occRatio <= 0 || occluderCount >= MAX_OCCLUDERS) return;
+    // Only track objects within ±2 grid units of the player
+    const dyGY = egoPos.y - gy;
+    const dxGX = egoPos.x - gx;
+    if (dyGY <= -0.5 || dyGY >= 2.0 || dxGX <= -2.0 || dxGX >= 2.0) return;
+    const occ = occluderPool[occluderCount++];
+    occ.sx = jsx; occ.sy = drawSy;
+    occ.gy = gy; occ.scale = drawScale;
+    occ.ratio = occRatio;
+    occ.sortKey = depthKey;
+    // Resolve the asset canvas or emoji for re-draw
+    if (hasAssetSprite(cell.assetKey)) {
+      occ.assetCanvas = getAssetSprite(cell.assetKey, tintHue, gx, gy) ?? null;
+    } else {
+      occ.assetCanvas = null;
+    }
+    occ.emoji = def.emoji;
+    occ.tint = tintHue;
+  }
+
+  /**
+   * Emit a CMD_ITEM draw command for the collectible sitting on this cell
+   * (if any). Items use the parent cell's screen position with sub-cell
+   * jitter (#82) so they sit ON the ground without floating appearance.
+   *
+   * Extracted from `iterateObjectCells` in B6.6 (#272).
+   */
+  private emitItemOverlay(
+    cell: ChunkData['cells'][number][number],
+    sx: number,
+    sy: number,
+    gx: number,
+    gy: number,
+  ): void {
+    if (!cell.itemId) return;
+    const itemDef = ASSET_DEFS[cell.itemId];
+    if (!itemDef) return;
+    const cmd = jsPool[jsPoolIdx++];
+    // Item jitter uses item's own jitter range (#82)
+    const ijr = itemDef.jitter ?? 0;
+    const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
+    cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
+    cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
   }
 
   /**
