@@ -247,10 +247,60 @@ export class IsometricRenderer {
     jsPoolIdx = 0;
     occluderCount = 0;   // reset occluder tracking (#181)
     _renderFrameCount++;
-    const size = WORLD_CONFIG.chunkSize;
     const maxCmds = RENDER_CONFIG.maxDrawCmds; // draw call budget for graceful degradation
 
-    // Iterate ONLY visible chunks (viewport culling)
+    // Iterate ONLY visible chunks (viewport culling) — builds draw commands
+    this.iterateVisibleChunks(chunks, camera, egoPos, maxCmds);
+
+    // Player draw command
+    this.emitPlayerDrawCmd(camera, egoPos, egoDir, egoImg);
+
+    // Sort the active draw commands by sortKey (back-to-front rendering)
+    const count = this.sortDrawCommands();
+
+    // Execute all draw commands (no closures!)
+    this.executeDrawCommands(count);
+
+    // ─── Occluder Re-draw Pass (#181) ────────────────────────────
+    // Re-draw the bottom portion of tracked occluder objects ON TOP of the player
+    // to create partial-hiding behind tall objects (trees, walls).
+    this.redrawOccluders(egoPos.y);
+  }
+
+  /**
+   * Emit a single player draw command to the pool.
+   * Extracted from `render()` in B6.3 (#272).
+   */
+  private emitPlayerDrawCmd(
+    camera: Camera,
+    egoPos: { x: number; y: number },
+    egoDir: number,
+    egoImg: HTMLImageElement | null,
+  ): void {
+    const { x: esx, y: esy } = this.gridToScreen(egoPos.x, egoPos.y, camera);
+    const cmd = jsPool[jsPoolIdx++];
+    cmd.sortKey = egoPos.y + 0.3;
+    cmd.type = CMD_PLAYER;
+    cmd.emoji = '🧑';
+    cmd.sx = esx; cmd.sy = esy;
+    cmd.scale = 1.0; cmd.tint = 0;
+    cmd.img = egoImg;
+    cmd.flipX = egoDir < 0;
+  }
+
+  /**
+   * Iterate only visible chunks (viewport culled by buf) and build draw commands
+   * for every object cell in those chunks. Uses pre-allocated jsPool (no per-frame
+   * alloc). Tracks occluders near the player for the partial-hide pass.
+   * Extracted from `render()` in B6.3 (#272).
+   */
+  private iterateVisibleChunks(
+    chunks: Map<string, ChunkData>,
+    camera: Camera,
+    egoPos: { x: number; y: number },
+    maxCmds: number,
+  ): void {
+    const size = WORLD_CONFIG.chunkSize;
     const camCX = Math.floor(camera.x / size);
     const camCY = Math.floor(camera.y / size);
     const buf = WORLD_CONFIG.viewportBuffer; // matches chunk loading radius
@@ -404,30 +454,6 @@ export class IsometricRenderer {
         }
       }
     }
-
-    // Player draw command
-    const { x: esx, y: esy } = this.gridToScreen(egoPos.x, egoPos.y, camera);
-    {
-      const cmd = jsPool[jsPoolIdx++];
-      cmd.sortKey = egoPos.y + 0.3;
-      cmd.type = CMD_PLAYER;
-      cmd.emoji = '🧑';
-      cmd.sx = esx; cmd.sy = esy;
-      cmd.scale = 1.0; cmd.tint = 0;
-      cmd.img = egoImg;
-      cmd.flipX = egoDir < 0;
-    }
-
-    // Sort the active draw commands by sortKey (back-to-front rendering)
-    const count = this.sortDrawCommands();
-
-    // Execute all draw commands (no closures!)
-    this.executeDrawCommands(count);
-
-    // ─── Occluder Re-draw Pass (#181) ────────────────────────────
-    // Re-draw the bottom portion of tracked occluder objects ON TOP of the player
-    // to create partial-hiding behind tall objects (trees, walls).
-    this.redrawOccluders(egoPos.y);
   }
 
   /**
