@@ -24,8 +24,13 @@ import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons } from
 // customizer + age band + subjects + tutorial) and the load-slot- helper
 // extracted to ./game/new-game-flow.ts. main() now branches into
 // runNewGameFlow(state) or loadSlotIntoState(state, slot).
+// B5 micro-slice 11.42 (#268): MIDI + sampled-SFX background loading
+// extracted to ./game/audio-bootstrap.ts. bootstrapAudio(state) kicks
+// off both pipelines as fire-and-forget; oscillator fallbacks cover
+// the loading window so the game loop can start in parallel.
 import { makeSlotSaveHandler, makeSlotLoadHandler, makeSlotDeleteHandler } from './game/slot-actions';
 import { runNewGameFlow, loadSlotIntoState } from './game/new-game-flow';
+import { bootstrapAudio } from './game/audio-bootstrap';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -147,13 +152,11 @@ import {
   setLastDialogNpcId,
 } from './game/interaction-handler';
 import {
-  play as musicPlay,
   setBiome as musicSetBiome,
-  initMidiTracks, getTotalTrackCount,
 } from './game/audio/music';
 import {
   playSfx,
-  initSampledSfxPipeline, updateListenerPosition,
+  updateListenerPosition,
   playFootstep, resetFootstepCounter,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
 } from './game/audio/sfx';
@@ -1177,20 +1180,8 @@ async function main(): Promise<void> {
     // 'continue' → auto-save already loaded by init()
   }
 
-  // Load MIDI tracks in background (non-blocking, oscillator tracks work immediately)
-  initMidiTracks(state.music).then(() => {
-    if (getTotalTrackCount() > 4) {
-      console.log(`[Music] ${getTotalTrackCount()} MIDI tracks available`);
-    }
-    // Auto-start music after tracks are ready if music is enabled and not muted.
-    // Skip in test mode — tests control music state explicitly.
-    if (!isTestMode() && state.music.settings.enabled && !state.music.settings.muted) {
-      musicPlay(state.music);
-    }
-  });
-
-  // Load sampled SFX in background (oscillator SFX work immediately as fallback)
-  initSampledSfxPipeline(state.sfx).catch(e => console.warn('[SFX] Sample init failed:', e));
+  // Audio bootstrap (background; oscillator fallbacks cover loading window)
+  bootstrapAudio(state);
 
   requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
