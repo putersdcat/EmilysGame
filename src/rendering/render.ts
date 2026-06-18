@@ -14,7 +14,7 @@ import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData, Camera } from '../types/game.types';
 import { cellJitter } from '../engine/utils';
-import { FIRE_VARIANTS, getFireAnimation } from '../config/fire.config';
+import { FIRE_VARIANTS, getFireAnimation, type FireVariant } from '../config/fire.config';
 import { getShadowParams } from './shadows';
 import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from '../asset-pipeline/npc-sprites';
 import {
@@ -392,62 +392,11 @@ export class IsometricRenderer {
           drawSy += fa.dyOffset;
         }
 
-        // NPC paper-cut sprite path (#85)
-        if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
-          // Determine facing: stored on cell if set, else face toward player
-          const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
-          // Mouth animation: cycle during active dialog (#113)
-          const mouth: MouthState = getNpcMouthState(cell.npcId);
-          const headBob = getHeadBob(cell.npcId);
-          const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
-          const cmd = jsPool[jsPoolIdx++];
-          cmd.sortKey = depthKey;
-          cmd.type = CMD_NPC;
-          cmd.emoji = def.emoji; // fallback
-          cmd.sx = jsx; cmd.sy = drawSy + headBob; cmd.scale = drawScale; cmd.tint = 0;
-          cmd.shadow = def.shadow;
-          cmd.npcImg = npcImg;
-          cmd.npcFlipX = facing === 'west';
-          cmd.assetCanvas = null;
-        } else if (def.tileType && hasNanoRenderer(def.tileType)) {
-          const cmd = jsPool[jsPoolIdx++];
-          cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-          cmd.tileType = def.tileType; cmd.shadow = def.shadow;
-          cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
-          cmd.assetCanvas = null;
-        } else if (hasAssetSprite(cell.assetKey)) {
-          // SVG asset sprite path (#115) — priority over tileType for objects
-          const cmd = jsPool[jsPoolIdx++];
-          cmd.sortKey = depthKey;
-          cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
-          cmd.emoji = def.emoji; // fallback
-          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-          cmd.shadow = def.shadow;
-          // Resolve sprite at build time: fire frames or static asset
-          if (fireVariant) {
-            const phase = Math.abs(Math.floor(gx * 13 + gy * 29));
-            const fi = (Math.floor(_renderFrameCount / fireVariant.frameDuration) + phase) % FIRE_FRAME_COUNT;
-            cmd.assetCanvas = getFireFrame(cell.assetKey, fi) ?? null;
-          } else {
-            cmd.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
-          }
-        } else if (def.tileType) {
-          const cmd = jsPool[jsPoolIdx++];
-          cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-          cmd.tileType = def.tileType; cmd.shadow = def.shadow;
-          cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
-          cmd.assetCanvas = null;
-        } else {
-          const cmd = jsPool[jsPoolIdx++];
-          cmd.sortKey = depthKey;
-          cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
-          cmd.emoji = def.emoji;
-          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-          cmd.shadow = def.shadow;
-          cmd.assetCanvas = null;
-        }
+        // 5-branch sprite dispatch extracted to emitObjectSpriteCmd (B6.5, #272)
+        this.emitObjectSpriteCmd(
+          cell, def, jsx, drawSy, gx, gy, cx, cy, chunk, chunks,
+          biome.tintHue, depthKey, drawScale, fireVariant,
+        );
 
         // Track occluder objects near the player for partial-hide pass (#181)
         const occRatio = def.occluderRatio;
@@ -486,6 +435,93 @@ export class IsometricRenderer {
           cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
         }
       }
+    }
+  }
+
+  /**
+   * 5-branch sprite dispatch for elevated (non-base) objects. Emits one
+   * draw command into the shared `jsPool`. The branches, in priority order:
+   *
+   *   1. NPC paper-cut sprite (#85) — uses mouth animation + head bob
+   *   2. Nano tile renderer — uses cell-local variant inference
+   *   3. SVG asset sprite (#115) — fire frames for FIRE_VARIANTS, else static
+   *   4. Nano tile fallback (def.tileType without nano renderer)
+   *   5. Emoji / shadow-emoji fallback
+   *
+   * Extracted from `iterateObjectCells` in B6.5 (#272) so the per-cell
+   * loop stays readable and the dispatch is self-contained.
+   */
+  private emitObjectSpriteCmd(
+    cell: ChunkData['cells'][number][number],
+    def: typeof ASSET_DEFS[string],
+    jsx: number,
+    drawSy: number,
+    gx: number,
+    gy: number,
+    cx: number,
+    cy: number,
+    chunk: ChunkData,
+    chunks: Map<string, ChunkData>,
+    tintHue: number,
+    depthKey: number,
+    drawScale: number,
+    fireVariant: FireVariant | undefined,
+  ): void {
+    // NPC paper-cut sprite path (#85)
+    if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
+      // Determine facing: stored on cell if set, else face toward player
+      const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
+      // Mouth animation: cycle during active dialog (#113)
+      const mouth: MouthState = getNpcMouthState(cell.npcId);
+      const headBob = getHeadBob(cell.npcId);
+      const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
+      const cmd = jsPool[jsPoolIdx++];
+      cmd.sortKey = depthKey;
+      cmd.type = CMD_NPC;
+      cmd.emoji = def.emoji; // fallback
+      cmd.sx = jsx; cmd.sy = drawSy + headBob; cmd.scale = drawScale; cmd.tint = 0;
+      cmd.shadow = def.shadow;
+      cmd.npcImg = npcImg;
+      cmd.npcFlipX = facing === 'west';
+      cmd.assetCanvas = null;
+    } else if (def.tileType && hasNanoRenderer(def.tileType)) {
+      const cmd = jsPool[jsPoolIdx++];
+      cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
+      cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
+      cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+      cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+      cmd.assetCanvas = null;
+    } else if (hasAssetSprite(cell.assetKey)) {
+      // SVG asset sprite path (#115) — priority over tileType for objects
+      const cmd = jsPool[jsPoolIdx++];
+      cmd.sortKey = depthKey;
+      cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
+      cmd.emoji = def.emoji; // fallback
+      cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
+      cmd.shadow = def.shadow;
+      // Resolve sprite at build time: fire frames or static asset
+      if (fireVariant) {
+        const phase = Math.abs(Math.floor(gx * 13 + gy * 29));
+        const fi = (Math.floor(_renderFrameCount / fireVariant.frameDuration) + phase) % FIRE_FRAME_COUNT;
+        cmd.assetCanvas = getFireFrame(cell.assetKey, fi) ?? null;
+      } else {
+        cmd.assetCanvas = getAssetSprite(cell.assetKey, tintHue, gx, gy) ?? null;
+      }
+    } else if (def.tileType) {
+      const cmd = jsPool[jsPoolIdx++];
+      cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
+      cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
+      cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+      cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+      cmd.assetCanvas = null;
+    } else {
+      const cmd = jsPool[jsPoolIdx++];
+      cmd.sortKey = depthKey;
+      cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
+      cmd.emoji = def.emoji;
+      cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
+      cmd.shadow = def.shadow;
+      cmd.assetCanvas = null;
     }
   }
 
