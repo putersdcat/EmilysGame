@@ -694,6 +694,90 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
   return false;
 }
 
+/**
+ * Handle input while a trade panel is active.
+ * B5 micro-slice 11.30 (#268): extracted from update() in main.ts.
+ * Manages: barter quiz input, sell/buy navigation, post-trade flow.
+ * The 'input' param is needed for the inner barter-quiz early-return.
+ * Returns true if a trade is active and handled input (caller must
+ * call input.endFrame() and return early).
+ */
+function handleTradeInput(state: GameState, justKeys: any, input: InputManager): boolean {
+  if (state.trade.active) {
+  // Barter quiz active — handle quiz input first (#112 Phase 3)
+  if (state.trade.barterQuiz) {
+    if (justKeys.up) { barterNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
+    if (justKeys.down) { barterNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
+    if (justKeys.interact) {
+      const answer = submitBarterAnswer(state.trade);
+      if (answer.correct) {
+        addToast(state.ui, answer.feedback, '#4caf50', 3000);
+        playSfx(state.sfx, 'quiz_correct');
+      } else {
+        addToast(state.ui, answer.feedback, '#f44336', 3000);
+        playSfx(state.sfx, 'quiz_wrong');
+      }
+      // Apply discount on the pending trade (already executed)
+    }
+    syncBarterQuizDOM(state.trade);
+    syncTradeDOM(state.trade, state.inventory);
+    input.endFrame();
+    return true;
+  }
+
+  if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.interact) {
+    if (state.trade.mode === 'sell') {
+      const sellable = getSellableItems(state.inventory);
+      const item = sellable[state.trade.selectedIndex];
+      if (item && shouldTriggerBarter()) {
+        const price = getSellPrice(item.itemId, state.trade);
+        state.trade.barterQuiz = generateBarterQuiz(item.displayName, price);
+        state.trade.barterSelectedIndex = 0;
+        playSfx(state.sfx, 'menu_navigate');
+        syncBarterQuizDOM(state.trade);
+      } else {
+        const result = executeSell(state.trade, state.inventory);
+        const dialog = getTradeDialog(state.trade.persona, result);
+        if (result.ok) {
+          addToast(state.ui, dialog, '#ffab40');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
+        }
+      }
+    } else {
+      const trade = state.trade.trades[state.trade.selectedIndex];
+      if (trade && shouldTriggerBarter()) {
+        state.trade.barterQuiz = generateBarterQuiz(
+          trade.gives,
+          trade.wants === 'coin' ? trade.cost : trade.cost
+        );
+        state.trade.barterSelectedIndex = 0;
+        playSfx(state.sfx, 'menu_navigate');
+        syncBarterQuizDOM(state.trade);
+      } else {
+        const result = executeTrade(state.trade, state.inventory);
+        const dialog = getTradeDialog(state.trade.persona, result);
+        if (result.ok) {
+          addToast(state.ui, dialog, '#4caf50');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
+        }
+      }
+    }
+    // Don't close — let player buy/sell multiple items
+  }
+  // Escape handled in global keydown handler
+  syncTradeDOM(state.trade, state.inventory);
+  input.endFrame();
+  return true;
+  }
+  return false;
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -728,76 +812,7 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  // --- Trade Input (edge-detected) ---
-  if (state.trade.active) {
-    // Barter quiz active — handle quiz input first (#112 Phase 3)
-    if (state.trade.barterQuiz) {
-      if (justKeys.up) { barterNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
-      if (justKeys.down) { barterNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
-      if (justKeys.interact) {
-        const answer = submitBarterAnswer(state.trade);
-        if (answer.correct) {
-          addToast(state.ui, answer.feedback, '#4caf50', 3000);
-          playSfx(state.sfx, 'quiz_correct');
-        } else {
-          addToast(state.ui, answer.feedback, '#f44336', 3000);
-          playSfx(state.sfx, 'quiz_wrong');
-        }
-        // Apply discount on the pending trade (already executed)
-      }
-      syncBarterQuizDOM(state.trade);
-      syncTradeDOM(state.trade, state.inventory);
-      input.endFrame();
-      return;
-    }
-
-    if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
-    if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
-    if (justKeys.interact) {
-      if (state.trade.mode === 'sell') {
-        const sellable = getSellableItems(state.inventory);
-        const item = sellable[state.trade.selectedIndex];
-        if (item && shouldTriggerBarter()) {
-          const price = getSellPrice(item.itemId, state.trade);
-          state.trade.barterQuiz = generateBarterQuiz(item.displayName, price);
-          state.trade.barterSelectedIndex = 0;
-          playSfx(state.sfx, 'menu_navigate');
-          syncBarterQuizDOM(state.trade);
-        } else {
-          const result = executeSell(state.trade, state.inventory);
-          const dialog = getTradeDialog(state.trade.persona, result);
-          if (result.ok) {
-            addToast(state.ui, dialog, '#ffab40');
-            playSfx(state.sfx, 'shop_buy');
-          } else {
-            playSfx(state.sfx, 'shop_fail');
-          }
-        }
-      } else {
-        const trade = state.trade.trades[state.trade.selectedIndex];
-        if (trade && shouldTriggerBarter()) {
-          state.trade.barterQuiz = generateBarterQuiz(
-            trade.gives,
-            trade.wants === 'coin' ? trade.cost : trade.cost
-          );
-          state.trade.barterSelectedIndex = 0;
-          playSfx(state.sfx, 'menu_navigate');
-          syncBarterQuizDOM(state.trade);
-        } else {
-          const result = executeTrade(state.trade, state.inventory);
-          const dialog = getTradeDialog(state.trade.persona, result);
-          if (result.ok) {
-            addToast(state.ui, dialog, '#4caf50');
-            playSfx(state.sfx, 'shop_buy');
-          } else {
-            playSfx(state.sfx, 'shop_fail');
-          }
-        }
-      }
-      // Don't close — let player buy/sell multiple items
-    }
-    // Escape handled in global keydown handler
-    syncTradeDOM(state.trade, state.inventory);
+  if (handleTradeInput(state, justKeys, input)) {
     input.endFrame();
     return;
   }
