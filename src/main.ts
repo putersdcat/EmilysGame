@@ -39,16 +39,11 @@ import { showOptionsOverlay } from './game/options-overlay';
 // ./game/wildlife-render.ts. getRevealedCreatures() lives there too
 // and is imported directly by debug-api.ts (no DI needed).
 import { getNpcPersona, getShopPersona } from './config/npc.config';
-import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
-import { initWasmRenderer, isWasmReady, wasmBenchmark } from './rendering/wasm-bridge';
+import { isWasmReady } from './rendering/wasm-bridge';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
-import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
-import { preloadAssetSprites } from './asset-pipeline/asset-sprites';
-import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
-import { initMinimap } from './rendering/minimap';
 
-import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
+import { searchBookArticles } from './ui/book-content';
 import { createKnowledgeState, showSubjectSelection, openArticle } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
@@ -84,7 +79,6 @@ import {
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
-  initDebuffVisuals,
   triggerInjuryFlash,
   setDiarrheaOverlay,
 } from './rendering/debuff-visuals';
@@ -269,8 +263,12 @@ function maybeLoadChunks(state: GameState): void {
 // ./game/wordlist-bootstrap.ts. bootstrapWordlist() handles the test-mode
 // vs production branch (no LLM in tests; non-blocking scrambled fallback
 // + LLM swap in production, #26).
+// B5 micro-slice 11.37 (#268): asset + content + WASM pre-roll extracted
+// to ./game/asset-bootstrap.ts. bootstrapAssets() awaits SVG tile preload,
+// runs sync pre-renders, then awaits book content + WASM (with fallback).
 import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
 import { bootstrapWordlist } from './game/wordlist-bootstrap';
+import { bootstrapAssets } from './game/asset-bootstrap';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -289,38 +287,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // NOTE: cleanupLlmSessions() available but not auto-called —
   // BitNet server lacks /v1/sessions endpoint. Call manually if needed.
 
-  // Preload SVG tile sprites (async, must complete before rendering)
-  await preloadTiles();
-
-  // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
-  preloadEmojiSprites();
-
-  // Pre-render SVG asset sprites for trees, rocks, fire (#115)
-  await preloadAssetSprites();
-
-  // Preload NPC paper-cut sprites (#85)
-  preloadNpcSprites();
-
-  // Initialize minimap canvas
-  initMinimap();
-
-  // Initialize debuff visual effects (#110)
-  initDebuffVisuals();
-
-  // Load content packs for Book of Knowledge (#120)
-  await initBookContent();
-  const contentStats = getBookContentStats();
-  console.log(`[INIT] Book content: ${contentStats.totalArticles} articles (${contentStats.packArticles} from pack, ${contentStats.staticArticles} static)`);
-
-  // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
-  const wasmOk = await initWasmRenderer();
-  if (wasmOk) {
-    console.log('[INIT] WASM rendering core loaded');
-    // Run benchmark on first load
-    wasmBenchmark();
-  } else {
-    console.log('[INIT] WASM unavailable, using JS renderer');
-  }
+  // Asset + content + WASM pre-roll (tile preload blocks render, #82)
+  await bootstrapAssets();
 
   // Load char sprite (initial idle)
   // Try loading saved game first to get player variation
