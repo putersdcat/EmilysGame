@@ -778,6 +778,100 @@ function handleTradeInput(state: GameState, justKeys: any, input: InputManager):
   return false;
 }
 
+/**
+ * Run per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles).
+ * B5 micro-slice 11.31 (#268): extracted from update() in main.ts.
+ * All subsystems are throttled (frame-count modulo) to avoid CPU churn.
+ * No early-return semantics — runs every frame, no input.endFrame() needed.
+ */
+function tickSubsystems(state: GameState, justKeys: any): void {
+  // --- Survival Status tick (#70) ---
+  // tickStatus self-throttles internally (every 300 frames)
+  {
+    const cs = WORLD_CONFIG.chunkSize;
+    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
+    const chunk = state.chunks.get(cKey);
+    const biomeId = chunk?.biomeId ?? 0;
+    tickStatus(state.status, state.player.isMoving, biomeId);
+    // Music biome awareness (#74) — switch tracks on biome change
+    musicSetBiome(state.music, biomeId);
+  }
+  
+  // --- Tutorial tick (#186) ---
+  if (isTutorialActive()) {
+    tickTutorial(
+      state.player.x,
+      state.player.y,
+      state.inventory.slots.reduce((sum, s) => sum + s.quantity, 0),
+      isFlashlightOn(),
+      justKeys.interact,
+    );
+  }
+  
+  // --- Transient expression tick (#102) ---
+  tickExpressionOverride(state);
+  
+  // --- Ambience update (#75 + #108) — oscillator + sampled layers ---
+  // Throttle to every 60th frame (~1s at 60fps) to avoid churn
+  if (state.frameCount % 60 === 0) {
+    const cycleProgress = getCycleProgress();
+    const timeSlot: 'day' | 'dusk' | 'night' = cycleProgress < 0.65 ? 'day' : cycleProgress < 0.80 ? 'dusk' : 'night';
+    const weatherInfo = getWeatherInfo();
+    // Enhanced ambience with sampled loops (#108)
+    updateAmbienceEnhanced(state.sfx, timeSlot, weatherInfo.type);
+    // Random animal calls (#108) — bird chirps, owl hoots, frog croaks
+    tickAnimalCalls(state.sfx, timeSlot, state.frameCount);
+    // Dawn rooster (#108) — play once on night→day transition
+    if (timeSlot === 'day' && state._lastTimeSlot === 'night') {
+      playRoosterCrow(state.sfx);
+    }
+    state._lastTimeSlot = timeSlot;
+  }
+  
+  // --- Positional audio listener update (#108) — every 10th frame ---
+  if (state.frameCount % 10 === 0) {
+    updateListenerPosition(state.sfx, state.player.x, state.player.y);
+  }
+  
+  // --- Positional audio source scan (#108) — every 120 frames (~2s) ---
+  // Scans nearby chunks for campfire/waterfall and starts positional loops
+  if (state.frameCount % 120 === 0 && state.sfx.sampledReady) {
+    scanPositionalAudioSources(state);
+  }
+  
+  // --- Auto-save every 30s ---
+  if (state.frameCount % (60 * 30) === 0) {
+    doSave(state);
+  }
+  
+  // --- Wildlife update (throttled to every 3rd frame for perf) ---
+  if (state.frameCount % 3 === 0) {
+    updateWildlife(state.chunks, state.player.x, state.player.y);
+  }
+  
+  // --- Fog-of-war: reveal cells around player (#114) ---
+  if (state.frameCount % 6 === 0) {
+    updateFog(state.player.x, state.player.y, isFlashlightOn());
+  }
+  
+  // --- Thought Bubble triggers (throttled to every 30th frame for perf) ---
+  if (state.frameCount % 30 === 0 && !state.paused) {
+    checkBubbleTriggers(state);
+  }
+  // Tick bubble queue/display every 6th frame
+  if (state.frameCount % 6 === 0) {
+    // Dismiss bubbles during modal overlays (dialog, quiz, book)
+    if (state.paused) {
+      dismissBubble();
+    } else {
+      tickBubbles();
+    }
+  }
+  
+  
+
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -1047,90 +1141,8 @@ function update(state: GameState, input: InputManager): void {
   // --- Toggle Debug (F3) ---
   // Handled in extended input listener below
 
-  // --- Survival Status tick (#70) ---
-  // tickStatus self-throttles internally (every 300 frames)
-  {
-    const cs = WORLD_CONFIG.chunkSize;
-    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
-    const chunk = state.chunks.get(cKey);
-    const biomeId = chunk?.biomeId ?? 0;
-    tickStatus(state.status, state.player.isMoving, biomeId);
-    // Music biome awareness (#74) — switch tracks on biome change
-    musicSetBiome(state.music, biomeId);
-  }
-
-  // --- Tutorial tick (#186) ---
-  if (isTutorialActive()) {
-    tickTutorial(
-      state.player.x,
-      state.player.y,
-      state.inventory.slots.reduce((sum, s) => sum + s.quantity, 0),
-      isFlashlightOn(),
-      justKeys.interact,
-    );
-  }
-
-  // --- Transient expression tick (#102) ---
-  tickExpressionOverride(state);
-
-  // --- Ambience update (#75 + #108) — oscillator + sampled layers ---
-  // Throttle to every 60th frame (~1s at 60fps) to avoid churn
-  if (state.frameCount % 60 === 0) {
-    const cycleProgress = getCycleProgress();
-    const timeSlot: 'day' | 'dusk' | 'night' = cycleProgress < 0.65 ? 'day' : cycleProgress < 0.80 ? 'dusk' : 'night';
-    const weatherInfo = getWeatherInfo();
-    // Enhanced ambience with sampled loops (#108)
-    updateAmbienceEnhanced(state.sfx, timeSlot, weatherInfo.type);
-    // Random animal calls (#108) — bird chirps, owl hoots, frog croaks
-    tickAnimalCalls(state.sfx, timeSlot, state.frameCount);
-    // Dawn rooster (#108) — play once on night→day transition
-    if (timeSlot === 'day' && state._lastTimeSlot === 'night') {
-      playRoosterCrow(state.sfx);
-    }
-    state._lastTimeSlot = timeSlot;
-  }
-
-  // --- Positional audio listener update (#108) — every 10th frame ---
-  if (state.frameCount % 10 === 0) {
-    updateListenerPosition(state.sfx, state.player.x, state.player.y);
-  }
-
-  // --- Positional audio source scan (#108) — every 120 frames (~2s) ---
-  // Scans nearby chunks for campfire/waterfall and starts positional loops
-  if (state.frameCount % 120 === 0 && state.sfx.sampledReady) {
-    scanPositionalAudioSources(state);
-  }
-
-  // --- Auto-save every 30s ---
-  if (state.frameCount % (60 * 30) === 0) {
-    doSave(state);
-  }
-
-  // --- Wildlife update (throttled to every 3rd frame for perf) ---
-  if (state.frameCount % 3 === 0) {
-    updateWildlife(state.chunks, state.player.x, state.player.y);
-  }
-
-  // --- Fog-of-war: reveal cells around player (#114) ---
-  if (state.frameCount % 6 === 0) {
-    updateFog(state.player.x, state.player.y, isFlashlightOn());
-  }
-
-  // --- Thought Bubble triggers (throttled to every 30th frame for perf) ---
-  if (state.frameCount % 30 === 0 && !state.paused) {
-    checkBubbleTriggers(state);
-  }
-  // Tick bubble queue/display every 6th frame
-  if (state.frameCount % 6 === 0) {
-    // Dismiss bubbles during modal overlays (dialog, quiz, book)
-    if (state.paused) {
-      dismissBubble();
-    } else {
-      tickBubbles();
-    }
-  }
-
-  // Snapshot input for edge detection next frame
+  // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
+  tickSubsystems(state, justKeys);  // Snapshot input for edge detection next frame
   input.endFrame();
   _clearExtraKeys(); // Clear numeric/R key queue (#94)
 }
