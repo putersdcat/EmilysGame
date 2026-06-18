@@ -4,13 +4,12 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
+import { WORLD_CONFIG } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
-import { loadCharacterSprite } from './asset-pipeline/sprites';
 import { feedEntropy } from './engine/gen';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
@@ -34,9 +33,13 @@ import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
 // to ./game/menu-flow.ts. runMenuFlow() handles the welcome splash +
 // main menu choice dispatch (new-game → runNewGameFlow, load-slot-N →
 // loadSlotIntoState, continue → no-op). Skips entirely in test mode.
+// B5 micro-slice 11.45 (#268): player visual state update extracted
+// to ./game/player-visuals.ts. updatePlayerVisuals(state, mv, isMoving)
+// owns direction, facingDx/Dy, facingPose, isMoving, animFrame, egoImg.
 import { runMenuFlow } from './game/menu-flow';
 import { bootstrapAudio } from './game/audio-bootstrap';
 import { wireStartupHud } from './game/startup-hud';
+import { updatePlayerVisuals } from './game/player-visuals';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // (B5.44 — usage moved to ./game/menu-flow.ts.)
 // B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
@@ -789,46 +792,8 @@ if (isMoving) {
     }
   }
 
-  // Direction (left/right flip)
-  if (mv.dx > 0) state.player.direction = 1;
-  else if (mv.dx < 0) state.player.direction = -1;
-
-  // Track full 2D facing direction for interaction
-  if (mv.dx !== 0 || mv.dy !== 0) {
-    state.player.facingDx = Math.sign(mv.dx);
-    state.player.facingDy = Math.sign(mv.dy);
-  }
-
-  // Determine facing pose from screen-space direction (what the player sees):
-  // Horizontal dominance (left/right keys) → side profile sprite
-  // Vertical dominance (up/down keys) → front (down) or back (up)
-  // Diagonal → use vertical component for front/back
-  const asx = Math.abs(mv.screenDx);
-  const asy = Math.abs(mv.screenDy);
-  if (asx > asy) {
-    state.player.facingPose = 'side';
-  } else if (mv.screenDy < 0) {
-    state.player.facingPose = 'back';
-  } else if (mv.screenDy > 0) {
-    state.player.facingPose = 'front';
-  }
-  // Equal diagonal (asx === asy && both > 0) → keep current facingPose
-
-  state.player.isMoving = true;
-  // Throttle animation: only advance sprite frame every 6th game frame
-  if (state.frameCount % 6 === 0) {
-    state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
-  }
-
-  // Walking sprite - reload when frame or facing pose changes
-  if (state.player.animFrame !== state.lastAnimFrame ||
-      state.player.facingPose !== state.lastFacingPose) {
-    state.egoImg = loadCharacterSprite(
-      state.playerVariation, state.player.animFrame, true, state.player.facingPose,
-    );
-    state.lastAnimFrame = state.player.animFrame;
-    state.lastFacingPose = state.player.facingPose;
-  }
+  // Direction / facing / animation frame / sprite reload (#268 B5.45)
+  updatePlayerVisuals(state, mv, true);
 
   // Auto-collect walkable items
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
@@ -844,18 +809,9 @@ if (isMoving) {
   // Ensure chunks ONLY on chunk boundary crossing
   maybeLoadChunks(state);
 } else {
-  state.player.isMoving = false;
+  updatePlayerVisuals(state, mv, false);
   resetFootstepCounter(); // Reset footstep cadence when idle (#108)
-  // Idle sprite - only reload once when stopping (preserves facing pose)
-  if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
-    state.player.animFrame = 0;
-    state.egoImg = loadCharacterSprite(state.playerVariation, 0, false, state.player.facingPose);
-    state.lastAnimFrame = 0;
-    state.lastFacingPose = state.player.facingPose;
-  }
 }
-
-
 }
 
 /**
