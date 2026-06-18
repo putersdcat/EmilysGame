@@ -318,139 +318,172 @@ export class IsometricRenderer {
 
         const biome = getBiome(chunk.biomeId);
 
-        // Use pre-computed object cell list (~50-100 per chunk vs 1024)
-        const objCells = getObjectCells(key, chunk);
-        for (let oi = 0; oi < objCells.length && jsPoolIdx < maxCmds; oi++) {
-          const { cx, cy } = objCells[oi];
-          const cell = chunk.cells[cy][cx];
-          const def = ASSET_DEFS[cell.assetKey];
+        // Per-cell iteration extracted to iterateObjectCells (B6.4, #272)
+        // — owns the 5-branch sprite dispatch + occluder tracking + item overlay.
+        this.iterateObjectCells(chunk, key, chunks, biome, camera, egoPos, maxCmds);
+      }
+    }
+  }
 
-          const isBase = def && def.layer === 'base';
+  /**
+   * Iterate all object cells in a single chunk, emitting one or two draw
+   * commands per cell into the shared `jsPool`. Extracted from
+   * `iterateVisibleChunks` in B6.4 (#272) so the outer chunk loop stays
+   * a thin orchestrator.
+   *
+   * Per cell:
+   *   1. Compute screen position + sub-cell jitter (#82)
+   *   2. Cull via isVisible() (viewport boundary)
+   *   3. If non-base: 5-branch sprite dispatch
+   *      - NPC paper-cut sprite (#85)
+   *      - Nano tile renderer
+   *      - SVG asset sprite with fire frames (#115, #81)
+   *      - Nano tile fallback
+   *      - Emoji/shadow-emoji fallback
+   *   4. Track occluders within ±2 grid units for partial-hide pass (#181)
+   *   5. Emit item overlay command if cell has a collectible
+   */
+  private iterateObjectCells(
+    chunk: ChunkData,
+    key: string,
+    chunks: Map<string, ChunkData>,
+    biome: ReturnType<typeof getBiome>,
+    camera: Camera,
+    egoPos: { x: number; y: number },
+    maxCmds: number,
+  ): void {
+    const size = WORLD_CONFIG.chunkSize;
+    // Use pre-computed object cell list (~50-100 per chunk vs 1024)
+    const objCells = getObjectCells(key, chunk);
+    for (let oi = 0; oi < objCells.length && jsPoolIdx < maxCmds; oi++) {
+      const { cx, cy } = objCells[oi];
+      const cell = chunk.cells[cy][cx];
+      const def = ASSET_DEFS[cell.assetKey];
 
-          // Cell mutations may make stale cache entries (item collected → now base-only)
-          if (!def || (isBase && !cell.itemId)) continue;
+      const isBase = def && def.layer === 'base';
 
-          const gx = chunk.chunkX * size + cx;
-          const gy = chunk.chunkY * size + cy;
-          const { x: sx, y: sy } = this.gridToScreen(gx, gy, camera);
-          // Deterministic sub-cell jitter for small props (#82)
-          const jr = def ? (def.jitter ?? 0) : 0;
-          const { dx: jdx, dy: jdy } = cellJitter(gx, gy, jr);
-          const jsx = sx + jdx;
-          const jsy = sy + jdy;
+      // Cell mutations may make stale cache entries (item collected → now base-only)
+      if (!def || (isBase && !cell.itemId)) continue;
 
-          if (!this.isVisible(jsx, jsy)) continue;
+      const gx = chunk.chunkX * size + cx;
+      const gy = chunk.chunkY * size + cy;
+      const { x: sx, y: sy } = this.gridToScreen(gx, gy, camera);
+      // Deterministic sub-cell jitter for small props (#82)
+      const jr = def ? (def.jitter ?? 0) : 0;
+      const { dx: jdx, dy: jdy } = cellJitter(gx, gy, jr);
+      const jsx = sx + jdx;
+      const jsy = sy + jdy;
 
-          // Draw elevated (non-base) objects
-          if (!isBase) {
-            // Sort key: cell base Y + half-cell for center anchor + height bias.
-            // height * 0.4 means a height=4 wall sorts 1.6 rows "deeper",
-            // correctly occluding objects/player within ~1.6 grid rows south. (#184)
-            const depthKey = gy + 0.5 + def.height * 0.4;
-            // Fire animation: scale pulse + vertical wobble (#81)
-            const fireVariant = FIRE_VARIANTS[cell.assetKey];
-            let drawScale = def.scale;
-            let drawSy = jsy;
-            if (fireVariant) {
-              const fa = getFireAnimation(fireVariant, gx, gy, _renderFrameCount);
-              drawScale *= fa.scaleMultiplier;
-              drawSy += fa.dyOffset;
-            }
+      if (!this.isVisible(jsx, jsy)) continue;
 
-            // NPC paper-cut sprite path (#85)
-            if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
-              // Determine facing: stored on cell if set, else face toward player
-              const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
-              // Mouth animation: cycle during active dialog (#113)
-              const mouth: MouthState = getNpcMouthState(cell.npcId);
-              const headBob = getHeadBob(cell.npcId);
-              const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
-              const cmd = jsPool[jsPoolIdx++];
-              cmd.sortKey = depthKey;
-              cmd.type = CMD_NPC;
-              cmd.emoji = def.emoji; // fallback
-              cmd.sx = jsx; cmd.sy = drawSy + headBob; cmd.scale = drawScale; cmd.tint = 0;
-              cmd.shadow = def.shadow;
-              cmd.npcImg = npcImg;
-              cmd.npcFlipX = facing === 'west';
-              cmd.assetCanvas = null;
-            } else if (def.tileType && hasNanoRenderer(def.tileType)) {
-              const cmd = jsPool[jsPoolIdx++];
-              cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-              cmd.tileType = def.tileType; cmd.shadow = def.shadow;
-              cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
-              cmd.assetCanvas = null;
-            } else if (hasAssetSprite(cell.assetKey)) {
-              // SVG asset sprite path (#115) — priority over tileType for objects
-              const cmd = jsPool[jsPoolIdx++];
-              cmd.sortKey = depthKey;
-              cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
-              cmd.emoji = def.emoji; // fallback
-              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-              cmd.shadow = def.shadow;
-              // Resolve sprite at build time: fire frames or static asset
-              if (fireVariant) {
-                const phase = Math.abs(Math.floor(gx * 13 + gy * 29));
-                const fi = (Math.floor(_renderFrameCount / fireVariant.frameDuration) + phase) % FIRE_FRAME_COUNT;
-                cmd.assetCanvas = getFireFrame(cell.assetKey, fi) ?? null;
-              } else {
-                cmd.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
-              }
-            } else if (def.tileType) {
-              const cmd = jsPool[jsPoolIdx++];
-              cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
-              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-              cmd.tileType = def.tileType; cmd.shadow = def.shadow;
-              cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
-              cmd.assetCanvas = null;
+      // Draw elevated (non-base) objects
+      if (!isBase) {
+        // Sort key: cell base Y + half-cell for center anchor + height bias.
+        // height * 0.4 means a height=4 wall sorts 1.6 rows "deeper",
+        // correctly occluding objects/player within ~1.6 grid rows south. (#184)
+        const depthKey = gy + 0.5 + def.height * 0.4;
+        // Fire animation: scale pulse + vertical wobble (#81)
+        const fireVariant = FIRE_VARIANTS[cell.assetKey];
+        let drawScale = def.scale;
+        let drawSy = jsy;
+        if (fireVariant) {
+          const fa = getFireAnimation(fireVariant, gx, gy, _renderFrameCount);
+          drawScale *= fa.scaleMultiplier;
+          drawSy += fa.dyOffset;
+        }
+
+        // NPC paper-cut sprite path (#85)
+        if (def.category === 'npc' && hasNpcSprite(cell.assetKey)) {
+          // Determine facing: stored on cell if set, else face toward player
+          const facing: NpcFacing = (cell.npcFacing as NpcFacing) || 'south';
+          // Mouth animation: cycle during active dialog (#113)
+          const mouth: MouthState = getNpcMouthState(cell.npcId);
+          const headBob = getHeadBob(cell.npcId);
+          const npcImg = getNpcSprite(cell.assetKey, facing, mouth);
+          const cmd = jsPool[jsPoolIdx++];
+          cmd.sortKey = depthKey;
+          cmd.type = CMD_NPC;
+          cmd.emoji = def.emoji; // fallback
+          cmd.sx = jsx; cmd.sy = drawSy + headBob; cmd.scale = drawScale; cmd.tint = 0;
+          cmd.shadow = def.shadow;
+          cmd.npcImg = npcImg;
+          cmd.npcFlipX = facing === 'west';
+          cmd.assetCanvas = null;
+        } else if (def.tileType && hasNanoRenderer(def.tileType)) {
+          const cmd = jsPool[jsPoolIdx++];
+          cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
+          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+          cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+          cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+          cmd.assetCanvas = null;
+        } else if (hasAssetSprite(cell.assetKey)) {
+          // SVG asset sprite path (#115) — priority over tileType for objects
+          const cmd = jsPool[jsPoolIdx++];
+          cmd.sortKey = depthKey;
+          cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
+          cmd.emoji = def.emoji; // fallback
+          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+          cmd.shadow = def.shadow;
+          // Resolve sprite at build time: fire frames or static asset
+          if (fireVariant) {
+            const phase = Math.abs(Math.floor(gx * 13 + gy * 29));
+            const fi = (Math.floor(_renderFrameCount / fireVariant.frameDuration) + phase) % FIRE_FRAME_COUNT;
+            cmd.assetCanvas = getFireFrame(cell.assetKey, fi) ?? null;
+          } else {
+            cmd.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
+          }
+        } else if (def.tileType) {
+          const cmd = jsPool[jsPoolIdx++];
+          cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
+          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+          cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+          cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+          cmd.assetCanvas = null;
+        } else {
+          const cmd = jsPool[jsPoolIdx++];
+          cmd.sortKey = depthKey;
+          cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
+          cmd.emoji = def.emoji;
+          cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
+          cmd.shadow = def.shadow;
+          cmd.assetCanvas = null;
+        }
+
+        // Track occluder objects near the player for partial-hide pass (#181)
+        const occRatio = def.occluderRatio;
+        if (occRatio && occRatio > 0 && occluderCount < MAX_OCCLUDERS) {
+          // Only track objects within ±2 grid units of the player
+          const dyGY = egoPos.y - gy;
+          const dxGX = egoPos.x - gx;
+          if (dyGY > -0.5 && dyGY < 2.0 && dxGX > -2.0 && dxGX < 2.0) {
+            const occ = occluderPool[occluderCount++];
+            occ.sx = jsx; occ.sy = drawSy;
+            occ.gy = gy; occ.scale = drawScale;
+            occ.ratio = occRatio;
+            occ.sortKey = depthKey;
+            // Resolve the asset canvas or emoji for re-draw
+            if (hasAssetSprite(cell.assetKey)) {
+              occ.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
             } else {
-              const cmd = jsPool[jsPoolIdx++];
-              cmd.sortKey = depthKey;
-              cmd.type = def.shadow ? CMD_SHADOW_EMOJI : CMD_EMOJI;
-              cmd.emoji = def.emoji;
-              cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = biome.tintHue;
-              cmd.shadow = def.shadow;
-              cmd.assetCanvas = null;
+              occ.assetCanvas = null;
             }
-
-            // Track occluder objects near the player for partial-hide pass (#181)
-            const occRatio = def.occluderRatio;
-            if (occRatio && occRatio > 0 && occluderCount < MAX_OCCLUDERS) {
-              // Only track objects within ±2 grid units of the player
-              const dyGY = egoPos.y - gy;
-              const dxGX = egoPos.x - gx;
-              if (dyGY > -0.5 && dyGY < 2.0 && dxGX > -2.0 && dxGX < 2.0) {
-                const occ = occluderPool[occluderCount++];
-                occ.sx = jsx; occ.sy = drawSy;
-                occ.gy = gy; occ.scale = drawScale;
-                occ.ratio = occRatio;
-                occ.sortKey = depthKey;
-                // Resolve the asset canvas or emoji for re-draw
-                if (hasAssetSprite(cell.assetKey)) {
-                  occ.assetCanvas = getAssetSprite(cell.assetKey, biome.tintHue, gx, gy) ?? null;
-                } else {
-                  occ.assetCanvas = null;
-                }
-                occ.emoji = def.emoji;
-                occ.tint = biome.tintHue;
-              }
-            }
+            occ.emoji = def.emoji;
+            occ.tint = biome.tintHue;
           }
+        }
+      }
 
-          // Draw collectible overlay if present (on any cell layer)
-          // Items sit ON the ground (no vertical lift) — prevents floating appearance
-          if (cell.itemId) {
-            const itemDef = ASSET_DEFS[cell.itemId];
-            if (itemDef) {
-              const cmd = jsPool[jsPoolIdx++];
-              // Item jitter uses item's own jitter range (#82)
-              const ijr = itemDef.jitter ?? 0;
-              const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
-              cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
-              cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
-            }
-          }
+      // Draw collectible overlay if present (on any cell layer)
+      // Items sit ON the ground (no vertical lift) — prevents floating appearance
+      if (cell.itemId) {
+        const itemDef = ASSET_DEFS[cell.itemId];
+        if (itemDef) {
+          const cmd = jsPool[jsPoolIdx++];
+          // Item jitter uses item's own jitter range (#82)
+          const ijr = itemDef.jitter ?? 0;
+          const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
+          cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
+          cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
         }
       }
     }
