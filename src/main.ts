@@ -42,9 +42,8 @@ import { showOptionsOverlay } from './game/options-overlay';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
-import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './rendering/wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
-import { clearObjectCache } from './rendering/render';
+import { initWasmRenderer, isWasmReady, wasmBenchmark } from './rendering/wasm-bridge';
+import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
 import { preloadAssetSprites } from './asset-pipeline/asset-sprites';
 import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
@@ -264,6 +263,10 @@ function maybeLoadChunks(state: GameState): void {
 // ─── LLM Connection Gate ─────────────────────────────────────
 // B5 micro-slice 11.26 (#268): waitForLlm extracted to ./game/llm-gate.ts.
 // Shows LLM splash, polls health, supports dev skip button + test mode.
+// B5 micro-slice 11.35 (#268): canvas setup + responsive resize extracted
+// to ./game/canvas-bootstrap.ts. setupCanvasAndRenderer() owns the canvas
+// element, the IsometricRenderer construction, and the resize listeners.
+import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -271,44 +274,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // --- LLM gate: must be connected before proceeding ---
   await waitForLlm();
 
-  // Canvas setup
-  const container = document.getElementById('gameContainer');
-  if (!container) throw new Error('Game container not found');
-
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-
-  const renderer = new IsometricRenderer(canvas);
-
-  // Responsive canvas: fill viewport, render at scaled resolution
-  const resizeCanvas = () => {
-    const container = document.getElementById('gameContainer');
-    if (!container) return;
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    const scale = RENDER_CONFIG.renderScale;
-    const rw = Math.round(w * scale);
-    const rh = Math.round(h * scale);
-    if (rw > 0 && rh > 0 && (rw !== canvas.width || rh !== canvas.height)) {
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      canvas.style.imageRendering = 'pixelated';
-      canvas.width = rw;
-      canvas.height = rh;
-      RENDER_CONFIG.canvasWidth = rw;
-      RENDER_CONFIG.canvasHeight = rh;
-      updateWasmConfig(rw, rh);
-      clearTerrainCache(); // terrain cache depends on viewport
-      clearObjectCache(); // object cell cache depends on chunk rendering
-    }
-  };
-  window.addEventListener('resize', resizeCanvas);
-  // Also resize when sidebar toggles
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  sidebarToggle?.addEventListener('click', () => {
-    setTimeout(resizeCanvas, 300); // after CSS transition
-  });
-  resizeCanvas();
+  // Canvas + renderer (responsive resize wired internally)
+  const renderer = setupCanvasAndRenderer();
 
   const input = new InputManager();
 
