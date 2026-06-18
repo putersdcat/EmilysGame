@@ -1094,7 +1094,9 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  handleMovement(state, input);  // --- Interaction (Space, edge-detected) ---
+  handleMovement(state, input);
+
+  // --- Interaction (Space, edge-detected) ---
   if (justKeys.interact && !state.player.isMoving) {
     // Try facing direction first, then check all 4 neighbors as fallback
     // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
