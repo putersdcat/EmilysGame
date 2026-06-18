@@ -142,6 +142,10 @@ import { showWelcomeSplash } from './game/welcome-splash';
 // to ./game/bug-report.ts. Bundles canvas screenshot + game state into
 // a downloadable JSON. Pure function (no module state, no side effects).
 import { captureBugReport } from './game/bug-report';
+// B5 micro-slice 11.24 (#268): shouldAutoRead + autoReadQuizQuestion
+// extracted from main.ts to ./game/auto-read.ts. Decides whether to
+// auto-read quiz questions aloud based on age band + voice settings.
+import { shouldAutoRead as _shouldAutoRead, autoReadQuizQuestion as _autoReadQuizQuestion } from './game/auto-read';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -526,27 +530,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 }
 
 // ─── Quiz Accessibility Helpers (#94) ────────────────────────
-
-/** Should auto-read be enabled based on player's age band? */
-function _shouldAutoRead(state: GameState): boolean {
-  const band = state.ageProfile.ageBand;
-  // Auto-read for young bands (5-7 always, 8-10 if voice enabled)
-  if (band === '5-7') return true;
-  if (band === '8-10' && state.voice.settings.enabled) return true;
-  return false;
-}
-
-/** Auto-read the current quiz question aloud via TTS (#94) */
-function _autoReadQuizQuestion(state: GameState): void {
-  if (!_shouldAutoRead(state)) return;
-  if (!state.quiz.active || !state.quiz.displayText) return;
-  // Small delay so quiz overlay renders first
-  setTimeout(() => {
-    if (state.quiz.active) {
-      speakLine(state.voice, state.quiz.displayText, null);
-    }
-  }, 300);
-}
+// B5 micro-slice 11.24 (#268): _shouldAutoRead + _autoReadQuizQuestion
+// extracted to ./game/auto-read.ts. Aliased imports retain call-site
+// stability (no rename of all 2 call sites).
 
 // ─── Update ──────────────────────────────────────────────────
 
