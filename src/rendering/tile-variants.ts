@@ -81,7 +81,8 @@ export function getObjectCells(key: string, chunk: ChunkData): ObjectCellRef[] {
  */
 export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fence' | 'water' | 'bridge' | TileType | string {
   const t = tileType as string;
-  if (t === 'stone_wall' || t === 'stone_wall_red_clinker' || t === 'stone_wall_mud_brick' || t === 'stone_wall_sandstone') {
+  if (t === 'stone_wall' || t === 'stone_wall_red_clinker' || t === 'stone_wall_mud_brick'
+    || t === 'stone_wall_sandstone' || t === 'stone_wall_cottage_foundation') {
     return 'wall';
   }
   switch (tileType) {
@@ -89,6 +90,8 @@ export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fen
     case 'door_gate':
     case 'quiz_gate':
     case 'homestead_wall':
+    case 'homestead_wall_plaster':
+    case 'homestead_wall_planks':
     case 'cathedral_wall':
       return 'wall';
     case 'wooden_fence':

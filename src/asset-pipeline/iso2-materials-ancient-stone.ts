@@ -254,3 +254,9 @@ export const Limestone = createAncientStoneMaterial({
   mortar: '#706c5d', joint: 'rgba(58,55,47,0.30)', rimLight: 'rgba(255,252,228,0.14)',
   pit: 'rgba(92,86,70,0.12)', rBase: 190, gBase: 184, bBase: 158, variance: 15, salt: 2301,
 });
+
+/** Rural foundation stone (experiment cottage-stone-foundation.ts). */
+export const CottageStoneFoundation = createAncientStoneMaterial({
+  mortar: '#6d6458', joint: 'rgba(78,70,60,0.28)', rimLight: 'rgba(255,247,228,0.12)',
+  pit: 'rgba(84,74,65,0.12)', rBase: 160, gBase: 151, bBase: 136, variance: 14, salt: 6205,
+});

@@ -18,7 +18,8 @@ import {
   type IsoFeatureVariant as FeatureVariant,
 } from '../types/iso-renderer.types.js';
 import {
-  DarkCathedralStone, MudBrick, RedClinker, SandstoneBrick, StoneBrick, TimberFrameWall,
+  CottageStoneFoundation, DarkCathedralStone, MudBrick, PlasterWhitewashWall,
+  RedClinker, RoughWoodPlankWall, SandstoneBrick, StoneBrick, TimberFrameWall,
 } from '../asset-pipeline/iso2-materials.js';
 import {
   cathedralWallSvg,
@@ -98,7 +99,16 @@ export function sandstoneBrickWallNano(variant: FeatureVariant = 'straight-h', z
   return brickPaletteWallNano(SandstoneBrick, variant, zOffset);
 }
 
-export function homesteadWallNano(
+interface HomesteadFaceMaterial {
+  svgTop(): string;
+  svgTopV(): string;
+  svgSouth(): string;
+  svgEast(): string;
+  svgEnd(): string;
+}
+
+function homesteadPaletteWallNano(
+  material: HomesteadFaceMaterial,
   variant: FeatureVariant = 'isolated',
   zOffset = 8,
 ): IsoNanoTile {
@@ -109,15 +119,41 @@ export function homesteadWallNano(
     svg: homesteadWallSvg(variant),
     sideTextureSvg: homesteadWallSvg(variant),
     topTextureSvg: homesteadWallTopSvg(variant),
-    topFaceTextureSvg: TimberFrameWall.svgTop(),
-    topFaceTextureSvgV: TimberFrameWall.svgTopV(),
-    southFaceTextureSvg: TimberFrameWall.svgSouth(),
-    eastFaceTextureSvg: TimberFrameWall.svgEast(),
-    endFaceTextureSvg: TimberFrameWall.svgEnd(),
+    topFaceTextureSvg: material.svgTop(),
+    topFaceTextureSvgV: material.svgTopV(),
+    southFaceTextureSvg: material.svgSouth(),
+    eastFaceTextureSvg: material.svgEast(),
+    endFaceTextureSvg: material.svgEnd(),
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
   };
+}
+
+export function homesteadWallNano(
+  variant: FeatureVariant = 'isolated',
+  zOffset = 8,
+): IsoNanoTile {
+  return homesteadPaletteWallNano(TimberFrameWall, variant, zOffset);
+}
+
+export function plasterHomesteadWallNano(variant: FeatureVariant = 'straight-h', zOffset = 8): IsoNanoTile {
+  return homesteadPaletteWallNano(PlasterWhitewashWall, variant, zOffset);
+}
+
+export function plankHomesteadWallNano(variant: FeatureVariant = 'straight-h', zOffset = 8): IsoNanoTile {
+  return homesteadPaletteWallNano(RoughWoodPlankWall, variant, zOffset);
+}
+
+function cottageFoundationWallNano(variant: FeatureVariant = 'straight-h', zOffset = 4): IsoNanoTile {
+  const faces = {
+    svgTop: () => CottageStoneFoundation.svgTop(),
+    svgTopV: () => CottageStoneFoundation.svgTop(),
+    svgSouth: () => CottageStoneFoundation.svgSouth(),
+    svgEast: () => CottageStoneFoundation.svgEast(),
+    svgEnd: () => CottageStoneFoundation.svgEast(),
+  };
+  return brickPaletteWallNano(faces, variant, zOffset);
 }
 
 export function cathedralWallNano(
@@ -280,6 +316,12 @@ export function getNanoStack(
       stack = [sandstoneBrickWallNano(variant ?? 'straight-h')]; break;
     case 'homestead_wall':
       stack = [homesteadWallNano(variant ?? 'isolated')]; break;
+    case 'homestead_wall_plaster':
+      stack = [plasterHomesteadWallNano(variant ?? 'straight-h')]; break;
+    case 'homestead_wall_planks':
+      stack = [plankHomesteadWallNano(variant ?? 'straight-h')]; break;
+    case 'stone_wall_cottage_foundation':
+      stack = [cottageFoundationWallNano(variant ?? 'straight-h')]; break;
     case 'cathedral_wall':
       stack = [cathedralWallNano(variant ?? 'isolated')]; break;
     case 'wooden_fence':
@@ -306,7 +348,10 @@ export function getNanoStack(
 export function hasNanoRenderer(tileType: string): boolean {
   return tileType === 'stone_wall' || tileType === 'stone_wall_red_clinker'
     || tileType === 'stone_wall_mud_brick' || tileType === 'stone_wall_sandstone'
+    || tileType === 'stone_wall_cottage_foundation'
     || tileType === 'wooden_fence' || tileType === 'door_gate'
     || tileType === 'quiz_gate' || tileType === 'water' || tileType === 'bridge'
-    || tileType === 'troll_bridge' || tileType === 'homestead_wall' || tileType === 'cathedral_wall';
+    || tileType === 'troll_bridge' || tileType === 'homestead_wall'
+    || tileType === 'homestead_wall_plaster' || tileType === 'homestead_wall_planks'
+    || tileType === 'cathedral_wall';
 }
