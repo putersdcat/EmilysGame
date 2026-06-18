@@ -5,6 +5,50 @@ applyTo: "{src/asset-pipeline/iso2-materials.ts,src/engine/iso2-assemblies.ts,sr
 
 # Iso 2.0 Main Engine Port Instructions
 
+## Port-Back Contract (C1 — issue #259)
+
+A "mergeable iso2 module" satisfies **all** of the following:
+
+1. **Source parity** — the module's behavior matches the experiment's behavior
+   for at least one canonical scene (e.g. the 7×7 stone-wall perimeter from
+   `experiment/isometric-2.0/ProgressEvaluations/walls-huggers-iter04.png`).
+2. **No new public API** — consumers import from the existing paths
+   (`src/asset-pipeline/iso2-materials.ts`, `src/rendering/nano-tile*.ts`,
+   `src/engine/iso2-solver.ts`, `src/engine/iso2-assemblies.ts`). Do not
+   create new top-level modules when an existing one can be extended.
+3. **No re-implementation** — if a helper exists in the experiment
+   (`solver.ts`, `iso-geometry.ts`, `nano-tile.ts`, `textures/`), port the
+   helper **verbatim** into the main engine rather than rewriting the same
+   math in a different style. The port keeps the source-of-truth at
+   `experiment/isometric-2.0/src/`; main is the consumer.
+4. **Visual proof** — every micro-slice commits a PNG checkpoint in
+   `experiment/isometric-2.0/ProgressEvaluations/` (for experiment visuals)
+   **and** a paired main-engine screenshot in `tests/screenshots/`. Both must
+   be reproducible.
+5. **B-series discipline** — extracted sub-modules follow the B-series
+   rules from `.github/instructions/architecture.instructions.md` (soft
+   limit 250 lines, hard 400). If a port pushes a main module past the
+   limit, decompose it as part of the same slice.
+6. **Adapter boundary documented** — when a port can't preserve source
+   parity (e.g. experiment uses an API not exposed in main), add a code
+   comment at the adapter call site explaining the difference and
+   linking to the experiment line.
+7. **No regression in main tests** — `npx tsc --noEmit` clean and
+   `tests/rendering/iso2-*.spec.ts` green before declaring the slice done.
+
+**C1 sequencing** — `#259` (port-back contract + corner-void) gates
+`#257` (C2 render systems), which gates `#256` (C3 walkability), which
+gates `#258` (C4 FPS validation). All C work depends on B5 #268, B6 #272,
+and B9 #272 closed (✅ all closed as of 2026-06-18).
+
+**Reference docs** (kept cross-consistent):
+- `.github/instructions/iso2-main-port.instructions.md` — this file
+- `Docs/Iso2.0-MainEngineIntegrationGuide.md` — narrative companion
+- `AGENTS.md` (planned, see C1) — operating manual section
+
+**If a missing rule surfaces during a port**, add it to this section
+**and** mirror it into the integration guide, not just the issue.
+
 ## Integration Discipline
 
 - Treat `experiment/isometric-2.0/src/` as the source of truth until the main game has feature parity.
