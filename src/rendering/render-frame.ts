@@ -65,6 +65,8 @@ export function renderFrame(
   const _t0 = performance.now();
 
   // World render (WASM if available, JS fallback)
+  // C2.3 (#257): thread player.sinkDepth (set by walk integration in
+  // main.ts) so the JS render path drops the sprite when on rivers.
   renderer.renderAuto(
     state.chunks,
     state.camera,
@@ -72,6 +74,7 @@ export function renderFrame(
     state.player.direction,
     state.egoImg,
     state.ui.showDebug,
+    state.player.sinkDepth ?? 0,
   );
 
   const _t1 = performance.now();

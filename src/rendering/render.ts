@@ -56,6 +56,8 @@ interface DrawCmd {
   // Player-specific fields (reused for flexibility)
   img?: HTMLImageElement | null;
   flipX?: boolean;
+  /** Player sink offset (C2.3, #257): y += sinkPx when standing on neg-Z nano (rivers). */
+  sinkPx?: number;
   shadow?: boolean;
   // Tile-specific fields
   tileType?: TileType;
@@ -233,6 +235,13 @@ export class IsometricRenderer {
     egoPos: { x: number; y: number },
     egoDir: number,
     egoImg: HTMLImageElement | null,
+    /**
+     * Player sink offset in pixels (C2.3, #257). When > 0, the player
+     * sprite is drawn lower on screen, simulating feet-descending on
+     * negative-Z tiles (rivers, trenches). Set by the walk integration
+     * in main.ts from `state.player.sinkDepth`.
+     */
+    playerSinkPx: number = 0,
   ): void {
     // Background fill based on center chunk biome
     const centerKey = `${Math.floor(camera.x / WORLD_CONFIG.chunkSize)},${Math.floor(camera.y / WORLD_CONFIG.chunkSize)}`;
@@ -252,8 +261,8 @@ export class IsometricRenderer {
     // Iterate ONLY visible chunks (viewport culling) — builds draw commands
     this.iterateVisibleChunks(chunks, camera, egoPos, maxCmds);
 
-    // Player draw command
-    this.emitPlayerDrawCmd(camera, egoPos, egoDir, egoImg);
+    // Player draw command (C2.3: applies sinkPx so feet descend on rivers)
+    this.emitPlayerDrawCmd(camera, egoPos, egoDir, egoImg, playerSinkPx);
 
     // Sort the active draw commands by sortKey (back-to-front rendering)
     const count = this.sortDrawCommands();
@@ -276,6 +285,7 @@ export class IsometricRenderer {
     egoPos: { x: number; y: number },
     egoDir: number,
     egoImg: HTMLImageElement | null,
+    sinkPx: number = 0,
   ): void {
     const { x: esx, y: esy } = this.gridToScreen(egoPos.x, egoPos.y, camera);
     const cmd = jsPool[jsPoolIdx++];
@@ -286,6 +296,7 @@ export class IsometricRenderer {
     cmd.scale = 1.0; cmd.tint = 0;
     cmd.img = egoImg;
     cmd.flipX = egoDir < 0;
+    cmd.sinkPx = sinkPx;
   }
 
   /**
@@ -619,11 +630,12 @@ export class IsometricRenderer {
           this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
           break;
         case CMD_PLAYER:
-          this.drawShadow(cmd.sx, cmd.sy, 1.0);
+          // C2.3 (#257): apply sinkPx to drop the player sprite lower on rivers
+          this.drawShadow(cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), 1.0);
           if (cmd.img) {
-            this.drawSprite(cmd.img, cmd.sx, cmd.sy, cmd.scale, cmd.flipX ?? false);
+            this.drawSprite(cmd.img, cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), cmd.scale, cmd.flipX ?? false);
           } else {
-            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), cmd.scale, cmd.tint);
           }
           break;
         case CMD_NPC:
@@ -686,7 +698,15 @@ export class IsometricRenderer {
     egoPos: { x: number; y: number },
     egoDir: number,
     egoImg: HTMLImageElement | null,
+    /** Player sink offset in pixels (C2.3, #257). See render() for details.
+     *  Not yet wired into the WASM build-draw-cmds path; the JS fallback
+     *  (render() → CMD_PLAYER) handles sink fully. */
+    playerSinkPx: number = 0,
   ): void {
+    // (playerSinkPx reserved for the WASM path's per-cmd player sink.
+    // Currently WASM cmds are built without the sink offset; tracked
+    // for the next WASM-bridge pass.)
+    void playerSinkPx;
     // Background fill
     const size = WORLD_CONFIG.chunkSize;
     const centerKey = `${Math.floor(camera.x / size)},${Math.floor(camera.y / size)}`;
@@ -781,6 +801,9 @@ export class IsometricRenderer {
         break;
       }
       case WCMD_PLAYER:
+        // C2.3 (#257): WASM path sinkPx is not yet threaded through
+        // wasmBuildDrawCmds — the player still draws at base Y here.
+        // JS path (case CMD_PLAYER above) handles the sink fully.
         this.drawShadow(cmd.sx, cmd.sy, 1.0);
         if (egoImg) {
           this.drawSprite(egoImg, cmd.sx, cmd.sy, cmd.scale, flipX);
@@ -802,11 +825,13 @@ export class IsometricRenderer {
     egoDir: number,
     egoImg: HTMLImageElement | null,
     showDebug = false,
+    /** Player sink offset in pixels (C2.3, #257). See render() for details. */
+    playerSinkPx: number = 0,
   ): void {
     if (RENDER_CONFIG.useWasmRenderer && isWasmReady()) {
-      this.renderWasm(chunks, camera, egoPos, egoDir, egoImg);
+      this.renderWasm(chunks, camera, egoPos, egoDir, egoImg, playerSinkPx);
     } else {
-      this.render(chunks, camera, egoPos, egoDir, egoImg);
+      this.render(chunks, camera, egoPos, egoDir, egoImg, playerSinkPx);
     }
     // Debug overlay: world unit grid boundaries (after all scene layers)
     if (showDebug) {
