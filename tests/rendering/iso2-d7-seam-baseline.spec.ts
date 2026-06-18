@@ -7,10 +7,9 @@
  * average brightness vs. an interior-tile sample. The dark band is the
  * user-visible "you can see the lines between tiles" problem.
  *
- * Today the seam band is much darker than the interior. Once D.7 lands
- * (seamless 144×144 procedural textures anchored per-cell so adjacent
- * tiles share a continuous pattern), this same test will report
- * `seamDelta < 4` instead of the current ~25.
+ * Pre-D.7 baseline measured delta ~31 (dark per-tile band). After D.7
+ * (world-anchored 144×144 procedural textures, no black seam band) the
+ * same test asserts |seamDelta| < 4.
  *
  * @see Docs/Iso2.0-MainEngineIntegrationGuide.md
  * @see .github/instructions/iso2-main-port.instructions.md
@@ -18,6 +17,9 @@
 
 import { test, expect, Page } from '@playwright/test';
 import { readFile } from 'fs/promises';
+
+/** Must match RENDER_CONFIG.tileHeight / 2 (Iso 2.0 diamond half-height). */
+const ISO_TILE_HALF_H = 64;
 
 const BASE_URL = 'http://localhost:5173/?test=1';
 const SHOT = 'tests/screenshots/iso2-d7-seam-baseline.png';
@@ -71,7 +73,7 @@ async function averageStrip(
   );
 }
 
-test('D.7 baseline: grass patch shows visible per-tile seam band (refs #275)', async ({ page }) => {
+test('D.7: homogeneous grass patch has no per-tile seam band (refs #275)', async ({ page }) => {
   await waitForGame(page);
 
   // Build a 25×25 homogeneous grass patch in the origin chunk and center
@@ -108,19 +110,28 @@ test('D.7 baseline: grass patch shows visible per-tile seam band (refs #275)', a
   await page.waitForTimeout(400);
   await page.screenshot({ path: SHOT, fullPage: false });
 
-  expect(true).toBe(true);
+  // Sample relative to the game canvas center (player is centered on tile 12,12).
+  // Interior = mid-diamond; seam = bottom edge of iso diamond (old black-band site).
+  const layout = await page.evaluate(() => {
+    const canvas = document.querySelector('#gameContainer canvas') as HTMLCanvasElement | null;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      cx: Math.floor(rect.left + rect.width / 2),
+      cy: Math.floor(rect.top + rect.height / 2),
+      scaleY: rect.height / canvas.height,
+    };
+  });
+  expect(layout).not.toBeNull();
 
-  // Sample two horizontal strips near the center of the viewport:
-  // - "interior" is mid-tile vertical (should be the base green)
-  // - "seam" is the bottom of the iso diamond (where the hardcoded
-  //   black band at y=28 of every 32px source tile lands on screen)
-  const viewport = page.viewportSize() ?? { width: 1280, height: 720 };
-  const cx = Math.floor(viewport.width / 2);
-  const cy = Math.floor(viewport.height / 2);
-
+  const halfThPx = Math.floor(ISO_TILE_HALF_H * layout!.scaleY);
   const pngBase64 = (await readFile(SHOT)).toString('base64');
-  const interior = await averageStrip(page, pngBase64, cx - 80, cy - 12, 160);
-  const seam = await averageStrip(page, pngBase64, cx - 80, cy + 12, 160);
+  const interior = await averageStrip(
+    page, pngBase64, layout!.cx - 80, layout!.cy - Math.floor(halfThPx / 2), 160,
+  );
+  const seam = await averageStrip(
+    page, pngBase64, layout!.cx - 80, layout!.cy + halfThPx - 6, 160,
+  );
 
   const interiorLum = (interior.r + interior.g + interior.b) / 3;
   const seamLum = (seam.r + seam.g + seam.b) / 3;
@@ -129,7 +140,9 @@ test('D.7 baseline: grass patch shows visible per-tile seam band (refs #275)', a
   // eslint-disable-next-line no-console
   console.log(
     `[D.7 baseline] interior=${interiorLum.toFixed(1)} seam=${seamLum.toFixed(1)} ` +
-      `delta=${seamDelta.toFixed(1)} (target after D.7 fix: delta < 4; ` +
-      `today: delta > 12 means a visible per-tile seam band)`,
+      `delta=${seamDelta.toFixed(1)} (target: delta < 4)`,
   );
+
+  // Uniform patch: interior and seam band should match (|delta| < 4).
+  expect(Math.abs(seamDelta)).toBeLessThan(4);
 });

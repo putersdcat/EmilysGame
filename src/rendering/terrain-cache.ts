@@ -12,7 +12,8 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getBiome } from '../config/biomes.config';
-import { getIsoTile, getGrassVariant, getDirtVariant, getRockVariant, getSandVariant, getStoneFloorVariant } from './tiles';
+import { getIsoTile } from './tiles';
+import { drawSeamlessTerrainTile, type SeamlessTerrainType } from '../asset-pipeline/world-tile-textures';
 import { drawNanoStack } from './nano-tile';
 import { getNanoStack } from './nano-tile-defs';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
@@ -106,15 +107,9 @@ export function getCachedTerrain(
       const globalCY = chunk.chunkY * SIZE + cy;
 
       if (def.tileType) {
-        // Use tile variants for visual variety (grass/dirt/rock have multiple patterns)
-        let tileCanvas: HTMLCanvasElement | undefined;
-        if (def.tileType === 'grass') {
-          tileCanvas = getGrassVariant(globalCX, globalCY);
-        } else if (def.tileType === 'water') {
+        if (def.tileType === 'water') {
           // Native Iso 2.0 water is a negative-Z nano cut into a grass/shore base.
-          // Draw the local grass underlay first, then the connected water stack.
-          tileCanvas = getGrassVariant(globalCX, globalCY);
-          if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
+          drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
           const variant = inferWaterVariant(chunk, cx, cy, allChunks);
           const waterStack = getNanoStack('water', variant);
           if (waterStack) {
@@ -122,11 +117,9 @@ export function getCachedTerrain(
             if (!res.allImagesLoaded) allImagesLoaded = false;
           }
           continue;
-        } else if (def.tileType === 'bridge') {
-          // Bridge tiles are base-layer in gameplay, but visually they are a
-          // nano deck over the connected negative-Z water channel.
-          tileCanvas = getGrassVariant(globalCX, globalCY);
-          if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
+        }
+        if (def.tileType === 'bridge') {
+          drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
           const variant = inferBridgeVariant(chunk, cx, cy, allChunks);
           const waterStack = getNanoStack('water', variant);
           if (waterStack) {
@@ -139,19 +132,22 @@ export function getCachedTerrain(
             if (!res.allImagesLoaded) allImagesLoaded = false;
           }
           continue;
-        } else if (def.tileType === 'dirt') {
-          tileCanvas = getDirtVariant(globalCX, globalCY);
-        } else if (def.tileType === 'rock') {
-          tileCanvas = getRockVariant(globalCX, globalCY);
-        } else if (def.tileType === 'sand') {
-          tileCanvas = getSandVariant(globalCX, globalCY);
-        } else if (def.tileType === 'stone_floor') {
-          tileCanvas = getStoneFloorVariant(globalCX, globalCY);
-        } else {
-          tileCanvas = getIsoTile(def.tileType);
         }
-        if (tileCanvas) {
-          ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
+        const seamlessTypes: readonly SeamlessTerrainType[] = [
+          'grass', 'dirt', 'rock', 'sand', 'stone_floor',
+        ];
+        if (seamlessTypes.includes(def.tileType as SeamlessTerrainType)) {
+          drawSeamlessTerrainTile(
+            ctx,
+            def.tileType as SeamlessTerrainType,
+            globalCX,
+            globalCY,
+            lsx,
+            lsy,
+          );
+        } else {
+          const tileCanvas = getIsoTile(def.tileType);
+          if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
         }
       } else {
         const sprite = getEmojiSprite(def.emoji, biome.tintHue);
