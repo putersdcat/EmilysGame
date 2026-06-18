@@ -4,19 +4,18 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, PLAYER_CONFIG } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
-import { isTeslaMode } from './game/platform';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { loadCharacterSprite } from './asset-pipeline/sprites';
 import { feedEntropy } from './engine/gen';
 import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
-import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons } from './ui/ui';
+import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
 // B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
 // to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
 // used as a wireHudButtons callback.
@@ -28,9 +27,14 @@ import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons } from
 // extracted to ./game/audio-bootstrap.ts. bootstrapAudio(state) kicks
 // off both pipelines as fire-and-forget; oscillator fallbacks cover
 // the loading window so the game loop can start in parallel.
-import { makeSlotSaveHandler, makeSlotLoadHandler, makeSlotDeleteHandler } from './game/slot-actions';
+// B5 micro-slice 11.43 (#268): post-init HUD wiring + debug surface +
+// startup toasts extracted to ./game/startup-hud.ts. wireStartupHud()
+// wraps the fog-pref restore, Tesla badge, wireHudButtons() with slot
+// action handlers, __gameDebug surface, welcome toasts, and wireHudEvents().
+// (B5.43 — make*Handler usage moved to ./game/startup-hud.ts.)
 import { runNewGameFlow, loadSlotIntoState } from './game/new-game-flow';
 import { bootstrapAudio } from './game/audio-bootstrap';
+import { wireStartupHud } from './game/startup-hud';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -52,7 +56,6 @@ import { showOptionsOverlay } from './game/options-overlay';
 // and is imported directly by debug-api.ts (no DI needed).
 import { getNpcPersona } from './config/npc.config';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
-import { isWasmReady } from './rendering/wasm-bridge';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 
 import { searchBookArticles } from './ui/book-content';
@@ -61,7 +64,7 @@ import { getCycleProgress } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
 import { isFlashlightOn } from './rendering/local-lights';
 // invalidateShadowCache now called from input-extra-keys.ts (B5.20)
-import { updateFog, setFogEnabled } from './rendering/fog';
+import { updateFog } from './rendering/fog';
 import {
   updateWildlife, interactWithWildlife,
 } from './game/wildlife';
@@ -190,12 +193,9 @@ import {
 // factory + save overrides + chunk generation.
 import { type GameState } from './game/game-state';
 // B5 micro-slice 11.5 (#268): __gameDebug surface extracted to
-// ./game/debug-api.ts. main() calls createGameDebug() once and assigns
-// the result to window.__gameDebug.
-import { createGameDebug } from './game/debug-api';
+// ./game/debug-api.ts. (B5.43 — usage moved to ./game/startup-hud.ts.)
 // B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
-// ./game/dom-wiring.ts. main() calls wireHudEvents() once after state init.
-import { wireHudEvents } from './game/dom-wiring';
+// ./game/dom-wiring.ts. (B5.43 — usage moved to ./game/startup-hud.ts.)
 
 // ─── Game State ──────────────────────────────────────────────
 // GameState interface and createGameState factory are in ./game/game-state.ts
@@ -1120,49 +1120,8 @@ async function main(): Promise<void> {
   setupExtraKeys(state, input, { doSave, captureBugReport });
   _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
-  // Restore fog-of-war preference from localStorage (#127)
-  const fogPref = localStorage.getItem('emilys_game_fog_enabled');
-  if (fogPref !== null) {
-    setFogEnabled(fogPref === '1');
-  }
-
-  // Apply Tesla mode badge on startup (#185)
-  if (isTeslaMode()) {
-    const teslaBadge = document.getElementById('teslaBadge');
-    if (teslaBadge) teslaBadge.classList.add('active');
-  }
-
-  // Wire HTML HUD buttons (slot actions extracted to ./game/slot-actions.ts, #268 B5.40)
-  wireHudButtons(
-    () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
-    () => { state.ui.showDebug = !state.ui.showDebug; },
-    () => { doSave(state); addToast(state.ui, 'Game saved!', '#4caf50', 1500); },
-    makeSlotSaveHandler(state),
-    makeSlotLoadHandler(state),
-    makeSlotDeleteHandler(state),
-  );
-
-  // Debug hooks for testing (available via window.__gameDebug)
-  // B5 micro-slice 11.5 (#268): __gameDebug surface extracted to
-  // ./game/debug-api.ts. See createGameDebug() for the full API.
-  (window as any).__gameDebug = createGameDebug({
-    state,
-    input,
-    doSave,
-    checkCosmeticUnlocks,
-    shouldAutoRead: _shouldAutoRead,
-  });
-
-  addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
-  if (isTestMode()) {
-    addToast(state.ui, '🧪 Test mode — LLM disabled', '#ffaa00', 3000);
-  } else if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
-    addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
-  }
-
-  // B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
-  // ./game/dom-wiring.ts. See wireHudEvents() for the full wiring.
-  wireHudEvents({ state, input, onBookClose: () => { state.paused = false; } });
+  // HUD wiring + debug surface + startup toasts (#268 B5.43)
+  wireStartupHud(state, input);
 
   // ─── Main Menu / New Game Flow ─────────────────────────────
   if (!isTestMode()) {
