@@ -135,6 +135,9 @@ import { resetGameState } from './game/game-reset';
 // lastBubbleDiffTier "last seen" state moved with the function.
 // resetBubbleTriggerState() is called by resetGameState (in game-reset.ts).
 import { checkBubbleTriggers } from './game/bubble-triggers';
+// B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome + FIRST_RUN_KEY
+// extracted from main.ts to ./game/welcome-splash.ts. Pure DOM overlay.
+import { showWelcomeSplash } from './game/welcome-splash';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -1252,30 +1255,8 @@ function captureBugReport(state: GameState, description: string): void {
 }
 
 // ─── Welcome Splash (#117) ──────────────────────────────────
-
-const FIRST_RUN_KEY = 'emilys_game_first_run';
-
-function shouldShowWelcome(): boolean {
-  return !localStorage.getItem(FIRST_RUN_KEY);
-}
-
-function showWelcomeSplash(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!shouldShowWelcome()) {
-      resolve();
-      return;
-    }
-
-    const splash = document.getElementById('welcomeSplash')!;
-    splash.style.display = 'flex';
-
-    document.getElementById('welcomeDismiss')!.onclick = () => {
-      splash.style.display = 'none';
-      localStorage.setItem(FIRST_RUN_KEY, '1');
-      resolve();
-    };
-  });
-}
+// B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome
+// extracted to ./game/welcome-splash.ts. FIRST_RUN_KEY moved with them.
 
 // B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
 // (76 lines). Handlers for save/options/bug-report/main-menu are wired
