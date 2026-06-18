@@ -11,14 +11,13 @@ import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTeslaMode } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
-import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
-import { feedEntropy, restoreEntropyBuffer } from './engine/gen';
+import { loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
+import { feedEntropy } from './engine/gen';
 import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
-import { createInventory } from './game/inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, wireHudButtons, markSaveSlotsDirty } from './ui/ui';
-import { loadGame, saveToSlot, loadFromSlot, deleteSlot } from './game/save';
+import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
+import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons, markSaveSlotsDirty } from './ui/ui';
+import { saveToSlot, loadFromSlot, deleteSlot } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -44,15 +43,13 @@ import { isWasmReady } from './rendering/wasm-bridge';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 
 import { searchBookArticles } from './ui/book-content';
-import { createKnowledgeState, showSubjectSelection, openArticle } from './game/knowledge';
-import { createAgeProfile, setAgeBand } from './game/age-profile';
-import { showCustomizer, createDefaultVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
-import type { AgeBand } from './types/content-pack.types';
+import { showSubjectSelection, openArticle } from './game/knowledge';
+import { showCustomizer } from './ui/customizer';
 import { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
 import { isFlashlightOn } from './rendering/local-lights';
 // invalidateShadowCache now called from input-extra-keys.ts (B5.20)
-import { updateFog, setFogEnabled, deserializeVisited } from './rendering/fog';
+import { updateFog, setFogEnabled } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -75,7 +72,7 @@ import {
   syncBarterQuizDOM, getTradeDialog,
 } from './game/trading';
 import {
-  createPlayerStatus, tickStatus, getDebuffs,
+  tickStatus, getDebuffs,
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
@@ -83,7 +80,7 @@ import {
   setDiarrheaOverlay,
 } from './rendering/debuff-visuals';
 import {
-  createInjuryState, checkHazardInjury, applyWoundQuizBonus,
+  checkHazardInjury, applyWoundQuizBonus,
   getInjurySpeedMult,
 } from './game/injury';
 // B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
@@ -97,8 +94,6 @@ import { startInsectQuiz } from './game/quiz-specials';
 // chains eviction + auto-save on chunk exit.
 import {
   loadChunksOnBoundaryCross,
-  ensureChunksAround,
-  setPendingResolvedCells,
 } from './game/chunk-lifecycle';
 // B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
 // ./game/save-apply.ts. Pure orchestration — sequences deserializers across
@@ -150,14 +145,12 @@ import {
   setLastDialogNpcId,
 } from './game/interaction-handler';
 import {
-  createMusicState, play as musicPlay,
+  play as musicPlay,
   setBiome as musicSetBiome,
-  deserializeMusicSettings,
   initMidiTracks, getTotalTrackCount,
 } from './game/audio/music';
 import {
-  createSfxState, playSfx,
-  deserializeSfxSettings,
+  playSfx,
   initSampledSfxPipeline, updateListenerPosition,
   playFootstep, resetFootstepCounter,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
@@ -167,8 +160,7 @@ import {
 // also moved there (used internally by scanPositionalAudioSources).
 import { scanPositionalAudioSources } from './game/audio/positional-sources';
 import {
-  createVoiceState, speakLine, cancelSpeech,
-  deserializeVoiceSettings,
+  speakLine, cancelSpeech,
 } from './game/audio/npc-voice';
 // B5 micro-slice 11.1 (#268): extra key queue extracted to
 // ./game/input-extra-keys.ts (quiz accessibility, #94).
@@ -180,10 +172,7 @@ import {
 } from './game/input-extra-keys';
 // B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
 // extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
-import {
-  DIARRHEA_CONFIG,
-  createInitialDiarrheaState,
-} from './game/illness';
+import { DIARRHEA_CONFIG } from './game/illness';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
 import {
@@ -191,12 +180,10 @@ import {
   tickExpressionOverride,
 } from './game/expression';
 // B5 micro-slice 11.4 (#268): GameState interface + createGameState factory
-// extracted to ./game/game-state.ts. init() uses the factory instead of
-// the inline 50-line object literal.
-import {
-  createGameState,
-  type GameState,
-} from './game/game-state';
+// extracted to ./game/game-state.ts. B5.38 (#268): state init+save-restore
+// extracted to ./game/state-init.ts. createInitialState() wraps the
+// factory + save overrides + chunk generation.
+import { type GameState } from './game/game-state';
 // B5 micro-slice 11.5 (#268): __gameDebug surface extracted to
 // ./game/debug-api.ts. main() calls createGameDebug() once and assigns
 // the result to window.__gameDebug.
@@ -266,9 +253,15 @@ function maybeLoadChunks(state: GameState): void {
 // B5 micro-slice 11.37 (#268): asset + content + WASM pre-roll extracted
 // to ./game/asset-bootstrap.ts. bootstrapAssets() awaits SVG tile preload,
 // runs sync pre-renders, then awaits book content + WASM (with fallback).
+// B5 micro-slice 11.38 (#268): state init + save restore extracted to
+// ./game/state-init.ts. createInitialState() loads save, builds state via
+// factory, layers save overrides, applies starter items for new games,
+// and generates initial chunks. (debug-api.ts will move the __gameState
+// exposure out in a later slice.)
 import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
 import { bootstrapWordlist } from './game/wordlist-bootstrap';
 import { bootstrapAssets } from './game/asset-bootstrap';
+import { createInitialState } from './game/state-init';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -290,101 +283,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // Asset + content + WASM pre-roll (tile preload blocks render, #82)
   await bootstrapAssets();
 
-  // Load char sprite (initial idle)
-  // Try loading saved game first to get player variation
-  const save = loadGame();
-  const playerVariation = save?.playerVariation 
-    ? deserializeVariation(save.playerVariation) 
-    : (characterVariations[PLAYER_CONFIG.defaultVariation] ?? createDefaultVariation());
-  const egoImg = loadCharacterSprite(playerVariation, 0, false);
-
-  const startX = save?.player.x ?? PLAYER_CONFIG.startPosition.x;
-  const startY = save?.player.y ?? PLAYER_CONFIG.startPosition.y;
-
-  // B5 micro-slice 11.4 (#268): state init via createGameState factory.
-  // Save-specific fields (direction, quizStats, unlockedCosmetics) are
-  // restored after factory returns, keeping the factory pure/default-only.
-  const state: GameState = createGameState({
-    playerVariation,
-    egoImg,
-    startX,
-    startY,
-    quizStats: { answered: 0, correct: 0 },
-    unlockedCosmetics: [],
-    createInventory,
-    createQuizState,
-    createUIState,
-    createKnowledgeState,
-    createTradeState,
-    createPlayerStatus,
-    createInjuryState,
-    createMusicState,
-    createSfxState,
-    createVoiceState,
-    createStreakState,
-    createAgeProfile,
-    createInitialDiarrheaState,
-  });
-  // Restore save-specific fields (factory uses defaults; save overrides)
-  state.player.direction = save?.player.direction ?? 1;
-  state.quizStats = save?.quizStats ?? { answered: 0, correct: 0 };
-  state.unlockedCosmetics = save?.unlockedCosmetics ?? [];
-
-  // Sync unlocked cosmetics to customizer
-  setUnlockedCosmetics(state.unlockedCosmetics);
-
-  // Restore inventory from save
-  if (save?.inventory) {
-    for (const slot of save.inventory) {
-      state.inventory.addItem(slot.itemId, slot.quantity);
-    }
-  }
-
-  // Restore knowledge state from save
-  if (save) {
-    if (save.selectedSubjects) state.knowledge.selectedSubjects = save.selectedSubjects as any;
-    if (save.wordBag) state.knowledge.wordBag = save.wordBag;
-    if (save.readArticles) state.knowledge.readArticles = new Set(save.readArticles);
-    if (save.discoveryPoints) state.knowledge.discoveryPoints = save.discoveryPoints;
-    state.knowledge.subjectsChosen = true;
-    // Restore entropy buffer from auto-save (#4)
-    if (save.entropyBuffer) {
-      restoreEntropyBuffer(save.entropyBuffer);
-    }
-    // Restore music settings (#74)
-    if (save.musicSettings) {
-      state.music.settings = deserializeMusicSettings(save.musicSettings);
-    }
-    // Restore SFX settings (#75)
-    if (save.sfxSettings) {
-      deserializeSfxSettings(state.sfx, save.sfxSettings);
-    }
-    // Restore voice settings (#76)
-    if (save.voiceSettings) {
-      deserializeVoiceSettings(state.voice, save.voiceSettings);
-    }
-    // Restore fog-of-war visited cells (#114)
-    if (save.visitedFog) {
-      deserializeVisited(save.visitedFog);
-    }
-    // Restore age band profile (#92)
-    if (save.ageBand) {
-      setAgeBand(state.ageProfile, save.ageBand as AgeBand);
-    }
-  }
-
-  // Give starter items for new games (#109)
-  if (!save) {
-    state.inventory.addItem('bandage', 3);
-    state.inventory.addItem('snack', 2);
-    state.inventory.addItem('water_flask', 1);
-  }
-
-  // Prepare resolved cells from save for application during chunk generation
-  setPendingResolvedCells(save?.resolvedCells ?? []);
-
-  // Generate initial chunks
-  ensureChunksAround(state);
+  // State init + save restore (creates GameState, generates initial chunks)
+  const { state, hasSaveData } = createInitialState();
 
   // Expose state for debugging / E2E tests
   (window as any).__gameState = state;
@@ -413,7 +313,7 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
     getShopPersona, // #112 themed shop persona lookup
   };
 
-  return { state, renderer, input, hasSaveData: !!save };
+  return { state, renderer, input, hasSaveData };
 }
 
 // ─── Quiz Accessibility Helpers (#94) ────────────────────────
