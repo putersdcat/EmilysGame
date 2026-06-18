@@ -891,6 +891,164 @@ function handleDiarrheaControlLock(state: GameState): boolean {
   return true;
 }
 
+/**
+ * Handle player movement (or idle state) for the current frame.
+ * B5 micro-slice 11.33 (#268): extracted from update() in main.ts.
+ * Manages: speed debuffs, footprint collision, footstep SFX,
+ * sinkDepth (water/river), hazard injury on wall bump,
+ * direction tracking, facing pose, sprite animation, auto-collect,
+ * camera follow, chunk loading.
+ * Sets state.player.isMoving = true/false as a side effect; callers
+ * can read it via state.player.isMoving.
+ */
+function handleMovement(state: GameState, input: InputManager): void {
+// --- Movement ---
+const mv = input.getMovementVector();
+const isMoving = mv.dx !== 0 || mv.dy !== 0;
+
+if (isMoving) {
+  // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
+  const debuffs = getDebuffs(state.status);
+  const injuryMult = getInjurySpeedMult(state.injury);
+  const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
+  const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
+  const dx = mv.dx * effectiveSpeed;
+  const dy = mv.dy * effectiveSpeed;
+  const newX = state.player.x + dx;
+  const newY = state.player.y + dy;
+
+  // Axis-independent collision resolution with footprint (#151, #180)
+  // Try combined move first; if blocked, try each axis independently (wall-sliding)
+  // iso2: pass activeConditions so conditional gates (quiz-gate etc) use isPointWalkableInTile + cond state (per #223/AUTONOMOUS_LOOP.md)
+  let movedX = false;
+  let movedY = false;
+  if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
+    state.player.x = newX;
+    state.player.y = newY;
+    movedX = true;
+    movedY = true;
+  } else {
+    // Try X-only
+    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
+      state.player.x = newX;
+      movedX = true;
+    }
+    // Try Y-only
+    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
+      state.player.y = newY;
+      movedY = true;
+    }
+  }
+
+  if (movedX || movedY) {
+    // Terrain-aware footstep SFX (#108)
+    const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
+    const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
+    const surface = footTileDef?.surface ?? 'grass';
+    playFootstep(state.sfx, surface);
+
+    // iso2 sinkDepth for negative Z (rivers, from walk integration per #223)
+    // Use exact walk logic to detect if in channel
+    const currentCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
+    if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
+      state.player.sinkDepth = 4; // match iso2 nano z for sink visual
+    } else {
+      state.player.sinkDepth = 0;
+    }
+  } else {
+    // Wall bump SFX (#75) — debounce handles frame-spam
+    playSfx(state.sfx, 'wall_bump');
+    // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
+    const hitCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
+    const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+    const hazardDmg = hitDef?.hazardDamage ?? 0;
+    if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
+      const label = hitDef?.hazardLabel ?? 'something sharp';
+      playSfx(state.sfx, 'ouch');
+      triggerHint('ouch_injury');
+      setTransientExpression(state, 'surprised', 3000);
+      triggerInjuryFlash(); // (#109 Phase 3) red screen flash
+      addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
+      // Achievement milestones (#109 Phase 3)
+      if (state.injury.injuryCount === 5) {
+        addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 10) {
+        addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 25) {
+        addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+      }
+    }
+  }
+
+  // Direction (left/right flip)
+  if (mv.dx > 0) state.player.direction = 1;
+  else if (mv.dx < 0) state.player.direction = -1;
+
+  // Track full 2D facing direction for interaction
+  if (mv.dx !== 0 || mv.dy !== 0) {
+    state.player.facingDx = Math.sign(mv.dx);
+    state.player.facingDy = Math.sign(mv.dy);
+  }
+
+  // Determine facing pose from screen-space direction (what the player sees):
+  // Horizontal dominance (left/right keys) → side profile sprite
+  // Vertical dominance (up/down keys) → front (down) or back (up)
+  // Diagonal → use vertical component for front/back
+  const asx = Math.abs(mv.screenDx);
+  const asy = Math.abs(mv.screenDy);
+  if (asx > asy) {
+    state.player.facingPose = 'side';
+  } else if (mv.screenDy < 0) {
+    state.player.facingPose = 'back';
+  } else if (mv.screenDy > 0) {
+    state.player.facingPose = 'front';
+  }
+  // Equal diagonal (asx === asy && both > 0) → keep current facingPose
+
+  state.player.isMoving = true;
+  // Throttle animation: only advance sprite frame every 6th game frame
+  if (state.frameCount % 6 === 0) {
+    state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
+  }
+
+  // Walking sprite - reload when frame or facing pose changes
+  if (state.player.animFrame !== state.lastAnimFrame ||
+      state.player.facingPose !== state.lastFacingPose) {
+    state.egoImg = loadCharacterSprite(
+      state.playerVariation, state.player.animFrame, true, state.player.facingPose,
+    );
+    state.lastAnimFrame = state.player.animFrame;
+    state.lastFacingPose = state.player.facingPose;
+  }
+
+  // Auto-collect walkable items
+  const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
+  if (collected && collected.type === 'collect') {
+    addToast(state.ui, collected.message, '#ffd700', 1200);
+    playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
+  }
+
+  // Camera follow (smooth)
+  state.camera.x += (state.player.x - state.camera.x) * 0.1;
+  state.camera.y += (state.player.y - state.camera.y) * 0.1;
+
+  // Ensure chunks ONLY on chunk boundary crossing
+  maybeLoadChunks(state);
+} else {
+  state.player.isMoving = false;
+  resetFootstepCounter(); // Reset footstep cadence when idle (#108)
+  // Idle sprite - only reload once when stopping (preserves facing pose)
+  if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
+    state.player.animFrame = 0;
+    state.egoImg = loadCharacterSprite(state.playerVariation, 0, false, state.player.facingPose);
+    state.lastAnimFrame = 0;
+    state.lastFacingPose = state.player.facingPose;
+  }
+}
+
+
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -936,152 +1094,8 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  // --- Movement ---
-  const mv = input.getMovementVector();
-  const isMoving = mv.dx !== 0 || mv.dy !== 0;
-
-  if (isMoving) {
-    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
-    const debuffs = getDebuffs(state.status);
-    const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
-    const dx = mv.dx * effectiveSpeed;
-    const dy = mv.dy * effectiveSpeed;
-    const newX = state.player.x + dx;
-    const newY = state.player.y + dy;
-
-    // Axis-independent collision resolution with footprint (#151, #180)
-    // Try combined move first; if blocked, try each axis independently (wall-sliding)
-    // iso2: pass activeConditions so conditional gates (quiz-gate etc) use isPointWalkableInTile + cond state (per #223/AUTONOMOUS_LOOP.md)
-    let movedX = false;
-    let movedY = false;
-    if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
-      state.player.x = newX;
-      state.player.y = newY;
-      movedX = true;
-      movedY = true;
-    } else {
-      // Try X-only
-      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
-        state.player.x = newX;
-        movedX = true;
-      }
-      // Try Y-only
-      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
-        state.player.y = newY;
-        movedY = true;
-      }
-    }
-
-    if (movedX || movedY) {
-      // Terrain-aware footstep SFX (#108)
-      const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
-      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
-      const surface = footTileDef?.surface ?? 'grass';
-      playFootstep(state.sfx, surface);
-
-      // iso2 sinkDepth for negative Z (rivers, from walk integration per #223)
-      // Use exact walk logic to detect if in channel
-      const currentCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
-      if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
-        state.player.sinkDepth = 4; // match iso2 nano z for sink visual
-      } else {
-        state.player.sinkDepth = 0;
-      }
-    } else {
-      // Wall bump SFX (#75) — debounce handles frame-spam
-      playSfx(state.sfx, 'wall_bump');
-      // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
-      const hitCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
-      const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
-      const hazardDmg = hitDef?.hazardDamage ?? 0;
-      if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
-        const label = hitDef?.hazardLabel ?? 'something sharp';
-        playSfx(state.sfx, 'ouch');
-        triggerHint('ouch_injury');
-        setTransientExpression(state, 'surprised', 3000);
-        triggerInjuryFlash(); // (#109 Phase 3) red screen flash
-        addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
-        // Achievement milestones (#109 Phase 3)
-        if (state.injury.injuryCount === 5) {
-          addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 10) {
-          addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 25) {
-          addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
-        }
-      }
-    }
-
-    // Direction (left/right flip)
-    if (mv.dx > 0) state.player.direction = 1;
-    else if (mv.dx < 0) state.player.direction = -1;
-
-    // Track full 2D facing direction for interaction
-    if (mv.dx !== 0 || mv.dy !== 0) {
-      state.player.facingDx = Math.sign(mv.dx);
-      state.player.facingDy = Math.sign(mv.dy);
-    }
-
-    // Determine facing pose from screen-space direction (what the player sees):
-    // Horizontal dominance (left/right keys) → side profile sprite
-    // Vertical dominance (up/down keys) → front (down) or back (up)
-    // Diagonal → use vertical component for front/back
-    const asx = Math.abs(mv.screenDx);
-    const asy = Math.abs(mv.screenDy);
-    if (asx > asy) {
-      state.player.facingPose = 'side';
-    } else if (mv.screenDy < 0) {
-      state.player.facingPose = 'back';
-    } else if (mv.screenDy > 0) {
-      state.player.facingPose = 'front';
-    }
-    // Equal diagonal (asx === asy && both > 0) → keep current facingPose
-
-    state.player.isMoving = true;
-    // Throttle animation: only advance sprite frame every 6th game frame
-    if (state.frameCount % 6 === 0) {
-      state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
-    }
-
-    // Walking sprite - reload when frame or facing pose changes
-    if (state.player.animFrame !== state.lastAnimFrame ||
-        state.player.facingPose !== state.lastFacingPose) {
-      state.egoImg = loadCharacterSprite(
-        state.playerVariation, state.player.animFrame, true, state.player.facingPose,
-      );
-      state.lastAnimFrame = state.player.animFrame;
-      state.lastFacingPose = state.player.facingPose;
-    }
-
-    // Auto-collect walkable items
-    const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
-    if (collected && collected.type === 'collect') {
-      addToast(state.ui, collected.message, '#ffd700', 1200);
-      playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
-    }
-
-    // Camera follow (smooth)
-    state.camera.x += (state.player.x - state.camera.x) * 0.1;
-    state.camera.y += (state.player.y - state.camera.y) * 0.1;
-
-    // Ensure chunks ONLY on chunk boundary crossing
-    maybeLoadChunks(state);
-  } else {
-    state.player.isMoving = false;
-    resetFootstepCounter(); // Reset footstep cadence when idle (#108)
-    // Idle sprite - only reload once when stopping (preserves facing pose)
-    if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
-      state.player.animFrame = 0;
-      state.egoImg = loadCharacterSprite(state.playerVariation, 0, false, state.player.facingPose);
-      state.lastAnimFrame = 0;
-      state.lastFacingPose = state.player.facingPose;
-    }
-  }
-
-  // --- Interaction (Space, edge-detected) ---
-  if (justKeys.interact && !isMoving) {
+  handleMovement(state, input);  // --- Interaction (Space, edge-detected) ---
+  if (justKeys.interact && !state.player.isMoving) {
     // Try facing direction first, then check all 4 neighbors as fallback
     // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
     const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
