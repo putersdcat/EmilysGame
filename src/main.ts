@@ -56,9 +56,7 @@ import { searchBookArticles, initBookContent, getBookContentStats } from './ui/b
 import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
-import { getCosmeticById } from './config/cosmetics.config';
 import type { AgeBand } from './types/content-pack.types';
-import { checkAllUnlocks, type ProgressionData } from './config/cosmetics.config';
 import { updateAndRenderParticles } from './rendering/particles';
 import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
 import { updateAndRenderWeather, getWeatherInfo, didLightningStrike } from './rendering/weather';
@@ -146,6 +144,10 @@ import { captureBugReport } from './game/bug-report';
 // extracted from main.ts to ./game/auto-read.ts. Decides whether to
 // auto-read quiz questions aloud based on age band + voice settings.
 import { shouldAutoRead as _shouldAutoRead, autoReadQuizQuestion as _autoReadQuizQuestion } from './game/auto-read';
+// B5 micro-slice 11.25 (#268): checkCosmeticUnlocks extracted from main.ts
+// to ./game/cosmetic-unlocks.ts. Checks quiz + wildlife progression against
+// the unlock table and grants new cosmetics (with toasts).
+import { checkCosmeticUnlocks } from './game/cosmetic-unlocks';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -1150,26 +1152,9 @@ function update(state: GameState, input: InputManager): void {
 // debug-api as a function reference.
 
 // ─── Cosmetic Unlock Check (#66) ────────────────────────────────
-/** Check progression and grant newly unlocked cosmetics */
-function checkCosmeticUnlocks(state: GameState): void {
-  const progress: ProgressionData = {
-    quizCorrect: state.quizStats.correct,
-    quizAnswered: state.quizStats.answered,
-    wildlifeDiscovered: getWildlifeStats().discovered,
-  };
-  const newUnlocks = checkAllUnlocks(progress, new Set(state.unlockedCosmetics));
-  if (newUnlocks.length > 0) {
-    state.unlockedCosmetics.push(...newUnlocks);
-    setUnlockedCosmetics(state.unlockedCosmetics);
-    // Show toast for each unlock
-    for (const id of newUnlocks) {
-      const cosmetic = getCosmeticById(id);
-      if (cosmetic) {
-        addToast(state.ui, `🔓 New cosmetic unlocked: ${cosmetic.name}!`, '#ffab40', 4000);
-      }
-    }
-  }
-}
+// B5 micro-slice 11.25 (#268): checkCosmeticUnlocks extracted to
+// ./game/cosmetic-unlocks.ts. Pure side-effecting function that
+// checks progression and grants new cosmetics with toasts.
 
 // ─── Menu System ───────────────────────────────────────────────────
 // TODO: DOC - menu flow state diagram
