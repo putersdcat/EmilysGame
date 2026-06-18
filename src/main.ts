@@ -138,6 +138,10 @@ import { checkBubbleTriggers } from './game/bubble-triggers';
 // B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome + FIRST_RUN_KEY
 // extracted from main.ts to ./game/welcome-splash.ts. Pure DOM overlay.
 import { showWelcomeSplash } from './game/welcome-splash';
+// B5 micro-slice 11.23 (#268): captureBugReport extracted from main.ts
+// to ./game/bug-report.ts. Bundles canvas screenshot + game state into
+// a downloadable JSON. Pure function (no module state, no side effects).
+import { captureBugReport } from './game/bug-report';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -1210,49 +1214,9 @@ function checkCosmeticUnlocks(state: GameState): void {
 // orchestration. No module-level state moves.
 
 // ─── Bug Report Capture (#117) ──────────────────────────────
-
-function captureBugReport(state: GameState, description: string): void {
-  // Capture canvas screenshot
-  const canvas = document.querySelector('#gameContainer canvas') as HTMLCanvasElement | null;
-  const screenshotDataUrl = canvas ? canvas.toDataURL('image/png') : '';
-
-  // Build metadata
-  const cs = WORLD_CONFIG.chunkSize;
-  const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
-  const chunk = state.chunks.get(cKey);
-  const metadata = {
-    timestamp: new Date().toISOString(),
-    description,
-    player: {
-      x: Math.round(state.player.x * 100) / 100,
-      y: Math.round(state.player.y * 100) / 100,
-      biome: chunk?.biomeName ?? 'unknown',
-      biomeId: chunk?.biomeId ?? -1,
-    },
-    status: { ...state.status },
-    inventory: state.inventory.serialize().map((s) => ({ id: s.itemId, qty: s.quantity })),
-    timeOfDay: getCycleProgress(),
-    frameCount: state.frameCount,
-    platform: navigator.userAgent,
-  };
-
-  // Bundle into a downloadable JSON + embedded screenshot
-  const report = {
-    version: '1.0',
-    ...metadata,
-    screenshot: screenshotDataUrl,
-  };
-
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `bug-report-${Date.now()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+// B5 micro-slice 11.23 (#268): captureBugReport extracted to
+// ./game/bug-report.ts. Bundles canvas screenshot + game state into
+// a downloadable JSON. Pure function (no module state).
 
 // ─── Welcome Splash (#117) ──────────────────────────────────
 // B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome
