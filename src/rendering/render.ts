@@ -714,59 +714,80 @@ export class IsometricRenderer {
 
     for (let i = 0; i < cmds.length; i++) {
       const cmd = cmds[i];
-      const hasShadow = (cmd.flags & 1) !== 0;
       const flipX = (cmd.flags & 2) !== 0;
+      this.executeWasmDrawCmd(cmd, egoImg, flipX);
+    }
+  }
 
-      switch (cmd.type) {
-        case WCMD_TILE: {
-          // Skip base terrain tiles (already cached); draw elevated tiles
-          const tileDef = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
-          if (tileDef && tileDef.layer === 'base') break; // cached
-          if (hasShadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
-          if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
-          break;
-        }
-        case WCMD_EMOJI: {
-          const def = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
-          if (def) {
-            if (def.layer === 'base') break; // base emoji terrain is also cached
-            // SVG asset sprite (#115) — use default variant in WASM path
-            const sprite = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
-            if (sprite) {
-              this.drawAssetCanvas(sprite, cmd.sx, cmd.sy, cmd.scale);
-            } else {
-              this.drawEmoji(def.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
-            }
-          }
-          break;
-        }
-        case WCMD_SHADOW_EMOJI: {
-          this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
-          const def2 = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
-          if (def2) {
-            const sprite2 = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
-            if (sprite2) {
-              this.drawAssetCanvas(sprite2, cmd.sx, cmd.sy, cmd.scale);
-            } else {
-              this.drawEmoji(def2.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
-            }
-          }
-          break;
-        }
-        case WCMD_ITEM: {
-          const itemDef = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
-          if (itemDef) this.drawEmoji(itemDef.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
-          break;
-        }
-        case WCMD_PLAYER:
-          this.drawShadow(cmd.sx, cmd.sy, 1.0);
-          if (egoImg) {
-            this.drawSprite(egoImg, cmd.sx, cmd.sy, cmd.scale, flipX);
-          } else {
-            this.drawEmoji('🧑', cmd.sx, cmd.sy, cmd.scale, 0);
-          }
-          break;
+  /**
+   * Dispatch a single WASM-computed draw command to the appropriate
+   * Canvas API call. Extracted from `renderWasm` in B6.7 (#272) so the
+   * outer loop stays readable and each WASM command type has its own
+   * self-contained case.
+   *
+   * Cases (WASM-only):
+   *   - WCMD_TILE: skip base terrain (cached); draw elevated tiles
+   *   - WCMD_EMOJI: SVG asset sprite (#115) or emoji fallback
+   *   - WCMD_SHADOW_EMOJI: shadow + asset sprite or emoji
+   *   - WCMD_ITEM: collectible emoji
+   *   - WCMD_PLAYER: shadow + sprite or 🧑 fallback
+   */
+  private executeWasmDrawCmd(
+    cmd: ReturnType<typeof wasmBuildDrawCmds>[number],
+    egoImg: HTMLImageElement | null,
+    flipX: boolean,
+  ): void {
+    const hasShadow = (cmd.flags & 1) !== 0;
+
+    switch (cmd.type) {
+      case WCMD_TILE: {
+        // Skip base terrain tiles (already cached); draw elevated tiles
+        const tileDef = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+        if (tileDef && tileDef.layer === 'base') break; // cached
+        if (hasShadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+        if (cmd.tileType) this.drawTile(cmd.tileType, cmd.sx, cmd.sy);
+        break;
       }
+      case WCMD_EMOJI: {
+        const def = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+        if (def) {
+          if (def.layer === 'base') break; // base emoji terrain is also cached
+          // SVG asset sprite (#115) — use default variant in WASM path
+          const sprite = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
+          if (sprite) {
+            this.drawAssetCanvas(sprite, cmd.sx, cmd.sy, cmd.scale);
+          } else {
+            this.drawEmoji(def.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          }
+        }
+        break;
+      }
+      case WCMD_SHADOW_EMOJI: {
+        this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+        const def2 = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+        if (def2) {
+          const sprite2 = cmd.assetKey ? getAssetSprite(cmd.assetKey, cmd.tint) : undefined;
+          if (sprite2) {
+            this.drawAssetCanvas(sprite2, cmd.sx, cmd.sy, cmd.scale);
+          } else {
+            this.drawEmoji(def2.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+          }
+        }
+        break;
+      }
+      case WCMD_ITEM: {
+        const itemDef = cmd.assetKey ? ASSET_DEFS[cmd.assetKey] : null;
+        if (itemDef) this.drawEmoji(itemDef.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+        break;
+      }
+      case WCMD_PLAYER:
+        this.drawShadow(cmd.sx, cmd.sy, 1.0);
+        if (egoImg) {
+          this.drawSprite(egoImg, cmd.sx, cmd.sy, cmd.scale, flipX);
+        } else {
+          this.drawEmoji('🧑', cmd.sx, cmd.sy, cmd.scale, 0);
+        }
+        break;
     }
   }
 
