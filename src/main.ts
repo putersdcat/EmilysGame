@@ -12,9 +12,8 @@ import { InputManager } from './game/input';
 import { isTeslaMode } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
-import { setWordlist, setBiomeNoiseSeed, feedEntropy, restoreEntropyBuffer } from './engine/gen';
-import { generateWordlist, isTestMode } from './engine/llm';
-import { getScrambledWordlist } from './config/wordlists.asset';
+import { feedEntropy, restoreEntropyBuffer } from './engine/gen';
+import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
@@ -266,7 +265,12 @@ function maybeLoadChunks(state: GameState): void {
 // B5 micro-slice 11.35 (#268): canvas setup + responsive resize extracted
 // to ./game/canvas-bootstrap.ts. setupCanvasAndRenderer() owns the canvas
 // element, the IsometricRenderer construction, and the resize listeners.
+// B5 micro-slice 11.36 (#268): wordlist + biome seed init extracted to
+// ./game/wordlist-bootstrap.ts. bootstrapWordlist() handles the test-mode
+// vs production branch (no LLM in tests; non-blocking scrambled fallback
+// + LLM swap in production, #26).
 import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
+import { bootstrapWordlist } from './game/wordlist-bootstrap';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -279,22 +283,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
   const input = new InputManager();
 
-  // Start with scrambled bundled wordlist immediately, swap in LLM wordlist when ready.
-  // In test mode: never call LLM; use scrambled bundled list for deterministic variance.
-  // In normal mode: generateWordlist() checks sessionStorage cache first, only calls
-  // LLM if no cache exists. Result is cached for future startups. (#26)
-  if (isTestMode()) {
-    setWordlist(getScrambledWordlist());
-    setBiomeNoiseSeed(12345); // Deterministic biome map for tests
-    console.log('[INIT] Test mode: using scrambled bundled wordlist (no LLM)');
-  } else {
-    setWordlist(getScrambledWordlist()); // Immediate non-blocking fallback
-    setBiomeNoiseSeed(Date.now()); // Session-unique biome regions
-    generateWordlist().then((wl) => {
-      setWordlist(wl);
-      console.log('[INIT] LLM wordlist ready');
-    });
-  }
+  // Wordlist + biome seed bootstrap (non-blocking — LLM wordlist swaps in async)
+  bootstrapWordlist();
 
   // NOTE: cleanupLlmSessions() available but not auto-called —
   // BitNet server lacks /v1/sessions endpoint. Call manually if needed.
