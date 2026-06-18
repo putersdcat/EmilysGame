@@ -640,6 +640,60 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
   return false;
 }
 
+/**
+ * Handle input while a dialog is active.
+ * B5 micro-slice 11.29 (#268): extracted from update() in main.ts.
+ * Manages: dialog advance/close, post-dialog flow (pending quiz, trade,
+ * or unpause). Caller must call input.endFrame() after this returns true.
+ */
+function handleDialogInput(state: GameState, justKeys: any): boolean {
+  if (state.ui.dialog.active) {
+  if (justKeys.interact) {
+    if (!advanceDialog(state.ui)) {
+      closeDialog(state.ui);
+      cancelSpeech(state.voice); // Stop voice on dialog close (#76)
+      setDialogNpc(null); // Stop mouth animation (#113)
+      playSfx(state.sfx, 'dialog_close');
+      // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
+      if (state.pendingQuiz) {
+        const pq = state.pendingQuiz;
+        state.pendingQuiz = null;
+        startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
+        playSfx(state.sfx, 'quiz_start');
+        // Auto-read question for young age bands (#94)
+        _autoReadQuizQuestion(state);
+        // state.paused stays true for quiz
+      } else if (state._pendingInsectQuiz) {
+        // Insect safety quiz after eating worms (#110 Phase 3)
+        state._pendingInsectQuiz = false;
+        startInsectQuiz(state);
+        playSfx(state.sfx, 'quiz_start');
+        _autoReadQuizQuestion(state);
+      } else if (state.pendingTrade) {
+        // Open trade panel directly (no quiz pending)
+        const persona = getNpcPersona(state.pendingTrade);
+        state.pendingTrade = null;
+        if (persona && openTrade(state.trade, persona)) {
+          playSfx(state.sfx, 'shop_open');
+          // state.paused stays true for trade
+        } else {
+          state.paused = false;
+        }
+      } else {
+        state.paused = false;
+      }
+    } else {
+      playSfx(state.sfx, 'dialog_advance');
+      // Speak the new dialog line (#76)
+      setDialogNpc(getLastDialogNpcId()); // Reset mouth cycle for new line (#113)
+      const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
+      if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : getLastDialogNpcId());
+    }
+  }
+  }
+  return false;
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -669,50 +723,7 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  // --- Dialog Input (edge-detected) ---
-  if (state.ui.dialog.active) {
-    if (justKeys.interact) {
-      if (!advanceDialog(state.ui)) {
-        closeDialog(state.ui);
-        cancelSpeech(state.voice); // Stop voice on dialog close (#76)
-        setDialogNpc(null); // Stop mouth animation (#113)
-        playSfx(state.sfx, 'dialog_close');
-        // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
-        if (state.pendingQuiz) {
-          const pq = state.pendingQuiz;
-          state.pendingQuiz = null;
-          startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
-          playSfx(state.sfx, 'quiz_start');
-          // Auto-read question for young age bands (#94)
-          _autoReadQuizQuestion(state);
-          // state.paused stays true for quiz
-        } else if (state._pendingInsectQuiz) {
-          // Insect safety quiz after eating worms (#110 Phase 3)
-          state._pendingInsectQuiz = false;
-          startInsectQuiz(state);
-          playSfx(state.sfx, 'quiz_start');
-          _autoReadQuizQuestion(state);
-        } else if (state.pendingTrade) {
-          // Open trade panel directly (no quiz pending)
-          const persona = getNpcPersona(state.pendingTrade);
-          state.pendingTrade = null;
-          if (persona && openTrade(state.trade, persona)) {
-            playSfx(state.sfx, 'shop_open');
-            // state.paused stays true for trade
-          } else {
-            state.paused = false;
-          }
-        } else {
-          state.paused = false;
-        }
-      } else {
-        playSfx(state.sfx, 'dialog_advance');
-        // Speak the new dialog line (#76)
-        setDialogNpc(getLastDialogNpcId()); // Reset mouth cycle for new line (#113)
-        const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
-        if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : getLastDialogNpcId());
-      }
-    }
+  if (handleDialogInput(state, justKeys)) {
     input.endFrame();
     return;
   }
