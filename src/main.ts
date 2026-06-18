@@ -6,7 +6,6 @@
 
 import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
-import { getBiome } from './config/biomes.config';
 import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
@@ -19,7 +18,7 @@ import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { createInventory } from './game/inventory';
 import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, createStreakState, recordQuizResult, modulateDifficulty } from './game/quiz';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI } from './ui/ui';
+import { createUIState, addToast, showDialog, advanceDialog, closeDialog, wireHudButtons, markSaveSlotsDirty } from './ui/ui';
 import { loadGame, saveToSlot, loadFromSlot, deleteSlot } from './game/save';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
@@ -40,7 +39,6 @@ import { showOptionsOverlay } from './game/options-overlay';
 // _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
 // ./game/wildlife-render.ts. getRevealedCreatures() lives there too
 // and is imported directly by debug-api.ts (no DI needed).
-import { renderWildlife } from './game/wildlife-render';
 import { getNpcPersona, getShopPersona } from './config/npc.config';
 import { preloadTiles } from './rendering/tiles';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
@@ -50,20 +48,18 @@ import { clearObjectCache } from './rendering/render';
 import { preloadEmojiSprites } from './asset-pipeline/emoji-cache';
 import { preloadAssetSprites } from './asset-pipeline/asset-sprites';
 import { preloadNpcSprites } from './asset-pipeline/npc-sprites';
-import { initMinimap, renderMinimap } from './rendering/minimap';
+import { initMinimap } from './rendering/minimap';
 
 import { searchBookArticles, initBookContent, getBookContentStats } from './ui/book-content';
-import { createKnowledgeState, syncBookUI, showSubjectSelection, openArticle } from './game/knowledge';
+import { createKnowledgeState, showSubjectSelection, openArticle } from './game/knowledge';
 import { createAgeProfile, setAgeBand } from './game/age-profile';
 import { showCustomizer, createDefaultVariation, deserializeVariation, setUnlockedCosmetics } from './ui/customizer';
 import type { AgeBand } from './types/content-pack.types';
-import { updateAndRenderParticles } from './rendering/particles';
-import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
-import { updateAndRenderWeather, getWeatherInfo, didLightningStrike } from './rendering/weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, isFlashlightOn } from './rendering/local-lights';
-import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
+import { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
+import { getWeatherInfo } from './rendering/weather';
+import { isFlashlightOn } from './rendering/local-lights';
 // invalidateShadowCache now called from input-extra-keys.ts (B5.20)
-import { updateFog, renderFog, setFogEnabled, deserializeVisited } from './rendering/fog';
+import { updateFog, setFogEnabled, deserializeVisited } from './rendering/fog';
 import {
   updateWildlife, getVisibleWildlife, interactWithWildlife,
   clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
@@ -90,10 +86,9 @@ import {
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
-  initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies,
-  triggerInjuryFlash, updateInjuryFlash,
-  setDiarrheaOverlay, updateDiarrheaOverlay,
-  spawnPoopBurst, updateAndRenderPoopParticles, renderPoopMarkers,
+  initDebuffVisuals,
+  triggerInjuryFlash,
+  setDiarrheaOverlay,
 } from './rendering/debuff-visuals';
 import {
   createInjuryState, checkHazardInjury, applyWoundQuizBonus,
@@ -151,6 +146,7 @@ import { checkCosmeticUnlocks } from './game/cosmetic-unlocks';
 // B5 micro-slice 11.26 (#268): waitForLlm extracted from main.ts to
 // ./game/llm-gate.ts. Shows LLM splash, polls health, supports dev skip.
 import { waitForLlm } from './game/llm-gate';
+import { renderFrame as renderFrameImpl } from './rendering/render-frame';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -160,14 +156,12 @@ import {
   handleInteraction,
   getLastDialogNpcId,
   setLastDialogNpcId,
-  getPendingPoopBurst,
-  setPendingPoopBurst,
 } from './game/interaction-handler';
 import {
   createMusicState, play as musicPlay,
-  startDucking, stopDucking, setBiome as musicSetBiome,
+  setBiome as musicSetBiome,
   deserializeMusicSettings,
-  initMidiTracks, getTotalTrackCount, updateMidiProgress,
+  initMidiTracks, getTotalTrackCount,
 } from './game/audio/music';
 import {
   createSfxState, playSfx,
@@ -1177,205 +1171,17 @@ function update(state: GameState, input: InputManager): void {
 // ./game/interaction-handler.ts. renderFrame uses getPendingPoopBurst()
 // + setPendingPoopBurst(false) to drain the flag after spawning the VFX.
 
+// B5 micro-slice 11.27 (#268): renderFrame extracted to
+// ./rendering/render-frame.ts. Composes 7 render passes; perfStats
+// is passed as a parameter (caller owns the timing aggregation).
 function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
+  perfStats: { render: number; particles: number; wildlife: number; lighting: number; weather: number; update: number; total: number },
 ): void {
-  const _t0 = performance.now();
-
-  // World render (WASM if available, JS fallback)
-  renderer.renderAuto(
-    state.chunks,
-    state.camera,
-    { x: state.player.x, y: state.player.y },
-    state.player.direction,
-    state.egoImg,
-    state.ui.showDebug,
-  );
-
-  const _t1 = performance.now();
-  perfStats.render = perfSmooth(perfStats.render, _t1 - _t0);
-
-  // Ambient particles (butterflies, sparkles, leaves, birds)
-  updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
-
-  const _t2 = performance.now();
-  perfStats.particles = perfSmooth(perfStats.particles, _t2 - _t1);
-
-  // Wildlife layer: draw creatures after terrain/objects, before lighting
-  renderWildlife(renderer, state);
-
-  const _t3 = performance.now();
-  perfStats.wildlife = perfSmooth(perfStats.wildlife, _t3 - _t2);
-
-  // Debuff visual effects (#110): fly particles + dehydration blur
-  updateFlies(state.status);
-  updateBlurOverlay(state.status);
-  updateInjuryFlash(); // (#109 Phase 3) injury red flash
-  updateDiarrheaOverlay(); // (#133) green illness overlay
-  const playerScreenDbf = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
-  renderFlies(renderer.getCtx(), playerScreenDbf.x, playerScreenDbf.y);
-
-  // Poop markers in world space (#133)
-  const cam = state.camera;
-  renderPoopMarkers(
-    renderer.getCtx(),
-    state.diarrhea.poopMarkers,
-    state.frameCount,
-    DIARRHEA_CONFIG.MARKER_DURATION_FRAMES,
-    (gx: number, gy: number) => renderer.gridToScreen(gx, gy, cam),
-  );
-
-  // Poop particle burst (#133): resolve deferred burst with screen coords
-  if (getPendingPoopBurst()) {
-    setPendingPoopBurst(false);
-    spawnPoopBurst(playerScreenDbf.x, playerScreenDbf.y, DIARRHEA_CONFIG.PARTICLE_COUNT);
-  }
-  updateAndRenderPoopParticles(renderer.getCtx());
-
-  // Fog-of-war overlay: darken unexplored areas (#114)
-  renderFog(renderer.getCtx(), state.camera);
-
-  // Update thought bubble position (anchored above player sprite screen position)
-  const playerScreen = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
-  updateBubblePosition(playerScreen.x, playerScreen.y);
-
-  // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
-  // Pause-aware: don't advance time when menus/overlays are active (#136)
-  tickLighting(state.paused);
-
-  // Local lights: fire positions cached per chunk to avoid 5625+ cell scans every frame (#79, #81)
-  clearLights();
-  const cs2 = WORLD_CONFIG.chunkSize;
-  for (const [, chunk] of state.chunks) {
-    if (!chunk.generated) continue;
-    // lazily cache fire positions per chunk (bonfire, campfire, biomass_fire)
-    let fires = (chunk as any)._fireCache as { gx: number; gy: number; key: string }[] | undefined;
-    if (fires === undefined) {
-      fires = [];
-      const baseGX = chunk.chunkX * cs2;
-      const baseGY = chunk.chunkY * cs2;
-      for (let cy = 0; cy < cs2; cy++) {
-        for (let cx = 0; cx < cs2; cx++) {
-          const ak = chunk.cells[cy][cx].assetKey;
-          if (FIRE_ASSET_KEYS.has(ak)) {
-            fires.push({ gx: baseGX + cx, gy: baseGY + cy, key: ak });
-          }
-        }
-      }
-      (chunk as any)._fireCache = fires;
-    }
-    for (let i = 0; i < fires.length; i++) {
-      const f = fires[i];
-      const variant = FIRE_VARIANTS[f.key];
-      if (variant) {
-        addPointLight(f.gx, f.gy, {
-          radius: variant.lightRadius,
-          color: variant.lightColor,
-          intensity: variant.lightIntensity,
-        });
-      } else {
-        addPointLight(f.gx, f.gy);
-      }
-    }
-  }
-  addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
-  // Torch: portable warm light when player has torch in inventory (#99)
-  if (state.inventory.hasItem('torch')) {
-    addPointLight(state.player.x, state.player.y, {
-      radius: 80,
-      color: [255, 160, 50],
-      intensity: 0.7,
-      flicker: true,
-    });
-  }
-  renderLocalLights(renderer.getCtx(), state.camera);
-
-  // Night desaturation: CSS filter on canvas element for GPU-composited grayscale (#114)
-  // Smooth ramp: full color during day, desaturated at night
-  const cycleT = getCycleProgress();
-  let desatFactor = 0; // 0 = full color, 1 = full desaturation 
-  if (cycleT >= 0.80) {
-    desatFactor = 0.75; // Full night: heavy desaturation
-  } else if (cycleT >= 0.65) {
-    // Dusk transition: 0 → 0.75 over dusk phase
-    desatFactor = ((cycleT - 0.65) / 0.15) * 0.75;
-  } else if (cycleT < 0.08) {
-    // Dawn: fade back 0.75 → 0 
-    desatFactor = (1 - cycleT / 0.08) * 0.75;
-  }
-  if (desatFactor > 0.01) {
-    const sat = 1 - desatFactor;
-    const bright = 1 - desatFactor * 0.15; // slight brightness reduction at night
-    renderer.getCanvas().style.filter = `saturate(${sat.toFixed(2)}) brightness(${bright.toFixed(2)})`;
-  } else {
-    renderer.getCanvas().style.filter = '';
-  }
-
-  const _t4 = performance.now();
-  perfStats.lighting = perfSmooth(perfStats.lighting, _t4 - _t3);
-
-  // Weather effects (rain, fog, clouds, lightning)
-  updateAndRenderWeather(renderer.getCtx());
-  // Thunder SFX on lightning strike (#75)
-  if (didLightningStrike()) {
-    playSfx(state.sfx, 'thunder');
-  }
-
-  const _t5 = performance.now();
-  perfStats.weather = perfSmooth(perfStats.weather, _t5 - _t4);
-
-  // UI overlay - throttle DOM sync to every 4th frame
-  if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active || state.trade.active) {
-    // Get current biome name from chunk map
-    const cs = WORLD_CONFIG.chunkSize;
-    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
-    const currentChunk = state.chunks.get(cKey);
-    const biomeName = currentChunk ? getBiome(currentChunk.biomeId).displayName : undefined;
-
-    renderUI(
-      renderer.getCtx(),
-      state.ui,
-      state.inventory,
-      state.quiz,
-      { x: state.player.x, y: state.player.y },
-      state.fps,
-      state.quizStats,
-      biomeName,
-    );
-
-    // Trade panel DOM sync
-    if (state.trade.active) {
-      syncTradeDOM(state.trade, state.inventory);
-    }
-
-    // Status bars (#70, #109)
-    syncStatusBars(state.status, state.injury);
-
-    // Music ducking sync (#74) — duck when paused (quiz/dialog active)
-    if (state.paused && !state.music.ducking) {
-      startDucking(state.music);
-    } else if (!state.paused && state.music.ducking) {
-      stopDucking(state.music);
-    }
-
-    // Music UI sync (#74)
-    updateMidiProgress(state.music);
-    syncMusicUI(state.music);
-
-    // SFX UI sync (#75)
-    syncSfxUI(state.sfx);
-
-    // Voice UI sync (#76)
-    syncVoiceUI(state.voice);
-  }
-
-  // Minimap (self-throttling to ~6fps)
-  renderMinimap(state.chunks, state.player.x, state.player.y);
-
-  // Book of Knowledge overlay (self-throttling)
-  syncBookUI(state.knowledge);
+  renderFrameImpl(renderer, state, perfStats);
 }
+
 
 // ─── Game Loop ───────────────────────────────────────────────
 
@@ -1389,7 +1195,7 @@ function gameLoop(
   update(ctx.state, ctx.input);
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
-  renderFrame(ctx.renderer, ctx.state);
+  renderFrame(ctx.renderer, ctx.state, perfStats);
   const _frameEnd = performance.now();
   const totalMs = _frameEnd - _frameStart;
   perfStats.total = perfSmooth(perfStats.total, totalMs);

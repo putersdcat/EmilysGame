@@ -6,7 +6,17 @@
  */
 
 /** Smoothed per-subsystem timings in ms (exponential moving average) */
-export const perfStats = {
+export interface PerfStats {
+  render: number;
+  particles: number;
+  wildlife: number;
+  lighting: number;
+  weather: number;
+  update: number;
+  total: number;
+}
+
+export const perfStats: PerfStats = {
   render: 0,
   particles: 0,
   wildlife: 0,
