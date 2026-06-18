@@ -12,7 +12,6 @@ import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { loadCharacterSprite } from './asset-pipeline/sprites';
 import { feedEntropy } from './engine/gen';
-import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
@@ -31,13 +30,15 @@ import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
 // startup toasts extracted to ./game/startup-hud.ts. wireStartupHud()
 // wraps the fog-pref restore, Tesla badge, wireHudButtons() with slot
 // action handlers, __gameDebug surface, welcome toasts, and wireHudEvents().
-// (B5.43 — make*Handler usage moved to ./game/startup-hud.ts.)
-import { runNewGameFlow, loadSlotIntoState } from './game/new-game-flow';
+// B5 micro-slice 11.44 (#268): main-menu flow orchestration extracted
+// to ./game/menu-flow.ts. runMenuFlow() handles the welcome splash +
+// main menu choice dispatch (new-game → runNewGameFlow, load-slot-N →
+// loadSlotIntoState, continue → no-op). Skips entirely in test mode.
+import { runMenuFlow } from './game/menu-flow';
 import { bootstrapAudio } from './game/audio-bootstrap';
 import { wireStartupHud } from './game/startup-hud';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
-// The Options callback is wired here so this module stays decoupled.
-import { showMainMenu } from './game/main-menu';
+// (B5.44 — usage moved to ./game/menu-flow.ts.)
 // B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
 // with dependency-inversion for save/options/bug-report/main-menu actions.
 // (showPauseMenu unused in main.ts — called from input-extra-keys.ts)
@@ -46,9 +47,8 @@ import { showMainMenu } from './game/main-menu';
 // (B5.41 — usage moved to ./game/new-game-flow.ts)
 // B5 micro-slice 11.17 (#268): showOptionsOverlay extracted from main.ts
 // to ./game/options-overlay.ts. Pure DOM (volume sliders, touch controls,
-// fog, Tesla mode, replay tutorial). Takes optional state + inputMgr.
-// The two existing call sites (pause menu, main menu) pass them through
-// unchanged — the new module's signature is identical.
+// fog, Tesla mode, replay tutorial). The main menu passes it as a
+// callback to ./game/menu-flow.ts via dependency-inversion (B5.44).
 import { showOptionsOverlay } from './game/options-overlay';
 // B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
 // _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
@@ -127,7 +127,7 @@ import { doSave } from './game/save-build';
 import { checkBubbleTriggers } from './game/bubble-triggers';
 // B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome + FIRST_RUN_KEY
 // extracted from main.ts to ./game/welcome-splash.ts. Pure DOM overlay.
-import { showWelcomeSplash } from './game/welcome-splash';
+// (B5.44 — usage moved to ./game/menu-flow.ts.)
 // B5 micro-slice 11.23 (#268): captureBugReport extracted from main.ts
 // to ./game/bug-report.ts. Bundles canvas screenshot + game state into
 // a downloadable JSON. Pure function (no module state, no side effects).
@@ -1123,21 +1123,8 @@ async function main(): Promise<void> {
   // HUD wiring + debug surface + startup toasts (#268 B5.43)
   wireStartupHud(state, input);
 
-  // ─── Main Menu / New Game Flow ─────────────────────────────
-  if (!isTestMode()) {
-    // Welcome splash for first-time players (#117)
-    await showWelcomeSplash();
-
-    const choice = await showMainMenu(hasSaveData, () => showOptionsOverlay(null));
-
-    if (choice === 'new-game') {
-      await runNewGameFlow(state);
-    } else if (choice.startsWith('load-slot-')) {
-      const slot = parseInt(choice.replace('load-slot-', ''));
-      await loadSlotIntoState(state, slot);
-    }
-    // 'continue' → auto-save already loaded by init()
-  }
+  // ─── Main Menu / New Game Flow (#268 B5.44) ─────────────────
+  await runMenuFlow(state, hasSaveData, () => showOptionsOverlay(null));
 
   // Audio bootstrap (background; oscillator fallbacks cover loading window)
   bootstrapAudio(state);
