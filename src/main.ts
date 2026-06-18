@@ -1049,6 +1049,87 @@ if (isMoving) {
 
 }
 
+/**
+ * Handle space-key interaction (NPC, tile, eat-worms).
+ * B5 micro-slice 11.34 (#268): extracted from update() in main.ts.
+ * Tries wildlife first, then facing-direction tile, then 4 cardinal
+ * neighbors, then eat-worms desperation. Delegates result to
+ * handleInteraction (from interaction-handler.ts).
+ */
+function handleSpaceInteraction(state: GameState, justKeys: any): void {
+  if (justKeys.interact && !state.player.isMoving) {
+// --- Interaction (Space, edge-detected) ---
+if (justKeys.interact && !state.player.isMoving) {
+  // Try facing direction first, then check all 4 neighbors as fallback
+  // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
+  const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
+  const facingDir = {
+    dx: hasFacing ? state.player.facingDx : state.player.direction,
+    dy: hasFacing ? state.player.facingDy : 0,
+  };
+
+  // Wildlife interaction check (before tile-based interactions)
+  const wildlifeHit = interactWithWildlife(
+    state.player.x, state.player.y, facingDir.dx, facingDir.dy,
+  );
+  if (wildlifeHit) {
+    const { species, entity } = wildlifeHit;
+    // Show creature dialog — use custom interaction lines if available (#142)
+    const wildlifeLine = species.interactLines && species.interactLines.length > 0
+      ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
+      : `You spotted a ${species.name}! ${species.emoji}`;
+    showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
+    state.paused = true;
+    playSfx(state.sfx, 'wildlife_discover');
+    // Speak wildlife discovery (#76)
+    setLastDialogNpcId(null);
+    speakLine(state.voice, wildlifeLine, null);
+    // Make creature flee after inspection
+    entity.behavior = 'flee';
+    entity.fleeCooldown = 180;
+    // Check cosmetic unlocks for wildlife discovery (#66)
+    checkCosmeticUnlocks(state);
+    // Queue a quiz if species has a quiz category
+    if (species.quizCategory) {
+      const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
+      const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
+      state.pendingQuiz = {
+        difficulty: diff,
+        npcId: `wildlife_${species.id}`,
+        bias: { [species.quizCategory]: 2.0 },
+      };
+    }
+  } else {
+    let result = interact(
+      state.player.x, state.player.y,
+      facingDir, state.chunks, state.inventory,
+    );
+
+    // Fallback: try all 4 cardinal neighbors if facing dir had nothing
+    if (result.type === 'none') {
+      const dirs = [
+        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+        { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+      ];
+      for (const d of dirs) {
+        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
+        if (result.type !== 'none') break;
+      }
+    }
+
+    // Eat worms desperation: if no interaction found and energy critically low (#110 Phase 3)
+    if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
+      result = { type: 'eat_worms', message: 'You found a worm in the ground... 🐛 Gulp!' };
+    }
+
+    handleInteraction(result, state);
+  }
+}
+
+
+  }
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -1096,75 +1177,7 @@ function update(state: GameState, input: InputManager): void {
 
   handleMovement(state, input);
 
-  // --- Interaction (Space, edge-detected) ---
-  if (justKeys.interact && !state.player.isMoving) {
-    // Try facing direction first, then check all 4 neighbors as fallback
-    // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
-    const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
-    const facingDir = {
-      dx: hasFacing ? state.player.facingDx : state.player.direction,
-      dy: hasFacing ? state.player.facingDy : 0,
-    };
-
-    // Wildlife interaction check (before tile-based interactions)
-    const wildlifeHit = interactWithWildlife(
-      state.player.x, state.player.y, facingDir.dx, facingDir.dy,
-    );
-    if (wildlifeHit) {
-      const { species, entity } = wildlifeHit;
-      // Show creature dialog — use custom interaction lines if available (#142)
-      const wildlifeLine = species.interactLines && species.interactLines.length > 0
-        ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
-        : `You spotted a ${species.name}! ${species.emoji}`;
-      showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
-      state.paused = true;
-      playSfx(state.sfx, 'wildlife_discover');
-      // Speak wildlife discovery (#76)
-      setLastDialogNpcId(null);
-      speakLine(state.voice, wildlifeLine, null);
-      // Make creature flee after inspection
-      entity.behavior = 'flee';
-      entity.fleeCooldown = 180;
-      // Check cosmetic unlocks for wildlife discovery (#66)
-      checkCosmeticUnlocks(state);
-      // Queue a quiz if species has a quiz category
-      if (species.quizCategory) {
-        const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
-        const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
-        state.pendingQuiz = {
-          difficulty: diff,
-          npcId: `wildlife_${species.id}`,
-          bias: { [species.quizCategory]: 2.0 },
-        };
-      }
-    } else {
-      let result = interact(
-        state.player.x, state.player.y,
-        facingDir, state.chunks, state.inventory,
-      );
-
-      // Fallback: try all 4 cardinal neighbors if facing dir had nothing
-      if (result.type === 'none') {
-        const dirs = [
-          { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-          { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
-        ];
-        for (const d of dirs) {
-          result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
-          if (result.type !== 'none') break;
-        }
-      }
-
-      // Eat worms desperation: if no interaction found and energy critically low (#110 Phase 3)
-      if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
-        result = { type: 'eat_worms', message: 'You found a worm in the ground... 🐛 Gulp!' };
-      }
-
-      handleInteraction(result, state);
-    }
-  }
-
-  // --- Toggle Debug (F3) ---
+  handleSpaceInteraction(state, justKeys);  // --- Toggle Debug (F3) ---
   // Handled in extended input listener below
 
   // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
