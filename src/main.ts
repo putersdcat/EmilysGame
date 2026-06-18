@@ -498,6 +498,148 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
 
 // ─── Update ──────────────────────────────────────────────────
 
+
+/**
+ * Handle input while a quiz is active.
+ * B5 micro-slice 11.28 (#268): extracted from update() in main.ts.
+ * Manages: numeric/R key shortcuts, quiz result branch (correct/wrong/idk),
+ * quiz reward application, post-quiz flow (trade or unpause).
+ * Returns true if a quiz is active and handled input (caller should
+ * call input.endFrame() and return early).
+ */
+function handleQuizInput(state: GameState, justKeys: any): boolean {
+  if (state.quiz.active) {
+  if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
+
+  // ── Numeric keys 1-9 select quiz choice directly (#94) ──
+  for (let n = 1; n <= 9; n++) {
+    if (_consumeExtraKey(String(n))) {
+      if (state.quiz.result === 'pending') {
+        if (quizSelectIndex(state.quiz, n - 1)) {
+          playSfx(state.sfx, 'menu_navigate');
+        }
+      }
+    }
+  }
+
+  // ── R key repeats question readout (#94) ──
+  if (_consumeExtraKey('r')) {
+    if (state.quiz.displayText && state.voice.settings.enabled) {
+      speakLine(state.voice, state.quiz.displayText, null);
+    }
+  }
+
+  if (justKeys.interact) {
+    if (state.quiz.result !== 'pending') {
+      if (state.quiz.result === 'correct') {
+        const rewards = quizReward(state.quiz.difficulty);
+        for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
+        addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
+        state.quizStats.correct++;
+        playSfx(state.sfx, 'quiz_correct');
+        // Transient expression: happy for 2s (#102)
+        setTransientExpression(state, 'happy', 2000);
+        checkCosmeticUnlocks(state);
+
+        // Wound-care quiz bonus heal (#109)
+        if (state._woundCareQuiz) {
+          applyWoundQuizBonus(state.status);
+          addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
+          state._woundCareQuiz = false;
+        }
+
+        // Hygiene quiz bonus — full cleanliness restore (#110)
+        if (state._hygieneQuiz) {
+          state.status.cleanliness = 100;
+          addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
+          playSfx(state.sfx, 'outhouse_clean');
+          state._hygieneQuiz = false;
+        }
+
+        // Insect safety quiz bonus — extra energy (#110 Phase 3)
+        if (state._insectQuiz) {
+          state.status.energy = Math.min(100, state.status.energy + 10);
+          addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
+          state._insectQuiz = false;
+        }
+
+        // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
+        if (state.pendingGateQuiz) {
+          const g = state.pendingGateQuiz;
+          resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
+          // iso2: unlock cond so isPointWalkableInTile / buildWalkableMap see passable (supports cond path + morph to door_open)
+          state.activeConditions.set('quiz-gate', 'unlocked');
+          state.pendingGateQuiz = null;
+          addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
+          playSfx(state.sfx, 'gate_open');
+        }
+      } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
+        // Wrong answer — gate stays closed
+        state.pendingGateQuiz = null;
+        addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
+        playSfx(state.sfx, 'quiz_wrong');
+        setTransientExpression(state, 'surprised', 1500);
+      } else if (state.quiz.result === 'wrong') {
+        playSfx(state.sfx, 'quiz_wrong');
+        setTransientExpression(state, 'surprised', 1500);
+        state._woundCareQuiz = false; // Clear wound-care flag (#109)
+        state._hygieneQuiz = false; // Clear hygiene flag (#110)
+        state._insectQuiz = false; // Clear insect flag (#110 P3)
+      } else if (state.quiz.result === 'idk') {
+        state._woundCareQuiz = false; // Clear wound-care flag (#109)
+        state._hygieneQuiz = false; // Clear hygiene flag (#110)
+        state._insectQuiz = false; // Clear insect flag (#110 P3)
+        // "I don't know" → open Book to related article
+        const category = state.quiz.question?.category || '';
+        const questionText = state.quiz.question?.question || '';
+        // Search for articles related to the quiz category or question
+        const related = searchBookArticles(category) || searchBookArticles(questionText);
+        if (related.length > 0) {
+          openArticle(state.knowledge, related[0].id);
+          state.knowledge.bookOpen = true;
+          state.knowledge.activeTab = 'browse';
+          addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
+        } else {
+          state.knowledge.bookOpen = true;
+          state.knowledge.activeTab = 'browse';
+          addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
+        }
+        // Don't count "I don't know" as answered
+        // Clear pending gate quiz on "I don't know" too
+        state.pendingGateQuiz = null;
+      }
+      if (state.quiz.result !== 'idk') {
+        state.quizStats.answered++;
+      }
+      quizClose(state.quiz);
+      // After quiz, open trade panel if NPC had trades, otherwise unpause
+      if (state.pendingTrade && !state.knowledge.bookOpen) {
+        const tradePersona = getNpcPersona(state.pendingTrade);
+        state.pendingTrade = null;
+        if (tradePersona && openTrade(state.trade, tradePersona)) {
+          state.paused = true;
+        } else {
+          state.paused = state.knowledge.bookOpen;
+        }
+      } else {
+        state.paused = state.knowledge.bookOpen;
+      }
+    } else {
+      quizSubmit(state.quiz);
+      // Record outcome for streak tracking (#103)
+      recordQuizResult(state.streak, state.quiz.result as 'correct' | 'wrong' | 'idk');
+      // Feed quiz answer text into entropy pool (#4)
+      if (state.quiz.question && state.quiz.selectedIndex >= 0) {
+        const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
+        feedEntropy(`quiz:${state.quiz.question.question}:${answerText}`);
+      }
+    }
+  }
+  }
+  return false;
+}
+
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
@@ -522,135 +664,7 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  // --- Quiz Input (edge-detected) ---
-  if (state.quiz.active) {
-    if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
-    if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
-
-    // ── Numeric keys 1-9 select quiz choice directly (#94) ──
-    for (let n = 1; n <= 9; n++) {
-      if (_consumeExtraKey(String(n))) {
-        if (state.quiz.result === 'pending') {
-          if (quizSelectIndex(state.quiz, n - 1)) {
-            playSfx(state.sfx, 'menu_navigate');
-          }
-        }
-      }
-    }
-
-    // ── R key repeats question readout (#94) ──
-    if (_consumeExtraKey('r')) {
-      if (state.quiz.displayText && state.voice.settings.enabled) {
-        speakLine(state.voice, state.quiz.displayText, null);
-      }
-    }
-
-    if (justKeys.interact) {
-      if (state.quiz.result !== 'pending') {
-        if (state.quiz.result === 'correct') {
-          const rewards = quizReward(state.quiz.difficulty);
-          for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
-          addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
-          state.quizStats.correct++;
-          playSfx(state.sfx, 'quiz_correct');
-          // Transient expression: happy for 2s (#102)
-          setTransientExpression(state, 'happy', 2000);
-          checkCosmeticUnlocks(state);
-
-          // Wound-care quiz bonus heal (#109)
-          if (state._woundCareQuiz) {
-            applyWoundQuizBonus(state.status);
-            addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
-            state._woundCareQuiz = false;
-          }
-
-          // Hygiene quiz bonus — full cleanliness restore (#110)
-          if (state._hygieneQuiz) {
-            state.status.cleanliness = 100;
-            addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
-            playSfx(state.sfx, 'outhouse_clean');
-            state._hygieneQuiz = false;
-          }
-
-          // Insect safety quiz bonus — extra energy (#110 Phase 3)
-          if (state._insectQuiz) {
-            state.status.energy = Math.min(100, state.status.energy + 10);
-            addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
-            state._insectQuiz = false;
-          }
-
-          // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
-          if (state.pendingGateQuiz) {
-            const g = state.pendingGateQuiz;
-            resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
-            // iso2: unlock cond so isPointWalkableInTile / buildWalkableMap see passable (supports cond path + morph to door_open)
-            state.activeConditions.set('quiz-gate', 'unlocked');
-            state.pendingGateQuiz = null;
-            addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
-            playSfx(state.sfx, 'gate_open');
-          }
-        } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
-          // Wrong answer — gate stays closed
-          state.pendingGateQuiz = null;
-          addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
-          playSfx(state.sfx, 'quiz_wrong');
-          setTransientExpression(state, 'surprised', 1500);
-        } else if (state.quiz.result === 'wrong') {
-          playSfx(state.sfx, 'quiz_wrong');
-          setTransientExpression(state, 'surprised', 1500);
-          state._woundCareQuiz = false; // Clear wound-care flag (#109)
-          state._hygieneQuiz = false; // Clear hygiene flag (#110)
-          state._insectQuiz = false; // Clear insect flag (#110 P3)
-        } else if (state.quiz.result === 'idk') {
-          state._woundCareQuiz = false; // Clear wound-care flag (#109)
-          state._hygieneQuiz = false; // Clear hygiene flag (#110)
-          state._insectQuiz = false; // Clear insect flag (#110 P3)
-          // "I don't know" → open Book to related article
-          const category = state.quiz.question?.category || '';
-          const questionText = state.quiz.question?.question || '';
-          // Search for articles related to the quiz category or question
-          const related = searchBookArticles(category) || searchBookArticles(questionText);
-          if (related.length > 0) {
-            openArticle(state.knowledge, related[0].id);
-            state.knowledge.bookOpen = true;
-            state.knowledge.activeTab = 'browse';
-            addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
-          } else {
-            state.knowledge.bookOpen = true;
-            state.knowledge.activeTab = 'browse';
-            addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
-          }
-          // Don't count "I don't know" as answered
-          // Clear pending gate quiz on "I don't know" too
-          state.pendingGateQuiz = null;
-        }
-        if (state.quiz.result !== 'idk') {
-          state.quizStats.answered++;
-        }
-        quizClose(state.quiz);
-        // After quiz, open trade panel if NPC had trades, otherwise unpause
-        if (state.pendingTrade && !state.knowledge.bookOpen) {
-          const tradePersona = getNpcPersona(state.pendingTrade);
-          state.pendingTrade = null;
-          if (tradePersona && openTrade(state.trade, tradePersona)) {
-            state.paused = true;
-          } else {
-            state.paused = state.knowledge.bookOpen;
-          }
-        } else {
-          state.paused = state.knowledge.bookOpen;
-        }
-      } else {
-        quizSubmit(state.quiz);
-        // Record outcome for streak tracking (#103)
-        recordQuizResult(state.streak, state.quiz.result as 'correct' | 'wrong' | 'idk');
-        // Feed quiz answer text into entropy pool (#4)
-        if (state.quiz.question && state.quiz.selectedIndex >= 0) {
-          const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
-          feedEntropy(`quiz:${state.quiz.question.question}:${answerText}`);
-        }
-      }
-    }
+  if (handleQuizInput(state, justKeys)) {
     input.endFrame();
     return;
   }
