@@ -10,6 +10,12 @@ export { AncientStone, CottageStoneFoundation, Limestone } from './iso2-material
 export {
   PlasterWhitewashWall, RoughWoodPlankWall, TimberFrameWall,
 } from './iso2-materials-homestead';
+export { ThatchRoof, createRoofMaterial, type RoofMaterial, type RoofPrimitiveKind } from './iso2-materials-roof';
+export {
+  BleachedPaddock, HazelWattle, MossyFarmRail, RoughPicket, SplitRailOak,
+  WeatheredPostRail, defaultFenceStyle, fenceStyleForTile, getFenceStyle, listFenceStyles,
+  type IsoFenceStyle,
+} from './iso2-fence-family';
 
 const SIZE = 144;
 const MODULE = 48;

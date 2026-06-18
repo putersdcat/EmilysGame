@@ -26,8 +26,9 @@ import { DIARRHEA_CONFIG } from './illness';
 import { setTimeOfDay, getCycleProgress } from '../rendering/lighting';
 import { toggleFlashlight, isFlashlightOn } from '../rendering/local-lights';
 import {
-  AncientStone, CottageStoneFoundation, Limestone, MudBrick, PlasterWhitewashWall,
-  RedClinker, RoughWoodPlankWall, SandstoneBrick,
+  AncientStone, BleachedPaddock, CottageStoneFoundation, HazelWattle, Limestone, MudBrick,
+  MossyFarmRail, PlasterWhitewashWall, RedClinker, RoughPicket, RoughWoodPlankWall,
+  SandstoneBrick, SplitRailOak, ThatchRoof, WeatheredPostRail,
 } from '../asset-pipeline/iso2-materials';
 import { clearTerrainCache } from '../rendering/terrain-cache';
 import { clearObjectCache, setDialogNpc } from '../rendering/render';
@@ -151,6 +152,10 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     iso2BrickMaterials: { RedClinker, MudBrick, SandstoneBrick },
     iso2StoneMaterials: { AncientStone, Limestone, CottageStoneFoundation },
     iso2HomesteadMaterials: { PlasterWhitewashWall, RoughWoodPlankWall },
+    iso2RoofMaterials: { ThatchRoof },
+    iso2FenceMaterials: {
+      WeatheredPostRail, SplitRailOak, MossyFarmRail, BleachedPaddock, RoughPicket, HazelWattle,
+    },
     // #223 live gameplay test helpers (per AUTONOMOUS_LOOP.md)
     isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks, state.activeConditions),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },

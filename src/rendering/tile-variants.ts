@@ -95,6 +95,9 @@ export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fen
     case 'cathedral_wall':
       return 'wall';
     case 'wooden_fence':
+    case 'wooden_fence_split_rail':
+    case 'wooden_fence_picket':
+    case 'wooden_fence_wattle':
       return 'fence';
     case 'water':
       return 'water';

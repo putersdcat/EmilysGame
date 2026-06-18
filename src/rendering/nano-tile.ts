@@ -27,6 +27,7 @@ import {
   type IsoNanoStack as NanoStack,
   type IsoSunState as SunState,
 } from '../types/iso-renderer.types.js';
+import type { IsoFenceStyle } from '../asset-pipeline/iso2-fence-family.js';
 import { wallBounds } from './nano-tile-svgs';
 
 // ─── SVG Image Cache ─────────────────────────────────────────────────────────
@@ -183,11 +184,26 @@ function projectFencePoint(
   };
 }
 
-function drawFencePost(ctx: CanvasRenderingContext2D, p: ScreenPoint, height: number, gate = false): void {
-  const postW = gate ? 8 : 6;
-  const postColor = gate ? '#7a4d1a' : '#6f5c48';
-  const postShadow = gate ? '#4f2c12' : '#433528';
-  const postHighlight = gate ? '#b6752e' : '#a08f77';
+function fenceRailHeightFractions(style?: IsoFenceStyle): readonly number[] {
+  const count = style?.railCount ?? 2;
+  const spread = style?.railSpread ?? 0.22;
+  const center = 0.56;
+  if (count === 1) return [center];
+  if (count === 3) return [center + spread, center, center - spread];
+  return [center + spread / 2, center - spread / 2];
+}
+
+function drawFencePost(
+  ctx: CanvasRenderingContext2D,
+  p: ScreenPoint,
+  height: number,
+  style?: IsoFenceStyle,
+): void {
+  const postW = style?.postWidth ?? 7;
+  const postCap = style?.postCapHeight ?? 4;
+  const postColor = style?.postColor ?? '#6f421d';
+  const postShadow = style?.postShadow ?? '#4f2c12';
+  const postHighlight = style?.postHighlight ?? '#b6752e';
 
   ctx.beginPath();
   ctx.ellipse(p.x + 1, p.y + 1, 5, 2.6, 0, 0, Math.PI * 2);
@@ -197,6 +213,14 @@ function drawFencePost(ctx: CanvasRenderingContext2D, p: ScreenPoint, height: nu
   ctx.fillStyle = postShadow;
   ctx.fillRect(p.x - postW / 2 - 1, p.y - 2, postW + 2, 3);
 
+  ctx.beginPath();
+  ctx.moveTo(p.x + 3, p.y + 2);
+  ctx.lineTo(p.x + 3, p.y - height + 2);
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+  ctx.lineWidth = postW + 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
   const grad = ctx.createLinearGradient(p.x - postW / 2, 0, p.x + postW / 2, 0);
   grad.addColorStop(0, postShadow);
   grad.addColorStop(0.45, postColor);
@@ -205,16 +229,16 @@ function drawFencePost(ctx: CanvasRenderingContext2D, p: ScreenPoint, height: nu
   ctx.fillRect(p.x - postW / 2, p.y - height, postW, height);
 
   ctx.fillStyle = postHighlight;
-  ctx.fillRect(p.x - postW / 2 - 1, p.y - height - 4, postW + 2, 4);
+  ctx.fillRect(p.x - postW / 2 - 1, p.y - height - postCap, postW + 2, postCap);
   ctx.strokeStyle = 'rgba(65,38,15,0.72)';
   ctx.lineWidth = 1;
-  ctx.strokeRect(p.x - postW / 2 - 1, p.y - height - 4, postW + 2, 4);
+  ctx.strokeRect(p.x - postW / 2 - 1, p.y - height - postCap, postW + 2, postCap);
 
   ctx.beginPath();
   ctx.moveTo(p.x - 2, p.y - 3);
   ctx.lineTo(p.x - 2, p.y - height + 3);
-  ctx.strokeStyle = 'rgba(224,157,68,0.42)';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = style?.bleachColor ?? 'rgba(224,157,68,0.52)';
+  ctx.lineWidth = 2;
   ctx.lineCap = 'round';
   ctx.stroke();
 }
@@ -227,13 +251,14 @@ function drawProceduralFenceNano(
 ): boolean {
   const gate = nano.kind === 'gate';
   const height = Math.max(nano.zOffset * NANO_Z_SCALE, gate ? 34 : MIN_NANO_HEIGHT);
+  const style = nano.fenceStyle;
+  const railColor = style?.railColor ?? (gate ? '#9a6829' : '#a06a26');
+  const railDark = style?.railShadow ?? (gate ? '#5a3519' : '#6a421d');
+  const railHighlight = style?.railHighlight ?? '#bd7b30';
+  const railWidth = style?.railThickness ?? 5;
   const arms = nano.connections ?? connectionsFromVariant(nano.variant);
   const postKeys = new Set<string>();
   const posts: ScreenPoint[] = [];
-  const railColor = gate ? '#9a6829' : '#7a6852';
-  const railDark = gate ? '#5a3519' : '#493a2c';
-  const railHighlight = gate ? '#bd7b30' : '#aa987f';
-  const railWidth = gate ? 6 : 5;
 
   const addPost = (p: ScreenPoint) => {
     const key = `${Math.round(p.x)},${Math.round(p.y)}`;
@@ -242,11 +267,27 @@ function drawProceduralFenceNano(
     posts.push(p);
   };
   const drawSegment = (a: ScreenPoint, b: ScreenPoint) => {
-    for (const frac of [0.68, 0.46]) {
+    for (const frac of fenceRailHeightFractions(style)) {
       drawLineBetween(ctx, a, b, height * frac, railDark, railWidth + 2);
       drawLineBetween(ctx, a, b, height * (frac + 0.02), railColor, railWidth);
       drawLineBetween(ctx, a, b, height * (frac + 0.035), railHighlight, 1.2);
     }
+  };
+  const drawRaisedLine = (
+    a: ScreenPoint,
+    b: ScreenPoint,
+    aOffset: number,
+    bOffset: number,
+    strokeStyle: string,
+    lineWidth: number,
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y - aOffset);
+    ctx.lineTo(b.x, b.y - bOffset);
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.lineCap = 'round';
+    ctx.stroke();
   };
   const drawGateLeaf = (a: ScreenPoint, b: ScreenPoint) => {
     const top = height * 0.72;
@@ -255,15 +296,10 @@ function drawProceduralFenceNano(
     drawLineBetween(ctx, a, b, bottom, railDark, railWidth + 2.5);
     drawLineBetween(ctx, a, b, top + 1.5, railColor, railWidth);
     drawLineBetween(ctx, a, b, bottom + 1.5, railColor, railWidth);
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y - bottom);
-    ctx.lineTo(b.x, b.y - top);
-    ctx.moveTo(a.x, a.y - top);
-    ctx.lineTo(b.x, b.y - bottom);
-    ctx.strokeStyle = railDark;
-    ctx.lineWidth = Math.max(3.5, railWidth - 0.5);
-    ctx.lineCap = 'round';
-    ctx.stroke();
+    drawRaisedLine(a, b, bottom, top, railDark, Math.max(3.5, railWidth - 0.5));
+    drawRaisedLine(a, b, bottom + 1.5, top + 1.5, railHighlight, 1.4);
+    drawRaisedLine(a, b, top, bottom, railDark, Math.max(3.5, railWidth - 0.5));
+    drawRaisedLine(a, b, top + 1.5, bottom + 1.5, railHighlight, 1.4);
   };
   const drawPadlock = (p: ScreenPoint) => {
     const y = p.y - height * 0.62;
@@ -307,13 +343,22 @@ function drawProceduralFenceNano(
     const horizontal = arms.left && arms.right;
     const start = horizontal ? left : top;
     const end = horizontal ? right : bottom;
+    const split = center;
     addPost(start);
-    addPost(center);
     addPost(end);
-    drawGateLeaf(start, center);
-    drawGateLeaf(center, end);
-    for (const post of posts) drawFencePost(ctx, post, height * 0.96, gate);
-    drawPadlock(center);
+
+    if (style?.gateLeafMode === 'double') {
+      addPost(split);
+      drawGateLeaf(start, split);
+      drawGateLeaf(split, end);
+    } else {
+      drawGateLeaf(start, end);
+    }
+
+    for (const post of posts) {
+      drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
+    }
+    drawPadlock(split);
     ctx.restore();
     return true;
   }
@@ -347,7 +392,9 @@ function drawProceduralFenceNano(
   }
 
   if (!arms.left && !arms.right && !arms.top && !arms.bottom) addPost(center);
-  for (const post of posts) drawFencePost(ctx, post, height * 0.96, gate);
+  for (const post of posts) {
+    drawFencePost(ctx, post, height * (style?.postHeightScale ?? 0.96), style);
+  }
   if (gate) drawPadlock(center);
 
   ctx.restore();

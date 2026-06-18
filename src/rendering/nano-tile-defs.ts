@@ -19,7 +19,8 @@ import {
 } from '../types/iso-renderer.types.js';
 import {
   CottageStoneFoundation, DarkCathedralStone, MudBrick, PlasterWhitewashWall,
-  RedClinker, RoughWoodPlankWall, SandstoneBrick, StoneBrick, TimberFrameWall,
+  RedClinker, RoughWoodPlankWall, SandstoneBrick, StoneBrick, ThatchRoof,
+  TimberFrameWall, fenceStyleForTile,
 } from '../asset-pipeline/iso2-materials.js';
 import {
   cathedralWallSvg,
@@ -190,16 +191,51 @@ export function cathedralWallNano(
 export function woodenFenceNano(
   variant: FeatureVariant = 'straight-h',
   zOffset = 2,
+  styleId?: string,
+  worldCol = 0,
+  worldRow = 0,
 ): IsoNanoTile {
+  const fenceStyle = styleId
+    ? fenceStyleForTile(styleId, worldCol, worldRow, variant)
+    : undefined;
   return {
     kind: 'fence',
     zOffset,
     zMode: 'positive',
-    svg: woodenFenceSvg(variant),
+    svg: woodenFenceSvg(variant, (styleId ?? 'weathered-post-rail') as import('./nano-tile-svgs.js').NanoFenceStyleId),
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
+    fenceStyle,
   };
+}
+
+function roofBillboardNano(
+  kind: 'roof-slope-left' | 'roof-slope-right' | 'roof-ridge',
+  svg: string,
+  zOffset = 6,
+): IsoNanoTile {
+  return {
+    kind,
+    zOffset,
+    zMode: 'positive',
+    svg,
+    walkable: WALKABLE_NEVER,
+    blendEdges: false,
+    variant: 'isolated',
+  };
+}
+
+export function thatchRoofSlopeLeftNano(zOffset = 6): IsoNanoTile {
+  return roofBillboardNano('roof-slope-left', ThatchRoof.svgSlopeLeft(), zOffset);
+}
+
+export function thatchRoofSlopeRightNano(zOffset = 6): IsoNanoTile {
+  return roofBillboardNano('roof-slope-right', ThatchRoof.svgSlopeRight(), zOffset);
+}
+
+export function thatchRoofRidgeNano(zOffset = 6): IsoNanoTile {
+  return roofBillboardNano('roof-ridge', ThatchRoof.svgRidge(), zOffset);
 }
 
 // ─── Gate / Quiz Gate ───────────────────────────────────────────────────────
@@ -326,6 +362,18 @@ export function getNanoStack(
       stack = [cathedralWallNano(variant ?? 'isolated')]; break;
     case 'wooden_fence':
       stack = [woodenFenceNano(variant ?? 'straight-h')]; break;
+    case 'wooden_fence_split_rail':
+      stack = [woodenFenceNano(variant ?? 'straight-h', 2, 'split-rail-oak')]; break;
+    case 'wooden_fence_picket':
+      stack = [woodenFenceNano(variant ?? 'straight-h', 2, 'rough-picket')]; break;
+    case 'wooden_fence_wattle':
+      stack = [woodenFenceNano(variant ?? 'straight-h', 2, 'hazel-wattle')]; break;
+    case 'roof_thatch_slope_left':
+      stack = [thatchRoofSlopeLeftNano()]; break;
+    case 'roof_thatch_slope_right':
+      stack = [thatchRoofSlopeRightNano()]; break;
+    case 'roof_thatch_ridge':
+      stack = [thatchRoofRidgeNano()]; break;
     case 'door_gate':
       stack = [woodenGateNano(variant ?? 'straight-h')]; break;
     case 'quiz_gate':
@@ -349,7 +397,11 @@ export function hasNanoRenderer(tileType: string): boolean {
   return tileType === 'stone_wall' || tileType === 'stone_wall_red_clinker'
     || tileType === 'stone_wall_mud_brick' || tileType === 'stone_wall_sandstone'
     || tileType === 'stone_wall_cottage_foundation'
-    || tileType === 'wooden_fence' || tileType === 'door_gate'
+    || tileType === 'wooden_fence' || tileType === 'wooden_fence_split_rail'
+    || tileType === 'wooden_fence_picket' || tileType === 'wooden_fence_wattle'
+    || tileType === 'roof_thatch_slope_left' || tileType === 'roof_thatch_slope_right'
+    || tileType === 'roof_thatch_ridge'
+    || tileType === 'door_gate'
     || tileType === 'quiz_gate' || tileType === 'water' || tileType === 'bridge'
     || tileType === 'troll_bridge' || tileType === 'homestead_wall'
     || tileType === 'homestead_wall_plaster' || tileType === 'homestead_wall_planks'

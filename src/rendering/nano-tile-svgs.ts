@@ -70,7 +70,9 @@ function mixHex(a: string, b: string, t: number): string {
 
 // ─── Rustic Fence Material Factory ──────────────────────────────────────────
 
-export type NanoFenceStyleId = 'weathered-post-rail' | 'split-rail-oak' | 'rough-picket' | 'mossy-farm-rail';
+export type NanoFenceStyleId =
+  | 'weathered-post-rail' | 'split-rail-oak' | 'rough-picket' | 'mossy-farm-rail'
+  | 'bleached-paddock' | 'hazel-wattle';
 
 interface NanoFenceMaterial {
   readonly id: NanoFenceStyleId;
@@ -116,6 +118,18 @@ const FENCE_MATERIALS: Record<NanoFenceStyleId, NanoFenceMaterial> = {
     rail: '#70644e', railShadow: '#40372a', railHighlight: '#9f9279', bleach: '#bfb49f',
     moss: '#4d6a43', grime: '#372d22', crack: '#241d18', postWidth: 8, railThickness: 5, railCount: 2,
     sag: 0.9, roughness: 0.28, pickets: false,
+  },
+  'bleached-paddock': {
+    id: 'bleached-paddock', post: '#847d6f', postShadow: '#555044', postHighlight: '#c8c1b2',
+    rail: '#948b7b', railShadow: '#5d5548', railHighlight: '#d4ccbc', bleach: '#e3dac9',
+    moss: '#6a7a56', grime: '#4a4337', crack: '#3a342d', postWidth: 8, railThickness: 4, railCount: 3,
+    sag: 0.4, roughness: 0.18, pickets: false,
+  },
+  'hazel-wattle': {
+    id: 'hazel-wattle', post: '#6c5638', postShadow: '#3e2d1a', postHighlight: '#9a7a52',
+    rail: '#8a6c44', railShadow: '#4d351d', railHighlight: '#b78e5d', bleach: '#d2bd93',
+    moss: '#607046', grime: '#3d2e20', crack: '#2a1e14', postWidth: 7, railThickness: 4, railCount: 3,
+    sag: 0.9, roughness: 0.40, pickets: false,
   },
 };
 

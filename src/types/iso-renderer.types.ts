@@ -182,6 +182,8 @@ export interface IsoNanoTile {
   readonly endCapTickColor?: string;
   /** Solver-resolved connection flags for continuous feature renderers. */
   readonly connections?: IsoFeatureConnections;
+  /** Procedural fence/gate material preset (experiment fence-family.ts). */
+  readonly fenceStyle?: import('../asset-pipeline/iso2-fence-family.js').IsoFenceStyle;
 }
 
 /** Ordered stack of nano tiles on a single MicroTile. */
