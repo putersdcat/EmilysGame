@@ -10,18 +10,22 @@ import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTeslaMode } from './game/platform';
-import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
-import { loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
+import { isTutorialActive, tickTutorial } from './game/tutorial';
+import { loadCharacterSprite } from './asset-pipeline/sprites';
 import { feedEntropy } from './engine/gen';
 import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons } from './ui/ui';
-import { loadFromSlot } from './game/save';
 // B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
 // to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
 // used as a wireHudButtons callback.
+// B5 micro-slice 11.41 (#268): new-game onboarding flow (reset +
+// customizer + age band + subjects + tutorial) and the load-slot- helper
+// extracted to ./game/new-game-flow.ts. main() now branches into
+// runNewGameFlow(state) or loadSlotIntoState(state, slot).
 import { makeSlotSaveHandler, makeSlotLoadHandler, makeSlotDeleteHandler } from './game/slot-actions';
+import { runNewGameFlow, loadSlotIntoState } from './game/new-game-flow';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -30,7 +34,7 @@ import { showMainMenu } from './game/main-menu';
 // (showPauseMenu unused in main.ts — called from input-extra-keys.ts)
 // B5 micro-slice 11.12 (#268): showAgeSelection extracted to
 // ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
-import { showAgeSelection } from './game/age-selection';
+// (B5.41 — usage moved to ./game/new-game-flow.ts)
 // B5 micro-slice 11.17 (#268): showOptionsOverlay extracted from main.ts
 // to ./game/options-overlay.ts. Pure DOM (volume sliders, touch controls,
 // fog, Tesla mode, replay tutorial). Takes optional state + inputMgr.
@@ -47,8 +51,7 @@ import { isWasmReady } from './rendering/wasm-bridge';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 
 import { searchBookArticles } from './ui/book-content';
-import { showSubjectSelection, openArticle } from './game/knowledge';
-import { showCustomizer } from './ui/customizer';
+import { openArticle } from './game/knowledge';
 import { getCycleProgress } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
 import { isFlashlightOn } from './rendering/local-lights';
@@ -100,18 +103,14 @@ import {
 } from './game/chunk-lifecycle';
 // B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
 // ./game/save-apply.ts. Pure orchestration — sequences deserializers across
-// ~15 subsystems (entropy, cosmetics, status, injury, music, sfx, voice,
-// streak, fog, age, playtime, touch mode, resolved cells, chunk regen).
-import { applySaveData } from './game/save-apply';
+// ~15 subsystems. (B5.41 — usage moved to ./game/new-game-flow.ts.)
 // B5 micro-slice 11.21 (#268): buildSaveData + doSave extracted from
 // main.ts to ./game/save-build.ts. Sibling to save-apply.ts. Re-imported
 // here so main.ts can pass doSave as a callback to setupExtraKeys +
 // debug-api without the new module depending on main.ts.
 import { doSave } from './game/save-build';
 // B5 micro-slice 11.16 (#268): resetGameState extracted from main.ts to
-// ./game/game-reset.ts. Sibling to save-apply — both orchestrate calls
-// into already-extracted factory/clear functions across subsystems.
-import { resetGameState } from './game/game-reset';
+// ./game/game-reset.ts. (B5.41 — usage moved to ./game/new-game-flow.ts.)
 // B5 micro-slice 11.18 (#268): checkBubbleTriggers extracted from main.ts
 // to ./game/bubble-triggers.ts. Pure logic — evaluates state and calls
 // triggerHint() per matching hint category. The lastBubbleBiomeId and
@@ -1170,31 +1169,10 @@ async function main(): Promise<void> {
     const choice = await showMainMenu(hasSaveData, () => showOptionsOverlay(null));
 
     if (choice === 'new-game') {
-      resetGameState(state);
-      // Character customizer (no cancel on new game — must create character)
-      const customVariation = (await showCustomizer(state.playerVariation))!;
-      clearVariationCache('custom');
-      state.playerVariation = customVariation;
-      state._baseExpression = customVariation.expression ?? 'happy';
-      state.expressionOverride = null;
-      state.egoImg = loadCharacterSprite(customVariation, 0, false);
-      state.lastAnimFrame = -1;
-      // Age band selection (#92)
-      await showAgeSelection(state.ageProfile);
-      // Subject selection
-      await showSubjectSelection(state.knowledge);
-      addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
-      // Tutorial for first-time players (#186)
-      if (shouldShowTutorial()) {
-        initTutorial();
-      }
+      await runNewGameFlow(state);
     } else if (choice.startsWith('load-slot-')) {
       const slot = parseInt(choice.replace('load-slot-', ''));
-      const data = loadFromSlot(slot);
-      if (data) {
-        applySaveData(state, data);
-        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-      }
+      await loadSlotIntoState(state, slot);
     }
     // 'continue' → auto-save already loaded by init()
   }
