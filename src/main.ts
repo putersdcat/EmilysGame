@@ -37,7 +37,7 @@ import { showOptionsOverlay } from './game/options-overlay';
 // _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
 // ./game/wildlife-render.ts. getRevealedCreatures() lives there too
 // and is imported directly by debug-api.ts (no DI needed).
-import { getNpcPersona, getShopPersona } from './config/npc.config';
+import { getNpcPersona } from './config/npc.config';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
 import { isWasmReady } from './rendering/wasm-bridge';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
@@ -45,28 +45,27 @@ import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cach
 import { searchBookArticles } from './ui/book-content';
 import { showSubjectSelection, openArticle } from './game/knowledge';
 import { showCustomizer } from './ui/customizer';
-import { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds } from './rendering/lighting';
+import { getCycleProgress } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
 import { isFlashlightOn } from './rendering/local-lights';
 // invalidateShadowCache now called from input-extra-keys.ts (B5.20)
 import { updateFog, setFogEnabled } from './rendering/fog';
 import {
-  updateWildlife, getVisibleWildlife, interactWithWildlife,
-  clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
+  updateWildlife, interactWithWildlife,
 } from './game/wildlife';
 // B5 micro-slice 11.13 (#268): getAnimationOffset, getTimeSlot, getSpecies,
 // getEmojiSprite, and the _revealedCreatures state moved to
 // ./game/wildlife-render.ts (only used inside renderWildlife).
+// B5 micro-slice 11.39 (#268): most thought-bubble exports moved to
+// ./game/debug-expose.ts (__bubbles global). triggerHint/tickBubbles/
+// dismissBubble remain here for main.ts hot-path call sites.
 
 import {
-  triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
-  clearBubbles, getBubbleState, resetCooldowns,
-  getMessageHistory, toggleHistoryPanel,
+  triggerHint, tickBubbles, dismissBubble,
 } from './ui/thought-bubbles';
-import { HINTS } from './config/hints.config';
 import {
-  createTradeState, openTrade, closeTrade, tradeNavigate,
-  executeTrade, executeSell, toggleTradeMode, getSellPrice, getSellableItems,
+  openTrade, tradeNavigate,
+  executeTrade, executeSell, getSellPrice, getSellableItems,
   syncTradeDOM,
   generateBarterQuiz, shouldTriggerBarter, barterNavigate, submitBarterAnswer,
   syncBarterQuizDOM, getTradeDialog,
@@ -256,12 +255,15 @@ function maybeLoadChunks(state: GameState): void {
 // B5 micro-slice 11.38 (#268): state init + save restore extracted to
 // ./game/state-init.ts. createInitialState() loads save, builds state via
 // factory, layers save overrides, applies starter items for new games,
-// and generates initial chunks. (debug-api.ts will move the __gameState
-// exposure out in a later slice.)
+// and generates initial chunks.
+// B5 micro-slice 11.39 (#268): window.__game* debug exposures extracted
+// to ./game/debug-expose.ts. exposeDebugGlobals(state) sets __gameState,
+// __wildlife, __lighting, __bubbles, __trade (read by E2E tests #68/71/72/111/112).
 import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
 import { bootstrapWordlist } from './game/wordlist-bootstrap';
 import { bootstrapAssets } from './game/asset-bootstrap';
 import { createInitialState } from './game/state-init';
+import { exposeDebugGlobals } from './game/debug-expose';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -286,32 +288,8 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // State init + save restore (creates GameState, generates initial chunks)
   const { state, hasSaveData } = createInitialState();
 
-  // Expose state for debugging / E2E tests
-  (window as any).__gameState = state;
-  // Expose wildlife + lighting module functions for E2E tests (#68)
-  (window as any).__wildlife = {
-    getVisibleWildlife,
-    interactWithWildlife,
-    clearWildlife,
-    getDiscoveredSpeciesArray,
-    restoreDiscoveredSpecies,
-    updateWildlife,
-    getWildlifeStats,
-  };
-  (window as any).__lighting = { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds };
-  // Expose thought bubble functions for E2E tests (#71, #111)
-  (window as any).__bubbles = {
-    triggerHint, tickBubbles, dismissBubble, clearBubbles,
-    getBubbleState, resetCooldowns, updateBubblePosition,
-    getMessageHistory, toggleHistoryPanel,
-    HINTS,
-  };
-  // Expose trade functions for E2E tests (#72, #112)
-  (window as any).__trade = {
-    openTrade, closeTrade, tradeNavigate, executeTrade, syncTradeDOM,
-    createTradeState, toggleTradeMode, executeSell, getSellPrice, getSellableItems,
-    getShopPersona, // #112 themed shop persona lookup
-  };
+  // Expose debug globals for E2E tests + browser DevTools
+  exposeDebugGlobals(state);
 
   return { state, renderer, input, hasSaveData };
 }
