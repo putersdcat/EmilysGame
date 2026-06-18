@@ -79,7 +79,11 @@ export function getObjectCells(key: string, chunk: ChunkData): ObjectCellRef[] {
  * Group tile types into connection families for variant inference.
  * Wall tiles share variants, fence tiles share variants, etc.
  */
-export function nanoConnectionFamily(tileType: TileType): 'wall' | 'fence' | 'water' | 'bridge' | TileType {
+export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fence' | 'water' | 'bridge' | TileType | string {
+  const t = tileType as string;
+  if (t === 'stone_wall' || t === 'stone_wall_red_clinker' || t === 'stone_wall_mud_brick' || t === 'stone_wall_sandstone') {
+    return 'wall';
+  }
   switch (tileType) {
     case 'stone_wall':
     case 'door_gate':

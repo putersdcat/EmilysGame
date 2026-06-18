@@ -25,6 +25,7 @@ import { type GameState } from './game-state';
 import { DIARRHEA_CONFIG } from './illness';
 import { setTimeOfDay, getCycleProgress } from '../rendering/lighting';
 import { toggleFlashlight, isFlashlightOn } from '../rendering/local-lights';
+import { AncientStone, Limestone, MudBrick, RedClinker, SandstoneBrick } from '../asset-pipeline/iso2-materials';
 import { clearTerrainCache } from '../rendering/terrain-cache';
 import { clearObjectCache, setDialogNpc } from '../rendering/render';
 import { stampIso2Assembly } from '../engine/iso2-assemblies';
@@ -144,6 +145,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Asset/biome metadata (#58)
     getAssetDefs: () => ASSET_DEFS,
     getBiomeDefs: () => BIOME_DEFS,
+    iso2BrickMaterials: { RedClinker, MudBrick, SandstoneBrick },
+    iso2StoneMaterials: { AncientStone, Limestone },
     // #223 live gameplay test helpers (per AUTONOMOUS_LOOP.md)
     isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks, state.activeConditions),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },

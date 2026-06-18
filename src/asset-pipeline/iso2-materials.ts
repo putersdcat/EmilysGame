@@ -6,6 +6,8 @@
  * contracts: tileable side/top slices with 48px structural modules.
  */
 
+export { AncientStone, Limestone } from './iso2-materials-ancient-stone';
+
 const SIZE = 144;
 const MODULE = 48;
 const MORTAR = 2;
@@ -136,6 +138,28 @@ export const StoneBrick = createBrickMaterial({
   mortar: '#3a3835', rBase: 158, gBase: 158, bBase: 154,
   rVar: 18, gVar: 18, bVar: 16, rMin: 104, gMin: 104, bMin: 100,
   rMax: 204, gMax: 204, bMax: 200, hi: [22, 22, 22], lo: [26, 26, 26], salt: 0x570A3,
+});
+
+/** Red clinker — furnaces, brick ovens (experiment red-clinker.ts). */
+export const RedClinker = createBrickMaterial({
+  mortar: '#2a201c', rBase: 136, gBase: 55, bBase: 29,
+  rVar: 24, gVar: 14, bVar: 9, rMin: 84, gMin: 30, bMin: 16,
+  rMax: 188, gMax: 88, bMax: 52, hi: [28, 20, 12], lo: [28, 20, 14], salt: 0xC11A,
+  topOpacity: 0.92,
+});
+
+/** Mud brick — huts, rural structures (experiment mud-brick.ts). */
+export const MudBrick = createBrickMaterial({
+  mortar: '#4a3325', rBase: 142, gBase: 92, bBase: 58,
+  rVar: 22, gVar: 16, bVar: 12, rMin: 88, gMin: 54, bMin: 34,
+  rMax: 188, gMax: 130, bMax: 88, hi: [24, 18, 12], lo: [24, 18, 12], salt: 0xAD0BE,
+});
+
+/** Sandstone brick — desert / arid biomes (experiment sandstone-brick.ts). */
+export const SandstoneBrick = createBrickMaterial({
+  mortar: '#6f5d3a', rBase: 188, gBase: 151, bBase: 86,
+  rVar: 20, gVar: 18, bVar: 14, rMin: 132, gMin: 104, bMin: 58,
+  rMax: 226, gMax: 196, bMax: 126, hi: [28, 24, 16], lo: [24, 22, 16], salt: 0x5A9D51,
 });
 
 function hash01(a: number, b: number, c: number): number {

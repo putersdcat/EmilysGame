@@ -17,7 +17,9 @@ import {
   type IsoNanoStack,
   type IsoFeatureVariant as FeatureVariant,
 } from '../types/iso-renderer.types.js';
-import { DarkCathedralStone, StoneBrick, TimberFrameWall } from '../asset-pipeline/iso2-materials.js';
+import {
+  DarkCathedralStone, MudBrick, RedClinker, SandstoneBrick, StoneBrick, TimberFrameWall,
+} from '../asset-pipeline/iso2-materials.js';
 import {
   cathedralWallSvg,
   cathedralWallTopSvg,
@@ -39,6 +41,38 @@ const WALKABLE_QUIZ_GATE = { type: 'conditional', conditionId: 'quiz-gate' } as 
 
 // ─── Stone Wall ───────────────────────────────────────────────────────────────
 
+interface BrickFaceMaterial {
+  svgTop(): string;
+  svgTopV(): string;
+  svgSouth(): string;
+  svgEast(): string;
+  svgEnd(): string;
+}
+
+function brickPaletteWallNano(
+  material: BrickFaceMaterial,
+  variant: FeatureVariant = 'isolated',
+  zOffset = 4,
+): IsoNanoTile {
+  return {
+    kind: 'stone-wall',
+    zOffset,
+    zMode: 'positive',
+    svg: stoneWallSvg(variant),
+    sideTextureSvg: stoneWallSvg(variant),
+    topTextureSvg: stoneWallTopSvg(variant),
+    topFaceTextureSvg: material.svgTop(),
+    topFaceTextureSvgV: material.svgTopV(),
+    southFaceTextureSvg: material.svgSouth(),
+    eastFaceTextureSvg: material.svgEast(),
+    endFaceTextureSvg: material.svgEnd(),
+    faceSliceEqualLighting: true,
+    walkable: WALKABLE_NEVER,
+    blendEdges: false,
+    variant,
+  };
+}
+
 /**
  * Create an IsoNanoTile descriptor for a stone wall.
  * Uses drawExtrudedNano path (sideTextureSvg + topTextureSvg).
@@ -49,23 +83,19 @@ export function stoneWallNano(
   variant: FeatureVariant = 'isolated',
   zOffset = 4,
 ): IsoNanoTile {
-  return {
-    kind: 'stone-wall',
-    zOffset,
-    zMode: 'positive',
-    svg: stoneWallSvg(variant),            // billboard fallback
-    sideTextureSvg: stoneWallSvg(variant), // front + end cap face
-    topTextureSvg:  stoneWallTopSvg(variant), // top footprint cap
-    topFaceTextureSvg: StoneBrick.svgTop(),
-    topFaceTextureSvgV: StoneBrick.svgTopV(),
-    southFaceTextureSvg: StoneBrick.svgSouth(),
-    eastFaceTextureSvg: StoneBrick.svgEast(),
-    endFaceTextureSvg: StoneBrick.svgEnd(),
-    faceSliceEqualLighting: true,
-    walkable: WALKABLE_NEVER,
-    blendEdges: false,
-    variant,
-  };
+  return brickPaletteWallNano(StoneBrick, variant, zOffset);
+}
+
+export function redClinkerWallNano(variant: FeatureVariant = 'straight-h', zOffset = 4): IsoNanoTile {
+  return brickPaletteWallNano(RedClinker, variant, zOffset);
+}
+
+export function mudBrickWallNano(variant: FeatureVariant = 'straight-h', zOffset = 4): IsoNanoTile {
+  return brickPaletteWallNano(MudBrick, variant, zOffset);
+}
+
+export function sandstoneBrickWallNano(variant: FeatureVariant = 'straight-h', zOffset = 4): IsoNanoTile {
+  return brickPaletteWallNano(SandstoneBrick, variant, zOffset);
 }
 
 export function homesteadWallNano(
@@ -242,6 +272,12 @@ export function getNanoStack(
   switch (tileType) {
     case 'stone_wall':
       stack = [stoneWallNano(variant ?? 'isolated')]; break;
+    case 'stone_wall_red_clinker':
+      stack = [redClinkerWallNano(variant ?? 'straight-h')]; break;
+    case 'stone_wall_mud_brick':
+      stack = [mudBrickWallNano(variant ?? 'straight-h')]; break;
+    case 'stone_wall_sandstone':
+      stack = [sandstoneBrickWallNano(variant ?? 'straight-h')]; break;
     case 'homestead_wall':
       stack = [homesteadWallNano(variant ?? 'isolated')]; break;
     case 'cathedral_wall':
@@ -268,7 +304,9 @@ export function getNanoStack(
  * Quick check avoids constructing the descriptor just to see if it exists.
  */
 export function hasNanoRenderer(tileType: string): boolean {
-  return tileType === 'stone_wall' || tileType === 'wooden_fence' || tileType === 'door_gate'
+  return tileType === 'stone_wall' || tileType === 'stone_wall_red_clinker'
+    || tileType === 'stone_wall_mud_brick' || tileType === 'stone_wall_sandstone'
+    || tileType === 'wooden_fence' || tileType === 'door_gate'
     || tileType === 'quiz_gate' || tileType === 'water' || tileType === 'bridge'
     || tileType === 'troll_bridge' || tileType === 'homestead_wall' || tileType === 'cathedral_wall';
 }
