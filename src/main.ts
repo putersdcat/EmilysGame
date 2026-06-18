@@ -14,7 +14,7 @@ import { isTeslaMode } from './game/platform';
 import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial } from './game/tutorial';
 import { characterVariations, loadCharacterSprite, clearVariationCache } from './asset-pipeline/sprites';
 import { setWordlist, setBiomeNoiseSeed, feedEntropy, restoreEntropyBuffer } from './engine/gen';
-import { generateWordlist, checkLlmHealth, isTestMode } from './engine/llm';
+import { generateWordlist, isTestMode } from './engine/llm';
 import { getScrambledWordlist } from './config/wordlists.asset';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { createInventory } from './game/inventory';
@@ -148,6 +148,9 @@ import { shouldAutoRead as _shouldAutoRead, autoReadQuizQuestion as _autoReadQui
 // to ./game/cosmetic-unlocks.ts. Checks quiz + wildlife progression against
 // the unlock table and grants new cosmetics (with toasts).
 import { checkCosmeticUnlocks } from './game/cosmetic-unlocks';
+// B5 micro-slice 11.26 (#268): waitForLlm extracted from main.ts to
+// ./game/llm-gate.ts. Shows LLM splash, polls health, supports dev skip.
+import { waitForLlm } from './game/llm-gate';
 // B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
 // to ./game/interaction-handler.ts. The _lastDialogNpcId +
 // _pendingPoopBurst module-level state moved with the function
@@ -265,45 +268,8 @@ function maybeLoadChunks(state: GameState): void {
 }
 
 // ─── LLM Connection Gate ─────────────────────────────────────
-
-/** Show splash and poll LLM until connected. Skips in test mode. Returns only when healthy or skipped. */
-async function waitForLlm(): Promise<void> {
-  const splash = document.getElementById('llmSplash');
-
-  // In test mode, skip LLM gate entirely (#26)
-  if (isTestMode()) {
-    console.log('[LLM] Test mode: skipping LLM health gate');
-    if (splash) splash.style.display = 'none';
-    return;
-  }
-
-  const statusEl = document.getElementById('llmStatus');
-  const skipBtn = document.getElementById('btnSkipLlm');
-  if (!splash || !statusEl) return; // Fallback: skip if no splash DOM
-
-  splash.style.display = 'flex';
-
-  // Allow dev skip
-  let skipped = false;
-  if (skipBtn) {
-    skipBtn.onclick = () => { skipped = true; };
-  }
-
-  let attempt = 0;
-  while (true) {
-    attempt++;
-    statusEl.textContent = `Connecting to LLM... (attempt ${attempt})`;
-    const ok = await checkLlmHealth();
-    if (ok || skipped) {
-      statusEl.textContent = ok ? 'LLM connected! Starting game...' : 'Skipping LLM (dev mode)...';
-      await new Promise((r) => setTimeout(r, 400));
-      splash.style.display = 'none';
-      return;
-    }
-    // Wait 2s before retry
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-}
+// B5 micro-slice 11.26 (#268): waitForLlm extracted to ./game/llm-gate.ts.
+// Shows LLM splash, polls health, supports dev skip button + test mode.
 
 // ─── Initialization ──────────────────────────────────────────
 
