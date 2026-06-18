@@ -418,12 +418,29 @@ export class IsometricRenderer {
       cmd.flipX = egoDir < 0;
     }
 
-    // Sort only the active portion using pre-allocated index array
+    // Sort the active draw commands by sortKey (back-to-front rendering)
+    const count = this.sortDrawCommands();
+
+    // Execute all draw commands (no closures!)
+    this.executeDrawCommands(count);
+
+    // ─── Occluder Re-draw Pass (#181) ────────────────────────────
+    // Re-draw the bottom portion of tracked occluder objects ON TOP of the player
+    // to create partial-hiding behind tall objects (trees, walls).
+    this.redrawOccluders(egoPos.y);
+  }
+
+  /**
+   * Sort the active draw commands by sortKey (back-to-front rendering) using
+   * the pre-allocated jsSortIdx index array. Returns the count of active cmds.
+   * In-place insertion sort for small counts (avoids slice allocation).
+   * With object cell cache, count is typically 100-500 — insertion sort is fine.
+   * Extracted from `render()` in B6.2 (#272).
+   */
+  private sortDrawCommands(): number {
     for (let i = 0; i < jsPoolIdx; i++) jsSortIdx[i] = i;
     const count = jsPoolIdx;
     const pool = jsPool;
-    // In-place insertion sort for small counts (avoids slice allocation)
-    // With object cell cache, count is typically 100-500 — insertion sort is fine
     for (let i = 1; i < count; i++) {
       const tmp = jsSortIdx[i];
       const key = pool[tmp].sortKey;
@@ -434,8 +451,17 @@ export class IsometricRenderer {
       }
       jsSortIdx[j + 1] = tmp;
     }
+    return count;
+  }
 
-    // Execute all draw commands (no closures!)
+  /**
+   * Execute the sorted draw commands in jsPool using pre-allocated index array.
+   * Switch dispatches to the appropriate `drawXxx` method based on cmd.type.
+   * No closures (zero per-frame allocation) — see pool initialization above.
+   * Extracted from `render()` in B6.2 (#272).
+   */
+  private executeDrawCommands(count: number): void {
+    const pool = jsPool;
     for (let ci = 0; ci < count; ci++) {
       const cmd = pool[jsSortIdx[ci]];
       switch (cmd.type) {
@@ -480,12 +506,16 @@ export class IsometricRenderer {
           break;
       }
     }
+  }
 
-    // ─── Occluder Re-draw Pass (#181) ────────────────────────────
-    // Re-draw the bottom portion of tracked occluder objects ON TOP of the player
-    // to create partial-hiding behind tall objects (trees, walls).
-    // Only activates when the player is slightly south of the occluder (in front but close).
-    const playerSortKey = egoPos.y + 0.3;
+  /**
+   * Re-draw the bottom portion of tracked occluder objects ON TOP of the player
+   * to create partial-hiding behind tall objects (trees, walls).
+   * Only activates when the player is slightly south of the occluder (in front but close).
+   * Extracted from `render()` in B6.2 (#272).
+   */
+  private redrawOccluders(playerGridY: number): void {
+    const playerSortKey = playerGridY + 0.3;
     const occCtx = this.ctx;
     for (let oi = 0; oi < occluderCount; oi++) {
       const occ = occluderPool[oi];
