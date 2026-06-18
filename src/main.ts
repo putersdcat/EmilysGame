@@ -16,8 +16,12 @@ import { feedEntropy } from './engine/gen';
 import { isTestMode } from './engine/llm';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
-import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons, markSaveSlotsDirty } from './ui/ui';
-import { saveToSlot, loadFromSlot, deleteSlot } from './game/save';
+import { addToast, showDialog, advanceDialog, closeDialog, wireHudButtons } from './ui/ui';
+import { loadFromSlot } from './game/save';
+// B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
+// to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
+// used as a wireHudButtons callback.
+import { makeSlotSaveHandler, makeSlotLoadHandler, makeSlotDeleteHandler } from './game/slot-actions';
 // B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
 // The Options callback is wired here so this module stays decoupled.
 import { showMainMenu } from './game/main-menu';
@@ -103,7 +107,7 @@ import { applySaveData } from './game/save-apply';
 // main.ts to ./game/save-build.ts. Sibling to save-apply.ts. Re-imported
 // here so main.ts can pass doSave as a callback to setupExtraKeys +
 // debug-api without the new module depending on main.ts.
-import { buildSaveData, doSave } from './game/save-build';
+import { doSave } from './game/save-build';
 // B5 micro-slice 11.16 (#268): resetGameState extracted from main.ts to
 // ./game/game-reset.ts. Sibling to save-apply — both orchestrate calls
 // into already-extracted factory/clear functions across subsystems.
@@ -1126,33 +1130,14 @@ async function main(): Promise<void> {
     if (teslaBadge) teslaBadge.classList.add('active');
   }
 
-  // Wire HTML HUD buttons
+  // Wire HTML HUD buttons (slot actions extracted to ./game/slot-actions.ts, #268 B5.40)
   wireHudButtons(
     () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
     () => { state.ui.showDebug = !state.ui.showDebug; },
     () => { doSave(state); addToast(state.ui, 'Game saved!', '#4caf50', 1500); },
-    // Slot save
-    (slot: number) => {
-      const data = buildSaveData(state);
-      saveToSlot(slot, data);
-      markSaveSlotsDirty();
-      addToast(state.ui, `Saved to slot ${slot + 1}!`, '#4caf50', 1500);
-    },
-    // Slot load
-    (slot: number) => {
-      const data = loadFromSlot(slot);
-      if (data) {
-        applySaveData(state, data);
-        markSaveSlotsDirty();
-        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-      }
-    },
-    // Slot delete
-    (slot: number) => {
-      deleteSlot(slot);
-      markSaveSlotsDirty();
-      addToast(state.ui, `Slot ${slot + 1} deleted`, '#ff8844', 1500);
-    },
+    makeSlotSaveHandler(state),
+    makeSlotLoadHandler(state),
+    makeSlotDeleteHandler(state),
   );
 
   // Debug hooks for testing (available via window.__gameDebug)
