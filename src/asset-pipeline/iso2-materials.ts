@@ -16,6 +16,7 @@ export {
   WeatheredPostRail, defaultFenceStyle, fenceStyleForTile, getFenceStyle, listFenceStyles,
   type IsoFenceStyle,
 } from './iso2-fence-family';
+export * as WaterFamily from './iso2-water-family';
 
 const SIZE = 144;
 const MODULE = 48;

@@ -16,6 +16,7 @@ import {
   type IsoNanoTile,
   type IsoNanoStack,
   type IsoFeatureVariant as FeatureVariant,
+  type NanoWeatheringOverlay,
 } from '../types/iso-renderer.types.js';
 import {
   CottageStoneFoundation, DarkCathedralStone, MudBrick, PlasterWhitewashWall,
@@ -31,6 +32,7 @@ import {
   stoneWallTopSvg,
   trollBridgeSvg,
   waterNanoSvg,
+  type NanoWaterStyleId,
   woodenBridgeSvg,
   woodenFenceSvg,
   woodenGateSvg,
@@ -40,6 +42,13 @@ import {
 const WALKABLE_NEVER  = { type: 'never'  } as const;
 const WALKABLE_ALWAYS = { type: 'always' } as const;
 const WALKABLE_QUIZ_GATE = { type: 'conditional', conditionId: 'quiz-gate' } as const;
+
+const WALL_WEATHERING_OVERLAYS: readonly NanoWeatheringOverlay[] = [
+  { kind: 'mud', color: '#3b2817', intensity: 0.38, opacity: 0.28, seed: 1729, faces: ['south', 'east'], yRange: [0.70, 1] },
+  { kind: 'moss', color: '#365c2d', intensity: 0.24, opacity: 0.24, seed: 2731, faces: ['south', 'east'], yRange: [0.48, 0.88] },
+  { kind: 'snow', color: '#f4fbff', intensity: 0.28, opacity: 0.35, seed: 3719, faces: ['top'], yRange: [0, 0.45] },
+  { kind: 'cracks', color: 'rgba(28,24,20,0.80)', intensity: 0.10, opacity: 0.22, seed: 4721, faces: ['south', 'east', 'top'] },
+] as const;
 
 // ─── Stone Wall ───────────────────────────────────────────────────────────────
 
@@ -69,6 +78,7 @@ function brickPaletteWallNano(
     eastFaceTextureSvg: material.svgEast(),
     endFaceTextureSvg: material.svgEnd(),
     faceSliceEqualLighting: true,
+    weatheringOverlays: WALL_WEATHERING_OVERLAYS,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
@@ -125,6 +135,7 @@ function homesteadPaletteWallNano(
     southFaceTextureSvg: material.svgSouth(),
     eastFaceTextureSvg: material.svgEast(),
     endFaceTextureSvg: material.svgEnd(),
+    weatheringOverlays: WALL_WEATHERING_OVERLAYS,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
@@ -174,6 +185,7 @@ export function cathedralWallNano(
     endFaceTextureSvg: DarkCathedralStone.svgEnd(),
     topRotateWithAxis: false,
     endCapTicks: false,
+    weatheringOverlays: WALL_WEATHERING_OVERLAYS,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant,
@@ -214,12 +226,14 @@ function roofBillboardNano(
   kind: 'roof-slope-left' | 'roof-slope-right' | 'roof-ridge',
   svg: string,
   zOffset = 6,
+  gableSvg?: string,
 ): IsoNanoTile {
   return {
     kind,
     zOffset,
     zMode: 'positive',
     svg,
+    sideTextureSvg: gableSvg,
     walkable: WALKABLE_NEVER,
     blendEdges: false,
     variant: 'isolated',
@@ -227,11 +241,11 @@ function roofBillboardNano(
 }
 
 export function thatchRoofSlopeLeftNano(zOffset = 6): IsoNanoTile {
-  return roofBillboardNano('roof-slope-left', ThatchRoof.svgSlopeLeft(), zOffset);
+  return roofBillboardNano('roof-slope-left', ThatchRoof.svgSlopeLeft(), zOffset, ThatchRoof.svgGable());
 }
 
 export function thatchRoofSlopeRightNano(zOffset = 6): IsoNanoTile {
-  return roofBillboardNano('roof-slope-right', ThatchRoof.svgSlopeRight(), zOffset);
+  return roofBillboardNano('roof-slope-right', ThatchRoof.svgSlopeRight(), zOffset, ThatchRoof.svgGable());
 }
 
 export function thatchRoofRidgeNano(zOffset = 6): IsoNanoTile {
@@ -270,16 +284,42 @@ export function woodenGateNano(
 export function waterNano(
   variant: FeatureVariant = 'straight-h',
   zOffset = -2,
+  styleId?: NanoWaterStyleId,
+  worldCol = 0,
+  worldRow = 0,
 ): IsoNanoTile {
+  const waterStyle = styleId ?? (variant === 'isolated' ? 'deep-pond' : 'clear-river');
   return {
     kind: 'river',
     zOffset,
     zMode: 'negative',
-    svg: waterNanoSvg(variant, variant === 'isolated' ? 'deep-pond' : 'clear-river'),
+    svg: waterNanoSvg(variant, waterStyle, 0, worldCol, worldRow),
     walkable: WALKABLE_NEVER,
     blendEdges: true,
     variant,
   };
+}
+
+/** Pick a D.6 water family by main-game biome id. */
+export function waterStyleIdForBiome(biomeId: number): NanoWaterStyleId {
+  switch (((biomeId % 4) + 4) % 4) {
+    case 1: return 'muddy-creek';
+    case 2: return 'deep-pond';
+    case 3: return 'marsh-water';
+    default: return 'clear-river';
+  }
+}
+
+/** Optional explicit water style tile types for tests/tools; plain water falls back to biome style. */
+export function waterStyleForTileType(tileType: string, biomeId: number): NanoWaterStyleId | null {
+  switch (tileType) {
+    case 'water': return waterStyleIdForBiome(biomeId);
+    case 'water_clear_river': return 'clear-river';
+    case 'water_muddy_creek': return 'muddy-creek';
+    case 'water_deep_pond': return 'deep-pond';
+    case 'water_marsh_water': return 'marsh-water';
+    default: return null;
+  }
 }
 
 // ─── Bridge ─────────────────────────────────────────────────────────────────
@@ -380,6 +420,14 @@ export function getNanoStack(
       stack = [woodenGateNano(variant ?? 'straight-h', true)]; break;
     case 'water':
       stack = [waterNano(variant ?? 'straight-h')]; break;
+    case 'water_clear_river':
+      stack = [waterNano(variant ?? 'straight-h', -2, 'clear-river')]; break;
+    case 'water_muddy_creek':
+      stack = [waterNano(variant ?? 'straight-h', -2, 'muddy-creek')]; break;
+    case 'water_deep_pond':
+      stack = [waterNano(variant ?? 'isolated', -2, 'deep-pond')]; break;
+    case 'water_marsh_water':
+      stack = [waterNano(variant ?? 'straight-h', -2, 'marsh-water')]; break;
     case 'bridge':
       stack = [bridgeNano(variant ?? 'straight-h')]; break;
     case 'troll_bridge':
@@ -402,7 +450,10 @@ export function hasNanoRenderer(tileType: string): boolean {
     || tileType === 'roof_thatch_slope_left' || tileType === 'roof_thatch_slope_right'
     || tileType === 'roof_thatch_ridge'
     || tileType === 'door_gate'
-    || tileType === 'quiz_gate' || tileType === 'water' || tileType === 'bridge'
+    || tileType === 'quiz_gate' || tileType === 'water'
+    || tileType === 'water_clear_river' || tileType === 'water_muddy_creek'
+    || tileType === 'water_deep_pond' || tileType === 'water_marsh_water'
+    || tileType === 'bridge'
     || tileType === 'troll_bridge' || tileType === 'homestead_wall'
     || tileType === 'homestead_wall_plaster' || tileType === 'homestead_wall_planks'
     || tileType === 'cathedral_wall';

@@ -109,6 +109,20 @@ export interface IsoFeatureConnections {
   readonly left: boolean;
 }
 
+/** Render-time weathering overlay applied against actual rendered face dimensions. */
+export interface NanoWeatheringOverlay {
+  readonly kind: 'moss' | 'dirt' | 'dust' | 'mud' | 'soot' | 'edge-wear' | 'snow' | 'cracks';
+  readonly color: string;
+  readonly intensity: number;
+  readonly opacity: number;
+  readonly seed: number;
+  readonly faces?: readonly ('south' | 'east' | 'top')[];
+  /** 0..1 y-range over the rendered face. Vertical faces: top→bottom. Top faces: local north→south. */
+  readonly yRange?: readonly [number, number];
+  /** 0..1 x-range over the rendered face. */
+  readonly xRange?: readonly [number, number];
+}
+
 // ─── Walkability ───────────────────────────────────────────────────────────────
 
 /**
@@ -180,6 +194,8 @@ export interface IsoNanoTile {
   readonly endCapTicks?: boolean;
   /** Optional color for future exposed end-cap/header grout ticks. */
   readonly endCapTickColor?: string;
+  /** Optional render-time weathering overlays applied with actual face dimensions. */
+  readonly weatheringOverlays?: readonly NanoWeatheringOverlay[];
   /** Solver-resolved connection flags for continuous feature renderers. */
   readonly connections?: IsoFeatureConnections;
   /** Procedural fence/gate material preset (experiment fence-family.ts). */

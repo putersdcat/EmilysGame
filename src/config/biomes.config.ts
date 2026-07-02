@@ -23,6 +23,32 @@ export interface BiomeDef {
   description: string;
 }
 
+/** Terrain surface ids used by D.8 continuous biome-transition overlays. */
+export type BiomeTransitionSurface = 'grass' | 'dirt' | 'sand' | 'stone_floor';
+
+export interface BiomeTransitionRule {
+  readonly id: string;
+  readonly surface: BiomeTransitionSurface;
+  readonly color: string;
+  /** Moisture range [min, max] where this surface influence appears. */
+  readonly moisture: readonly [number, number];
+  /** Elevation range [min, max] where this surface influence appears. */
+  readonly elevation: readonly [number, number];
+  /** Max overlay alpha used by the terrain-cache D.8 pass. */
+  readonly maxAlpha: number;
+}
+
+/**
+ * D.8 continuous biome-transition ladder. Dirt is the "mud" midpoint between
+ * meadow grass and dry sand; stone_floor is the high-elevation rocky endpoint.
+ */
+export const BIOME_TRANSITION_RULES = [
+  { id: 'grass-meadow', surface: 'grass', color: '#3CB43C', moisture: [0.36, 1.00], elevation: [0.00, 0.58], maxAlpha: 0.10 },
+  { id: 'mud-dirt', surface: 'dirt', color: '#7A5A2A', moisture: [0.28, 0.76], elevation: [0.05, 0.66], maxAlpha: 0.18 },
+  { id: 'dry-sand', surface: 'sand', color: '#D2B48C', moisture: [0.00, 0.42], elevation: [0.00, 0.64], maxAlpha: 0.20 },
+  { id: 'high-stone', surface: 'stone_floor', color: '#9A9080', moisture: [0.00, 0.82], elevation: [0.56, 1.00], maxAlpha: 0.19 },
+] as const satisfies readonly BiomeTransitionRule[];
+
 export const BIOME_DEFS: BiomeDef[] = [
   {
     id: 0,

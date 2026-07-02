@@ -16,22 +16,23 @@
  */
 
 import { ASSET_DEFS } from '../config/assets.config';
-import { BIOME_DEFS } from '../config/biomes.config';
+import { BIOME_DEFS, BIOME_TRANSITION_RULES } from '../config/biomes.config';
 import { type AgeBand } from '../types/content-pack.types';
 import { type Iso2AssemblyId } from '../engine/iso2-assemblies';
 import { isFootprintWalkable } from '../engine/mechanics';
 import { InputManager } from './input';
 import { type GameState } from './game-state';
 import { DIARRHEA_CONFIG } from './illness';
-import { setTimeOfDay, getCycleProgress } from '../rendering/lighting';
+import { setTimeOfDay, getCycleProgress, getCurrentLighting } from '../rendering/lighting';
 import { toggleFlashlight, isFlashlightOn } from '../rendering/local-lights';
 import {
   AncientStone, BleachedPaddock, CottageStoneFoundation, HazelWattle, Limestone, MudBrick,
   MossyFarmRail, PlasterWhitewashWall, RedClinker, RoughPicket, RoughWoodPlankWall,
-  SandstoneBrick, SplitRailOak, ThatchRoof, WeatheredPostRail,
+  SandstoneBrick, SplitRailOak, ThatchRoof, WaterFamily, WeatheredPostRail,
 } from '../asset-pipeline/iso2-materials';
 import { clearTerrainCache } from '../rendering/terrain-cache';
 import { clearObjectCache, setDialogNpc } from '../rendering/render';
+import { getNanoStack } from '../rendering/nano-tile-defs';
 import { stampIso2Assembly } from '../engine/iso2-assemblies';
 import { getDebuffs, useStatusItem } from './status';
 import {
@@ -93,6 +94,7 @@ import {
 } from './tutorial';
 import { generateBarterQuiz, syncBarterQuizDOM } from './trading';
 import { hasAssetSprite } from '../asset-pipeline/asset-sprites';
+import { sampleBiomeTransition } from '../rendering/biome-transition-overlays';
 
 // ─── Dependencies ────────────────────────────────────────────
 
@@ -129,6 +131,7 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Time of day
     setTimeOfDay,
     getCycleProgress,
+    getCurrentLighting,
     // Flashlight
     toggleFlashlight,
     isFlashlightOn,
@@ -149,6 +152,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Asset/biome metadata (#58)
     getAssetDefs: () => ASSET_DEFS,
     getBiomeDefs: () => BIOME_DEFS,
+    getBiomeTransitionRules: () => BIOME_TRANSITION_RULES,
+    sampleBiomeTransition,
     iso2BrickMaterials: { RedClinker, MudBrick, SandstoneBrick },
     iso2StoneMaterials: { AncientStone, Limestone, CottageStoneFoundation },
     iso2HomesteadMaterials: { PlasterWhitewashWall, RoughWoodPlankWall },
@@ -156,6 +161,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     iso2FenceMaterials: {
       WeatheredPostRail, SplitRailOak, MossyFarmRail, BleachedPaddock, RoughPicket, HazelWattle,
     },
+    iso2WaterMaterials: WaterFamily,
+    getNanoStackForTests: getNanoStack,
     // #223 live gameplay test helpers (per AUTONOMOUS_LOOP.md)
     isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks, state.activeConditions),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },

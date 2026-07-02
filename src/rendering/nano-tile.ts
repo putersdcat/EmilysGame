@@ -29,6 +29,8 @@ import {
 } from '../types/iso-renderer.types.js';
 import type { IsoFenceStyle } from '../asset-pipeline/iso2-fence-family.js';
 import { wallBounds } from './nano-tile-svgs';
+import { drawRoofNano, isRoofNanoKind } from './nano-roof';
+import { drawNanoWeathering } from './nano-weathering';
 
 // ─── SVG Image Cache ─────────────────────────────────────────────────────────
 // Inlined from experiment/isometric-2.0/src/tile.ts for standalone portability.
@@ -1051,6 +1053,16 @@ export function drawExtrudedNano(
   const isoX = (tx: number, ty: number) => screenX + (tx - ty) * ISO_X_PER_SOURCE_PX + HALF_W;
   const isoY = (tx: number, ty: number) => screenY + (tx + ty) * ISO_Y_PER_SOURCE_PX;
 
+  function drawWeathering(
+    face: 'south' | 'east' | 'top',
+    width: number,
+    height: number,
+    x0: number,
+    y0: number,
+  ): void {
+    drawNanoWeathering(ctx, nano, face, width, height, x0, y0, screenX, screenY);
+  }
+
   function southOccluded(r: { x: number; y: number; w: number; h: number }): boolean {
     return rects.some(o => o !== r && o.y === r.y + r.h && o.x < r.x + r.w && o.x + o.w > r.x);
   }
@@ -1085,6 +1097,7 @@ export function drawExtrudedNano(
       ctx.translate(ex, ey);
       ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
       ctx.drawImage(southImg, r.x, 0, r.w, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.w, drawH);
+      drawWeathering('south', r.w, drawH, 0, -drawH);
       ctx.restore();
     }
 
@@ -1095,6 +1108,7 @@ export function drawExtrudedNano(
       ctx.translate(ex, ey);
       ctx.transform(-ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, 0, 1, 0, 0);
       ctx.drawImage(eastImg, r.y, 0, r.h, Math.min(MICRO_TILE_SIZE, drawH), 0, -drawH, r.h, drawH);
+      drawWeathering('east', r.h, drawH, 0, -drawH);
       if (!nano.faceSliceEqualLighting) {
         ctx.fillStyle = 'rgba(0,0,0,0.18)';
         ctx.fillRect(0, -drawH, r.h, drawH);
@@ -1113,6 +1127,7 @@ export function drawExtrudedNano(
   for (const r of rects) {
     const img = topIsV(r) ? topVImg : topImg;
     ctx.drawImage(img, r.x, r.y, r.w, r.h, r.x, r.y, r.w, r.h);
+    drawWeathering('top', r.w, r.h, r.x, r.y);
   }
   ctx.restore();
 
@@ -1151,7 +1166,9 @@ export function drawNanoStack(
         if (!drawFlatNano(ctx, nano, screenX, screenY)) allImagesLoaded = false;
         break;
       case 'positive':
-        if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
+        if (isRoofNanoKind(nano.kind)) {
+          if (!drawRoofNano(ctx, nano, screenX, screenY, loadSvgImage)) allImagesLoaded = false;
+        } else if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
           if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;
         } else {
           if (!drawPositiveNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;

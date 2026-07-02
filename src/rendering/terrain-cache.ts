@@ -14,8 +14,9 @@ import { ASSET_DEFS } from '../config/assets.config';
 import { getBiome } from '../config/biomes.config';
 import { getIsoTile } from './tiles';
 import { drawSeamlessTerrainTile, type SeamlessTerrainType } from '../asset-pipeline/world-tile-textures';
+import { drawContinuousBiomeTransitions } from './biome-transition-overlays';
 import { drawNanoStack } from './nano-tile';
-import { getNanoStack } from './nano-tile-defs';
+import { getNanoStack, waterNano, waterStyleForTileType } from './nano-tile-defs';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { cellJitter } from '../engine/utils';
 import type { ChunkData } from '../types/game.types';
@@ -110,25 +111,23 @@ export function getCachedTerrain(
       const globalCY = chunk.chunkY * SIZE + cy;
 
       if (def.tileType) {
-        if (def.tileType === 'water') {
+        const waterStyle = waterStyleForTileType(def.tileType, chunk.biomeId);
+        if (waterStyle) {
           // Native Iso 2.0 water is a negative-Z nano cut into a grass/shore base.
           drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
           const variant = inferWaterVariant(chunk, cx, cy, allChunks);
-          const waterStack = getNanoStack('water', variant);
-          if (waterStack) {
-            const res = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
-            if (!res.allImagesLoaded) allImagesLoaded = false;
-          }
+          const waterStack = [waterNano(variant, -2, waterStyle, globalCX, globalCY)];
+          const res = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
+          if (!res.allImagesLoaded) allImagesLoaded = false;
           continue;
         }
         if (def.tileType === 'bridge') {
           drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
           const variant = inferBridgeVariant(chunk, cx, cy, allChunks);
-          const waterStack = getNanoStack('water', variant);
-          if (waterStack) {
-            const res = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
-            if (!res.allImagesLoaded) allImagesLoaded = false;
-          }
+          const waterStyle = waterStyleForTileType('water', chunk.biomeId)!;
+          const waterStack = [waterNano(variant, -2, waterStyle, globalCX, globalCY)];
+          const waterRes = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
+          if (!waterRes.allImagesLoaded) allImagesLoaded = false;
           const bridgeStack = getNanoStack('bridge', variant);
           if (bridgeStack) {
             const res = drawNanoStack(ctx, bridgeStack, lsx - HALF_TW, lsy - HALF_TH);
@@ -162,6 +161,13 @@ export function getCachedTerrain(
       }
     }
   }
+
+  // --- D.8 broad biome transition wash (moisture/elevation noise) ---
+  drawContinuousBiomeTransitions(ctx, chunk, {
+    startCX, startCY, endCX, endCY,
+    originX: ORIGIN_X,
+    originY: ORIGIN_Y,
+  });
 
   // --- Auto-tile transitions: subtle edge darkening at tile-type boundaries ---
   // Pass allChunks for cross-chunk border transitions
@@ -336,6 +342,10 @@ const TILE_DOMINANT_COLORS: Record<string, string> = {
   dirt: '#8B6914',
   rock: '#808080',
   water: '#2E6ECC',
+  water_clear_river: '#2E6ECC',
+  water_muddy_creek: '#617845',
+  water_deep_pond: '#174F78',
+  water_marsh_water: '#356751',
   sand: '#D2B48C',
   stone_wall: '#909090',
   stone_floor: '#9A9080',
@@ -465,7 +475,8 @@ function isWaterBase(
   cy: number,
   allChunks?: Map<string, ChunkData>,
 ): boolean {
-  return getBaseTileType(chunk, cx, cy, allChunks) === 'water';
+  const tileType = getBaseTileType(chunk, cx, cy, allChunks);
+  return tileType !== null && waterStyleForTileType(tileType, chunk.biomeId) !== null;
 }
 
 function inferWaterVariant(
@@ -499,11 +510,15 @@ function getDominantColor(tileType: string): string | null {
   return TILE_DOMINANT_COLORS[tileType] ?? null;
 }
 
+function isWaterTerrainType(tileType: string): boolean {
+  return waterStyleForTileType(tileType, 0) !== null;
+}
+
 /**
  * Check if a transition is water↔land (gets special shore treatment).
  */
 function isShoreTransition(typeA: string, typeB: string): boolean {
-  return (typeA === 'water') !== (typeB === 'water');
+  return isWaterTerrainType(typeA) !== isWaterTerrainType(typeB);
 }
 
 /**
@@ -616,7 +631,7 @@ function renderAutoTileTransitions(
         ctx.fillRect(lsx - HALF_TW, lsy - HALF_TH, TW, TH);
 
         // Shore foam effect: white sparkle along water↔land edges
-        if (shore && nbType === 'water') {
+        if (shore && isWaterTerrainType(nbType)) {
           ctx.globalAlpha = 0.2 * blendIntensity;
           ctx.strokeStyle = '#FFFFFF';
           ctx.lineWidth = 1;

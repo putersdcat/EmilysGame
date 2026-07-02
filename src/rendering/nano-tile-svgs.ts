@@ -32,6 +32,11 @@ export {
   resolveVariants,
 } from '../engine/iso2-solver.js';
 import { DarkCathedralStone, StoneBrick, TimberFrameWall } from '../asset-pipeline/iso2-materials.js';
+import {
+  listWaterStyles,
+  svgWater,
+  type WaterStyleId,
+} from '../asset-pipeline/iso2-water-family';
 
 const MICRO_TILE_SIZE = 144;
 const LEGACY_TILE_SIZE = 128;
@@ -154,119 +159,24 @@ function fenceMaterial(style: NanoFenceStyleId | undefined, seed: string): NanoF
 }
 
 // ─── Negative-Z Water Material Factory ──────────────────────────────────────
+// D.6: The full experiment water family lives in src/asset-pipeline/iso2-water-family.
+// Keep these nano-facing names stable for existing callers.
 
-export type NanoWaterStyleId = 'clear-river' | 'muddy-creek' | 'deep-pond' | 'marsh-water';
-
-interface NanoWaterMaterial {
-  readonly id: NanoWaterStyleId;
-  readonly bankOuter: string;
-  readonly bankInner: string;
-  readonly bankWet: string;
-  readonly shallow: string;
-  readonly mid: string;
-  readonly deep: string;
-  readonly foam: string;
-  readonly glint: string;
-  readonly channelWidth: number;
-  readonly bankWidth: number;
-}
-
-const WATER_MATERIALS: Record<NanoWaterStyleId, NanoWaterMaterial> = {
-  'clear-river': { id: 'clear-river', bankOuter: '#5f6530', bankInner: '#786733', bankWet: '#3f512e', shallow: '#2b86a8', mid: '#1b638f', deep: '#0d345f', foam: '#a8d9e8', glint: '#e8fff8', channelWidth: 64, bankWidth: 11 },
-  'muddy-creek': { id: 'muddy-creek', bankOuter: '#6a5429', bankInner: '#806439', bankWet: '#3e3524', shallow: '#617845', mid: '#3d684f', deep: '#244b46', foam: '#b7caa6', glint: '#e4e8cf', channelWidth: 58, bankWidth: 13 },
-  'deep-pond': { id: 'deep-pond', bankOuter: '#5a4a28', bankInner: '#746035', bankWet: '#303c2a', shallow: '#286b86', mid: '#174f78', deep: '#082b50', foam: '#87bfd4', glint: '#e5fff7', channelWidth: 70, bankWidth: 12 },
-  'marsh-water': { id: 'marsh-water', bankOuter: '#596b32', bankInner: '#69753d', bankWet: '#344529', shallow: '#52774a', mid: '#356751', deep: '#1d4744', foam: '#a8c49d', glint: '#d9eed2', channelWidth: 62, bankWidth: 14 },
-};
+export type NanoWaterStyleId = WaterStyleId;
 
 export function listNanoWaterStyles(): readonly NanoWaterStyleId[] {
-  return Object.keys(WATER_MATERIALS) as NanoWaterStyleId[];
-}
-
-function connectionsForVariant(variant: FeatureVariant): { top: boolean; right: boolean; bottom: boolean; left: boolean } {
-  switch (variant) {
-    case 'straight-h': return { top: false, right: true, bottom: false, left: true };
-    case 'straight-v': return { top: true, right: false, bottom: true, left: false };
-    case 'corner-tr': return { top: true, right: true, bottom: false, left: false };
-    case 'corner-tl': return { top: true, right: false, bottom: false, left: true };
-    case 'corner-br': return { top: false, right: true, bottom: true, left: false };
-    case 'corner-bl': return { top: false, right: false, bottom: true, left: true };
-    case 'cross': return { top: true, right: true, bottom: true, left: true };
-    case 'tee-t': return { top: false, right: true, bottom: true, left: true };
-    case 'tee-r': return { top: true, right: false, bottom: true, left: true };
-    case 'tee-b': return { top: true, right: true, bottom: false, left: true };
-    case 'tee-l': return { top: true, right: true, bottom: true, left: false };
-    case 'end-t': return { top: true, right: false, bottom: false, left: false };
-    case 'end-r': return { top: false, right: true, bottom: false, left: false };
-    case 'end-b': return { top: false, right: false, bottom: true, left: false };
-    case 'end-l': return { top: false, right: false, bottom: false, left: true };
-    default: return { top: false, right: false, bottom: false, left: false };
-  }
-}
-
-function edgePoint(dir: 'top' | 'right' | 'bottom' | 'left'): { x: number; y: number } {
-  switch (dir) {
-    case 'top': return { x: 72, y: -34 };
-    case 'right': return { x: 178, y: 72 };
-    case 'bottom': return { x: 72, y: 178 };
-    case 'left': return { x: -34, y: 72 };
-  }
-}
-
-function waterCornerPath(conn: { top: boolean; right: boolean; bottom: boolean; left: boolean }): string {
-  const dirs = (['top', 'right', 'bottom', 'left'] as const).filter((d) => conn[d]);
-  const a = edgePoint(dirs[0]); const b = edgePoint(dirs[1]);
-  return `M ${a.x} ${a.y} Q 72 72 ${b.x} ${b.y}`;
+  return listWaterStyles();
 }
 
 /** Procedural negative-Z water SVG. Transparent outside banks; river edges overdraw so adjacent nanos tile. */
-export function waterNanoSvg(variant: FeatureVariant = 'straight-h', styleId: NanoWaterStyleId = 'clear-river', frame = 0): string {
-  const style = WATER_MATERIALS[variant === 'isolated' ? 'deep-pond' : styleId];
-  const conn = connectionsForVariant(variant);
-  const count = (conn.top ? 1 : 0) + (conn.right ? 1 : 0) + (conn.bottom ? 1 : 0) + (conn.left ? 1 : 0);
-  const isCorner = count === 2 && !((conn.top && conn.bottom) || (conn.left && conn.right));
-  const chW = style.channelWidth;
-  const off = (144 - chW) / 2;
-  const min = -34;
-  const max = 178;
-  const id = `mw-${style.id}-${variant}-${frame}`.replace(/[^a-zA-Z0-9_-]/g, '');
-  const phase = (frame % 8) / 8 * Math.PI * 2;
-  const parts: string[] = [
-    `<defs><linearGradient id="${id}-h" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${style.bankWet}"/><stop offset="18%" stop-color="${style.shallow}"/><stop offset="50%" stop-color="${style.deep}"/><stop offset="82%" stop-color="${style.mid}"/><stop offset="100%" stop-color="${style.bankWet}"/></linearGradient><linearGradient id="${id}-v" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${style.bankWet}"/><stop offset="18%" stop-color="${style.shallow}"/><stop offset="50%" stop-color="${style.deep}"/><stop offset="82%" stop-color="${style.mid}"/><stop offset="100%" stop-color="${style.bankWet}"/></linearGradient><radialGradient id="${id}-pond" cx="45%" cy="42%" r="64%"><stop offset="0%" stop-color="${style.shallow}"/><stop offset="50%" stop-color="${style.mid}"/><stop offset="100%" stop-color="${style.deep}"/></radialGradient></defs>`,
-  ];
-
-  if (variant === 'isolated') {
-    parts.push(`<ellipse cx="72" cy="72" rx="48" ry="39" fill="${style.bankOuter}"/>`);
-    parts.push(`<ellipse cx="72" cy="72" rx="41" ry="32" fill="${style.bankInner}"/>`);
-    parts.push(`<ellipse cx="72" cy="72" rx="35" ry="27" fill="url(#${id}-pond)"/>`);
-    parts.push(`<ellipse cx="66" cy="64" rx="18" ry="8" fill="${rgba(style.glint, 0.16)}"/>`);
-    for (let i = 0; i < 4; i++) parts.push(`<ellipse cx="${66 + i * 5}" cy="${70 + Math.sin(phase + i) * 3}" rx="${12 + i * 4}" ry="${4 + i}" fill="none" stroke="${rgba(style.foam, 0.20)}" stroke-width="1"/>`);
-  } else {
-    parts.push(`<g opacity="0.30" fill="rgba(0,0,0,0.65)">`);
-    if (isCorner) parts.push(`<path d="${waterCornerPath(conn)}" stroke="rgba(0,0,0,0.85)" stroke-width="${chW + 20}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
-    else {
-      if (conn.top || conn.bottom) parts.push(`<rect x="${off - 10}" y="${conn.top ? min : off - 4}" width="${chW + 20}" height="${(conn.bottom ? max : off + chW + 4) - (conn.top ? min : off - 4)}" rx="5"/>`);
-      if (conn.left || conn.right) parts.push(`<rect x="${conn.left ? min : off - 4}" y="${off - 10}" width="${(conn.right ? max : off + chW + 4) - (conn.left ? min : off - 4)}" height="${chW + 20}" rx="5"/>`);
-    }
-    parts.push(`</g>`);
-    if (isCorner) {
-      const d = waterCornerPath(conn);
-      parts.push(`<path d="${d}" stroke="${style.mid}" stroke-width="${chW + 8}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
-      parts.push(`<path d="${d}" stroke="${style.deep}" stroke-width="${Math.max(18, chW - 30)}" fill="none" stroke-linecap="butt" stroke-linejoin="round"/>`);
-    } else {
-      if (conn.top || conn.bottom) parts.push(`<rect x="${off - 4}" y="${conn.top ? min : off}" width="${chW + 8}" height="${(conn.bottom ? max : off + chW) - (conn.top ? min : off)}" fill="url(#${id}-v)"/>`, `<rect x="${off + 15}" y="${conn.top ? min : off + 10}" width="${Math.max(10, chW - 30)}" height="${(conn.bottom ? max : off + chW - 10) - (conn.top ? min : off + 10)}" fill="${style.deep}" rx="4" opacity="0.92"/>`);
-      if (conn.left || conn.right) parts.push(`<rect x="${conn.left ? min : off}" y="${off - 4}" width="${(conn.right ? max : off + chW) - (conn.left ? min : off)}" height="${chW + 8}" fill="url(#${id}-h)"/>`, `<rect x="${conn.left ? min : off + 10}" y="${off + 15}" width="${(conn.right ? max : off + chW - 10) - (conn.left ? min : off + 10)}" height="${Math.max(10, chW - 30)}" fill="${style.deep}" rx="4" opacity="0.92"/>`);
-      if ((conn.top || conn.bottom) && (conn.left || conn.right)) parts.push(`<circle cx="72" cy="72" r="${chW * 0.45}" fill="${style.mid}"/>`, `<circle cx="72" cy="72" r="${chW * 0.25}" fill="${style.deep}" opacity="0.92"/>`);
-    }
-    if (!conn.top) parts.push(`<rect x="${conn.left ? 0 : off - 8}" y="${off - 9}" width="${(conn.right ? 144 : off + chW + 8) - (conn.left ? 0 : off - 8)}" height="${style.bankWidth}" fill="${style.bankOuter}" opacity="0.86"/>`);
-    if (!conn.bottom) parts.push(`<rect x="${conn.left ? 0 : off - 8}" y="${off + chW - 2}" width="${(conn.right ? 144 : off + chW + 8) - (conn.left ? 0 : off - 8)}" height="${style.bankWidth}" fill="${style.bankInner}" opacity="0.86"/>`);
-    if (!conn.left) parts.push(`<rect x="${off - 9}" y="${conn.top ? 0 : off - 8}" width="${style.bankWidth}" height="${(conn.bottom ? 144 : off + chW + 8) - (conn.top ? 0 : off - 8)}" fill="${style.bankInner}" opacity="0.82"/>`);
-    if (!conn.right) parts.push(`<rect x="${off + chW - 2}" y="${conn.top ? 0 : off - 8}" width="${style.bankWidth}" height="${(conn.bottom ? 144 : off + chW + 8) - (conn.top ? 0 : off - 8)}" fill="${style.bankOuter}" opacity="0.82"/>`);
-    for (let i = 0; i < 5; i++) {
-      const t = i / 5;
-      parts.push(`<path d="M ${10 + t * 120} ${65 + Math.sin(phase + i) * 4} q 10 ${2 + Math.cos(phase + i) * 2} 20 0" stroke="${rgba(style.foam, 0.16)}" stroke-width="1" fill="none" stroke-linecap="round"/>`);
-    }
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="144" height="144" viewBox="0 0 144 144">\n    ${parts.join('\n    ')}\n  </svg>`;
+export function waterNanoSvg(
+  variant: FeatureVariant = 'straight-h',
+  styleId: NanoWaterStyleId = 'clear-river',
+  frame = 0,
+  worldCol = 0,
+  worldRow = 0,
+): string {
+  return svgWater(variant, undefined, worldCol, worldRow, { style: styleId, frame });
 }
 
 // wallBounds (and the rest of the walkability/solver APIs) now come from the iso2-solver port.
