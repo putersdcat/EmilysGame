@@ -6,7 +6,7 @@
  * contracts: tileable side/top slices with 48px structural modules.
  */
 
-export { AncientStone, CottageStoneFoundation, Limestone } from './iso2-materials-ancient-stone';
+export { AncientStone, CottageStoneFoundation, DarkCathedralStone, Limestone } from './iso2-materials-ancient-stone';
 export {
   PlasterWhitewashWall, RoughWoodPlankWall, TimberFrameWall,
 } from './iso2-materials-homestead';
@@ -172,32 +172,5 @@ export const SandstoneBrick = createBrickMaterial({
   rMax: 226, gMax: 196, bMax: 126, hi: [28, 24, 16], lo: [24, 22, 16], salt: 0x5A9D51,
 });
 
-function hash01(a: number, b: number, c: number): number {
-  let h = (a * 374761393 + b * 668265263 + c * 2246822519) >>> 0;
-  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
-  return ((h ^ (h >>> 16)) >>> 0) / 0xffffffff;
-}
-
-function ancientStoneBody(): string {
-  const parts: string[] = [`<rect width="${SIZE}" height="${SIZE}" fill="#3a3634"/>`];
-  for (let y = 0; y < SIZE; y += 28) {
-    for (let x = 0; x < SIZE; x += 28) {
-      const jx = (hash01(x, y, 4407) * 2 - 1) * 4;
-      const jy = (hash01(y, x, 4411) * 2 - 1) * 4;
-      const w = 22 + hash01(x, y, 4417) * 14;
-      const h = 20 + hash01(y, x, 4421) * 16;
-      const shade = 76 + Math.floor(hash01(x, y, 4427) * 36);
-      parts.push(`<rect x="${(x + jx).toFixed(1)}" y="${(y + jy).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="rgb(${shade},${shade - 4},${shade - 7})" stroke="rgba(18,17,18,0.42)" stroke-width="1.1"/>`);
-      parts.push(`<path d="M ${(x + jx + 3).toFixed(1)} ${(y + jy + 3).toFixed(1)} h ${(w * 0.45).toFixed(1)}" stroke="rgba(204,196,184,0.16)" stroke-width="1"/>`);
-    }
-  }
-  return parts.join('\n    ');
-}
-
-export const DarkCathedralStone = {
-  svg: () => wrapCrisp(ancientStoneBody()),
-  svgTop: () => wrapCrisp(ancientStoneBody()),
-  svgSouth: () => wrapCrisp(ancientStoneBody()),
-  svgEast: () => wrapCrisp(ancientStoneBody()),
-  svgEnd: () => wrapCrisp(ancientStoneBody()),
-};
+// hash01 + ancientStoneBody removed — DarkCathedralStone now sourced from
+// iso2-materials-ancient-stone.ts (proper Voronoi factory port).

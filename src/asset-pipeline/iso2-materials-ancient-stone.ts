@@ -260,3 +260,9 @@ export const CottageStoneFoundation = createAncientStoneMaterial({
   mortar: '#6d6458', joint: 'rgba(78,70,60,0.28)', rimLight: 'rgba(255,247,228,0.12)',
   pit: 'rgba(84,74,65,0.12)', rBase: 160, gBase: 151, bBase: 136, variance: 14, salt: 6205,
 });
+
+/** Dark ecclesiastical cathedral stone (experiment dark-cathedral-stone.ts). */
+export const DarkCathedralStone = createAncientStoneMaterial({
+  mortar: '#3a3634', joint: 'rgba(18,17,18,0.38)', rimLight: 'rgba(204,196,184,0.11)',
+  pit: 'rgba(21,19,20,0.18)', rBase: 96, gBase: 91, bBase: 88, variance: 17, salt: 4407,
+});

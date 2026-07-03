@@ -182,7 +182,7 @@ export function cathedralWallNano(
     topFaceTextureSvg: DarkCathedralStone.svgTop(),
     southFaceTextureSvg: DarkCathedralStone.svgSouth(),
     eastFaceTextureSvg: DarkCathedralStone.svgEast(),
-    endFaceTextureSvg: DarkCathedralStone.svgEnd(),
+    endFaceTextureSvg: DarkCathedralStone.svgEast(),
     topRotateWithAxis: false,
     endCapTicks: false,
     weatheringOverlays: WALL_WEATHERING_OVERLAYS,
