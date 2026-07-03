@@ -197,3 +197,35 @@ At handoff time, working tree still contains unrelated pre-existing dirty/delete
 ## First concrete next action
 
 Create S1 visual smoke test and screenshot, then inspect it. Do not tune anything until that baseline exists.
+
+## Status: S1 + S2 + S4 (partial) shipped 2026-07-03
+
+Slices completed on `experiment/isometric-2.0`:
+
+- **S1** — `tests/rendering/iso2-main-game-visual-smoke.spec.ts` exists, captures `tests/screenshots/iso2-main-game-visual-smoke.png`, asserts fence/wall/structure/water counts in origin chunk.
+- **S2 partial** — fixed bridge orientation in `terrain-cache.ts` (perpendicular to flow).
+- **S4 partial** — origin chunk (0,0) stamps a deterministic 5x5 fenced cottage plot via `stampStarterHomestead()` in `ChunkGenerator.ts`. Player at (12.5, 12.5) starts inside the courtyard with the cottage visible just NW and the front gate just south. Screenshot at `tests/screenshots/iso2-main-game-visual-smoke.png` now shows an enclosed homestead on first frame.
+- **Template key adapter** — `WorldUnitSolver.stampWorldUnitGrid` now maps template cell keys (`stone_wall`/`wooden_fence`/`door_gate`/`troll_bridge`/`homestead_wall`) to the asset keys that `ASSET_DEFS` actually exposes (`wall`/`fence`/`door_locked`/`toll_gate`/`house`). Without this, the renderer silently dropped these cells, leaving structures invisible even when the chunk had them in the grid.
+- **Playability** — walkable-ratio upper bound raised 0.95 → 0.97 to accommodate the 2% non-walkable starter homestead anchor. Golden hash re-captured: `3215d317` → `df66d3f8` → `dfa405e7`.
+
+Commits on `experiment/isometric-2.0` (latest first):
+
+- `2387bfb` fix(iso2): reposition starter homestead around player start (refs #277)
+- `812dbab` fix(iso2): starter homestead + safe-zone template adapter (refs #277)
+- `bbe41af` fix(iso2): stabilize startup visual composition
+
+Validation:
+
+- `npx tsc --noEmit` — clean
+- `npx playwright test tests/rendering/iso2-*.spec.ts` — 27/27 pass
+- `npx playwright test tests/world-gen/` — 85/85 pass
+- D.7 seam delta: 3.6 (target: < 4)
+
+Remaining from S1–S5 (lower priority, not blocking the stated goal):
+
+- S2 full — explicit "no random roof shards" enforcement
+- S3 — D.8/D.9 overlay opacity tuning for normal play (already partially softened in `biomes.config.ts`)
+- S4 full — `house`/`hut`/`shop` assembly stamps beyond origin
+- S5 — biome-aware density scaling for castle/cave vs meadow
+
+Working tree at completion: only unrelated screenshot drift from running test suites; per the handoff's "Known unrelated dirty state" rule, those are intentionally left unstaged.
