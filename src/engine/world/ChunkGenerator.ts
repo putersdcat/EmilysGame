@@ -222,7 +222,14 @@ function generateGridChunk(
   // The solver uses its module-level GRID_DIM constant (derived from
   // WORLD_CONFIG.chunkSize / worldUnitSize) which matches gen.ts's
   // local constant exactly. No gridDim parameter is required.
-  const { grid, borderEdges } = solveWorldUnitGrid(biome, rng, borderConstraints, mood, biomeTransitions);
+  const { grid, borderEdges } = solveWorldUnitGrid(
+    biome,
+    rng,
+    borderConstraints,
+    mood,
+    biomeTransitions,
+    { safeZone: chunkDist <= 1 },
+  );
 
   // Phase 3: stamp solved templates onto cell grid
   // Pass gen.ts's WU_SIZE explicitly so the stamper is renderer-safe

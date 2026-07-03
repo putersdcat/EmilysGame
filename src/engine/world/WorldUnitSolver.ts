@@ -631,6 +631,17 @@ interface MoodLike {
   modifiers: Record<string, number>;
 }
 
+interface CandidatePoolOptions {
+  /** Central spawn chunks should stay meadow-readable; avoid heavy chains/structures. */
+  safeZone?: boolean;
+}
+
+const SAFE_ZONE_TEMPLATE_ALLOW = new Set([
+  'meadow_base', 'meadow_garden', 'dirt_clearing', 'mixed_terrain', 'forest_clearing',
+  'dirt_path_ns', 'dirt_path_ew', 'path_bend_ne', 'path_t_junction', 'path_crossroads', 'path_dead_end',
+  'rocky_outcrop', 'fence_row',
+]);
+
 /**
  * Build the per-biome weighted candidate pool. Iterates over every
  * available template+rotation, assigns a base weight from
@@ -652,12 +663,14 @@ export function buildBiomeCandidatePool(
   allRotations: Map<string, RotatedTemplate[]>,
   mood?: MoodLike,
   biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
+  options?: CandidatePoolOptions,
 ): WeightedCandidate[] {
   const pool: WeightedCandidate[] = [];
   const biomeWeights = BIOME_TEMPLATE_WEIGHTS[biome.name] ?? {};
   const hasTransition = biomeTransitions && (biomeTransitions.n || biomeTransitions.s || biomeTransitions.e || biomeTransitions.w);
 
   for (const [templateName, rotations] of allRotations.entries()) {
+    if (options?.safeZone && !SAFE_ZONE_TEMPLATE_ALLOW.has(templateName)) continue;
     let weight = biomeWeights[templateName] ?? 0.01;
 
     // Apply mood modifiers (#46): additive bias from mood profile
@@ -804,9 +817,10 @@ export function solveWorldUnitGrid(
   borderConstraints?: BorderConstraints,
   mood?: MoodLike,
   biomeTransitions?: { n: boolean; s: boolean; e: boolean; w: boolean },
+  options?: CandidatePoolOptions,
 ): SolveResult {
   const allRotations = getAllRotations();
-  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations, mood, biomeTransitions);
+  const biomeCandidates = buildBiomeCandidatePool(biome, allRotations, mood, biomeTransitions, options);
   const fallback = findFallbackTemplate(allRotations);
 
   // Phase 2a: Initialize possibility sets

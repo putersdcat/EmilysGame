@@ -82,8 +82,8 @@ export function getCachedTerrain(
   canvas.width = WU_PX_W;
   canvas.height = WU_PX_H;
   const ctx = canvas.getContext('2d')!;
-  // D.7: pre-fill with grass-tone so sub-pixel diamond gaps never read as black.
-  ctx.fillStyle = '#4CAF50';
+  // D.7/S1: pre-fill with the current grass base so sub-pixel gaps do not form WU-shaped patches.
+  ctx.fillStyle = '#47A84B';
   ctx.fillRect(0, 0, WU_PX_W, WU_PX_H);
 
   const biome = getBiome(chunk.biomeId);

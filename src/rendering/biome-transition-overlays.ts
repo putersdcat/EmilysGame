@@ -162,6 +162,9 @@ export function drawContinuousBiomeTransitions(
   chunk: ChunkData,
   params: BiomeTransitionOverlayParams,
 ): void {
+  const transitions = chunk.biomeTransitions;
+  if (!transitions || !(transitions.n || transitions.s || transitions.e || transitions.w)) return;
+
   const climate = chunk.climate ?? { moisture: 0.5, temperature: 0.5 };
   const gxOff = chunk.chunkX * SIZE;
   const gyOff = chunk.chunkY * SIZE;

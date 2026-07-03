@@ -64,7 +64,7 @@ function withIsoSourceSpace(
 
 function drawGrassFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, size: number): void {
   // Flat mid-tone base — diagonal gradients bias iso diamond edges (seam band).
-  ctx.fillStyle = '#4CAF50';
+  ctx.fillStyle = '#47A84B';
   ctx.fillRect(0, 0, size, size);
 
   // World-continuous low-contrast speckle (no horizontal bands).
@@ -98,12 +98,12 @@ function drawGrassFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, 
 
 function drawDirtFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, size: number): void {
   const grad = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.75);
-  grad.addColorStop(0, '#A0522D');
-  grad.addColorStop(1, '#654321');
+  grad.addColorStop(0, '#876037');
+  grad.addColorStop(1, '#5E432C');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
 
-  ctx.strokeStyle = 'rgba(75, 54, 33, 0.45)';
+  ctx.strokeStyle = 'rgba(63, 45, 29, 0.24)';
   ctx.lineWidth = 1;
   for (let i = 0; i < 8; i++) {
     const wx = wx0 + Math.floor(hash01(i, wy0, 51) * size);
@@ -122,7 +122,7 @@ function drawDirtFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, s
       const lx = wx - wx0;
       const ly = wy - wy0;
       const r = 2 + hash01(wx, wy, 56) * 5;
-      ctx.fillStyle = 'rgba(101, 67, 33, 0.35)';
+      ctx.fillStyle = 'rgba(82, 58, 36, 0.20)';
       ctx.beginPath();
       ctx.ellipse(lx, ly, r * 1.8, r * 0.75, -0.25, 0, Math.PI * 2);
       ctx.fill();

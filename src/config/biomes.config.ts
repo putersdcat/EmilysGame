@@ -43,10 +43,10 @@ export interface BiomeTransitionRule {
  * meadow grass and dry sand; stone_floor is the high-elevation rocky endpoint.
  */
 export const BIOME_TRANSITION_RULES = [
-  { id: 'grass-meadow', surface: 'grass', color: '#3CB43C', moisture: [0.36, 1.00], elevation: [0.00, 0.58], maxAlpha: 0.10 },
-  { id: 'mud-dirt', surface: 'dirt', color: '#7A5A2A', moisture: [0.28, 0.76], elevation: [0.05, 0.66], maxAlpha: 0.18 },
-  { id: 'dry-sand', surface: 'sand', color: '#D2B48C', moisture: [0.00, 0.42], elevation: [0.00, 0.64], maxAlpha: 0.20 },
-  { id: 'high-stone', surface: 'stone_floor', color: '#9A9080', moisture: [0.00, 0.82], elevation: [0.56, 1.00], maxAlpha: 0.19 },
+  { id: 'grass-meadow', surface: 'grass', color: '#3CB43C', moisture: [0.36, 1.00], elevation: [0.00, 0.58], maxAlpha: 0.035 },
+  { id: 'mud-dirt', surface: 'dirt', color: '#7A5A2A', moisture: [0.28, 0.76], elevation: [0.05, 0.66], maxAlpha: 0.070 },
+  { id: 'dry-sand', surface: 'sand', color: '#D2B48C', moisture: [0.00, 0.42], elevation: [0.00, 0.64], maxAlpha: 0.075 },
+  { id: 'high-stone', surface: 'stone_floor', color: '#9A9080', moisture: [0.00, 0.82], elevation: [0.56, 1.00], maxAlpha: 0.070 },
 ] as const satisfies readonly BiomeTransitionRule[];
 
 export const BIOME_DEFS: BiomeDef[] = [
@@ -57,7 +57,7 @@ export const BIOME_DEFS: BiomeDef[] = [
     baseColor: '#1a5c1a',
     terrainWeights: {
       grass: 0.45, flower: 0.06, flower_pink: 0.04, flower_red: 0.04,
-      dirt: 0.1, sand: 0.03,
+      dirt: 0.06, sand: 0.02,
       // #58 new plants & animals
       tulip: 0.03, clover: 0.03, wheat: 0.04, sunflower: 0.02,
       chicken: 0.04, sheep: 0.03, cow: 0.02, pig: 0.02, duck: 0.02, rabbit: 0.02, dog: 0.01,
