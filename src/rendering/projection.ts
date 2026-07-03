@@ -27,6 +27,21 @@ export function gridToScreen(
   };
 }
 
+/** Same math as gridToScreen but writes into a caller-provided object — zero allocation. */
+export function gridToScreenInto(
+  gx: number,
+  gy: number,
+  camera: Camera,
+  out: { x: number; y: number },
+): void {
+  const tw = RENDER_CONFIG.tileWidth;
+  const th = RENDER_CONFIG.tileHeight;
+  const rx = gx - camera.x;
+  const ry = gy - camera.y;
+  out.x = (rx - ry) * (tw / 2) + RENDER_CONFIG.canvasWidth / 2;
+  out.y = (rx + ry) * (th / 2) + RENDER_CONFIG.canvasHeight / 3;
+}
+
 /** Test if a screen point lies within the visible canvas (with margin). */
 export function isVisible(sx: number, sy: number, margin = 64): boolean {
   return (

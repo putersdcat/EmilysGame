@@ -91,6 +91,26 @@ export function cellJitter(
   };
 }
 
+/** Zero-alloc X component of cellJitter. */
+export function cellJitterX(
+  gx: number, gy: number, jitterRange: number,
+  halfTW = 32
+): number {
+  if (jitterRange <= 0) return 0;
+  const hx = ((gx * 374761393 + gy * 668265263) >>> 0) / 4294967296;
+  return (hx * 2 - 1) * jitterRange * halfTW;
+}
+
+/** Zero-alloc Y component of cellJitter. */
+export function cellJitterY(
+  gx: number, gy: number, jitterRange: number,
+  halfTH = 16
+): number {
+  if (jitterRange <= 0) return 0;
+  const hy = ((gx * 1274126177 + gy * 1103515245) >>> 0) / 4294967296;
+  return (hy * 2 - 1) * jitterRange * halfTH;
+}
+
 // ─── Perlin Noise (2D) ──────────────────────────────────────
 
 /**

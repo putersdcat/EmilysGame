@@ -13,7 +13,7 @@ import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData, Camera } from '../types/game.types';
-import { cellJitter } from '../engine/utils';
+import { cellJitter, cellJitterX, cellJitterY } from '../engine/utils';
 import { FIRE_VARIANTS, getFireAnimation, type FireVariant } from '../config/fire.config';
 import { getShadowParams } from './shadows';
 import { hasNpcSprite, getNpcSprite, type NpcFacing, type MouthState } from '../asset-pipeline/npc-sprites';
@@ -23,7 +23,7 @@ import {
 } from './wasm-bridge';
 import { hasAssetSprite, getAssetSprite, getFireFrame, FIRE_FRAME_COUNT } from '../asset-pipeline/asset-sprites';
 import type { IsoFeatureVariant as FeatureVariant } from '../types/iso-renderer.types';
-import { gridToScreen, isVisible } from './projection';
+import { gridToScreen, gridToScreenInto, isVisible } from './projection';
 import { ShadowSpriteCache } from './shadow-cache';
 import { getNpcMouthState, getHeadBob } from './mouth-animation';
 import { drawDebugGrid as drawDebugGridImpl } from './debug-grid';
@@ -105,6 +105,10 @@ for (let i = 0; i < MAX_OCCLUDERS; i++) {
   occluderPool.push({ sx: 0, sy: 0, gy: 0, scale: 0, ratio: 0, sortKey: 0, assetCanvas: null, emoji: '', tint: 0 });
 }
 let occluderCount = 0;
+
+// ─── Hot-path scratch objects (zero-alloc render loop) ──────
+// Single shared object reused by iterateObjectCells via gridToScreenInto.
+const _scratchScreen = { x: 0, y: 0 };
 
 // ─── Object Cell Cache & Variant Inference ──────────────────
 // Moved to `./tile-variants.ts` in B6.1 (#272).
@@ -378,12 +382,15 @@ export class IsometricRenderer {
 
       const gx = chunk.chunkX * size + cx;
       const gy = chunk.chunkY * size + cy;
-      const { x: sx, y: sy } = this.gridToScreen(gx, gy, camera);
+      gridToScreenInto(gx, gy, camera, _scratchScreen);
+      const sx = _scratchScreen.x;
+      const sy = _scratchScreen.y;
       // Deterministic sub-cell jitter for small props (#82)
       const jr = def ? (def.jitter ?? 0) : 0;
-      const { dx: jdx, dy: jdy } = cellJitter(gx, gy, jr);
-      const jsx = sx + jdx;
-      const jsy = sy + jdy;
+      const jx = cellJitterX(gx, gy, jr);
+      const jy = cellJitterY(gx, gy, jr);
+      const jsx = sx + jx;
+      const jsy = sy + jy;
 
       if (!this.isVisible(jsx, jsy)) continue;
 
