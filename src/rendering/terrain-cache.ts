@@ -53,13 +53,15 @@ const TH = RENDER_CONFIG.tileHeight; // 32
 const HALF_TW = TW / 2;             // 32
 const HALF_TH = TH / 2;             // 16
 
-// Full-res world-unit pixel dimensions (5×5 cells). Whole 25×25 chunk
-// canvases are too large for Iso 2.0 256×128 tiles, so cache WUs lazily.
-const WU_PX_W = (WU_SIZE * 2) * HALF_TW + TW;
-const WU_PX_H = WU_SIZE * 2 * HALF_TH + TH;
+// Full-res world-unit pixel dimensions. For an N×N grid of isometric cells,
+// the bounding box is (2*(N-1)*halfW + fullW) by (2*(N-1)*halfH + fullH).
+// (5×5 cells: 320×160 in iso projection at 64×32 per cell.)
+// Whole 25×25 chunk canvases are too large for Iso 2.0 tiles, so cache WUs lazily.
+const WU_PX_W = ((WU_SIZE - 1) * 2) * HALF_TW + TW;
+const WU_PX_H = ((WU_SIZE - 1) * 2) * HALF_TH + TH;
 
 // Origin offset within a WU canvas (where local 0,0 maps to)
-const ORIGIN_X = WU_SIZE * HALF_TW;
+const ORIGIN_X = (WU_SIZE - 1) * HALF_TW;
 const ORIGIN_Y = HALF_TH;
 
 /**
@@ -82,9 +84,21 @@ export function getCachedTerrain(
   canvas.width = WU_PX_W;
   canvas.height = WU_PX_H;
   const ctx = canvas.getContext('2d')!;
-  // D.7/S1: pre-fill with the current grass base so sub-pixel gaps do not form WU-shaped patches.
+  // Pre-fill the WU bounding diamond (not the bounding rect) with the grass
+  // base color so sub-pixel gaps do not form WU-shaped patches. The diamond
+  // corners are the actual outline of the 5×5 cell grid: top (ORIGIN_X, 0),
+  // right (WU_PX_W, ORIGIN_Y + (WU_SIZE-1)*HALF_TH), bottom (ORIGIN_X, WU_PX_H),
+  // left (0, ORIGIN_Y + (WU_SIZE-1)*HALF_TH).
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(ORIGIN_X, 0);
+  ctx.lineTo(WU_PX_W, ORIGIN_Y + (WU_SIZE - 1) * HALF_TH);
+  ctx.lineTo(ORIGIN_X, WU_PX_H);
+  ctx.lineTo(0, ORIGIN_Y + (WU_SIZE - 1) * HALF_TH);
+  ctx.closePath();
   ctx.fillStyle = '#47A84B';
-  ctx.fillRect(0, 0, WU_PX_W, WU_PX_H);
+  ctx.fill();
+  ctx.restore();
 
   const biome = getBiome(chunk.biomeId);
   const waterPositions: { lsx: number; lsy: number }[] = [];

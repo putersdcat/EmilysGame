@@ -63,47 +63,100 @@ function withIsoSourceSpace(
 }
 
 function drawGrassFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, size: number): void {
-  // Flat mid-tone base — diagonal gradients bias iso diamond edges (seam band).
-  ctx.fillStyle = '#47A84B';
+  // Flat mid-tone base. Diamond clipping in withIsoSourceSpace keeps this
+  // contained to the iso cell; the texture detail below reads as grass.
+  ctx.fillStyle = '#4FAE53';
   ctx.fillRect(0, 0, size, size);
 
-  // World-continuous low-contrast speckle (no horizontal bands).
-  for (let wy = wy0; wy < wy0 + size; wy += 8) {
-    for (let wx = wx0; wx < wx0 + size; wx += 8) {
+  // Fine high-frequency speckle (3-4px, varied alpha + color) — reads as grass
+  // texture instead of a flat color block when projected to the iso diamond.
+  for (let wy = wy0; wy < wy0 + size; wy += 4) {
+    for (let wx = wx0; wx < wx0 + size; wx += 4) {
       const v = hash01(wx, wy, 42);
-      if (v < 0.4) continue;
+      if (v < 0.25) continue;
       const lx = wx - wx0;
       const ly = wy - wy0;
-      const alpha = 0.03 + (v - 0.4) * 0.08;
-      ctx.fillStyle = v > 0.72 ? `rgba(34, 139, 34, ${alpha})` : `rgba(152, 251, 152, ${alpha * 0.6})`;
-      ctx.fillRect(lx, ly, 2, 2);
+      const a = 0.10 + v * 0.18;
+      if (v > 0.78) {
+        ctx.fillStyle = `rgba(30, 110, 30, ${a})`;
+        ctx.fillRect(lx, ly, 2, 2);
+      } else if (v > 0.55) {
+        ctx.fillStyle = `rgba(140, 220, 100, ${a * 0.85})`;
+        ctx.fillRect(lx, ly, 2, 2);
+      } else {
+        ctx.fillStyle = `rgba(70, 160, 70, ${a * 0.6})`;
+        ctx.fillRect(lx, ly, 2, 1);
+      }
     }
   }
 
-  for (let wy = wy0; wy < wy0 + size; wy += 14) {
-    for (let wx = wx0; wx < wx0 + size; wx += 14) {
-      if (worldHash(wx, wy, 43) % 5 !== 0) continue;
+  // Grass-blade tufts (short diagonal strokes) — adds organic detail
+  // without crossing the iso diamond seam.
+  for (let wy = wy0; wy < wy0 + size; wy += 7) {
+    for (let wx = wx0; wx < wx0 + size; wx += 7) {
+      if (worldHash(wx, wy, 43) % 3 !== 0) continue;
       const lx = wx - wx0;
       const ly = wy - wy0;
-      const len = 6 + hash01(wx, wy, 44) * 10;
-      ctx.strokeStyle = 'rgba(18, 105, 34, 0.18)';
+      const len = 4 + hash01(wx, wy, 44) * 6;
+      const a = 0.15 + hash01(wx, wy, 45) * 0.20;
+      ctx.strokeStyle = `rgba(20, 90, 30, ${a})`;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(lx, ly);
-      ctx.quadraticCurveTo(lx + len * 0.4, ly - 3, lx + len, ly);
+      ctx.quadraticCurveTo(lx + len * 0.4, ly - 2, lx + len, ly);
       ctx.stroke();
     }
+  }
+
+  // Soft moss patches — slightly larger, lower-contrast blobs that read as
+  // ground variation rather than overlay.
+  for (let i = 0; i < 5; i++) {
+    const cx = hash01(wx0, wy0 + i, 46) * size;
+    const cy = hash01(wx0 + i, wy0, 47) * size;
+    const r = 6 + hash01(wx0, wy0 + i + 100, 48) * 8;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, 'rgba(80, 170, 80, 0.18)');
+    g.addColorStop(1, 'rgba(80, 170, 80, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
 function drawDirtFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, size: number): void {
-  const grad = ctx.createRadialGradient(size * 0.5, size * 0.5, 0, size * 0.5, size * 0.5, size * 0.75);
-  grad.addColorStop(0, '#876037');
-  grad.addColorStop(1, '#5E432C');
-  ctx.fillStyle = grad;
+  // Layered base — diagonal earth gradient (two warm browns) to break the
+  // flat radial look that was reading as a uniform color overlay.
+  const baseGrad = ctx.createLinearGradient(0, 0, size, size);
+  baseGrad.addColorStop(0, '#7E582C');
+  baseGrad.addColorStop(0.5, '#946A3A');
+  baseGrad.addColorStop(1, '#6A4A26');
+  ctx.fillStyle = baseGrad;
   ctx.fillRect(0, 0, size, size);
 
-  ctx.strokeStyle = 'rgba(63, 45, 29, 0.24)';
+  // Fine high-frequency speckle — pebble/soil grain
+  for (let wy = wy0; wy < wy0 + size; wy += 4) {
+    for (let wx = wx0; wx < wx0 + size; wx += 4) {
+      const v = hash01(wx, wy, 57);
+      if (v < 0.25) continue;
+      const lx = wx - wx0;
+      const ly = wy - wy0;
+      const a = 0.12 + v * 0.22;
+      if (v > 0.80) {
+        ctx.fillStyle = `rgba(45, 30, 18, ${a})`;
+        ctx.fillRect(lx, ly, 2, 2);
+      } else if (v > 0.55) {
+        ctx.fillStyle = `rgba(160, 120, 80, ${a * 0.85})`;
+        ctx.fillRect(lx, ly, 2, 1);
+      } else {
+        ctx.fillStyle = `rgba(105, 75, 45, ${a * 0.6})`;
+        ctx.fillRect(lx, ly, 1, 1);
+      }
+    }
+  }
+
+  // Crack/line detail — short diagonal strokes for natural earth fissures
+  ctx.strokeStyle = 'rgba(55, 38, 24, 0.30)';
   ctx.lineWidth = 1;
   for (let i = 0; i < 8; i++) {
     const wx = wx0 + Math.floor(hash01(i, wy0, 51) * size);
@@ -116,17 +169,33 @@ function drawDirtFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, s
     ctx.stroke();
   }
 
-  for (let wy = wy0; wy < wy0 + size; wy += 16) {
-    for (let wx = wx0; wx < wx0 + size; wx += 16) {
-      if (worldHash(wx, wy, 55) % 5 !== 0) continue;
+  // Pebbles — small ellipses scattered across the surface
+  for (let wy = wy0; wy < wy0 + size; wy += 14) {
+    for (let wx = wx0; wx < wx0 + size; wx += 14) {
+      if (worldHash(wx, wy, 55) % 4 !== 0) continue;
       const lx = wx - wx0;
       const ly = wy - wy0;
-      const r = 2 + hash01(wx, wy, 56) * 5;
-      ctx.fillStyle = 'rgba(82, 58, 36, 0.20)';
+      const r = 2 + hash01(wx, wy, 56) * 4;
+      const shade = hash01(wx, wy, 58) > 0.5 ? 'rgba(45, 30, 18, 0.32)' : 'rgba(170, 130, 90, 0.28)';
+      ctx.fillStyle = shade;
       ctx.beginPath();
-      ctx.ellipse(lx, ly, r * 1.8, r * 0.75, -0.25, 0, Math.PI * 2);
+      ctx.ellipse(lx, ly, r * 1.6, r * 0.75, -0.25, 0, Math.PI * 2);
       ctx.fill();
     }
+  }
+
+  // Soft tonal variation patches
+  for (let i = 0; i < 4; i++) {
+    const cx = hash01(wx0, wy0 + i, 59) * size;
+    const cy = hash01(wx0 + i, wy0, 60) * size;
+    const r = 10 + hash01(wx0, wy0 + i + 100, 61) * 12;
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, 'rgba(130, 95, 60, 0.20)');
+    g.addColorStop(1, 'rgba(130, 95, 60, 0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 
