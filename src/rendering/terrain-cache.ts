@@ -84,21 +84,10 @@ export function getCachedTerrain(
   canvas.width = WU_PX_W;
   canvas.height = WU_PX_H;
   const ctx = canvas.getContext('2d')!;
-  // Pre-fill the WU bounding diamond (not the bounding rect) with the grass
-  // base color so sub-pixel gaps do not form WU-shaped patches. The diamond
-  // corners are the actual outline of the 5×5 cell grid: top (ORIGIN_X, 0),
-  // right (WU_PX_W, ORIGIN_Y + (WU_SIZE-1)*HALF_TH), bottom (ORIGIN_X, WU_PX_H),
-  // left (0, ORIGIN_Y + (WU_SIZE-1)*HALF_TH).
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(ORIGIN_X, 0);
-  ctx.lineTo(WU_PX_W, ORIGIN_Y + (WU_SIZE - 1) * HALF_TH);
-  ctx.lineTo(ORIGIN_X, WU_PX_H);
-  ctx.lineTo(0, ORIGIN_Y + (WU_SIZE - 1) * HALF_TH);
-  ctx.closePath();
-  ctx.fillStyle = '#47A84B';
-  ctx.fill();
-  ctx.restore();
+  // R1: No WU pre-fill. Each cell draws its own diamond (clipped to iso
+  // outline). Adjacent WU canvases overlap so sub-pixel gaps can't form
+  // WU-shaped patches, and the diamond corners of the WU bounding region
+  // never leak as colored triangles.
 
   const biome = getBiome(chunk.biomeId);
   const waterPositions: { lsx: number; lsy: number }[] = [];
@@ -107,7 +96,27 @@ export function getCachedTerrain(
   const endCY = Math.min(SIZE, startCY + WU_SIZE);
   const endCX = Math.min(SIZE, startCX + WU_SIZE);
 
-  // Render base terrain tiles for this WU only.
+  // Pass 1: draw grass base under every cell (so non-base cells like fence
+  // and water still have a grass floor). This guarantees the entire 5×5
+  // grid is covered with grass diamonds, with no rectangle corner leak.
+  for (let cy = startCY; cy < endCY; cy++) {
+    for (let cx = startCX; cx < endCX; cx++) {
+      const cell = chunk.cells[cy][cx];
+      const def = ASSET_DEFS[cell.assetKey];
+      // For non-base cells we still want a grass floor underneath.
+      if (def && def.layer !== 'base') {
+        const localCX = cx - startCX;
+        const localCY = cy - startCY;
+        const lsx = (localCX - localCY) * HALF_TW + ORIGIN_X;
+        const lsy = (localCX + localCY) * HALF_TH + ORIGIN_Y;
+        const globalCX = chunk.chunkX * SIZE + cx;
+        const globalCY = chunk.chunkY * SIZE + cy;
+        drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
+      }
+    }
+  }
+
+  // Pass 2: render base terrain tiles for this WU only.
   for (let cy = startCY; cy < endCY; cy++) {
     for (let cx = startCX; cx < endCX; cx++) {
       const cell = chunk.cells[cy][cx];
