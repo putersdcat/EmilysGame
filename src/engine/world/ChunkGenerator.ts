@@ -90,8 +90,13 @@ function makeStarterCell(assetKey: string): CellData {
 }
 
 function stampStarterHomestead(cells: CellData[][]): void {
-  const ox = 3;
-  const oy = 3;
+  // Place the homestead so the front gate is right next to the player start
+  // (12.5, 12.5). Pattern is 5x5; placing top-left at (9, 9) means:
+  //   - player stands at (12.5, 12.5) = (cell 12, 12) = inside the courtyard
+  //   - house is at (11, 11) just NW of the player
+  //   - front gate (gap in the south fence) is at (11, 13) just south
+  const ox = 9;
+  const oy = 9;
   const pattern = [
     ['fence', 'fence', 'fence', 'fence', 'fence'],
     ['fence', 'dirt',  'dirt',  'dirt',  'fence'],
