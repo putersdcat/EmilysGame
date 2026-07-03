@@ -25,8 +25,9 @@ def extract_item(source_path: Path, item_name: str, target_path: Path, dry_run: 
 
     # Support both function/class and const arrow styles
     patterns = [
-        rf'^(export\s+)?(async\s+)?function\s+{re.escape(item_name)}\\b',
-        rf'^(export\s+)?(const|let|var)\s+{re.escape(item_name)}\s*=\s*(async\s+)?\\(',
+        rf'^(export\s+)?(async\s+)?function\s+{re.escape(item_name)}\b',
+        rf'^(export\s+)?(const|let|var)\s+{re.escape(item_name)}\s*=\s*'
+        r'(async\s+)?\(',
     ]
 
     start_idx = None

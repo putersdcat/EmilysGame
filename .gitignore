@@ -31,7 +31,6 @@ inventory-*.png
 torch-*.png
 
 # A/B test runs (keep README only)
-<<<<<<< HEAD
 # asset-dev/Export/A-B-Tests/run-*/
 
 # Stuff from alpha build testing
@@ -45,4 +44,6 @@ scripts/content-pipeline/.cache/
 public/content/packs/*/qa-reports/
 asset-dev/Export/WorldTileAssets_OG_Backup.zip
 asset-dev/Export/
-#tests/screenshots/
+
+# grok build stuff
+mcps/*
