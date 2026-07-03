@@ -123,12 +123,13 @@ export function getCachedTerrain(
         }
         if (def.tileType === 'bridge') {
           drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
-          const variant = inferBridgeVariant(chunk, cx, cy, allChunks);
+          const waterVariant = inferWaterVariant(chunk, cx, cy, allChunks);
+          const bridgeVariant = inferBridgeVariant(chunk, cx, cy, allChunks);
           const waterStyle = waterStyleForTileType('water', chunk.biomeId)!;
-          const waterStack = [waterNano(variant, -2, waterStyle, globalCX, globalCY)];
+          const waterStack = [waterNano(waterVariant, -2, waterStyle, globalCX, globalCY)];
           const waterRes = drawNanoStack(ctx, waterStack, lsx - HALF_TW, lsy - HALF_TH);
           if (!waterRes.allImagesLoaded) allImagesLoaded = false;
-          const bridgeStack = getNanoStack('bridge', variant);
+          const bridgeStack = getNanoStack('bridge', bridgeVariant);
           if (bridgeStack) {
             const res = drawNanoStack(ctx, bridgeStack, lsx - HALF_TW, lsy - HALF_TH);
             if (!res.allImagesLoaded) allImagesLoaded = false;
@@ -501,9 +502,10 @@ function inferBridgeVariant(
 ): FeatureVariant {
   const vertical = isWaterBase(chunk, cx, cy - 1, allChunks) || isWaterBase(chunk, cx, cy + 1, allChunks);
   const horizontal = isWaterBase(chunk, cx - 1, cy, allChunks) || isWaterBase(chunk, cx + 1, cy, allChunks);
-  if (vertical && !horizontal) return 'straight-v';
-  if (horizontal && !vertical) return 'straight-h';
-  return inferWaterVariant(chunk, cx, cy, allChunks);
+  // Bridge deck spans bank-to-bank, perpendicular to river flow.
+  if (vertical && !horizontal) return 'straight-h';
+  if (horizontal && !vertical) return 'straight-v';
+  return 'straight-h';
 }
 
 function getDominantColor(tileType: string): string | null {

@@ -639,7 +639,8 @@ interface CandidatePoolOptions {
 const SAFE_ZONE_TEMPLATE_ALLOW = new Set([
   'meadow_base', 'meadow_garden', 'dirt_clearing', 'mixed_terrain', 'forest_clearing',
   'dirt_path_ns', 'dirt_path_ew', 'path_bend_ne', 'path_t_junction', 'path_crossroads', 'path_dead_end',
-  'rocky_outcrop', 'fence_row',
+  'rocky_outcrop',
+  'homestead_compound', 'outhouse_clearing',
 ]);
 
 /**
@@ -864,6 +865,17 @@ export function solveWorldUnitGrid(
 
 // --- Phase 3: Stamp Solved Grid onto Cells ---
 
+function assetKeyForTemplateCell(cellKey: string): string {
+  switch (cellKey) {
+    case 'stone_wall': return 'wall';
+    case 'wooden_fence': return 'fence';
+    case 'door_gate': return 'door_locked';
+    case 'troll_bridge': return 'toll_gate';
+    case 'homestead_wall': return 'house';
+    default: return cellKey;
+  }
+}
+
 /**
  * Phase 3 of chunk generation: write the solved (RotatedTemplate|null)[][]
  * grid into the concrete CellData[][] grid. Each (gx, gy) world unit
@@ -893,9 +905,10 @@ export function stampWorldUnitGrid(
           if (cellKey === null || cellKey === undefined) continue;
 
           const microDef = MICRO_TILE_DEFS[cellKey as TileType];
-          const def = ASSET_DEFS[cellKey];
+          const assetKey = assetKeyForTemplateCell(cellKey);
+          const def = ASSET_DEFS[assetKey];
           cells[baseY + ty][baseX + tx] = {
-            assetKey: cellKey,
+            assetKey,
             walkable: microDef?.walkable ?? def?.walkable ?? true,
             interactable: def?.interactable ?? false,
           };

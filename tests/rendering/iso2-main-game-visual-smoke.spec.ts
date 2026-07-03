@@ -32,6 +32,8 @@ test('normal generated startup view has a visual smoke baseline (refs #277)', as
   await page.screenshot({ path: SHOT, fullPage: false });
 
   const stats = await page.evaluate(() => {
+    const debug = (window as any).__gameDebug;
+    const state = debug?.state;
     const canvas = document.querySelector('#gameContainer canvas') as HTMLCanvasElement | null;
     if (!canvas) return null;
     const ctx = canvas.getContext('2d');
@@ -48,10 +50,31 @@ test('normal generated startup view has a visual smoke baseline (refs #277)', as
       if (r + g + b > 24) nonBlank++;
       if (r + g + b > 280) bright++;
     }
-    return { nonBlank, bright, samples: data.length / 64 };
+    let fence = 0;
+    let wall = 0;
+    let structure = 0;
+    let water = 0;
+    if (state?.chunks) {
+      const origin = state.chunks.get('0,0');
+      if (origin) {
+        const chunk = origin;
+        for (const row of chunk.cells) {
+          for (const cell of row) {
+            if (cell.assetKey === 'fence') fence++;
+            if (cell.assetKey === 'wall' || cell.assetKey === 'cathedral_wall') wall++;
+            if (cell.assetKey === 'house' || cell.assetKey === 'hut' || cell.assetKey === 'shop' || cell.assetKey === 'outhouse') structure++;
+            if (cell.assetKey === 'water' || cell.assetKey === 'bridge') water++;
+          }
+        }
+      }
+    }
+    return { nonBlank, bright, samples: data.length / 64, fence, wall, structure, water };
   });
 
   expect(stats).not.toBeNull();
   expect(stats!.nonBlank).toBeGreaterThan(stats!.samples * 0.35);
   expect(stats!.bright).toBeGreaterThan(20);
+  // Startup should show some authored Iso2 objects, but not freeform fence spam.
+  expect(stats!.fence).toBeLessThan(80);
+  expect(stats!.fence + stats!.wall + stats!.structure + stats!.water).toBeGreaterThan(0);
 });

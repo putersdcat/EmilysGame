@@ -74,10 +74,38 @@ import { WU_SIZE, GRID_DIM } from './WorldGrid';
 import { buildPerlinBase } from './TerrainBuilder';
 import { applyEntropyCellFlags } from './EntropyCellFlags';
 import type {
+  CellData,
   BorderConstraints,
   ChunkData,
   GridChunkResult,
 } from '../../types/game.types';
+
+function makeStarterCell(assetKey: string): CellData {
+  switch (assetKey) {
+    case 'fence': return { assetKey, walkable: false, interactable: true };
+    case 'house': return { assetKey, walkable: false, interactable: true };
+    case 'dirt': return { assetKey, walkable: true, interactable: false };
+    default: return { assetKey: 'grass', walkable: true, interactable: false };
+  }
+}
+
+function stampStarterHomestead(cells: CellData[][]): void {
+  const ox = 3;
+  const oy = 3;
+  const pattern = [
+    ['fence', 'fence', 'fence', 'fence', 'fence'],
+    ['fence', 'dirt',  'dirt',  'dirt',  'fence'],
+    ['fence', 'dirt',  'house', 'dirt',  'fence'],
+    ['fence', 'dirt',  'dirt',  'dirt',  'fence'],
+    ['fence', 'fence', 'dirt',  'fence', 'fence'],
+  ] as const;
+
+  for (let y = 0; y < pattern.length; y++) {
+    for (let x = 0; x < pattern[y].length; x++) {
+      cells[oy + y][ox + x] = makeStarterCell(pattern[y][x]);
+    }
+  }
+}
 
 // --- Chunk Generation (async + LLM) ---
 
@@ -235,6 +263,7 @@ function generateGridChunk(
   // Pass gen.ts's WU_SIZE explicitly so the stamper is renderer-safe
   // (the module doesn't read WORLD_CONFIG.worldUnitSize directly).
   stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
+  if (chunkX === 0 && chunkY === 0) stampStarterHomestead(cells);
 
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
