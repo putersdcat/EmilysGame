@@ -87,6 +87,9 @@ export type IsoNanoTileKind =
   | 'troll-bridge'         // new — quiz-gated bridge (no v1 equivalent)
   | 'cathedral-wall'       // new — assembly feature
   | 'homestead-wall'       // new — assembly feature
+  | 'starter-cottage'      // authored single-cell cottage geometry (#277)
+  | 'castle-keep'          // authored single-cell castle/cathedral proof geometry
+  | 'cathedral-chapel'     // authored single-cell chapel/cathedral proof geometry
   | 'roof-slope-left'
   | 'roof-slope-right'
   | 'roof-ridge';

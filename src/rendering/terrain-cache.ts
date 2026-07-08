@@ -12,7 +12,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getBiome } from '../config/biomes.config';
-import { getIsoTile } from './tiles';
+import { getIsoTile, isTileType } from './tiles';
 import { drawSeamlessTerrainTile, type SeamlessTerrainType } from '../asset-pipeline/world-tile-textures';
 import { drawContinuousBiomeTransitions } from './biome-transition-overlays';
 import { drawNanoStack } from './nano-tile';
@@ -60,8 +60,11 @@ const HALF_TH = TH / 2;             // 16
 const WU_PX_W = ((WU_SIZE - 1) * 2) * HALF_TW + TW;
 const WU_PX_H = ((WU_SIZE - 1) * 2) * HALF_TH + TH;
 
-// Origin offset within a WU canvas (where local 0,0 maps to)
-const ORIGIN_X = (WU_SIZE - 1) * HALF_TW;
+// Origin offset within a WU canvas (where local 0,0 maps to). A 5×5 WU spans
+// centers from -4..+4 half-widths, plus one extra half-width of diamond body on
+// each side, so the origin must be WU_SIZE × halfW. Using (WU_SIZE-1) clipped
+// the west diagonal edge and leaked dark base-color diamonds at WU boundaries.
+const ORIGIN_X = WU_SIZE * HALF_TW;
 const ORIGIN_Y = HALF_TH;
 
 /**
@@ -171,11 +174,16 @@ export function getCachedTerrain(
             lsx,
             lsy,
           );
-        } else {
+        } else if (isTileType(def.tileType)) {
           const tileCanvas = getIsoTile(def.tileType);
           if (tileCanvas) ctx.drawImage(tileCanvas, lsx - HALF_TW, lsy - HALF_TH);
         }
       } else {
+        // Base-layer decorations (flowers, animals, tiny props) do not own a
+        // terrain tileType, but they still need a ground diamond. Without this,
+        // the transparent cell exposes the dark canvas clear/base colour as a
+        // full green-black diamond in normal startup views (#277).
+        drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
         const sprite = getEmojiSprite(def.emoji, biome.tintHue);
         const size = sprite.width * def.scale;
         // Deterministic sub-cell jitter for small props (#82)
@@ -400,12 +408,14 @@ const DEFAULT_BLEND: BlendRule = { alpha: 0.25, depth: 0.35, featherStops: 2, no
 /** Per-pair blend config. Order-independent: getBlendRule normalizes keys. */
 const BLEND_RULES: Record<string, BlendRule> = {
   // High-contrast land transitions — wider blends, more feathering
-  'dirt→grass':        { alpha: 0.35, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },
-  'rock→grass':        { alpha: 0.30, depth: 0.45, featherStops: 3, noiseAmp: 0.20 },
-  'sand→grass':        { alpha: 0.35, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },
-  'dirt→rock':         { alpha: 0.28, depth: 0.40, featherStops: 3, noiseAmp: 0.15 },
-  'dirt→sand':         { alpha: 0.30, depth: 0.45, featherStops: 3, noiseAmp: 0.20 },
-  'rock→sand':         { alpha: 0.28, depth: 0.40, featherStops: 3, noiseAmp: 0.15 },
+  // Land-land blends must stay subtle; high alpha/depth reads as a hard
+  // half-green/half-brown tile in normal gameplay (#277 visual stabilization).
+  'dirt→grass':        { alpha: 0.14, depth: 0.26, featherStops: 4, noiseAmp: 0.08 },
+  'rock→grass':        { alpha: 0.14, depth: 0.24, featherStops: 3, noiseAmp: 0.08 },
+  'sand→grass':        { alpha: 0.16, depth: 0.28, featherStops: 4, noiseAmp: 0.08 },
+  'dirt→rock':         { alpha: 0.13, depth: 0.24, featherStops: 3, noiseAmp: 0.06 },
+  'dirt→sand':         { alpha: 0.14, depth: 0.26, featherStops: 3, noiseAmp: 0.07 },
+  'rock→sand':         { alpha: 0.13, depth: 0.24, featherStops: 3, noiseAmp: 0.06 },
   // Shore transitions — strong blends with foam
   'grass→water':       { alpha: 0.50, depth: 0.55, featherStops: 5, noiseAmp: 0.30 },
   'dirt→water':        { alpha: 0.45, depth: 0.50, featherStops: 4, noiseAmp: 0.25 },

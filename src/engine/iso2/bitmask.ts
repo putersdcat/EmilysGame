@@ -39,17 +39,17 @@ export function bitmaskToConnections(mask: number): FeatureConnections {
  */
 export function variantFromBitmask(mask: number): FeatureVariant {
   switch (mask) {
-    case 0b0010: return 'straight-h';
+    case 0b1010: return 'straight-h';
     case 0b0101: return 'straight-v';
     case 0b1111: return 'cross';
     case 0b0011: return 'corner-tr';
     case 0b1001: return 'corner-tl';
     case 0b0110: return 'corner-br';
     case 0b1100: return 'corner-bl';
-    case 0b0111: return 'tee-t';
-    case 0b1011: return 'tee-r';
-    case 0b1101: return 'tee-b';
-    case 0b1110: return 'tee-l';
+    case 0b0111: return 'tee-l';
+    case 0b1011: return 'tee-b';
+    case 0b1101: return 'tee-r';
+    case 0b1110: return 'tee-t';
     case 0b0001: return 'end-t';
     case 0b0010: return 'end-r';
     case 0b0100: return 'end-b';

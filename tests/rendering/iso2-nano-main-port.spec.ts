@@ -38,6 +38,9 @@ test.describe('Iso 2.0 nano main-game port', () => {
         bridge: assetDefs.bridge?.tileType,
         toll: assetDefs.toll_gate?.tileType,
         house: assetDefs.house?.tileType,
+        starterCottage: assetDefs.starter_cottage?.tileType,
+        castleKeep: assetDefs.castle_keep?.tileType,
+        cathedralChapel: assetDefs.cathedral_chapel?.tileType,
         cathedral: assetDefs.cathedral_wall?.tileType,
       };
     });
@@ -50,23 +53,93 @@ test.describe('Iso 2.0 nano main-game port', () => {
       bridge: 'bridge',
       toll: 'troll_bridge',
       house: 'homestead_wall',
+      starterCottage: 'starter_cottage',
+      castleKeep: 'castle_keep',
+      cathedralChapel: 'cathedral_chapel',
       cathedral: 'cathedral_wall',
     });
   });
 
   test('nano factories produce stack descriptors for the ported asset families', async () => {
-    const tileTypes = ['wooden_fence', 'door_gate', 'quiz_gate', 'water', 'bridge', 'troll_bridge', 'homestead_wall', 'cathedral_wall'] as const;
+    const tileTypes = ['wooden_fence', 'door_gate', 'quiz_gate', 'water', 'bridge', 'troll_bridge', 'homestead_wall', 'starter_cottage', 'castle_keep', 'cathedral_chapel', 'cathedral_wall'] as const;
     for (const tileType of tileTypes) {
       expect(hasNanoRenderer(tileType)).toBe(true);
       const stack = getNanoStack(tileType, tileType === 'water' ? 'corner-bl' : 'straight-h');
       expect(stack?.length).toBeGreaterThan(0);
-      expect(stack?.[0].svg.length).toBeGreaterThan(500);
+      if (tileType === 'starter_cottage' || tileType === 'castle_keep' || tileType === 'cathedral_chapel') {
+        const expected = tileType === 'starter_cottage' ? 'starter-cottage'
+          : tileType === 'castle_keep' ? 'castle-keep'
+            : 'cathedral-chapel';
+        expect(stack?.[0].kind).toBe(expected);
+      } else {
+        expect(stack?.[0].svg.length).toBeGreaterThan(500);
+      }
     }
     expect(listNanoFenceStyles().length).toBeGreaterThanOrEqual(4);
     expect(listNanoWaterStyles().length).toBeGreaterThanOrEqual(4);
     const waterSvg = waterNanoSvg('corner-bl', 'clear-river');
     expect(waterSvg).toContain('Q 72 72');
     expect(waterSvg).not.toContain('<rect width="144" height="144" fill="#');
+  });
+
+  test('starter cottage stays on the nano path, not the legacy asset-sprite path', async ({ page }) => {
+    await waitForGame(page);
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const def = debug.getAssetDefs().starter_cottage;
+      const stack = debug.getNanoStackForTests(def.tileType);
+      return {
+        tileType: def.tileType,
+        hasAssetSprite: debug.hasAssetSprite('starter_cottage'),
+        stackKind: stack?.[0]?.kind,
+      };
+    });
+
+    expect(result).toEqual({
+      tileType: 'starter_cottage',
+      hasAssetSprite: false,
+      stackKind: 'starter-cottage',
+    });
+  });
+
+  test('castle keep uses the same authored-structure nano path', async ({ page }) => {
+    await waitForGame(page);
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const def = debug.getAssetDefs().castle_keep;
+      const stack = debug.getNanoStackForTests(def.tileType);
+      return {
+        tileType: def.tileType,
+        hasAssetSprite: debug.hasAssetSprite('castle_keep'),
+        stackKind: stack?.[0]?.kind,
+      };
+    });
+
+    expect(result).toEqual({
+      tileType: 'castle_keep',
+      hasAssetSprite: false,
+      stackKind: 'castle-keep',
+    });
+  });
+
+  test('cathedral chapel uses the same authored-structure nano path', async ({ page }) => {
+    await waitForGame(page);
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const def = debug.getAssetDefs().cathedral_chapel;
+      const stack = debug.getNanoStackForTests(def.tileType);
+      return {
+        tileType: def.tileType,
+        hasAssetSprite: debug.hasAssetSprite('cathedral_chapel'),
+        stackKind: stack?.[0]?.kind,
+      };
+    });
+
+    expect(result).toEqual({
+      tileType: 'cathedral_chapel',
+      hasAssetSprite: false,
+      stackKind: 'cathedral-chapel',
+    });
   });
 
   test('main Iso2 structural port uses 144px source geometry and canonical tee variants', async () => {

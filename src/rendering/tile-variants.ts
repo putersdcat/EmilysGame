@@ -91,6 +91,7 @@ export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fen
     case 'quiz_gate':
     case 'homestead_wall':
     case 'homestead_wall_plaster':
+    case 'starter_homestead_wall_plaster':
     case 'homestead_wall_planks':
     case 'cathedral_wall':
       return 'wall';
@@ -118,7 +119,7 @@ export function sameFeatureNeighbor(
   chunk: ChunkData,
   cx: number,
   cy: number,
-  tileType: TileType,
+  tileType: TileType | string,
 ): boolean {
   let localX = cx;
   let localY = cy;
@@ -168,7 +169,7 @@ export function inferTileVariant(
   chunk: ChunkData,
   cx: number,
   cy: number,
-  tileType: TileType,
+  tileType: TileType | string,
 ): FeatureVariant {
   return variantFromConnections(
     sameFeatureNeighbor(chunks, chunk, cx, cy - 1, tileType),

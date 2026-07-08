@@ -467,6 +467,12 @@ const isoTileCache = new Map<TileType, HTMLCanvasElement>();
 
 /** All available tile types */
 export const ALL_TILE_TYPES: TileType[] = Object.keys(TILE_SVG_SOURCES) as TileType[];
+const TILE_TYPE_SET = new Set<string>(ALL_TILE_TYPES);
+
+/** True when a string is a base tile atlas key handled by getIsoTile(). */
+export function isTileType(type: string | undefined): type is TileType {
+  return !!type && TILE_TYPE_SET.has(type);
+}
 
 /**
  * Render an SVG into an isometric diamond on an offscreen canvas.

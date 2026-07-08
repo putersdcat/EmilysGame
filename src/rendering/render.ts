@@ -8,7 +8,7 @@ import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { getBiome } from '../config/biomes.config';
-import { getIsoTile, type TileType } from './tiles';
+import { getIsoTile, isTileType, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
@@ -60,7 +60,7 @@ interface DrawCmd {
   sinkPx?: number;
   shadow?: boolean;
   // Tile-specific fields
-  tileType?: TileType;
+  tileType?: TileType | string;
   tileVariant?: FeatureVariant;
   // NPC sprite fields (#85)
   npcImg?: HTMLImageElement | null;
@@ -163,7 +163,7 @@ export class IsometricRenderer {
 
   /** Draw a pre-rendered isometric tile at screen position.
    *  Nano-capable tiles now draw at native Iso 2.0 scale (256×128 diamond). */
-  private drawTile(tileType: TileType, sx: number, sy: number, variant?: FeatureVariant): void {
+  private drawTile(tileType: TileType | string, sx: number, sy: number, variant?: FeatureVariant): void {
     const nanos = getNanoStack(tileType, variant);
     if (nanos) {
       this.ctx.save();
@@ -172,6 +172,7 @@ export class IsometricRenderer {
       this.ctx.restore();
       return;
     }
+    if (!isTileType(tileType)) return;
     const tileCanvas = getIsoTile(tileType);
     if (tileCanvas) {
       this.ctx.drawImage(tileCanvas, sx - RENDER_CONFIG.tileWidth / 2, sy - RENDER_CONFIG.tileHeight / 2);
@@ -542,7 +543,9 @@ export class IsometricRenderer {
       const cmd = jsPool[jsPoolIdx++];
       cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
       cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
-      cmd.tileType = def.tileType; cmd.shadow = def.shadow;
+      // Nano geometry owns contact shadows/material depth; the generic sprite
+      // ellipse shadow creates large dark diamonds under fences/gates (#277).
+      cmd.tileType = def.tileType; cmd.shadow = false;
       cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
       cmd.assetCanvas = null;
     } else if (hasAssetSprite(cell.assetKey)) {
@@ -561,7 +564,7 @@ export class IsometricRenderer {
       } else {
         cmd.assetCanvas = getAssetSprite(cell.assetKey, tintHue, gx, gy) ?? null;
       }
-    } else if (def.tileType) {
+    } else if (isTileType(def.tileType)) {
       const cmd = jsPool[jsPoolIdx++];
       cmd.sortKey = depthKey; cmd.type = CMD_TILE; cmd.emoji = def.emoji;
       cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;

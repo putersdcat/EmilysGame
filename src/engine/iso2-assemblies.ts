@@ -8,6 +8,7 @@
 
 import { ASSET_DEFS } from '../config/assets.config';
 import type { ChunkData, CellData } from '../types/game.types';
+export { stampStarterHomestead } from './iso2-assemblies/starter-homestead';
 
 export type Iso2AssemblyId = 'homestead-small' | 'ruined-cathedral';
 
@@ -15,6 +16,8 @@ interface AssemblyPlacement {
   readonly x: number;
   readonly y: number;
   readonly assetKey: string;
+  readonly itemId?: string;
+  readonly npcId?: string;
 }
 
 const HOMESTEAD_SMALL: readonly AssemblyPlacement[] = [
@@ -35,13 +38,17 @@ const RUINED_CATHEDRAL: readonly AssemblyPlacement[] = [
   { x: 0, y: 4, assetKey: 'wall' },           { x: 2, y: 4, assetKey: 'wall' },
 ];
 
-function makeCell(assetKey: string): CellData {
+function makeCell(placement: AssemblyPlacement): CellData {
+  const { assetKey } = placement;
   const def = ASSET_DEFS[assetKey];
   if (!def) throw new Error(`Unknown assembly asset: ${assetKey}`);
   return {
     assetKey,
     walkable: def.walkable,
     interactable: def.interactable,
+    itemId: placement.itemId,
+    npcId: placement.npcId,
+    npcFacing: placement.npcId ? 'south' : undefined,
   };
 }
 
@@ -58,6 +65,6 @@ export function stampIso2Assembly(chunk: ChunkData, id: Iso2AssemblyId, originX:
     const x = originX + p.x;
     const y = originY + p.y;
     if (y < 0 || y >= chunk.cells.length || x < 0 || x >= chunk.cells[y].length) continue;
-    chunk.cells[y][x] = makeCell(p.assetKey);
+    chunk.cells[y][x] = makeCell(p);
   }
 }

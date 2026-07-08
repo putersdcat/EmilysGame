@@ -8,7 +8,7 @@
 import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getBiome } from '../config/biomes.config';
-import { ALL_TILE_TYPES, type TileType } from './tiles';
+import { ALL_TILE_TYPES, isTileType, type TileType } from './tiles';
 import type { ChunkData } from '../types/game.types';
 import type { Camera } from './render';
 
@@ -266,7 +266,7 @@ export function wasmBuildDrawCmds(
         cellView[b + 3] = def.layer === 'base' ? 0 : 1;
         cellView[b + 4] = def.height;
         cellView[b + 5] = def.shadow ? 1 : 0;
-        cellView[b + 6] = getTileTypeIndex(def.tileType);
+        cellView[b + 6] = getTileTypeIndex(isTileType(def.tileType) ? def.tileType : undefined);
         cellView[b + 7] = def.scale;
         cellView[b + 8] = biome.tintHue;
         cellView[b + 9] = cell.itemId ? 1 : 0;

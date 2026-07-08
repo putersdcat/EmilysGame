@@ -23,7 +23,8 @@ export interface AssetDef {
   walkable: boolean;        // Can the player walk through this?
   interactable: boolean;    // Can the player interact (Space)?
   description: string;      // Short tooltip / dev reference
-  tileType?: TileType;      // SVG tile type for ground rendering (if available)
+  /** Base tile or Iso2 nano tile key. Some Iso2-only keys are handled by nano-tile-defs, not tiles.ts. */
+  tileType?: TileType | string;
   jitter?: number;           // 0-1 sub-cell placement jitter range (fraction of half-tile). 0 = centered. (#82)
   /** Hazard damage on collision (#137). 0/undefined = safe, >0 = deterministic injury. */
   hazardDamage?: number;
@@ -138,6 +139,54 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     scale: 1.0, shadow: true, walkable: false, interactable: false,
     description: 'Brick wall segment', tileType: 'stone_wall',
     occluderRatio: 0.6,
+  },
+  starter_foundation: {
+    emoji: '⬜', category: 'obstacle', height: 3, layer: 'mid',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage foundation stone', tileType: 'stone_wall_cottage_foundation',
+    occluderRatio: 0.35,
+  },
+  starter_wall_plaster: {
+    emoji: '🏠', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Starter cottage plaster/timber wall', tileType: 'starter_homestead_wall_plaster',
+    occluderRatio: 0.65,
+  },
+  starter_cottage: {
+    emoji: '🏠', category: 'obstacle', height: 7, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Starter cottage nano geometry with 45-degree roof and player-scale front door', tileType: 'starter_cottage',
+    occluderRatio: 0.55,
+  },
+  castle_keep: {
+    emoji: '🏰', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Single-cell castle keep nano geometry proof', tileType: 'castle_keep',
+    occluderRatio: 0.70,
+  },
+  cathedral_chapel: {
+    emoji: '⛪', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Single-cell cathedral chapel nano geometry proof', tileType: 'cathedral_chapel',
+    occluderRatio: 0.70,
+  },
+  starter_roof_left: {
+    emoji: '🛖', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof left slope', tileType: 'starter_roof_thatch_slope_left',
+    occluderRatio: 0.55,
+  },
+  starter_roof_right: {
+    emoji: '🛖', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof right slope', tileType: 'starter_roof_thatch_slope_right',
+    occluderRatio: 0.55,
+  },
+  starter_roof_ridge: {
+    emoji: '🛖', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof ridge', tileType: 'starter_roof_thatch_ridge',
+    occluderRatio: 0.55,
   },
   door_locked: {
     emoji: '🔒', category: 'obstacle', height: 5, layer: 'high',

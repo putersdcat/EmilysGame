@@ -9,8 +9,11 @@
  * `import('/engine/gen.ts')` directly in the page and drive the generator with fixed
  * inputs — isolating gen.ts from startup variance (the scrambled wordlist re-seeds per load).
  *
- * Golden captured 2026-07-03 after stabilization pass: starter homestead repositioned
- * to surround the player start (12.5, 12.5) so it's visible at game start (issue #277).
+ * Golden captured 2026-07-07 after starter homestead hardening: origin safe-zone
+ * now uses a runtime-safe assembly (stone floor, starter cottage sprite, gate,
+ * campfire/sign/path) instead of a loose fence ring + single house icon (#277).
+ * Unsafe roof/foundation wall nanos are deliberately excluded from normal startup
+ * generation until structure assembly rendering is more stable.
  * If you intentionally change generation output, re-capture GOLDEN_HASH.
  *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
@@ -22,7 +25,7 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-const GOLDEN_HASH = 'dfa405e7';
+const GOLDEN_HASH = '061b4390';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

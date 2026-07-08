@@ -29,6 +29,7 @@ import {
 } from '../types/iso-renderer.types.js';
 import type { IsoFenceStyle } from '../asset-pipeline/iso2-fence-family.js';
 import { wallBounds } from './nano-tile-svgs';
+import { drawAuthoredStructureNano, isAuthoredStructureNanoKind } from './nano-structures';
 import { drawRoofNano, isRoofNanoKind } from './nano-roof';
 import { drawNanoWeathering } from './nano-weathering';
 
@@ -1166,7 +1167,9 @@ export function drawNanoStack(
         if (!drawFlatNano(ctx, nano, screenX, screenY)) allImagesLoaded = false;
         break;
       case 'positive':
-        if (isRoofNanoKind(nano.kind)) {
+        if (isAuthoredStructureNanoKind(nano.kind)) {
+          if (!drawAuthoredStructureNano(ctx, nano, screenX, screenY, loadSvgImage)) allImagesLoaded = false;
+        } else if (isRoofNanoKind(nano.kind)) {
           if (!drawRoofNano(ctx, nano, screenX, screenY, loadSvgImage)) allImagesLoaded = false;
         } else if (nano.sideTextureSvg || nano.topTextureSvg || nano.topFaceTextureSvg || nano.southFaceTextureSvg || nano.eastFaceTextureSvg) {
           if (!drawExtrudedNano(ctx, nano, screenX, screenY, sun)) allImagesLoaded = false;
