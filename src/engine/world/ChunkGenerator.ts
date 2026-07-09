@@ -13,8 +13,8 @@
  *   Phase 4: enforcePassability (Passability) — ensure walkability
  *   Phase 5: populateAnchors, clusterDecorations, scatterCollectibles, layCoinTrails,
  *            placeQuizGates, placeGatesInFenceRuns, promoteDoorGates, placeBonfires,
- *            applyEntropyCellFlags, addExtraObstacles (Populator/CollectibleScatterer/
- *            ObstacleSolver/EntropyCellFlags)
+ *            maybePlaceCastleLandmark, applyEntropyCellFlags, addExtraObstacles
+ *            (Populator/CollectibleScatterer/ObstacleSolver/EntropyCellFlags/iso2-assemblies)
  *   Phase 6: balanceObstacles, rewardDeadEnds (ObstacleSolver)
  *   Phase 7: enforcePassability (re-enforce after population)
  *   Phase 8: validatePlayability (Validation) — playability report
@@ -73,7 +73,7 @@ import { solveWorldUnitGrid, stampWorldUnitGrid } from './WorldUnitSolver';
 import { WU_SIZE, GRID_DIM } from './WorldGrid';
 import { buildPerlinBase } from './TerrainBuilder';
 import { applyEntropyCellFlags } from './EntropyCellFlags';
-import { stampStarterHomestead } from '../iso2-assemblies';
+import { stampStarterHomestead, ensureSpawnClearance, maybePlaceCastleLandmark } from '../iso2-assemblies';
 import type {
   BorderConstraints,
   ChunkData,
@@ -267,6 +267,13 @@ function generateGridChunk(
   // Phase 5.45: place bonfires for night-time local lighting (#67)
   placeBonfires(cells, size, biome, seededRandom(featureSeed + 475));
 
+  // Phase 5.46: maybe place a rare castle-biome landmark (ruined cathedral or
+  // castle keep) -- wires up previously-dead assembly content into real
+  // generation for the first time (Slice E "Step 2", 2026-07-09). No-op for
+  // every other biome and most eligible chunks; runs before the Phase 6-8
+  // safety net so any repair the landmark needs still happens.
+  maybePlaceCastleLandmark(cells, size, biome, chunkDist, seededRandom(featureSeed + 476));
+
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
@@ -286,6 +293,14 @@ function generateGridChunk(
 
   // Phase 8: playability validation (Solver F) (#46)
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));
+
+  // Phase 9: guarantee the player's fixed spawn point is walkable (2026-07-09
+  // fix). Runs LAST, after every earlier phase that could plausibly place
+  // blocking content near spawn (WU-template stamping, entropy-flag
+  // overrides, bonfire placement, obstacle balancing, etc.) has already had
+  // its chance -- see ensureSpawnClearance's own doc comment for the full
+  // root-cause writeup (a user-reported "player spawns inside a wall" bug).
+  if (chunkX === 0 && chunkY === 0) ensureSpawnClearance(cells);
 
   return { cells, borderEdges };
 }

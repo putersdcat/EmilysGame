@@ -6,6 +6,7 @@ dist/
 playwright-report/
 test-results/
 .playwright-mcp/
+OnlyFails/
 test-output.txt
 test-output2.txt
 test-output-weather.txt

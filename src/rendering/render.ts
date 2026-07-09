@@ -9,7 +9,7 @@ import { ASSET_DEFS } from '../config/assets.config';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { getBiome } from '../config/biomes.config';
 import { getIsoTile, isTileType, type TileType } from './tiles';
-import { getNanoStack, hasNanoRenderer } from './nano-tile-defs';
+import { getNanoStack, hasNanoRenderer, wallTileTypeForBiome, fenceTileTypeForBiome } from './nano-tile-defs';
 import { drawNanoStack } from './nano-tile';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData, Camera } from '../types/game.types';
@@ -545,8 +545,17 @@ export class IsometricRenderer {
       cmd.sx = jsx; cmd.sy = drawSy; cmd.scale = drawScale; cmd.tint = tintHue;
       // Nano geometry owns contact shadows/material depth; the generic sprite
       // ellipse shadow creates large dark diamonds under fences/gates (#277).
-      cmd.tileType = def.tileType; cmd.shadow = false;
-      cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, def.tileType);
+      cmd.shadow = false;
+      // Slice E: give plain wall/fence obstacles biome-themed material variety
+      // (e.g. castle ruins get aged cottage-foundation stone + split-rail
+      // fencing, meadow gets cheerful white picket). Only ever substitutes
+      // within the same nano `kind` family, so this is render-only -- it
+      // never changes collision (see nano-tile-defs.ts's Slice E comment).
+      let resolvedTileType = def.tileType;
+      if (resolvedTileType === 'stone_wall') resolvedTileType = wallTileTypeForBiome(chunk.biomeId);
+      else if (resolvedTileType === 'wooden_fence') resolvedTileType = fenceTileTypeForBiome(chunk.biomeId);
+      cmd.tileType = resolvedTileType;
+      cmd.tileVariant = inferTileVariant(chunks, chunk, cx, cy, resolvedTileType);
       cmd.assetCanvas = null;
     } else if (hasAssetSprite(cell.assetKey)) {
       // SVG asset sprite path (#115) — priority over tileType for objects

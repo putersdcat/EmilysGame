@@ -241,6 +241,8 @@ export interface NanoTile {
   readonly shadowPath?: string;
   /** Optional procedural fence/gate construction + material style. */
   readonly fenceStyle?: FenceStyle;
+  /** Resolved per-tile water material palette (D.6 water-family). Drives negative-Z river/pond rendering. */
+  readonly waterStyle?: import('./textures/water-family').WaterStyle;
   /** Solver-resolved connection flags. */
   readonly connections?: FeatureConnections;
   /** Solver-resolved variant piece. */

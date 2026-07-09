@@ -3,3 +3,4 @@
 export type { WaterFactoryOptions, WaterStyle, WaterStyleId } from './types';
 export { createWaterStyleVariant, defaultWaterStyle, listWaterStyles, waterStyleForTile } from './styles';
 export { svgRiverBank, svgWater, svgWaterFrameStrip } from './svg-water';
+export { rgba } from './utils';

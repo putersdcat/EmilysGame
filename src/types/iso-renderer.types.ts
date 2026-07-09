@@ -203,6 +203,8 @@ export interface IsoNanoTile {
   readonly connections?: IsoFeatureConnections;
   /** Procedural fence/gate material preset (experiment fence-family.ts). */
   readonly fenceStyle?: import('../asset-pipeline/iso2-fence-family.js').IsoFenceStyle;
+  /** Resolved per-tile water material palette (D.6 water-family). Drives negative-Z river/pond rendering. */
+  readonly waterStyle?: import('../asset-pipeline/iso2-water-family/types.js').WaterStyle;
 }
 
 /** Ordered stack of nano tiles on a single MicroTile. */

@@ -116,7 +116,7 @@ function mix(a: string, b: string, t: number): string {
   return `#${ch(aa.r, bb.r)}${ch(aa.g, bb.g)}${ch(aa.b, bb.b)}`;
 }
 
-function rgba(hex: string, alpha: number): string {
+export function rgba(hex: string, alpha: number): string {
   const { r, g, b } = hexToRgb(hex);
   return `rgba(${r},${g},${b},${clamp01(alpha).toFixed(3)})`;
 }

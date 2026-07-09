@@ -23,6 +23,7 @@ import {
   RedClinker, RoughWoodPlankWall, SandstoneBrick, StoneBrick, ThatchRoof,
   TimberFrameWall, fenceStyleForTile,
 } from '../asset-pipeline/iso2-materials.js';
+import { waterStyleForTile } from '../asset-pipeline/iso2-water-family/index.js';
 import {
   cathedralWallSvg,
   cathedralWallTopSvg,
@@ -327,15 +328,20 @@ export function waterNano(
   worldCol = 0,
   worldRow = 0,
 ): IsoNanoTile {
-  const waterStyle = styleId ?? (variant === 'isolated' ? 'deep-pond' : 'clear-river');
+  const waterStyleId = styleId ?? (variant === 'isolated' ? 'deep-pond' : 'clear-river');
+  // Resolved palette threads through to drawSunkenCutFaces/drawProceduralRiverWater
+  // (nano-tile.ts) so the 4 water styles are actually visible at draw time —
+  // previously only the (unused-for-river) nano.svg carried style information.
+  const resolvedWaterStyle = waterStyleForTile(waterStyleId, worldCol, worldRow, variant);
   return {
     kind: 'river',
     zOffset,
     zMode: 'negative',
-    svg: waterNanoSvg(variant, waterStyle, 0, worldCol, worldRow),
+    svg: waterNanoSvg(variant, waterStyleId, 0, worldCol, worldRow),
     walkable: WALKABLE_NEVER,
     blendEdges: true,
     variant,
+    waterStyle: resolvedWaterStyle,
   };
 }
 
@@ -358,6 +364,34 @@ export function waterStyleForTileType(tileType: string, biomeId: number): NanoWa
     case 'water_deep_pond': return 'deep-pond';
     case 'water_marsh_water': return 'marsh-water';
     default: return null;
+  }
+}
+
+// ─── Slice E: wall/fence material variety by biome ─────────────────────────
+// Mirrors waterStyleIdForBiome's one-pick-per-biome pattern. Only ever
+// substitutes WITHIN the same nano `kind` family (stone-wall / fence) that
+// the bare 'wall'/'fence' assetKeys already resolve to below -- Slice B.5
+// confirmed every stone_wall_* and wooden_fence_* sub-variant shares
+// identical footprint geometry, so swapping material here never changes
+// collision, only the rendered look. Biome ids/themes from biomes.config.ts:
+// 0 meadow (fence-only), 1 forest (no wall/fence in obstacleWeights today),
+// 2 cave (wall-only, neutral gray fits underground), 3 castle (both, wants
+// an aged/ruined look).
+
+/** Pick a Slice E wall material tileType by main-game biome id. */
+export function wallTileTypeForBiome(biomeId: number): string {
+  switch (((biomeId % 4) + 4) % 4) {
+    case 3: return 'stone_wall_cottage_foundation'; // castle — ancient/ruined stone
+    default: return 'stone_wall'; // meadow/forest/cave — neutral masonry
+  }
+}
+
+/** Pick a Slice E fence material tileType by main-game biome id. */
+export function fenceTileTypeForBiome(biomeId: number): string {
+  switch (((biomeId % 4) + 4) % 4) {
+    case 0: return 'wooden_fence_picket'; // meadow — cheerful white picket
+    case 3: return 'wooden_fence_split_rail'; // castle — rugged/aged rail
+    default: return 'wooden_fence'; // forest/cave — plain default (rare here today)
   }
 }
 
@@ -421,6 +455,19 @@ export function getNanoStack(
 
   let stack: IsoNanoStack | null = null;
   switch (tileType) {
+    // Bare assetKey aliases (Slice E): real generation places 'wall'/'fence'
+    // as the literal cell.assetKey (see ObstacleSolver.ts), never the
+    // resolved 'stone_wall'/'wooden_fence' tileType -- these cases let
+    // mechanics.ts's collision path (which looks up getNanoStack using the
+    // RAW cell.assetKey, not def.tileType) resolve real generated walls and
+    // fences to their precise nano footprint instead of falling through to
+    // a blunt whole-tile cell.walkable block. The render path never calls
+    // getNanoStack with these bare strings (it always resolves def.tileType
+    // first), so this only changes collision precision, not rendering.
+    case 'wall':
+      stack = [stoneWallNano(variant ?? 'isolated')]; break;
+    case 'fence':
+      stack = [woodenFenceNano(variant ?? 'straight-h')]; break;
     case 'stone_wall':
       stack = [stoneWallNano(variant ?? 'isolated')]; break;
     case 'stone_wall_red_clinker':

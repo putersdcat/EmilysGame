@@ -12,8 +12,9 @@ import type { CellData, ChunkData } from '../types/game.types';
 import { WORLD_CONFIG, PLAYER_CONFIG } from '../config/game.config';
 import type { Inventory } from '../game/inventory';
 import { invalidateObjectCache } from '../rendering/render';
-import { isPointWalkableInTile, variantFromBitmask, connectionsToBitmask } from '../rendering/nano-tile-svgs';
+import { isPointWalkableInTile } from '../rendering/nano-tile-svgs';
 import { getNanoStack } from '../rendering/nano-tile-defs';
+import { sameFeatureNeighbor, variantFromConnections } from '../rendering/tile-variants';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -80,20 +81,56 @@ export function isFootprintWalkable(
   );
 }
 
+// Maps a v1 assetKey to its Iso2 nano `kind` string, enabling the exact
+// footprint-based walkability check (isPointWalkableInTile) instead of the
+// blunt whole-tile cell.walkable fallback below. Scoped deliberately to
+// CONTINUOUS STRUCTURAL FEATURES (wall/fence/water material variants) that
+// are unconditionally WALKABLE_NEVER with no lock/gate state -- adding them
+// can only improve footprint precision, never change locked/unlocked
+// semantics. Deliberately excludes door_gate/toll_gate/roof/structure kinds:
+// those interact with the OBSTACLE_TEMPLATES direct-cell-mutation unlock
+// system (see the obstacle-resolution block below), and routing them
+// through the nano path here would swap their intentional full-tile block
+// for a narrow structural footprint -- a real gameplay behavior change, not
+// just a completeness fix. See tests/rendering/iso2-b-asset-nano-kind-completeness.spec.ts.
 const assetToNanoKind: Record<string, string> = {
+  // Bare, unresolved assetKeys placed directly by real generation (see
+  // ObstacleSolver.ts's weightedPick(biome.obstacleWeights, ...)) -- 'wall'
+  // and 'fence' were the two remaining gaps in this table: water/bridge
+  // already had their bare forms covered, but wall/fence did not, so every
+  // real biome-obstacle-weighted wall/fence fell through to the blunt
+  // cell.walkable full-tile block instead of the precise nano footprint
+  // (Slice E finding, 2026-07). Requires matching 'wall'/'fence' cases in
+  // nano-tile-defs.ts's getNanoStack() to actually resolve (added alongside).
+  'wall': 'stone-wall',
+  'fence': 'fence',
   'stone_wall': 'stone-wall',
+  'stone_wall_red_clinker': 'stone-wall',
+  'stone_wall_mud_brick': 'stone-wall',
+  'stone_wall_sandstone': 'stone-wall',
+  'stone_wall_cottage_foundation': 'stone-wall',
   'homestead_wall': 'homestead-wall',
+  'homestead_wall_plaster': 'homestead-wall',
+  'starter_homestead_wall_plaster': 'homestead-wall',
+  'homestead_wall_planks': 'homestead-wall',
   'cathedral_wall': 'cathedral-wall',
   'wooden_fence': 'fence',
+  'wooden_fence_split_rail': 'fence',
+  'wooden_fence_picket': 'fence',
+  'wooden_fence_wattle': 'fence',
   'barricade': 'fence',
   'quiz_gate': 'gate',
   'door_locked': 'gate',
   'water': 'river',
+  'water_clear_river': 'river',
+  'water_muddy_creek': 'river',
+  'water_deep_pond': 'river',
+  'water_marsh_water': 'river',
   'bridge': 'bridge',
   'troll_bridge': 'troll-bridge',
 };
 
-function getNanoKindForAsset(assetKey: string): string | null {
+export function getNanoKindForAsset(assetKey: string): string | null {
   return assetToNanoKind[assetKey] || null;
 }
 
@@ -117,19 +154,19 @@ function isPositionWalkable(
   const cell = chunk.cells[ly][lx];
   const nanoKind = getNanoKindForAsset(cell.assetKey);
   if (nanoKind) {
-    // Infer variant from 4-dir neighbors (same assetKey for continuous)
-    const neighbors: any = { top: false, right: false, bottom: false, left: false };
-    const check = (dx: number, dy: number, dir: string) => {
-      const nx = lx + dx, ny = ly + dy;
-      if (nx >= 0 && nx < size && ny >= 0 && ny < size) {
-        if (chunk.cells[ny][nx].assetKey === cell.assetKey) (neighbors as any)[dir] = true;
-      }
-    };
-    check(0, -1, 'top');
-    check(1, 0, 'right');
-    check(0, 1, 'bottom');
-    check(-1, 0, 'left');
-    const variant = variantFromBitmask(connectionsToBitmask(neighbors));
+    // Infer variant using the same family-aware, cross-chunk-boundary-safe
+    // neighbor logic the render path uses (tile-variants.ts). A strict
+    // same-assetKey-only check (the old local logic here) always resolved
+    // gates (door_gate/quiz_gate) to 'isolated', since a gate's assetKey never
+    // matches its wall/fence neighbors' assetKey -- collapsing a locked gate's
+    // blocking footprint from a full wall/fence run down to a ~18-48px center
+    // post and leaving the rest of the tile freely walkable around it.
+    const variant = variantFromConnections(
+      sameFeatureNeighbor(chunks, chunk, lx, ly - 1, cell.assetKey),
+      sameFeatureNeighbor(chunks, chunk, lx + 1, ly, cell.assetKey),
+      sameFeatureNeighbor(chunks, chunk, lx, ly + 1, cell.assetKey),
+      sameFeatureNeighbor(chunks, chunk, lx - 1, ly, cell.assetKey),
+    );
     const stack = getNanoStack(cell.assetKey as any, variant);
     if (stack && stack.length > 0) {
       const localColFrac = px - Math.floor(px);

@@ -111,6 +111,31 @@ export function nanoConnectionFamily(tileType: TileType | string): 'wall' | 'fen
 }
 
 /**
+ * Gate tiles (door_gate, quiz_gate) get embedded in EITHER a stone-wall run
+ * (door_gate's native template placement, or a door_gate/door_locked/toll_gate
+ * cell converted in place to quiz_gate) OR a wooden-fence run (quiz_gate
+ * punched into a fence run by placeGatesInFenceRuns) -- see ObstacleSolver.ts.
+ * A gate must therefore bridge BOTH 'wall' and 'fence' connectivity, while a
+ * plain wall and a plain fence must still NOT connect directly to each other.
+ */
+const GATE_TILE_TYPES = new Set<string>(['door_gate', 'quiz_gate']);
+const BARRIER_FAMILIES = new Set<string>(['wall', 'fence']);
+
+/** True if two tileTypes should be treated as a continuous feature run for
+ *  variant inference — same family, or one of them is a gate bridging wall
+ *  and fence families. */
+function familiesConnect(tileTypeA: TileType | string, tileTypeB: TileType | string): boolean {
+  const famA = nanoConnectionFamily(tileTypeA);
+  const famB = nanoConnectionFamily(tileTypeB);
+  if (famA === famB) return true;
+  if ((GATE_TILE_TYPES.has(tileTypeA as string) || GATE_TILE_TYPES.has(tileTypeB as string))
+    && BARRIER_FAMILIES.has(famA as string) && BARRIER_FAMILIES.has(famB as string)) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Check if the cell at (cx, cy) — possibly in a different chunk — is the
  * same feature as `tileType`. Walks across chunk boundaries.
  */
@@ -135,7 +160,7 @@ export function sameFeatureNeighbor(
   const cell = target.cells[localY]?.[localX];
   if (!cell) return false;
   const neighborTileType = ASSET_DEFS[cell.assetKey]?.tileType;
-  return !!neighborTileType && nanoConnectionFamily(neighborTileType) === nanoConnectionFamily(tileType);
+  return !!neighborTileType && familiesConnect(neighborTileType, tileType);
 }
 
 /**

@@ -31,6 +31,7 @@ import {
   type SunState,
 } from './types';
 import { wallBounds } from './solver';
+import { defaultWaterStyle, rgba, type WaterStyle } from './textures/water-family';
 import { loadSvgImage, Z_PX_PER_LEVEL } from './tile';
 import { computeShadowOffset } from './renderer';
 
@@ -583,6 +584,7 @@ function drawSunkenCutFaces(
   tileTopY: number,
   sinkPx: number,
   connections: FeatureConnections,
+  style: WaterStyle,
 ): void {
   // Match WaterFamily clear-river geometry: 64px channel centered inside
   // the 144px micro tile. Faces are drawn along the CHANNEL banks, not the
@@ -596,57 +598,70 @@ function drawSunkenCutFaces(
   const high = off + channelW + lip;
   const hasH = connections.left || connections.right;
   const hasV = connections.top || connections.bottom;
+  // Isolated (no-neighbor) water -- e.g. a single deep-pond tile -- previously
+  // drew NOTHING here (both gates below were false), leaving an invisible
+  // hole with no basin walls. Treat isolated as "walled on all 4 sides".
+  const isolated = !hasH && !hasV;
   const hStart = connections.left ? outerMin : off;
   const hEnd = connections.right ? outerMax : off + channelW;
   const vStart = connections.top ? outerMin : off;
   const vEnd = connections.bottom ? outerMax : off + channelW;
 
-  if (hasH) {
+  const bankA = rgba(style.bankOuter, 0.76);
+  const bankB = rgba(style.bankInner, 0.78);
+  const wetEdge = rgba(style.bankWet, 0.78);
+
+  if (hasH || isolated) {
     // Split around an intersecting vertical arm so crosses/tees become a
     // true plus-shaped trench instead of a square pond with walls through it.
     const gapA = hasV ? low : null;
     const gapB = hasV ? high : null;
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, low, low, hStart, hEnd, gapA, gapB, 'rgba(73, 78, 39, 0.76)');
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, high, high, hStart, hEnd, gapA, gapB, 'rgba(42, 54, 34, 0.78)');
-    if (!connections.left) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hStart, low, hStart, high, 'rgba(60, 64, 36, 0.74)');
-    if (!connections.right) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hEnd, low, hEnd, high, 'rgba(39, 50, 33, 0.80)');
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, low, low, hStart, hEnd, gapA, gapB, bankA);
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, high, high, hStart, hEnd, gapA, gapB, bankB);
+    if (!connections.left) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hStart, low, hStart, high, wetEdge);
+    if (!connections.right) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hEnd, low, hEnd, high, wetEdge);
   }
 
-  if (hasV) {
+  if (hasV || isolated) {
     const gapA = hasH ? low : null;
     const gapB = hasH ? high : null;
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, low, low, vStart, vEnd, gapA, gapB, 'rgba(58, 65, 37, 0.76)');
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, high, high, vStart, vEnd, gapA, gapB, 'rgba(79, 72, 40, 0.76)');
-    if (!connections.top) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vStart, high, vStart, 'rgba(68, 70, 38, 0.74)');
-    if (!connections.bottom) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vEnd, high, vEnd, 'rgba(45, 56, 35, 0.78)');
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, low, low, vStart, vEnd, gapA, gapB, bankB);
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, high, high, vStart, vEnd, gapA, gapB, bankA);
+    if (!connections.top) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vStart, high, vStart, wetEdge);
+    if (!connections.bottom) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vEnd, high, vEnd, wetEdge);
   }
 }
 
-function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: FeatureConnections): void {
+function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: FeatureConnections, style: WaterStyle): void {
   // Draw the live Canvas river plane directly in source coordinates. This
-  // avoids the core SVG-raster issue: an SVG image clipped to 144×144 cannot
+  // avoids the core SVG-raster issue: an SVG image clipped to 144x144 cannot
   // actually overdraw connected edges even if its internal markup requests it.
   const channelW = 64;
   const off = (MICRO_TILE_SIZE - channelW) / 2;
   const over = 30;
   const hasH = connections.left || connections.right;
   const hasV = connections.top || connections.bottom;
+  // See drawSunkenCutFaces: isolated ponds must still fill a basin, not skip
+  // rendering entirely just because neither axis has a connected neighbor.
+  const isolated = !hasH && !hasV;
   const hStart = connections.left ? -over : off;
   const hEnd = connections.right ? MICRO_TILE_SIZE + over : off + channelW;
   const vStart = connections.top ? -over : off;
   const vEnd = connections.bottom ? MICRO_TILE_SIZE + over : off + channelW;
-  const shallow = '#2b86a8';
-  const mid = '#1b638f';
-  const deep = 'rgba(13, 52, 95, 0.36)';
-  const foam = 'rgba(168, 217, 232, 0.20)';
+  const shallow = style.shallow;
+  const mid = style.mid;
+  const deep = rgba(style.deep, 0.36);
+  const foam = rgba(style.foam, 0.20);
+  const bankWashTop = rgba(style.bankWet, 0.34);
+  const bankWashBottom = rgba(style.bankWet, 0.26);
 
   const fillHChannel = (x: number, y: number, w: number, h: number) => {
     const grad = ctx.createLinearGradient(0, y, 0, y + h);
-    grad.addColorStop(0, 'rgba(63,81,46,0.34)');
+    grad.addColorStop(0, bankWashTop);
     grad.addColorStop(0.18, shallow);
     grad.addColorStop(0.50, mid);
     grad.addColorStop(0.82, shallow);
-    grad.addColorStop(1, 'rgba(63,81,46,0.26)');
+    grad.addColorStop(1, bankWashBottom);
     ctx.fillStyle = grad;
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = deep;
@@ -654,11 +669,11 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   };
   const fillVChannel = (x: number, y: number, w: number, h: number) => {
     const grad = ctx.createLinearGradient(x, 0, x + w, 0);
-    grad.addColorStop(0, 'rgba(63,81,46,0.34)');
+    grad.addColorStop(0, bankWashTop);
     grad.addColorStop(0.18, shallow);
     grad.addColorStop(0.50, mid);
     grad.addColorStop(0.82, shallow);
-    grad.addColorStop(1, 'rgba(63,81,46,0.26)');
+    grad.addColorStop(1, bankWashBottom);
     ctx.fillStyle = grad;
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = deep;
@@ -666,17 +681,17 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   };
 
   ctx.save();
-  if (hasH) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
-  if (hasV) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
+  if (hasH || isolated) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
+  if (hasV || isolated) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
 
-  // Cross/tee overlaps should be water, not a dark square. Repaint the center
-  // with the mid tone and a small soft highlight.
-  if (hasH && hasV) {
-    ctx.fillStyle = 'rgba(27,99,143,0.64)';
+  // Cross/tee overlaps (and isolated ponds, treated the same way) get a
+  // soft radial highlight instead of a dark square.
+  if ((hasH && hasV) || isolated) {
+    ctx.fillStyle = rgba(style.mid, 0.64);
     ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
     const g = ctx.createRadialGradient(72, 68, 4, 72, 72, 34);
-    g.addColorStop(0, 'rgba(168,217,232,0.16)');
-    g.addColorStop(1, 'rgba(27,99,143,0)');
+    g.addColorStop(0, rgba(style.foam, 0.16));
+    g.addColorStop(1, rgba(style.mid, 0));
     ctx.fillStyle = g;
     ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
   }
@@ -684,7 +699,7 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   ctx.strokeStyle = foam;
   ctx.lineWidth = 1.1;
   ctx.lineCap = 'round';
-  if (hasH) {
+  if (hasH || isolated) {
     for (let x = hStart + 18; x < hEnd - 10; x += 34) {
       ctx.beginPath();
       ctx.moveTo(x, off + 18 + ((x / 17) % 4));
@@ -692,7 +707,7 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
       ctx.stroke();
     }
   }
-  if (hasV) {
+  if (hasV || isolated) {
     for (let y = vStart + 18; y < vEnd - 10; y += 34) {
       ctx.beginPath();
       ctx.moveTo(off + 18 + ((y / 17) % 4), y);
@@ -732,11 +747,12 @@ export function drawNegativeNano(
   clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
 
   const connections = nano.connections ?? connectionsFromVariant(nano.variant);
+  const waterStyle = nano.kind === 'river' ? (nano.waterStyle ?? defaultWaterStyle()) : null;
 
   // Draw visible excavated side faces first. This is the negative-Z equivalent
   // of the wall renderer's side faces: without it, the lowered water texture
   // reads as a flat decal rather than a carved channel.
-  drawSunkenCutFaces(ctx, cx, screenY, sinkPx, connections);
+  drawSunkenCutFaces(ctx, cx, screenY, sinkPx, connections, waterStyle!);
 
   ctx.restore();
 
@@ -757,7 +773,7 @@ export function drawNegativeNano(
   // sunken plane effect (e.g., water surface below surrounding terrain).
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + sinkPx);
   if (nano.kind === 'river') {
-    drawProceduralRiverWater(ctx, connections);
+    drawProceduralRiverWater(ctx, connections, waterStyle!);
   } else {
     ctx.drawImage(img!, 0, 0, MICRO_TILE_SIZE, MICRO_TILE_SIZE);
   }

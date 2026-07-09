@@ -47,6 +47,7 @@ import {
   type WalkableRule,
 } from '../src/types.js';
 import type { WaterStyleId } from '../src/textures/water-family.js';
+import { waterStyleForTile } from '../src/textures/water-family.js';
 
 // ─── Local geometry constants ─────────────────────────────────
 
@@ -402,11 +403,20 @@ function buildNanoTile(e: CanvasSceneEntry): NanoTile | null {
       ? FenceFamily.getFenceStyle(e.fenceStyle)
       : e.fenceStyle);
 
+  // Resolved per-tile water palette. Without this, the Canvas negative-Z
+  // river renderer (drawSunkenCutFaces/drawProceduralRiverWater) falls back
+  // to clear-river for every style -- e.waterStyle was accepted as scene
+  // input but never actually reached the NanoTile before this wiring.
+  const waterStyle = e.kind === 'river'
+    ? waterStyleForTile(e.waterStyle, e.col, e.row, variant)
+    : undefined;
+
   return {
     kind, zOffset, zMode, walkable, blendEdges: e.kind === 'river',
     svg: svg ?? '',
     sideTextureSvg: e.southFaceSvgOverride ?? e.endFaceSvgOverride,
     fenceStyle,
+    waterStyle,
     variant,
     connections: conn,
   };
