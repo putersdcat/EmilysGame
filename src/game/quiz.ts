@@ -9,7 +9,7 @@
 
 import { getQuestions, type QuizQuestion, type QuizDifficulty } from '../config/quiz.config';
 import { WORLD_CONFIG } from '../config/game.config';
-import { rephraseQuizQuestion } from '../engine/llm';
+import { rephraseQuizQuestion, getPrefetchedResult } from '../engine/llm';
 import { shuffle } from '../engine/utils';
 import { contentPackLoader } from '../asset-pipeline/content-loader';
 import type { QuizQuestionPack } from '../types/content-pack.types';
@@ -286,16 +286,20 @@ export function getMergedQuestions(difficulty?: QuizDifficulty): QuizQuestion[] 
 }
 
 /**
- * Start a quiz for the given difficulty.
- * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
+ * Pick a random eligible question for `difficulty`, optionally weighted
+ * by category bias. Pure + synchronous (no LLM/rephrase involved) --
+ * extracted from startQuiz() (2026-07-10) so callers can pick the
+ * question EARLY (e.g. interaction-handler.ts, the moment a quiz is
+ * queued into pendingQuiz, well before the dialog closes and startQuiz()
+ * actually runs) and kick off a background rephrase prefetch
+ * (prefetchQuizRephrase) using the dialog-reading window as free head
+ * start. Returns null if no question is eligible for `difficulty`.
  * @param categoryBias - optional Record<category, weight> for weighted random selection
  */
-export async function startQuiz(
-  state: QuizState,
+export function pickQuizQuestion(
   difficulty: QuizDifficulty,
-  npcId: string | null,
   categoryBias?: Record<string, number>,
-): Promise<void> {
+): QuizQuestion | null {
   // Filter eligible questions -- merges the small static in-code bank with
   // the (much larger) content-pack question corpus loaded at bootstrap
   // (PR #106, 420 questions). Previously this called the static-only
@@ -303,11 +307,7 @@ export async function startQuiz(
   // into memory (and counted for age-profile stats) but never actually
   // reachable during real gameplay -- see Docs/VisionAlignmentAudit.md.
   const eligible = getMergedQuestions(difficulty);
-
-  if (eligible.length === 0) {
-    state.active = false;
-    return;
-  }
+  if (eligible.length === 0) return null;
 
   // Apply category bias: duplicate entries for biased categories
   let pool: QuizQuestion[];
@@ -321,7 +321,33 @@ export async function startQuiz(
     pool = eligible;
   }
 
-  const question = pool[Math.floor(Math.random() * pool.length)];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/**
+ * Start a quiz for the given difficulty.
+ * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
+ * @param categoryBias - optional Record<category, weight> for weighted random selection
+ * @param preSelectedQuestion - question already picked by pickQuizQuestion()
+ *   at pendingQuiz-set time (2026-07-10). Callers that pre-pick should
+ *   also have called prefetchQuizRephrase() with it, so its rephrase is
+ *   often already cached and instant here. If omitted, a question is
+ *   freshly picked the same way pre-2026-07-10 code always did (used by
+ *   callers with no natural lead-time window to prefetch from).
+ */
+export async function startQuiz(
+  state: QuizState,
+  difficulty: QuizDifficulty,
+  npcId: string | null,
+  categoryBias?: Record<string, number>,
+  preSelectedQuestion?: QuizQuestion | null,
+): Promise<void> {
+  const question = preSelectedQuestion ?? pickQuizQuestion(difficulty, categoryBias);
+
+  if (!question) {
+    state.active = false;
+    return;
+  }
 
   // Shuffle the answers array (correct answer is always at index 0 in source)
   const shuffledAnswers = [...question.answers];
@@ -332,8 +358,13 @@ export async function startQuiz(
   // Add "I don't know" as the last option
   shuffledAnswers.push("I don't know 📖");
 
-  // Try LLM rephrase (fallback: original text)
-  const displayText = await rephraseQuizQuestion(question.question);
+  // Use an already-ready background prefetch instantly if one exists
+  // (2026-07-10 -- see prefetchQuizRephrase()); otherwise fall through to
+  // the direct, TPS-gated, timeout-bound call exactly as before.
+  const prefetched = getPrefetchedResult<string>(question.question);
+  const displayText = prefetched !== undefined
+    ? prefetched
+    : await rephraseQuizQuestion(question.question);
 
   state.active = true;
   state.question = question;

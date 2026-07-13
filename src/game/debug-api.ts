@@ -17,7 +17,8 @@
 
 import { ASSET_DEFS } from '../config/assets.config';
 import { BIOME_DEFS, BIOME_TRANSITION_RULES } from '../config/biomes.config';
-import { getMerchantPersonaIdForBiome } from '../config/npc.config';
+import { getMerchantPersonaIdForBiome, getNpcPersona } from '../config/npc.config';
+import { npcChatResponse, rephraseQuizQuestion, isLlmAvailable, checkLlmHealth, getLlmTps, getLlmAvgTps, isTpsCutoverActive, isLikelyToFitBudget, estimateEtaMs, isQueueBusy, getPrefetchedResult, isPrefetchPending, prefetchQuizRephrase, _cleanRephraseForTests } from '../engine/llm';
 import { type AgeBand } from '../types/content-pack.types';
 import { type Iso2AssemblyId } from '../engine/iso2-assemblies';
 import { isFootprintWalkable } from '../engine/mechanics';
@@ -48,7 +49,7 @@ import { startHygieneQuiz, startInsectQuiz, getInsectQuestions } from './quiz-sp
 import { chunkKey } from './chunk-lifecycle';
 import { getLastDialogNpcId, setPendingPoopBurst } from './interaction-handler';
 // (getPendingPoopBurst removed — debug-api only sets the flag, doesn't read it)
-import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from '../ui/customizer';
+import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS, EYE_SHAPES, BACK_ACCESSORIES, NECK_ACCESSORIES } from '../ui/customizer';
 import { getCosmeticById } from '../config/cosmetics.config';
 import {
   play as musicPlay, pause as musicPause, stop as musicStop,
@@ -61,13 +62,14 @@ import { loadGame } from './save';
 import {
   loadCharacterSprite, loadCharacterSpriteAsync,
   generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG,
+  generateBackIdleCharacterSVG, generateWalkingCharacterSVG, generateBackWalkingCharacterSVG,
   spriteCache, clearVariationCache,
 } from '../asset-pipeline/sprites';
 import {
   generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES,
 } from '../asset-pipeline/npc-sprites';
-import { getStreakDebugInfo, quizSelectIndex, getMergedQuestions } from './quiz';
-import { getQuestions as getStaticQuestions } from '../config/quiz.config';
+import { getStreakDebugInfo, quizSelectIndex, getMergedQuestions, pickQuizQuestion } from './quiz';
+import { getQuestions as getStaticQuestions, type QuizDifficulty } from '../config/quiz.config';
 import { getWaterDebugInfo } from '../engine/world/Passability';
 import { getLockKeyDebugInfo } from '../engine/world/ObstacleSolver';
 import { getPlayabilityStats } from '../engine/world/Validation';
@@ -249,6 +251,9 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     generateIdleCharacterSVG,
     generateSideIdleCharacterSVG,
     generateSideWalkingCharacterSVG,
+    generateBackIdleCharacterSVG,
+    generateWalkingCharacterSVG,
+    generateBackWalkingCharacterSVG,
     spriteCache,
     clearVariationCache,
     showCustomizer: () => showCustomizer(state.playerVariation),
@@ -330,6 +335,35 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Merged (static + content-pack) quiz pool (VisionAlignmentAudit.md gap fix)
     getMergedQuestions,
     getStaticQuestions,
+    // LLM NPC chat + quiz rephrase test hooks (Step 4 gameplay audit,
+    // 2026-07-10). npcChatResponse has no live gameplay caller today (see
+    // the STATUS NOTE in src/engine/llm/npc.ts) -- exposed here so its
+    // persona-aware fallback behavior is directly testable rather than
+    // permanently uncovered. rephraseQuizQuestion IS live (quiz.ts).
+    isLlmAvailable: () => isLlmAvailable(),
+    checkLlmHealth: () => checkLlmHealth(),
+    // TPS measurement + interactive-budget gating (2026-07-10, see tps.ts).
+    getLlmTps: () => getLlmTps(),
+    getLlmAvgTps: () => getLlmAvgTps(),
+    isTpsCutoverActive: () => isTpsCutoverActive(),
+    isLikelyToFitBudget: (tokens: number, budgetMs?: number) => isLikelyToFitBudget(tokens, budgetMs),
+    estimateEtaMs: (tokens: number) => estimateEtaMs(tokens),
+    // Background prefetch queue (2026-07-10, see background-queue.ts).
+    isQueueBusy: () => isQueueBusy(),
+    getPrefetchedResult: (key: string) => getPrefetchedResult(key) ?? null,
+    isPrefetchPending: (key: string) => isPrefetchPending(key),
+    prefetchQuizRephrase: (originalQuestion: string) => prefetchQuizRephrase(originalQuestion),
+    pickQuizQuestion: (difficulty: QuizDifficulty, bias?: Record<string, number>) => pickQuizQuestion(difficulty, bias),
+    getNpcFallbackResponses: (npcId: string) => getNpcPersona(npcId)?.fallbackResponses ?? null,
+    npcChatResponse: (npcId: string, playerInput: string) => {
+      const persona = getNpcPersona(npcId);
+      if (!persona) return Promise.resolve(null);
+      return npcChatResponse(persona.llmPersona, playerInput, persona.fallbackResponses);
+    },
+    rephraseQuizQuestion: (originalQuestion: string) => rephraseQuizQuestion(originalQuestion),
+    // Pure cleanup logic for the live completions rephrase path (2026-07-13,
+    // see npc.ts's _cleanRephrase doc comment) -- no LLM call, directly testable.
+    cleanRephraseForTests: (raw: string, originalQuestion: string) => _cleanRephraseForTests(raw, originalQuestion),
     // Outhouse/hygiene debug (#110)
     startHygieneQuiz: () => startHygieneQuiz(state),
     getHygieneQuizActive: () => state._hygieneQuiz === true,
@@ -368,6 +402,9 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     getEyeColors: () => EYE_COLORS,
     getAccessories: () => ACCESSORIES,
     getOutfitPatterns: () => OUTFIT_PATTERNS,
+    getEyeShapes: () => EYE_SHAPES,
+    getBackAccessories: () => BACK_ACCESSORIES,
+    getNeckAccessories: () => NECK_ACCESSORIES,
     // Barter quiz debug (#112 Phase 3)
     getBarterStats: () => ({ quizCount: state.trade.barterQuizCount, correctCount: state.trade.barterCorrectCount }),
     triggerBarterQuiz: (itemName: string, price: number) => {

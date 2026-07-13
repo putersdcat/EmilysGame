@@ -6,7 +6,7 @@
  * TODO: DOC - customizer UI spec
  */
 
-import type { CharacterVariation, Accessory, Expression, OutfitPattern } from '../asset-pipeline/sprites';
+import type { CharacterVariation, Accessory, Expression, OutfitPattern, EyeShape, BackAccessory, NeckAccessory } from '../asset-pipeline/sprites';
 import { generateIdleCharacterSVG, generateWalkingCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG } from '../asset-pipeline/sprites';
 import { getUnlockablesForCategory } from '../config/cosmetics.config';
 
@@ -81,6 +81,25 @@ export const EYE_COLORS: { name: string; hex: string }[] = [
   { name: '🔶 Amber',   hex: '#CC7722' },
 ];
 
+/** Eye shape options (Finding #14 residual, 2026-07-13). Independent of eye COLOR above. */
+export const EYE_SHAPES: { name: string; value: EyeShape }[] = [
+  { name: '👁️ Round',  value: 'round' },
+  { name: '👁️ Almond', value: 'almond' },
+  { name: '👁️ Wide',   value: 'wide' },
+];
+
+/** Back-worn accessory options (Finding #14 residual, 2026-07-13). Independent slot from head Accessory. */
+export const BACK_ACCESSORIES: { name: string; value: BackAccessory }[] = [
+  { name: '❌ None',     value: 'none' },
+  { name: '🎒 Backpack', value: 'backpack' },
+];
+
+/** Neck-worn accessory options (Finding #14 residual, 2026-07-13). Independent slot from head Accessory. */
+export const NECK_ACCESSORIES: { name: string; value: NeckAccessory }[] = [
+  { name: '❌ None',   value: 'none' },
+  { name: '🧣 Scarf', value: 'scarf' },
+];
+
 export const EXPRESSIONS: { name: string; value: Expression }[] = [
   { name: '😊 Happy',       value: 'happy' },
   { name: '😐 Neutral',     value: 'neutral' },
@@ -101,6 +120,9 @@ export function createDefaultVariation(): CharacterVariation {
     expression: 'happy',
     eyeColor: '#0066CC',
     outfitPattern: 'plain',
+    eyeShape: 'round',
+    backAccessory: 'none',
+    neckAccessory: 'none',
   };
 }
 
@@ -322,6 +344,78 @@ function renderPatternButtons(
   });
 }
 
+/** Render eye shape toggle buttons (Finding #14 residual, 2026-07-13) */
+function renderEyeShapeButtons(
+  containerId: string,
+  selectedShape: EyeShape,
+  onSelect: (s: EyeShape) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = EYE_SHAPES.map(s => {
+    const selected = s.value === selectedShape;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${s.value}">
+              ${s.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as EyeShape);
+    });
+  });
+}
+
+/** Render back-accessory (backpack) toggle buttons (Finding #14 residual, 2026-07-13) */
+function renderBackAccessoryButtons(
+  containerId: string,
+  selectedBackAccessory: BackAccessory,
+  onSelect: (a: BackAccessory) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = BACK_ACCESSORIES.map(a => {
+    const selected = a.value === selectedBackAccessory;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${a.value}">
+              ${a.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as BackAccessory);
+    });
+  });
+}
+
+/** Render neck-accessory (scarf) toggle buttons (Finding #14 residual, 2026-07-13) */
+function renderNeckAccessoryButtons(
+  containerId: string,
+  selectedNeckAccessory: NeckAccessory,
+  onSelect: (a: NeckAccessory) => void,
+): void {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = NECK_ACCESSORIES.map(a => {
+    const selected = a.value === selectedNeckAccessory;
+    return `<button class="cust-style-btn${selected ? ' selected' : ''}" 
+              data-val="${a.value}">
+              ${a.name}
+            </button>`;
+  }).join('');
+
+  container.querySelectorAll('.cust-style-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      onSelect((btn as HTMLElement).dataset.val as NeckAccessory);
+    });
+  });
+}
+
 // ─── Main Customizer ────────────────────────────────────────
 
 /**
@@ -374,6 +468,18 @@ export function showCustomizer(initial?: CharacterVariation, allowCancel = false
         variation.outfitPattern = p;
         refreshAll();
       });
+      renderEyeShapeButtons('custEyeShapes', variation.eyeShape ?? 'round', (s) => {
+        variation.eyeShape = s;
+        refreshAll();
+      });
+      renderBackAccessoryButtons('custBackAccessories', variation.backAccessory ?? 'none', (a) => {
+        variation.backAccessory = a;
+        refreshAll();
+      });
+      renderNeckAccessoryButtons('custNeckAccessories', variation.neckAccessory ?? 'none', (a) => {
+        variation.neckAccessory = a;
+        refreshAll();
+      });
     };
 
     // Show overlay
@@ -406,6 +512,9 @@ export function showCustomizer(initial?: CharacterVariation, allowCancel = false
       variation.expression = EXPRESSIONS[Math.floor(Math.random() * EXPRESSIONS.length)].value;
       variation.eyeColor = EYE_COLORS[Math.floor(Math.random() * EYE_COLORS.length)].hex;
       variation.outfitPattern = OUTFIT_PATTERNS[Math.floor(Math.random() * OUTFIT_PATTERNS.length)].value;
+      variation.eyeShape = EYE_SHAPES[Math.floor(Math.random() * EYE_SHAPES.length)].value;
+      variation.backAccessory = BACK_ACCESSORIES[Math.floor(Math.random() * BACK_ACCESSORIES.length)].value;
+      variation.neckAccessory = NECK_ACCESSORIES[Math.floor(Math.random() * NECK_ACCESSORIES.length)].value;
       refreshAll();
       startPreviewAnimation(variation);
     };
@@ -430,6 +539,9 @@ export interface SerializedVariation {
   expression?: string;
   eyeColor?: string;
   outfitPattern?: string;
+  eyeShape?: string;
+  backAccessory?: string;
+  neckAccessory?: string;
 }
 
 export function serializeVariation(v: CharacterVariation): SerializedVariation {
@@ -442,6 +554,9 @@ export function serializeVariation(v: CharacterVariation): SerializedVariation {
     expression: v.expression ?? 'happy',
     eyeColor: v.eyeColor ?? '#0066CC',
     outfitPattern: v.outfitPattern ?? 'plain',
+    eyeShape: v.eyeShape ?? 'round',
+    backAccessory: v.backAccessory ?? 'none',
+    neckAccessory: v.neckAccessory ?? 'none',
   };
 }
 
@@ -456,5 +571,8 @@ export function deserializeVariation(data: SerializedVariation): CharacterVariat
     expression: (data.expression as Expression) || 'happy',
     eyeColor: data.eyeColor || '#0066CC',
     outfitPattern: (data.outfitPattern as OutfitPattern) || 'plain',
+    eyeShape: (data.eyeShape as EyeShape) || 'round',
+    backAccessory: (data.backAccessory as BackAccessory) || 'none',
+    neckAccessory: (data.neckAccessory as NeckAccessory) || 'none',
   };
 }

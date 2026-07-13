@@ -191,11 +191,20 @@ export async function llmComplete(
  * Send a chat-style prompt to the LLM.
  * Returns assistant message text or null on failure.
  * Uses context/session only for NPC conversations.
+ * @param timeoutMs - override LLM_CONFIG.timeoutMs (see llmComplete's
+ *   identical param). Added 2026-07-10 after live-measuring a local
+ *   CPU-only BitNet setup at ~0.19s/token with a system prompt present --
+ *   the default 15s budget is tight-to-insufficient for maxTokens.npcChat
+ *   (100 tokens ≈ 19s measured), causing near-constant silent fallback
+ *   even though the LLM is healthy and eventually responds correctly
+ *   (mirrors the already-existing pattern in entropy.ts's
+ *   generateWordlist(), which passes 60000 for its bigger 300-token ask).
  */
 export async function llmChat(
   systemPrompt: string,
   userMessage: string,
   maxTokens: number = LLM_CONFIG.maxTokens.npcChat,
+  timeoutMs?: number,
 ): Promise<string | null> {
   if (isTestMode()) return null;
 
@@ -215,7 +224,7 @@ export async function llmChat(
       max_tokens: maxTokens,
       temperature: LLM_CONFIG.temperature,
       stream: false,
-    });
+    }, timeoutMs);
 
     if (!response.ok) return null;
 

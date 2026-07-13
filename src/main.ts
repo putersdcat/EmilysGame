@@ -12,7 +12,8 @@ import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { feedEntropy } from './engine/gen';
 import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
-import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
+import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty, pickQuizQuestion } from './game/quiz';
+import { prefetchQuizRephrase } from './engine/llm';
 import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
 // B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
 // to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
@@ -517,7 +518,10 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
       if (state.pendingQuiz) {
         const pq = state.pendingQuiz;
         state.pendingQuiz = null;
-        startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
+        // pq.question (2026-07-10): pre-picked when pendingQuiz was set,
+        // so startQuiz() uses the SAME question its background rephrase
+        // prefetch was keyed on, instead of re-rolling a different one.
+        startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias, pq.question);
         playSfx(state.sfx, 'quiz_start');
         // Auto-read question for young age bands (#94)
         _autoReadQuizQuestion(state);
@@ -920,11 +924,19 @@ if (justKeys.interact && !state.player.isMoving) {
     if (species.quizCategory) {
       const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
       const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
+      const bias = { [species.quizCategory]: 2.0 };
+      // Pre-pick + prefetch (2026-07-10) -- same reasoning as
+      // interaction-handler.ts's npc/quiz_gate cases: the two-line
+      // wildlife dialog above gives the LLM a free head start before
+      // startQuiz() actually runs.
+      const question = pickQuizQuestion(diff, bias);
       state.pendingQuiz = {
         difficulty: diff,
         npcId: `wildlife_${species.id}`,
-        bias: { [species.quizCategory]: 2.0 },
+        bias,
+        question,
       };
+      if (question) prefetchQuizRephrase(question.question);
     }
   } else {
     let result = interact(

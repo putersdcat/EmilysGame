@@ -30,7 +30,7 @@ import { type Inventory } from './inventory';
 import { type QuizState, type StreakState } from './quiz';
 import { type UIState } from '../ui/ui';
 import { type KnowledgeState } from './knowledge';
-import { type QuizDifficulty } from '../config/quiz.config';
+import { type QuizDifficulty, type QuizQuestion } from '../config/quiz.config';
 import { type TradeState } from './trading';
 import { type PlayerStatus } from './status';
 import { type InjuryState } from './injury';
@@ -96,7 +96,11 @@ export interface GameState {
   lastChunkX: number;
   lastChunkY: number;
   // Pending quiz triggered by NPC — starts when dialog closes
-  pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
+  // `question` (2026-07-10): pre-picked at pendingQuiz-set time (see
+  // interaction-handler.ts/main.ts) so a background rephrase prefetch
+  // (prefetchQuizRephrase) can use the dialog-reading window as a head
+  // start -- optional because not every pendingQuiz assignment pre-picks.
+  pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number>; question?: QuizQuestion | null } | null;
   // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
   pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
   // Active conditions for iso2 conditional walkables (e.g. 'quiz-gate' locked/unlocked per #223 + AUTONOMOUS_LOOP.md)

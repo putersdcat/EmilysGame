@@ -55,7 +55,8 @@ import { triggerHint } from '../ui/thought-bubbles';
 import { setDiarrheaOverlay } from '../rendering/debuff-visuals';
 import { DIARRHEA_CONFIG } from './illness';
 import { getQuizBias } from './knowledge';
-import { blendDifficulty, getDifficultyForPosition, modulateDifficulty } from './quiz';
+import { blendDifficulty, getDifficultyForPosition, modulateDifficulty, pickQuizQuestion } from './quiz';
+import { prefetchQuizRephrase } from '../engine/llm';
 import { type GameState } from './game-state';
 import { type InteractionResult } from '../engine/mechanics';
 
@@ -142,7 +143,12 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
         const distDiff = getDifficultyForPosition(state.player.x, state.player.y);
         const baseDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
         const finalDifficulty = modulateDifficulty(baseDifficulty, state.streak);
-        state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
+        // Pre-pick the question now (not inside startQuiz) so a background
+        // rephrase prefetch can use the dialog-reading window as free head
+        // start (2026-07-10) -- see prefetchQuizRephrase()'s doc comment.
+        const question = pickQuizQuestion(finalDifficulty, bias);
+        state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias, question };
+        if (question) prefetchQuizRephrase(question.question);
       }
 
       // If NPC has trades, queue trade panel to open after dialog + optional quiz
@@ -170,7 +176,10 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
       const gateDiff = modulateDifficulty(baseGateDiff, state.streak); // #103 streak modulation
       const gateBias = getQuizBias(state.knowledge);
-      state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
+      // Pre-pick + prefetch, same reasoning as the npc case above.
+      const gateQuestion = pickQuizQuestion(gateDiff, gateBias);
+      state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias, question: gateQuestion };
+      if (gateQuestion) prefetchQuizRephrase(gateQuestion.question);
       state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
       break;
     }

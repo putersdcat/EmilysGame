@@ -66,7 +66,7 @@ Emily's Game is an isometric browser-based procedural adventure game with LLM-dr
 - Chunk loading only when player crosses chunk boundaries
 
 ### LLM Integration
-- LLM endpoint: `http://127.0.0.1:8002` (BitNet local server)
+- LLM endpoint: proxied via `vite.config.ts`'s dev-server proxy (`/api/llm` -> `http://127.0.0.1:<port>`) to avoid CORS. **The port is machine/session-dependent** (has been 8000, 8001, 8002, and 8005 at different times/on different machines) -- always verify with `GET http://127.0.0.1:<port>/health` before assuming a number in any doc is current; update `vite.config.ts`'s proxy target if it doesn't match. Currently configured for `8005` (verified 2026-07-10).
 - Game startup gates on LLM health check (`GET /health`)
 - Use `POST /v1/chat/completions` for entropy/NPC chat
 - Fallback to TypeScript RNG if LLM inference >1-2s

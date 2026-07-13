@@ -6,27 +6,32 @@ applyTo: "{src/engine/llm.ts,src/engine/llm/**}"
 # LLM Integration Rules
 
 ## Status: Decomposed (B8 series complete, issue #271)
-`src/engine/llm.ts` is a **21-line barrel re-export** of the 6 focused modules
-under `src/engine/llm/`. The hard ceiling is **50 lines**.
+`src/engine/llm.ts` is a **barrel re-export** of the 7 focused modules
+under `src/engine/llm/`. The hard ceiling for the barrel itself is **50 lines**.
 
 See `.github/instructions/architecture.instructions.md` for god-file prevention
 rules.
 
 ## Module Map
 
+Line counts verified 2026-07-13 (previous counts in this table had drifted
+significantly, especially `npc.ts` almost tripling and a whole new module
+being added without a doc update -- re-verify with `Get-ChildItem src/engine/llm.ts, src/engine/llm/*.ts | ForEach-Object { (Get-Content $_.FullName | Measure-Object -Line).Lines }` rather than trusting this table blindly next time too):
+
 ```
-src/engine/llm.ts                    ← 21-line barrel re-export
+src/engine/llm.ts                    ← 30-line barrel re-export
 src/engine/llm/
   ├── test-mode.ts         (35)  ← isTestMode() + ?test=1/?test=0/navigator.webdriver
-  ├── tps.ts               (50)  ← TPS rolling window + auto-cutover threshold
+  ├── tps.ts               (99)  ← TPS rolling window + auto-cutover threshold
   ├── wordlist-cache.ts    (32)  ← sessionStorage cache for generated wordlist
-  ├── client.ts            (202) ← HTTP client: checkLlmHealth, llmComplete, llmChat, llmFetch
-  ├── entropy.ts           (104) ← generateWordlist (5-tier fallback) + expandEntropy
-  └── npc.ts               (70)  ← npcChatResponse, rephraseQuizQuestion, cleanupLlmSessions
+  ├── client.ts            (211) ← HTTP client: checkLlmHealth, llmComplete, llmChat, llmFetch
+  ├── entropy.ts           (157) ← generateWordlist (5-tier fallback) + expandEntropy
+  ├── npc.ts               (205) ← npcChatResponse, rephraseQuizQuestion, cleanupLlmSessions
+  └── background-queue.ts  (109) ← fire-and-forget prefetch queue (2026-07-10, TPS-gating work)
 ```
 
 ## Endpoint
-- Local BitNet server: `http://127.0.0.1:8002`
+- Local BitNet server, reached via `vite.config.ts`'s dev proxy (`/api/llm` -> `http://127.0.0.1:<port>`). **Port is machine/session-dependent** -- has been 8000/8001/8002/8005 across different setups. Always verify with `GET http://127.0.0.1:<port>/health` rather than trusting a hardcoded number in any doc; update `vite.config.ts`'s proxy `target` if it's stale. Currently `8005` (verified 2026-07-10).
 - Health: `GET /health`
 - Chat: `POST /v1/chat/completions`
 - See `Docs/LLM-API-README.md` for full API reference

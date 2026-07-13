@@ -18,8 +18,9 @@ import { LLM_CONFIG } from '../../config/game.config';
 import { ENTROPY_PROMPTS, FALLBACK_WORDLIST } from '../../config/entropy.config';
 import { getScrambledWordlist } from '../../config/wordlists.asset';
 import { isTestMode } from './test-mode';
-import { isTpsCutoverActive } from './tps';
+import { isTpsCutoverActive, isLikelyToFitBudget } from './tps';
 import { getCachedWordlist, setCachedWordlist } from './wordlist-cache';
+import { tryAcquire, release } from './background-queue';
 import { llmComplete } from './client';
 
 /**
@@ -56,13 +57,14 @@ export async function generateWordlist(): Promise<string[]> {
   }
 
   // 4) Try LLM generation with optimized prompt
-  // Tuned: lower token count, stop sequence, simpler prompt for speed
-  const text = await llmComplete(
-    ENTROPY_PROMPTS.wordlistInit,
-    LLM_CONFIG.maxTokens.wordlist,
-    60000, // 60s timeout (was 120s — optimized prompt needs fewer tokens)
-    { temperature: 0.9, stop: ['\n\n', '51.', '51 '] },
-  );
+  // tryAcquire() guard added 2026-07-10 for consistency with the rest of
+  // the module (background-queue.ts) -- in practice this is always the
+  // first LLM call of a session so acquisition never fails, but this
+  // keeps the invariant "never more than one real request in flight"
+  // true even if a future caller re-triggers wordlist generation
+  // mid-session (e.g. a debug/regenerate action) while something else
+  // is in flight.
+  const text = await _tryGenerateWordlistLive();
 
   if (text) {
     const pairs = text
@@ -90,9 +92,41 @@ export async function generateWordlist(): Promise<string[]> {
 }
 
 /**
+ * Attempt the live wordlist-generation call, gated by the shared request
+ * slot. Returns null (never waits/retries) if acquisition fails.
+ * Tuned prompt: lower token count, stop sequence, simpler prompt for
+ * speed. 60s timeout (was 120s — optimized prompt needs fewer tokens).
+ */
+async function _tryGenerateWordlistLive(): Promise<string | null> {
+  if (!tryAcquire()) return null;
+  try {
+    return await llmComplete(
+      ENTROPY_PROMPTS.wordlistInit,
+      LLM_CONFIG.maxTokens.wordlist,
+      60000,
+      { temperature: 0.9, stop: ['\n\n', '51.', '51 '] },
+    );
+  } finally {
+    release();
+  }
+}
+
+/**
  * Expand a verb-noun pair into a nonsense sentence for entropy hacking.
  * @param pair - e.g. "obliterate quasar"
  * @param previousOutput - prior sentence for chaining (optional)
+ *
+ * STATUS NOTE (2026-07-10): this function has NO live callers today.
+ * The only production chunk generator, generateChunkSync()
+ * (ChunkGenerator.ts), is fully synchronous and derives its per-chunk
+ * seed from fastHash() + a snapshot of the (also currently never
+ * populated live) NPC-chat entropy buffer -- it never calls this
+ * async, LLM-backed sibling (generateChunk()). Kept working + tested
+ * (TPS-gated, shared-slot-gated, safety-net timeout) in case a future
+ * async chunk-load path or explicit "entropy hack" player action wires
+ * it up live -- see npc.ts's identical STATUS NOTE on npcChatResponse
+ * for the same kind of "scaffolding built, UI/call-site never
+ * finished" situation.
  */
 export async function expandEntropy(
   pair: string,
@@ -104,7 +138,7 @@ export async function expandEntropy(
         .replace('{pair}', pair)
     : ENTROPY_PROMPTS.entropyExpand.replace('{pair}', pair);
 
-  const text = await llmComplete(prompt, LLM_CONFIG.maxTokens.entropy);
+  const text = await _tryExpandEntropyLive(prompt);
 
   if (text) {
     return text;
@@ -113,3 +147,25 @@ export async function expandEntropy(
   // Deterministic fallback (e.g., test mode, LLM offline)
   return `${pair[0]?.toUpperCase() ?? ''}${pair.slice(1)} spirals into ${previousOutput ?? 'the void'}.`;
 }
+
+/**
+ * Attempt the live call, gated by TPS budget + the shared request slot.
+ * Returns null (never waits/retries) if either check fails.
+ * TPS-gated + shared-slot-gated + 25s safety-net timeout (2026-07-10,
+ * live-measured against a real local CPU-only BitNet server:
+ * ~0.19s/token with a system prompt present, so maxTokens.entropy=80
+ * needs ~15.2s -- right at the edge of the old 15s default, causing
+ * intermittent silent fallback. tryAcquire() also ensures this never
+ * piles a second concurrent request onto an in-flight prefetch/call
+ * (background-queue.ts) -- same reasoning as npc.ts's
+ * npcChatResponse/rephraseQuizQuestion.
+ */
+async function _tryExpandEntropyLive(prompt: string): Promise<string | null> {
+  if (!isLikelyToFitBudget(LLM_CONFIG.maxTokens.entropy) || !tryAcquire()) return null;
+  try {
+    return await llmComplete(prompt, LLM_CONFIG.maxTokens.entropy, 25000);
+  } finally {
+    release();
+  }
+}
+
