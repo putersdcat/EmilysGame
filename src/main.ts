@@ -11,7 +11,7 @@ import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { feedEntropy } from './engine/gen';
-import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt } from './engine/mechanics';
+import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty } from './game/quiz';
 import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
 // B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
@@ -61,7 +61,8 @@ import { getNpcPersona } from './config/npc.config';
 import { MICRO_TILE_DEFS } from './config/tiles.config';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 
-import { searchBookArticles } from './ui/book-content';
+import { searchBookArticles, getBookArticlesBySubject } from './ui/book-content';
+import { type SubjectId } from './config/knowledge.config';
 import { openArticle } from './game/knowledge';
 import { getCycleProgress } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
@@ -320,6 +321,24 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
  * call input.endFrame() and return early).
  */
 function handleQuizInput(state: GameState, justKeys: any): boolean {
+  // #4 fix (Step 4 gameplay audit, 2026-07-10): capture BEFORE the body
+  // runs, since quizClose() below sets state.quiz.active = false as part
+  // of normal result processing -- we must still report "this frame was
+  // consumed by quiz handling" even though the flag flips mid-body.
+  // Without this, this function always fell through to `return false`
+  // (a hardcoded value outside the `if` block, ignoring what happened
+  // inside it), which contradicts this function's own JSDoc ("Returns
+  // true if a quiz is active and handled input") and, critically, let
+  // update()'s `if (handleQuizInput(...)) { endFrame(); return; }` NEVER
+  // short-circuit -- handleMovement + handleSpaceInteraction ran in the
+  // SAME frame using the SAME justKeys.interact=true, silently re-firing
+  // a brand-new interaction the instant a quiz was submitted/closed while
+  // the player was still facing the same interactable (gate, NPC, etc).
+  // See tests/gameplay/quiz-gate-retry-loop.spec.ts for the live-engine
+  // proof this was reachable (a quiz gate's dialog reopening endlessly on
+  // every space press) and handleTradeInput below for the ALREADY-correct
+  // sibling pattern this now matches.
+  const wasActive = state.quiz.active;
   if (state.quiz.active) {
   if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
   if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
@@ -402,11 +421,33 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         state._woundCareQuiz = false; // Clear wound-care flag (#109)
         state._hygieneQuiz = false; // Clear hygiene flag (#110)
         state._insectQuiz = false; // Clear insect flag (#110 P3)
+        // Quiz-gate retry clarity (Step 4 audit, 2026-07-10): "I don't know"
+        // at a quiz gate previously cleared pendingGateQuiz silently -- the
+        // Book of Knowledge opening could read as a "reward" rather than
+        // "you're still blocked," unlike the 'wrong' branch above which has
+        // an explicit "gate remains shut" toast. The retry mechanism itself
+        // was already sound (the gate cell is never touched here, so the
+        // player can freely re-approach it), but the feedback was
+        // ambiguous. Mirror the 'wrong' branch's clarity for this case too.
+        if (state.pendingGateQuiz) {
+          addToast(state.ui, '🚪 The gate is still locked — read up, then try again!', '#f44336');
+        }
         // "I don't know" → open Book to related article
         const category = state.quiz.question?.category || '';
         const questionText = state.quiz.question?.question || '';
-        // Search for articles related to the quiz category or question
-        const related = searchBookArticles(category) || searchBookArticles(questionText);
+        // Prefer an exact subject match (category values overlap with
+        // SubjectId for math/science/history/language/technology/geography)
+        // since it's precise regardless of an article's specific wording --
+        // a plain text search for e.g. "technology" misses articles that
+        // are correctly tagged subject:'technology' but never use that
+        // literal word (see Docs/VisionAlignmentAudit.md quiz<->book gap).
+        // Categories with no Book subject counterpart (e.g. 'logic', which
+        // is intentionally book-less -- riddles are self-contained) fall
+        // through to the text search below.
+        const bySubject = getBookArticlesBySubject([category as SubjectId]);
+        const related = bySubject.length > 0
+          ? bySubject
+          : (searchBookArticles(category) || searchBookArticles(questionText));
         if (related.length > 0) {
           openArticle(state.knowledge, related[0].id);
           state.knowledge.bookOpen = true;
@@ -449,16 +490,22 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
     }
   }
   }
-  return false;
+  return wasActive;
 }
 
 /**
  * Handle input while a dialog is active.
  * B5 micro-slice 11.29 (#268): extracted from update() in main.ts.
  * Manages: dialog advance/close, post-dialog flow (pending quiz, trade,
- * or unpause). Caller must call input.endFrame() after this returns true.
+ * or unpause).
+ * Returns true if a dialog is active and handled input (caller must call
+ * input.endFrame() and return early) -- see the fix note in
+ * handleQuizInput above for why the returned value must reflect the
+ * ACTIVE-AT-ENTRY state, not a hardcoded false (this function's
+ * closeDialog() call flips state.ui.dialog.active to false mid-body).
  */
 function handleDialogInput(state: GameState, justKeys: any): boolean {
+  const wasActive = state.ui.dialog.active;
   if (state.ui.dialog.active) {
   if (justKeys.interact) {
     if (!advanceDialog(state.ui)) {
@@ -503,7 +550,7 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
     }
   }
   }
-  return false;
+  return wasActive;
 }
 
 /**
@@ -734,7 +781,20 @@ if (isMoving) {
   // iso2: pass activeConditions so conditional gates (quiz-gate etc) use isPointWalkableInTile + cond state (per #223/AUTONOMOUS_LOOP.md)
   let movedX = false;
   let movedY = false;
-  if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
+  if (state.player.spawnEscape) {
+    // Spawn/resume escape hatch (2026-07-09): the player's resolved
+    // position landed on non-walkable terrain (see state-init.ts's
+    // writeup). Bypass collision entirely -- guaranteed free movement,
+    // even if fully enclosed -- until they reach genuinely walkable
+    // ground, at which point normal collision resumes this same frame.
+    state.player.x = newX;
+    state.player.y = newY;
+    movedX = true;
+    movedY = true;
+    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+      state.player.spawnEscape = false;
+    }
+  } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
     state.player.x = newX;
     state.player.y = newY;
     movedX = true;
@@ -764,6 +824,8 @@ if (isMoving) {
     const currentCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
     if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
       state.player.sinkDepth = 4; // match iso2 nano z for sink visual
+    } else if (state.player.spawnEscape) {
+      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX; // still escaping -- stay elevated
     } else {
       state.player.sinkDepth = 0;
     }

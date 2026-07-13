@@ -512,7 +512,22 @@ export function computeRotations(template: WorldUnitTemplate): RotatedTemplate[]
   // Auto-compute new edge-contract fields (#42)
   let tc = template.traversalChannels ?? computeTraversalChannels(template.cells);
   let cc = computeCornerCells(template.cells);
-  let cp = template.chainPorts ?? computeChainPorts(template.edgeTags, template.chainType, template.terminator);
+  // #42 fix (2026-07-09): fully self-contained rooms (connectivity ===
+  // 'enclosure', e.g. castle_courtyard, fence_enclosure -- 8 templates as
+  // of this writing) are walled/fenced on ALL 4 sides BY DESIGN, not
+  // dangling chain features. Before this fix, computeChainPorts treated
+  // every non-open side as a chain port needing termination (since
+  // `terminator: true` + all-4-sides-non-open just meant "entries on all
+  // 4 sides"), so enforceChainIntegrity would try to replace a courtyard
+  // corner touching a chunk boundary with an unrelated terminator (falling
+  // through to a generic meadow_base, since 'castle_courtyard' matches no
+  // known terminator-family prefix) -- confirmed via a real-pipeline sweep
+  // in gen-chain-integrity-boundary-audit.spec.ts. An enclosure has no
+  // "opposite side" that continues the shape the way a river/wall/path
+  // chain does, so it must never be a dangling-chain candidate at all.
+  let cp = template.chainPorts ?? (template.connectivity === 'enclosure'
+    ? { entries: [], exits: [] }
+    : computeChainPorts(template.edgeTags, template.chainType, template.terminator));
 
   for (let r = 0; r < 4; r++) {
     const deg = r * 90;

@@ -36,6 +36,19 @@ export type InteractionResult =
 // ─── Collision Check ─────────────────────────────────────────
 
 /**
+ * Player sprite Y-offset (px, negative = higher on screen) used while
+ * `state.player.spawnEscape` is true (2026-07-09 fix for a live-reported
+ * bug: with real LLM entropy enabled, a resumed save can regenerate its
+ * chunk slightly differently than when it was saved, occasionally
+ * dropping an obstacle exactly on the player's last position). Comfortably
+ * clears a typical extruded wall's rendered height
+ * (`NANO_Z_SCALE=12 * zOffset`, `MIN_NANO_HEIGHT=16` in nano-tile.ts) so
+ * the player reads as standing ON TOP of the obstruction rather than
+ * clipped inside it, until they step onto genuinely walkable ground.
+ */
+export const SPAWN_ESCAPE_RISE_PX = -40;
+
+/**
  * Check if a grid position is walkable in the loaded chunks.
  */
 export function isWalkable(

@@ -208,11 +208,53 @@ It implements a partial version of the 10-phase
 | 6 Chain integrity (edge contracts) | ❌ planned | — |
 | 7 Progression placement (lock-key DAG) | ⚠️ partial | balance/repair + `getLockKeyDebugInfo` → `ObstacleSolver.ts` |
 | 8 Playability validation (Solver F) | ✅ | `validatePlayability`, `getPlayabilityStats` → `Validation.ts` |
-| 9–10 (full edge contracts, macro assembly) | ❌ planned | — |
+| 9–10 (full edge contracts, composite scene assembly) | ❌ planned | see "Entropy scope & the Composite Assembly pattern" below — clarified 2026-07-10 to be a template-driven sub-solver, not a bigger AC-3 macro-tier |
 
 **Determinism:** generation is seeded; chunks are **not** persisted — they regenerate
 identically on re-entry. The B3 split (#253) must preserve this exactly (covered by a
 determinism test).
+
+### Entropy scope & the Composite Assembly pattern
+
+**LLM-derived entropy is scoped to macro-level variety, not fine-grained construction.**
+Its job is to make world generation feel non-repetitive and non-pre-defined *across many
+playthroughs and across a large world* — which biome a region leans toward, what mood a
+macro tile has (river-heavy, fortified, sparse...), roughly where a notable scene should
+appear. It is explicitly **not** meant to drive a giant deterministic state machine that
+arbitrarily assembles nano tiles, terrain primitives, and structure primitives from raw
+entropy at the finest grain, every time. (Directive: 2026-07-10.)
+
+Just as textures and structural primitives (rivers, walls, fences, houses, churches) are
+**pre-authored, visually tested, and tuned** — not synthesized on the fly — complex
+*composite scenes* (a homestead with a fence and an open gate, a general store, a bounded
+gameplay section that needs its own structure) should be assembled by a dedicated
+**Composite Assembly Sub-Solver**, not improvised by the generic world-unit solver.
+
+The intended division of responsibility:
+
+1. The **macro/world-unit solver** (`solveWorldUnitGrid`, `ObstacleSolver.ts`) decides
+   *that* a footprint needs a named scene — e.g. "a homestead, meadow style, 7×7
+   footprint, gate facing south" — and *where* that footprint is. It does **not** work
+   out the nano-level composition itself.
+2. It hands that **recipe** (scene type + footprint + biome/style + specific parameters
+   like gate orientation) to the **Composite Assembly Sub-Solver**.
+3. The sub-solver selects a matching **pre-authored, hand-tuned template** for that scene
+   type and lays out the whole footprint's nano/micro elements atomically, honoring the
+   requested parameters (biome material variants, orientation, etc.).
+4. The result is handed back to the world/macro solver, which simply marks the footprint
+   as filled — the same way a single world-unit template is "just placed" today.
+
+This generalizes a pattern that **already exists in nascent form**: `stampIso2Assembly`
+(`src/engine/iso2-assemblies.ts`) is exactly this kind of sub-solver for two known scene
+types today (`'homestead-small'`, `'ruined-cathedral'`); `stampStarterHomestead`
+(`src/engine/iso2-assemblies/starter-homestead.ts`) and `maybePlaceCastleLandmark` are
+concrete callers deciding *where*/*whether* to invoke it. The target direction is a
+proper, reusable recipe → sub-solver → composite contract covering many scene types
+(stores, gatehouses, bounded progression sections, and — per Vision Alignment Audit
+Finding #3 — coherent ponds/lakes instead of emergent per-slot AC-3 water tiling), rather
+than a bigger/smarter version of the per-slot world-unit solver reaching for the same
+goal. See [WorldEngine-03-SolverPipeline.md](Docs/WorldEngine-03-SolverPipeline.md) §6.7
+and repo memory `iso2-portback-plan.md`'s "Phases 9-10" section for the fuller writeup.
 
 ---
 

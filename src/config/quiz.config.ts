@@ -7,8 +7,16 @@
  * Each question must have exactly one correct answer.
  */
 
-export type QuizCategory = 'math' | 'science' | 'history' | 'language' | 'logic';
-export type QuizDifficulty = 'easy' | 'medium' | 'hard';
+// QuizCategory/QuizDifficulty are the canonical definitions in
+// types/content-pack.types.ts (Content Pack Schema v1, #88) -- re-exported
+// here so existing `import { type QuizDifficulty } from '../config/quiz.config'`
+// call sites keep working unchanged. Previously this file re-declared its
+// own 5-value QuizCategory (missing 'geography'/'technology'), a divergence
+// documented as a known duplicate-type issue in
+// .github/instructions/config-files.instructions.md -- resolved by
+// importing the single canonical union instead of maintaining a second copy.
+export type { QuizCategory, QuizDifficulty } from '../types/content-pack.types';
+import type { QuizCategory, QuizDifficulty } from '../types/content-pack.types';
 
 export interface QuizQuestion {
   id: string;

@@ -295,7 +295,126 @@ export const BIOME_NPC_PERSONAS: NpcPersona[] = [
     canQuiz: true,
     quizDifficulty: 'hard',
   },
+
+  // --- Biome-specific wandering merchants (WorldEngine-05 §4.1: "the
+  // merchant's inventory is determined by biome... forest merchant sells
+  // mushrooms and potions; castle merchant sells keys and shields").
+  // Distinct from the flavor NPCs above (farmer/ranger/miner/knight etc.,
+  // which already vary by biome via BIOME_NPC_POOL) and from the
+  // structure-based THEMED_SHOP_PERSONAS below (which vary by store
+  // *archetype*, not biome). Selected via getMerchantPersonaIdForBiome().
+  {
+    id: 'merchant_meadow',
+    assetKey: 'npc_merchant',
+    displayName: 'Traveling Merchant',
+    llmPersona: 'You are a cheerful traveling merchant passing through sunny meadows. Speak warmly about trail goods and fair prices. Be welcoming to new adventurers.',
+    greetings: [
+      'Welcome, friend! Fresh goods for the road ahead! 🌻',
+      'Lovely day for trading, isn\'t it? Take a look at my wares!',
+      'A meadow merchant never turns away a friendly face. Come, browse!',
+    ],
+    fallbackResponses: [
+      'Everything here is fresh from the meadow trails!',
+      'Good prices for good company — that\'s my motto.',
+      'Take your time, traveler. No rush in these fields.',
+    ],
+    trades: [
+      { gives: 'potion', wants: 'coin', cost: 9, description: 'Buy a speed potion for 9 coins' },
+      { gives: 'snack', wants: 'coin', cost: 2, description: 'Buy a trail snack for 2 coins' },
+      { gives: 'water', wants: 'coin', cost: 3, description: 'Buy fresh water for 3 coins' },
+      { gives: 'soap', wants: 'coin', cost: 5, description: 'Buy soap for 5 coins' },
+    ],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
+  {
+    id: 'merchant_forest',
+    assetKey: 'npc_merchant',
+    displayName: 'Forest Peddler',
+    llmPersona: 'You are a forest peddler who forages mushrooms and brews potions between trees. Speak with a woodsy, earthy charm. Mention the forest\'s bounty often.',
+    greetings: [
+      'Ho there! Foraged fresh this morning, all of it! 🍄',
+      'A peddler\'s cart, deep in the woods — lucky you found me!',
+      'Mushrooms, potions, whatever the forest gives up. Care to look?',
+    ],
+    fallbackResponses: [
+      'The forest provides, if you know where to look.',
+      'These potions are brewed with real forest herbs, none of that city stuff.',
+      'Careful past here — I\'ve sold a few crowbars for the barricades ahead.',
+    ],
+    trades: [
+      { gives: 'mushroom', wants: 'coin', cost: 2, description: 'Buy a foraged mushroom for 2 coins' },
+      { gives: 'potion', wants: 'coin', cost: 9, description: 'Buy a forest-brewed potion for 9 coins' },
+      { gives: 'crowbar', wants: 'coin', cost: 17, description: 'Buy a crowbar for 17 coins' },
+      { gives: 'bandage', wants: 'coin', cost: 4, description: 'Buy a bandage for 4 coins' },
+    ],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
+  {
+    id: 'merchant_cave',
+    assetKey: 'npc_merchant',
+    displayName: 'Tunnel Trader',
+    llmPersona: 'You are a tunnel trader who sells to miners and adventurers deep underground. Speak gruffly but fairly. Emphasize light sources and unlocking things in the dark.',
+    greetings: [
+      'Careful down here — bring a torch, or buy one off me! 🕯️',
+      'Not many come this deep. Good, means fewer haggling me down.',
+      'Keys, torches, tools — everything a body needs underground.',
+    ],
+    fallbackResponses: [
+      'Dark tunnels hide good loot. And good loot needs a key.',
+      'Don\'t go wandering these caves without a light, friend.',
+      'I\'ve got maps too, if you\'d rather not get lost down here.',
+    ],
+    trades: [
+      { gives: 'key', wants: 'coin', cost: 16, description: 'Buy a tunnel key for 16 coins' },
+      { gives: 'crowbar', wants: 'coin', cost: 22, description: 'Buy a crowbar for 22 coins' },
+      { gives: 'torch', wants: 'coin', cost: 6, description: 'Buy a torch for 6 coins' },
+      { gives: 'map_scroll', wants: 'coin', cost: 18, description: 'Buy a tunnel map for 18 coins' },
+    ],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
+  {
+    id: 'merchant_castle',
+    assetKey: 'npc_merchant',
+    displayName: 'Court Merchant',
+    llmPersona: 'You are a well-dressed court merchant who trades in keys and fine goods within castle walls. Speak formally, with a touch of pride about your wares\' quality.',
+    greetings: [
+      'Ah, a visitor to the court! My wares are of the finest make. ⚜️',
+      'Keys, scrolls, potions fit for nobility — do have a look.',
+      'Few merchants earn a stall within these walls. I have.',
+    ],
+    fallbackResponses: [
+      'Every lock in this castle has a key somewhere on my cart.',
+      'Fine goods for a fine adventurer, at a fair castle price.',
+      'The court values quality. So do I.',
+    ],
+    trades: [
+      { gives: 'key', wants: 'coin', cost: 20, description: 'Buy a castle key for 20 coins' },
+      { gives: 'torch', wants: 'coin', cost: 7, description: 'Buy a court torch for 7 coins' },
+      { gives: 'potion', wants: 'coin', cost: 13, description: 'Buy a court potion for 13 coins' },
+      { gives: 'map_scroll', wants: 'coin', cost: 22, description: 'Buy a castle map for 22 coins' },
+    ],
+    canQuiz: false,
+    quizDifficulty: 'easy',
+  },
 ];
+
+/** Biome name -> wandering-merchant persona id (WorldEngine-05 §4.1). Falls
+ * back to 'merchant_default' for unrecognised/missing biome names so any
+ * caller lacking biome context still resolves to a valid persona. */
+const MERCHANT_PERSONA_BY_BIOME: Record<string, string> = {
+  meadow: 'merchant_meadow',
+  forest: 'merchant_forest',
+  cave: 'merchant_cave',
+  castle: 'merchant_castle',
+};
+
+/** Get the wandering-merchant persona id for a given biome name (#112 gap fix). */
+export function getMerchantPersonaIdForBiome(biomeName: string | undefined): string {
+  return (biomeName && MERCHANT_PERSONA_BY_BIOME[biomeName]) || 'merchant_default';
+}
 
 /** All personas combined */
 const ALL_PERSONAS = [...NPC_PERSONAS, ...BIOME_NPC_PERSONAS];

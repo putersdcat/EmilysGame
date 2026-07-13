@@ -92,6 +92,8 @@ export function applySaveData(state: GameState, data: SaveData): void {
   if (data.discoveredWildlife) {
     restoreDiscoveredSpecies(data.discoveredWildlife);
   }
+  // Restore NPC interaction history (WorldEngine-05 SS8.5 gap fix, Finding #10)
+  if (data.talkedToNpcs) state.talkedToNpcs = new Set(data.talkedToNpcs);
   // Restore survival status (#70)
   state.status = deserializeStatus(data.playerStatus);
   resetTickCounter();

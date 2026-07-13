@@ -60,6 +60,9 @@ export interface SaveData {
   playedSeconds?: number;
   /** Touch control visibility mode: whisper|slide|visible (#144) */
   touchControlMode?: string;
+  /** NPC persona ids the player has talked to at least once (WorldEngine-05
+   * SS8.5 save-fidelity gap fix -- see Docs/VisionAlignmentAudit.md Finding #10) */
+  talkedToNpcs?: string[];
 }
 
 export interface ResolvedCell {

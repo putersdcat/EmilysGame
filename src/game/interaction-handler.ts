@@ -127,6 +127,10 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       setDialogNpc(result.npcId); // Start mouth animation (#113)
       speakLine(state.voice, result.greeting, result.npcId);
 
+      // Record NPC interaction history (WorldEngine-05 §8.5 save-fidelity
+      // gap fix -- see Docs/VisionAlignmentAudit.md Finding #10)
+      state.talkedToNpcs.add(result.npcId);
+
       // Feed NPC greeting into entropy pool (#4)
       feedEntropy(result.greeting);
 

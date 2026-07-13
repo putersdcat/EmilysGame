@@ -89,6 +89,8 @@ import {
   edgesCompatible,
   getAllRotations,
   BIOME_TEMPLATE_WEIGHTS,
+  oppositeDir,
+  getTemplate,
 } from '../../config/tiles.config';
 import { ASSET_DEFS } from '../../config/assets.config';
 import type { TileType } from '../../rendering/tiles';
@@ -151,25 +153,206 @@ export function weightedSelectTemplate(
 // Used by enforceChainIntegrity when a chain feature would otherwise dangle
 // at a chunk border or into an empty neighbor slot.
 
+/** Which authored chain family a dangling template belongs to, or null if
+ * it isn't part of any chain (nothing to terminate). Shared by both the
+ * single-connector (`findTerminatorCandidates`) and multi-way
+ * (`findMultiWayTerminatorCandidates`, #4) selection paths so the
+ * prefix rules only live in one place. */
+type ChainFamily = 'river' | 'wall' | 'path';
+
+/**
+ * Resolve a template's chain family. Prefers the template's OWN declared
+ * `chainType` (#4 fix) -- a pure name-prefix heuristic misses every THEMED
+ * template whose name doesn't start with river_/wall_/path_ despite having
+ * a real chainType set (treasure_alcove, castle_corridor, castle_hall,
+ * beach_cove, fortified_passage, cave_tunnel_ns, and others -- found via a
+ * real-pipeline sweep in gen-chain-integrity-boundary-audit.spec.ts: these
+ * were silently un-resolvable and fell through to the bare meadow_base
+ * fallback every time, which then frequently failed its own
+ * north/west-neighbor compatibility check and left the original
+ * multi-sided template dangling and completely unfixed).
+ */
+function resolveChainFamily(baseName: string): ChainFamily | null {
+  const declared = getTemplate(baseName)?.chainType;
+  if (declared === 'river' || declared === 'wall' || declared === 'path') return declared;
+  if (declared === 'fence') {
+    // 'fence' chain members have no dedicated multi-way/single-connector
+    // terminator content today -- the only non-enclosure fence template
+    // (fence_row) is itself a self-terminating straight run with no
+    // authored fence_end/fence_corner/fence_t_junction sibling. Leave
+    // unresolved (null) rather than guessing; the meadow_base fallback in
+    // findTerminatorCandidates still applies exactly as before.
+    return null;
+  }
+
+  // Fallback prefix heuristic (kept for hand-built RotatedTemplate
+  // fixtures in tests that never went through WORLD_UNIT_TEMPLATES, so
+  // getTemplate() would return undefined for them).
+  if (baseName.startsWith('river_') || baseName.startsWith('shore_')) return 'river';
+  if (baseName.startsWith('wall_') || baseName === 'guard_tower' || baseName === 'cave_fork') return 'wall';
+  if (baseName.startsWith('dirt_path') || baseName.startsWith('path_')) return 'path';
+  return null;
+}
+
 export function findTerminator(
   baseName: string,
   allRotations: Map<string, RotatedTemplate[]>,
+  dir?: Cardinal,
+  dangling?: RotatedTemplate,
+  offGridDirs?: readonly Cardinal[],
 ): RotatedTemplate | null {
-  if (baseName.startsWith('river_')) {
-    const pondRots = allRotations.get('river_end_pond');
-    if (pondRots && pondRots.length > 0) return pondRots[0];
+  return findTerminatorCandidates(baseName, allRotations, dir, dangling, offGridDirs)[0] ?? null;
+}
+
+/**
+ * Preference-ordered list of candidate terminator rotations for a dangling
+ * chain feature, safest/most-preserving first. `enforceChainIntegrity`
+ * tries each in turn against its real-neighbor compatibility check, since
+ * a single "best-orientation" guess can still fail that check (e.g. it
+ * avoids every off-grid direction but its connector doesn't land on the
+ * ONE side with a real approaching chain) -- see #42 fix history
+ * (2026-07-09, gen-chain-integrity-boundary-audit.spec.ts) for the full
+ * writeup of why this needed to become a multi-candidate search.
+ *
+ * This is the SINGLE-connector path (collapses to a 1-sided _end/_dead_end
+ * /_pond piece). For cells with 2-3 sides that must stay connected
+ * (bends/T-junctions), see `findMultiWayTerminatorCandidates` (#4) --
+ * using this single-connector function for those would silently discard
+ * the cell's other still-valid connections.
+ */
+function findTerminatorCandidates(
+  baseName: string,
+  allRotations: Map<string, RotatedTemplate[]>,
+  dir?: Cardinal,
+  dangling?: RotatedTemplate,
+  offGridDirs?: readonly Cardinal[],
+): RotatedTemplate[] {
+  const family = resolveChainFamily(baseName);
+  const terminatorName = family ? CHAIN_SHAPE_POOLS[family].single[0] : null;
+
+  const candidates: RotatedTemplate[] = [];
+  if (terminatorName) {
+    const rots = allRotations.get(terminatorName);
+    if (rots && rots.length > 0) {
+      const safeDirs = offGridDirs && offGridDirs.length > 0 ? offGridDirs : (dir ? [dir] : []);
+      const isSafe = (r: RotatedTemplate) => !safeDirs.some(d => r.edgeTags[d] !== 'open');
+      const safeRots = rots.filter(isSafe);
+      if (dir && dangling) {
+        const into = oppositeDir(dir);
+        const exactMatches = safeRots.filter(r => r.edgeTags[into] === dangling.edgeTags[into]);
+        candidates.push(...exactMatches);
+        candidates.push(...safeRots.filter(r => !exactMatches.includes(r)));
+      } else {
+        candidates.push(...safeRots);
+      }
+      if (!candidates.includes(rots[0])) candidates.push(rots[0]);
+    }
   }
-  if (baseName.startsWith('wall_') || baseName === 'guard_tower') {
-    const wallEndRots = allRotations.get('wall_end');
-    if (wallEndRots && wallEndRots.length > 0) return wallEndRots[0];
-  }
-  if (baseName.startsWith('dirt_path') || baseName.startsWith('path_')) {
-    const pathEndRots = allRotations.get('path_dead_end');
-    if (pathEndRots && pathEndRots.length > 0) return pathEndRots[0];
-  }
+
   const meadowRots = allRotations.get('meadow_base');
-  if (meadowRots && meadowRots.length > 0) return meadowRots[0];
-  return null;
+  if (meadowRots && meadowRots.length > 0) candidates.push(meadowRots[0]);
+  return candidates;
+}
+
+// --- Multi-way junction termination (#4 / Docs/VisionAlignmentAudit.md
+// Finding #4, iso2-portback-plan.md "Phase 3b/6") ---
+//
+// `findTerminatorCandidates` above always collapses a dangling chain cell
+// to a SINGLE-connector piece (river_end_pond / wall_end / path_dead_end).
+// That's correct when only one side of the cell is a real chain port, but
+// a bend/T-junction/crossroads cell has 2-4 non-open sides BY DESIGN, and
+// replacing the whole cell with a 1-connector piece silently throws away
+// its OTHER still-valid connections (they'd need to happen to land on the
+// terminator's single connector by luck, or the connection is lost and
+// the neighbor is left expecting a chain that no longer continues).
+//
+// The fix is NOT new authored content -- the multi-way shapes already
+// exist (river_bend_ne/_nw, river_t_junction, wall_corner(_capped),
+// wall_t_junction, path_bend_ne, path_t_junction) because they're used as
+// ordinary AC-3 candidates during normal solving. This just teaches the
+// termination step to reuse them: pick a same-family template whose
+// non-open sides land EXACTLY on the sides that must stay connected
+// (`keepDirs`), with every dangling side forced 'open'.
+
+/** Authored template name pools per chain family, keyed by shape. Multiple
+ * names can exist per shape for visual variety (e.g. river_bend_ne/_nw
+ * both produce all 4 adjacent-pair rotations via `computeRotations`, just
+ * with different in-tile art) -- querying every name in the pool widens
+ * the rotation search for the final neighbor-compatibility check. */
+const CHAIN_SHAPE_POOLS: Record<ChainFamily, { single: string[]; bend: string[]; straight: string[]; tJunction: string[] }> = {
+  river: {
+    single: ['river_end_pond'],
+    bend: ['river_bend_ne', 'river_bend_nw'],
+    straight: ['river_straight_ns', 'river_straight_ew'],
+    tJunction: ['river_t_junction'],
+  },
+  wall: {
+    single: ['wall_end'],
+    bend: ['wall_corner', 'wall_corner_capped'],
+    straight: ['wall_segment'],
+    tJunction: ['wall_t_junction'],
+  },
+  path: {
+    single: ['path_dead_end'],
+    bend: ['path_bend_ne'],
+    straight: ['dirt_path_ns', 'dirt_path_ew'],
+    tJunction: ['path_t_junction'],
+  },
+};
+
+function nonOpenSides(edges: RotatedTemplate['edgeTags']): Cardinal[] {
+  return (['n', 's', 'e', 'w'] as Cardinal[]).filter(d => edges[d] !== 'open');
+}
+
+/** True iff `a` and `b` contain exactly the same cardinals (order-independent). */
+function sameDirSet(a: readonly Cardinal[], b: readonly Cardinal[]): boolean {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every(d => setB.has(d));
+}
+
+/**
+ * Candidate replacements for a chain cell with 2-3 sides that must stay
+ * connected (`keepDirs`) while every side in `offGridDirs` (this cell's
+ * own off-grid directions) becomes safely 'open'. Selects from the
+ * bend/T-junction pool matching `keepDirs.length` (2 adjacent → bend, 2
+ * opposite → straight-through, 3 → T-junction), never the 1-connector
+ * pool -- callers should fall back to `findTerminatorCandidates` when
+ * `keepDirs.length <= 1` or when this returns no candidates (e.g. the
+ * cell's real north AND west neighbors demand two incompatible
+ * connections simultaneously -- a genuine corner-piece gap, same
+ * dual-conflicting-neighbor residual `findTerminatorCandidates` already
+ * accepts as bounded-but-nonzero).
+ */
+function findMultiWayTerminatorCandidates(
+  baseName: string,
+  allRotations: Map<string, RotatedTemplate[]>,
+  keepDirs: readonly Cardinal[],
+  offGridDirs: readonly Cardinal[],
+): RotatedTemplate[] {
+  const family = resolveChainFamily(baseName);
+  if (!family || keepDirs.length < 2 || keepDirs.length > 3) return [];
+
+  const pool = CHAIN_SHAPE_POOLS[family];
+  let names: string[];
+  if (keepDirs.length === 3) {
+    names = pool.tJunction;
+  } else {
+    const [a, b] = keepDirs;
+    names = oppositeDir(a) === b ? pool.straight : pool.bend;
+  }
+
+  const candidates: RotatedTemplate[] = [];
+  for (const name of names) {
+    const rots = allRotations.get(name);
+    if (!rots) continue;
+    for (const r of rots) {
+      if (!sameDirSet(nonOpenSides(r.edgeTags), keepDirs)) continue;
+      if (offGridDirs.some(d => r.edgeTags[d] !== 'open')) continue;
+      candidates.push(r);
+    }
+  }
+  return candidates;
 }
 
 // --- Corner Governance (#42) ---
@@ -177,7 +360,7 @@ export function findTerminator(
 
 /**
  * Surface type for a micro-tile at a corner cell.
- * Looks up the tile's surface metadata; defaults to 'grass' when unknown.
+ * Looks up the tile's surface metadata; defaults to 'grass' for null.
  */
 export function getCornerSurface(cellType: string): string {
   return MICRO_TILE_DEFS[cellType as keyof typeof MICRO_TILE_DEFS]?.surface ?? 'grass';
@@ -947,7 +1130,7 @@ export function extractGridBorderEdges(
   };
 }
 
-// --- Chain Integrity (#42) ---
+// --- Chain Integrity (#42, extended #4) ---
 
 /**
  * Walk every cell in the grid and check for chain features that
@@ -955,7 +1138,14 @@ export function extractGridBorderEdges(
  * non-open exit at a position where the neighbor is missing (off-grid
  * or null), substitute an appropriate terminator (river_end_pond for
  * rivers, wall_end for walls, path_dead_end for paths, meadow_base
- * as the catch-all).
+ * as the catch-all) -- or, when 2-3 of the cell's sides must stay
+ * connected to real neighbors (a bend/T-junction cell), a matching
+ * multi-way terminator (river_bend_ne/wall_corner/path_bend_ne,
+ * river_t_junction/wall_t_junction/path_t_junction, or a straight-through
+ * segment) so those other connections are preserved instead of discarded
+ * (#4 -- see Docs/VisionAlignmentAudit.md Finding #4 /
+ * iso2-portback-plan.md "Phase 3b/6" for the full writeup of why a
+ * single-connector-only replacement silently broke multi-way shapes).
  *
  * The terminator must be edge-compatible with any already-placed
  * north/west neighbors — otherwise the chain would visually break
@@ -983,29 +1173,60 @@ export function enforceChainIntegrity(
         : ports.entries;
       if (dirsToCheck.length === 0) continue;
 
-      for (const dir of dirsToCheck) {
-        const tag = template.edgeTags[dir];
+      // All off-grid directions for THIS cell (0-2 of them: 0 for an
+      // interior cell, 1 for a mid-edge cell, 2 for a corner). Computed
+      // once per cell -- doesn't depend on which direction is currently
+      // being checked -- and passed to findTerminator so it can pick a
+      // rotation whose connector avoids ALL of them, not just the one
+      // direction this loop iteration happens to be processing.
+      const cellOffGridDirs = (['n', 's', 'e', 'w'] as Cardinal[]).filter(d => {
+        const dnx = gx + (d === 'e' ? 1 : d === 'w' ? -1 : 0);
+        const dny = gy + (d === 's' ? 1 : d === 'n' ? -1 : 0);
+        return dnx < 0 || dnx >= gridDim || dny < 0 || dny >= gridDim;
+      });
+
+      // #4 fix: compute the FULL set of dangling directions for this cell
+      // up front -- a pure function of grid position/nullness that doesn't
+      // depend on processing order -- instead of patching one direction at
+      // a time. A bend/T-junction cell can have 2-3 simultaneously
+      // non-open sides; fixing them one at a time (the old approach)
+      // always replaced the whole cell with a 1-connector terminator on
+      // the FIRST dangling direction found, discarding the cell's OTHER
+      // still-valid connections regardless of how many there were.
+      const needsFixDirs = dirsToCheck.filter(dir => {
         const nx = gx + (dir === 'e' ? 1 : dir === 'w' ? -1 : 0);
         const ny = gy + (dir === 's' ? 1 : dir === 'n' ? -1 : 0);
+        return nx < 0 || nx >= gridDim || ny < 0 || ny >= gridDim || !grid[ny]?.[nx];
+      });
+      if (needsFixDirs.length === 0) continue;
 
-        const needsFix =
-          nx < 0 || nx >= gridDim || ny < 0 || ny >= gridDim ||
-          !grid[ny]?.[nx];
+      const keepDirs = dirsToCheck.filter(d => !needsFixDirs.includes(d));
+      const nTag = gy > 0 && grid[gy - 1][gx] ? grid[gy - 1][gx]!.edgeTags.s : undefined;
+      const wTag = gx > 0 && grid[gy][gx - 1] ? grid[gy][gx - 1]!.edgeTags.e : undefined;
+      const compatible = (r: RotatedTemplate) =>
+        (!nTag || edgesCompatible(r.edgeTags.n, nTag)) &&
+        (!wTag || edgesCompatible(r.edgeTags.w, wTag));
 
-        if (needsFix && tag !== 'open') {
-          const replacement = findTerminator(template.baseName, allRotations);
-          if (replacement) {
-            // Check that replacement is compatible with placed neighbors
-            const nTag = gy > 0 && grid[gy - 1][gx] ? grid[gy - 1][gx]!.edgeTags.s : undefined;
-            const wTag = gx > 0 && grid[gy][gx - 1] ? grid[gy][gx - 1]!.edgeTags.e : undefined;
-            if (
-              (!nTag || edgesCompatible(replacement.edgeTags.n, nTag)) &&
-              (!wTag || edgesCompatible(replacement.edgeTags.w, wTag))
-            ) {
-              grid[gy][gx] = replacement;
-            }
-          }
-        }
+      let replacement: RotatedTemplate | undefined;
+      if (keepDirs.length >= 2 && keepDirs.length <= 3) {
+        // Multi-way path: 2-3 real sides to preserve (bend/T-junction).
+        replacement = findMultiWayTerminatorCandidates(template.baseName, allRotations, keepDirs, cellOffGridDirs)
+          .find(compatible);
+      }
+      if (!replacement) {
+        // Single-connector path (0-1 real sides to preserve), OR the
+        // multi-way search above found no compatible candidate (e.g. the
+        // cell's real north AND west neighbors demand two DIFFERENT
+        // non-open connections simultaneously -- a genuine corner-piece
+        // gap, the same tiny dual-conflicting-neighbor residual this
+        // function has always accepted as bounded-but-nonzero). Try
+        // anyway so at least one dangling side gets closed rather than
+        // leaving the cell completely untouched.
+        const candidates = findTerminatorCandidates(template.baseName, allRotations, needsFixDirs[0], template, cellOffGridDirs);
+        replacement = candidates.find(compatible);
+      }
+      if (replacement) {
+        grid[gy][gx] = replacement;
       }
     }
   }

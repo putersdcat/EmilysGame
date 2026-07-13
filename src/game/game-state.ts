@@ -63,6 +63,17 @@ export interface GameState {
     isMoving: boolean;
     animFrame: number;
     sinkDepth?: number; // iso2: neg-Z sink (rivers/gates per #223 walk + AUTONOMOUS_LOOP.md)
+    /**
+     * True when the player's resolved spawn/resume position landed on a
+     * non-walkable cell (e.g. LLM-entropy variance regenerated the chunk
+     * differently than when a save was made, dropping a wall where the
+     * player last stood). While true: collision is bypassed entirely (the
+     * player can always walk free) and `sinkDepth` is driven negative so
+     * they render visually ON TOP of the obstruction instead of clipped
+     * inside it. Cleared automatically the instant they reach a genuinely
+     * walkable cell -- see `handleMovement` in main.ts.
+     */
+    spawnEscape?: boolean;
   };
   playerVariation: CharacterVariation;
   camera: Camera;
@@ -100,6 +111,9 @@ export interface GameState {
   injury: InjuryState;
   // Unlocked cosmetic IDs (#66)
   unlockedCosmetics: string[];
+  // NPC persona ids the player has talked to at least once (WorldEngine-05
+  // SS8.5 save-fidelity gap fix -- see Docs/VisionAlignmentAudit.md Finding #10)
+  talkedToNpcs: Set<string>;
   // Music state (#74)
   music: MusicState;
   // SFX & ambience state (#75)
@@ -184,6 +198,7 @@ export function createGameState(deps: CreateGameStateDeps): GameState {
       isMoving: false,
       animFrame: 0,
       sinkDepth: 0, // iso2: for negative Z (rivers) from walk integration
+      spawnEscape: false,
     },
     playerVariation: deps.playerVariation,
     camera: {
@@ -215,6 +230,7 @@ export function createGameState(deps: CreateGameStateDeps): GameState {
     status: deps.createPlayerStatus(),
     injury: deps.createInjuryState(),
     unlockedCosmetics: deps.unlockedCosmetics,
+    talkedToNpcs: new Set(),
     music: deps.createMusicState(),
     sfx: deps.createSfxState(),
     voice: deps.createVoiceState(),

@@ -142,6 +142,20 @@ test.describe('NPC Interaction', () => {
     // Press Space to interact
     await pressSpace(page);
 
+    // Wait for the dialog overlay to become visible. Poll (not a single
+    // fixed-delay snapshot) because the HUD DOM sync is throttled to every
+    // 4th frame (render-frame.ts) -- a snapshot taken right after
+    // pressSpace() can race a slow/loaded test run and see a stale DOM.
+    // NOTE: the 3rd argument is `options` -- `waitForFunction(fn, arg,
+    // options)`. Passing `{ timeout }` as the 2nd arg (as an earlier
+    // version of this file did) silently becomes the page function's
+    // `arg` instead, so NO timeout is actually applied and a genuine
+    // failure hangs until Playwright's outer 60s test timeout kills it.
+    await page.waitForFunction(() => {
+      const overlay = document.getElementById('dialogOverlay');
+      return overlay ? overlay.style.display !== 'none' : false;
+    }, undefined, { timeout: 4000 });
+
     // Check dialog overlay
     const dialog = await page.evaluate(() => {
       const overlay = document.getElementById('dialogOverlay');
@@ -158,9 +172,14 @@ test.describe('NPC Interaction', () => {
     expect(dialog.name.length).toBeGreaterThan(0);
     expect(dialog.text.length).toBeGreaterThan(0);
 
-    // Name should not be 'Stranger' (we have known NPC personas)
-    // Should match any known NPC persona name
-    expect(dialog.name).toMatch(/Merchant|Villager|Guardian|Cat|Farmer|Beekeeper|Ranger|Hermit|Miner|Ghost|Knight/i);
+    // Name should not be 'Stranger' (the generic fallback for an unknown
+    // persona lookup) -- this is the real thing worth checking here. NOT a
+    // fixed whitelist regex: a coincidentally-nearby wildlife creature can
+    // legitimately steal this interaction (interactWithWildlife runs before
+    // the tile-based NPC check in handleSpaceInteraction/main.ts), and its
+    // name (e.g. "Hedgehog") is just as valid a "found a real persona"
+    // result as an NPC name -- see src/config/wildlife.config.ts.
+    expect(dialog.name).not.toBe('Stranger');
   });
 
   test('dialog can be closed with Space', async ({ page }) => {
@@ -189,22 +208,26 @@ test.describe('NPC Interaction', () => {
 
     await pressSpace(page);
 
-    // Dialog should be open
-    let visible = await page.evaluate(() => {
+    // Dialog should be open. Poll (not a single snapshot) because the HUD
+    // DOM sync is throttled to every 4th frame (render-frame.ts) -- a
+    // fixed-delay check can race a slow/loaded test run. NOTE: `options`
+    // is the 3rd argument -- see the longer note above.
+    await page.waitForFunction(() => {
       const overlay = document.getElementById('dialogOverlay');
       return overlay ? overlay.style.display !== 'none' : false;
-    });
-    expect(visible).toBe(true);
+    }, undefined, { timeout: 4000 });
 
     // Press Space again to close
     await pressSpace(page);
 
-    // Dialog should be closed
-    visible = await page.evaluate(() => {
+    // Dialog should be closed. Same throttle reasoning applies here: the
+    // frame that flips dialog.active=false may not be a synced frame, so
+    // poll for the eventual (within a few frames) DOM update rather than
+    // asserting on a single fixed-delay snapshot.
+    await page.waitForFunction(() => {
       const overlay = document.getElementById('dialogOverlay');
-      return overlay ? overlay.style.display !== 'none' : false;
-    });
-    expect(visible).toBe(false);
+      return overlay ? overlay.style.display === 'none' : true;
+    }, undefined, { timeout: 4000 });
   });
 
   test('interaction works from all 4 directions', async ({ page }) => {
@@ -268,7 +291,20 @@ test.describe('NPC Interaction', () => {
     ];
 
     for (const dir of directions) {
-      // Force-close any prior dialog or quiz state before next direction
+      // Force-close any prior dialog/quiz/trade state before next direction.
+      // Also clear pendingQuiz/pendingTrade AND trade.active: most of these
+      // NPC personas have canQuiz=true and/or trades.length>0 (see
+      // src/config/npc.config.ts), so closing a dialog can chain into
+      // starting a real quiz OR opening a real trade panel (see
+      // handleDialogInput in src/main.ts). Root-caused via a temp
+      // diagnostic (2026-07-10): tradeActive stayed true after the PRIOR
+      // direction's trade-enabled NPC (e.g. merchant_meadow) closed its
+      // dialog, and since this reset block never cleared trade.active,
+      // the NEXT direction's pressSpace() was swallowed by
+      // handleTradeInput (which correctly short-circuits when active) --
+      // handleSpaceInteraction never ran, so no new dialog opened,
+      // deterministically failing whichever direction ran right after a
+      // trade-enabled NPC.
       await page.evaluate(() => {
         const state = (window as any).__gameState;
         if (state.ui?.dialog) {
@@ -279,10 +315,17 @@ test.describe('NPC Interaction', () => {
         if (state.quiz) {
           state.quiz.active = false;
         }
+        if (state.trade) {
+          state.trade.active = false;
+        }
+        state.pendingQuiz = null;
+        state.pendingTrade = null;
         const overlay = document.getElementById('dialogOverlay');
         if (overlay) overlay.style.display = 'none';
         const quizOverlay = document.getElementById('quizOverlay');
         if (quizOverlay) quizOverlay.style.display = 'none';
+        const tradeOverlay = document.getElementById('tradeOverlay');
+        if (tradeOverlay) tradeOverlay.style.display = 'none';
         state.paused = false;
       });
       await page.waitForTimeout(300);

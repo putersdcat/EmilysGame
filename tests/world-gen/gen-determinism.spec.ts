@@ -16,6 +16,32 @@
  * generation until structure assembly rendering is more stable.
  * If you intentionally change generation output, re-capture GOLDEN_HASH.
  *
+ * Re-captured 2026-07-09 (061b4390 -> 839e4437) after the chain-integrity
+ * fixes in WorldUnitSolver.ts/tiles.config.ts (see repo memory
+ * iso2-portback-plan.md's "Phase 3b/6" section): `findTerminator` no longer
+ * always uses the unrotated terminator regardless of dangling direction,
+ * fixes a stale-snapshot clobber for cells with 2+ dangling directions, adds
+ * corner-awareness, tries multiple candidates against real neighbor
+ * compatibility, maps shore_/cave_fork to their terminator families, and
+ * excludes `connectivity: 'enclosure'` templates from chain-port detection
+ * entirely. All 9 golden-hash coordinates are chunkDist<=2 (forced meadow
+ * biome), but meadow's WU candidate pool still includes decorative
+ * river/shore features, so this is a genuine, intentional, verified content
+ * change reaching the golden-hash range -- not a regression.
+ *
+ * Re-captured 2026-07-10 (839e4437 -> 35536566) after the #4 multi-way
+ * junction terminator extension (Docs/VisionAlignmentAudit.md Finding #4,
+ * see gen-chain-integrity-boundary-audit.spec.ts's header comment and repo
+ * memory iso2-portback-plan.md's "#4 extension" writeup): a dangling
+ * bend/T-junction/crossroads cell now gets reduced to a same-family
+ * multi-way template (bend/straight/T-junction) that preserves its OTHER
+ * real connections, instead of always collapsing to a single-connector
+ * piece that discarded them. Same reasoning as the prior re-capture applies
+ * -- meadow's candidate pool includes decorative river features reachable
+ * within the golden-hash's chunkDist<=2 coordinates, so real generated
+ * content legitimately changed. Full tests/world-gen/ sweep (92 tests) is
+ * clean except this single, expected, sanctioned hash diff.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -25,7 +51,7 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-const GOLDEN_HASH = '061b4390';
+const GOLDEN_HASH = '35536566';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

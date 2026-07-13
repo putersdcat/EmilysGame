@@ -82,6 +82,7 @@ export function buildSaveData(state: GameState): SaveData {
     ageBand: state.ageProfile.ageBand ?? undefined,
     playedSeconds: getPlayedSeconds(),
     touchControlMode: localStorage.getItem('emilys_game_touch_vis') ?? 'whisper',
+    talkedToNpcs: [...state.talkedToNpcs],
   };
 }
 

@@ -7,7 +7,7 @@
 import { test, expect } from '@playwright/test';
 import * as fs from 'fs';
 
-const SOLVER_PATH = 'src/math-solver.ts';
+const SOLVER_PATH = 'src/game/math-solver.ts';
 
 test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
 
@@ -42,7 +42,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
 
     const results = await page.evaluate(() => {
       // Dynamic import the module
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         add: mod.evaluateExpression('7 + 5'),
         sub: mod.evaluateExpression('20 - 8'),
         mul: mod.evaluateExpression('15 * 3'),
@@ -73,7 +73,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         empty: mod.evaluateExpression(''),
         text: mod.evaluateExpression('hello'),
         partial: mod.evaluateExpression('5 +'),
@@ -92,7 +92,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         half: mod.normalizeAnswer('1/2'),
         threeQuarter: mod.normalizeAnswer('3/4'),
         mixed: mod.normalizeAnswer('2 1/2'),
@@ -109,7 +109,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         pct: mod.normalizeAnswer('45%'),
         comma: mod.normalizeAnswer('1,000'),
         bigComma: mod.normalizeAnswer('1,000,000'),
@@ -126,7 +126,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         degrees: mod.normalizeAnswer('40°'),
         cm: mod.normalizeAnswer('15 cm'),
         kg: mod.normalizeAnswer('3.5 kg'),
@@ -145,7 +145,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const result = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 7 + 5?', '12');
         if (!rubric) return null;
         return mod.validateMathAnswer('12', rubric);
@@ -164,7 +164,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const result = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 7 + 5?', '12');
         if (!rubric) return null;
         return mod.validateMathAnswer('13', rubric);
@@ -181,7 +181,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const result = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 17 x 13?', '221');
         if (!rubric) return null;
         // Student types the expression itself
@@ -198,7 +198,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const result = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 7 + 5?', '12');
         if (!rubric) return null;
         return mod.validateMathAnswer('twelve', rubric);
@@ -215,7 +215,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const result = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 7 + 5?', '12', {
           commonMistakes: [
             { answer: '75', feedback: 'You may have concatenated instead of adding.' },
@@ -237,7 +237,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const rubric = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         return mod.buildRubricFromQuestion('What is 15 × 3?', '45');
       });
     });
@@ -253,7 +253,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const rubric = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         return mod.buildRubricFromQuestion('What is the capital of France?', 'Paris');
       });
     });
@@ -269,7 +269,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const disabledResult = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => mod.isFreeResponseEnabled());
+      return import('/src/game/math-solver.ts').then(mod => mod.isFreeResponseEnabled());
     });
     expect(disabledResult).toBe(false);
 
@@ -278,7 +278,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const enabledResult = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => mod.isFreeResponseEnabled());
+      return import('/src/game/math-solver.ts').then(mod => mod.isFreeResponseEnabled());
     });
     expect(enabledResult).toBe(true);
   });
@@ -290,7 +290,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => ({
+      return import('/src/game/math-solver.ts').then(mod => ({
         math12: mod.canUseFreeResponse('math', '12'),
         math45: mod.canUseFreeResponse('math', '45'),
         mathDegree: mod.canUseFreeResponse('math', '40°'),
@@ -313,7 +313,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         // Test against actual quiz questions from quiz.config.ts
         const testCases = [
           { q: 'What is 7 + 5?', correct: '12', student: '12' },
@@ -350,7 +350,7 @@ test.describe('Issue #93 — Older-Kid Math Validation (Solver Spike)', () => {
     await page.waitForFunction(() => (window as any).__gameState?.frameCount > 2, { timeout: 15000 });
 
     const results = await page.evaluate(() => {
-      return import('/math-solver.ts').then(mod => {
+      return import('/src/game/math-solver.ts').then(mod => {
         const rubric = mod.buildRubricFromQuestion('What is 10 / 3?', '3.333');
         if (!rubric) return null;
         return {

@@ -87,6 +87,20 @@ export function computeShadowOffset(sun: SunState, z: number): { dx: number; dy:
 /** Pixels sunk/raised per terrain Z level (subtle elevation). */
 export const Z_PX_PER_LEVEL = 4;
 
+/**
+ * River/water channel width in source px (drawSunkenCutFaces,
+ * drawProceduralRiverWater) -- the visible water surface spans this width,
+ * centered on the tile. drawProceduralBridgeNano's deck half-width MUST be
+ * >= half this value, or the water rendered underneath a bridge cell
+ * (terrain-cache.ts always draws the full water nano beneath a bridge, then
+ * the bridge deck on top) visibly peeks out past the deck's edges --
+ * Vision Alignment Audit "Bug 2" (2026-07-13): the deck was previously
+ * hardcoded to widthHalf=28 (56px total) while the channel is 64px, an
+ * 8px shortfall (4px per side) that read as "water under the bridge looks
+ * wrong" even though isFootprintWalkable() proved collision was correct.
+ */
+export const RIVER_CHANNEL_WIDTH = 64;
+
 const HALF_W = ISO_TILE_WIDTH / 2;   // 128
 const HALF_H = ISO_TILE_HEIGHT / 2;  // 64
 const ISO_X_PER_SOURCE_PX = HALF_W / MICRO_TILE_SIZE;
@@ -571,7 +585,7 @@ function drawSunkenCutFaces(
   connections: FeatureConnections,
   style: WaterStyle,
 ): void {
-  const channelW = 64;
+  const channelW = RIVER_CHANNEL_WIDTH;
   const off = (MICRO_TILE_SIZE - channelW) / 2;
   const lip = 5;
   const outerMin = -lip;
@@ -613,7 +627,7 @@ function drawSunkenCutFaces(
 }
 
 function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: FeatureConnections, style: WaterStyle): void {
-  const channelW = 64;
+  const channelW = RIVER_CHANNEL_WIDTH;
   const off = (MICRO_TILE_SIZE - channelW) / 2;
   const over = 30;
   const hasH = connections.left || connections.right;
@@ -810,7 +824,13 @@ function drawProceduralBridgeNano(
   const center = MICRO_TILE_SIZE / 2;
   const start = 14;
   const end = MICRO_TILE_SIZE - 14;
-  const widthHalf = 28;
+  // Deck half-width MUST be >= RIVER_CHANNEL_WIDTH/2 (32) so the deck fully
+  // covers the water nano terrain-cache.ts always draws underneath a bridge
+  // cell -- previously hardcoded to 28 (4px short per side, 8px total),
+  // which let a visible sliver of water peek out past the deck's edges
+  // (Vision Alignment Audit "Bug 2", 2026-07-13). +3px margin beyond the
+  // channel edge for anti-aliasing/rounding safety.
+  const widthHalf = RIVER_CHANNEL_WIDTH / 2 + 3;
   const archH = Math.max(18, nano.zOffset * NANO_Z_SCALE + 8);
   const segments = 10;
   const isTroll = nano.kind === 'troll-bridge';

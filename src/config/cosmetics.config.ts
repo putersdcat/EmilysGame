@@ -6,7 +6,7 @@
 
 // ─── Unlock Condition Types ─────────────────────────────────
 
-export type UnlockConditionType = 'quiz_correct' | 'wildlife_discovered' | 'quiz_answered';
+export type UnlockConditionType = 'quiz_correct' | 'wildlife_discovered' | 'quiz_answered' | 'coin_count' | 'streak_length';
 
 export interface UnlockCondition {
   type: UnlockConditionType;
@@ -80,6 +80,28 @@ export const UNLOCKABLE_COSMETICS: UnlockableCosmetic[] = [
     condition: { type: 'quiz_correct', threshold: 20 },
     hint: 'Answer 20 quizzes correctly',
   },
+
+  // ── Progression-Adjacent Unlocks (2026-07-13, Vision Alignment Audit
+  // Finding #14 residual: #116's original Phase 2/3 task list included
+  // coin-count and streak-based unlock condition types alongside
+  // quiz/wildlife ones -- only quiz_correct/quiz_answered/
+  // wildlife_discovered were ever wired up) ──
+  {
+    id: 'outfit_treasure_hunter',
+    category: 'outfitColor',
+    name: 'Treasure Hunter',
+    value: '#C9A24B',
+    condition: { type: 'coin_count', threshold: 50 },
+    hint: 'Collect 50 coins',
+  },
+  {
+    id: 'hair_streak_flame',
+    category: 'hairColor',
+    name: 'Streak Flame',
+    value: '#FF7A1A',
+    condition: { type: 'streak_length', threshold: 8 },
+    hint: 'Get an 8-answer correct streak',
+  },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -94,6 +116,10 @@ export interface ProgressionData {
   quizCorrect: number;
   quizAnswered: number;
   wildlifeDiscovered: number;
+  /** Current coin count (2026-07-13, Finding #14 residual). */
+  coins: number;
+  /** Current consecutive-correct quiz streak (2026-07-13, Finding #14 residual). */
+  streakLength: number;
 }
 
 /** Check if a single cosmetic's unlock condition is met */
@@ -105,6 +131,10 @@ export function isConditionMet(condition: UnlockCondition, progress: Progression
       return progress.quizAnswered >= condition.threshold;
     case 'wildlife_discovered':
       return progress.wildlifeDiscovered >= condition.threshold;
+    case 'coin_count':
+      return progress.coins >= condition.threshold;
+    case 'streak_length':
+      return progress.streakLength >= condition.threshold;
     default:
       return false;
   }

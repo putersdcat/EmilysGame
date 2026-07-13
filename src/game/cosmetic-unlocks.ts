@@ -27,6 +27,11 @@ export function checkCosmeticUnlocks(state: GameState): void {
     quizCorrect: state.quizStats.correct,
     quizAnswered: state.quizStats.answered,
     wildlifeDiscovered: getWildlifeStats().discovered,
+    // 2026-07-13 (Vision Alignment Audit Finding #14 residual): coin_count
+    // and streak_length unlock condition types added to match #116's
+    // original Phase 2/3 task list alongside the existing quiz/wildlife ones.
+    coins: state.inventory.countItem('coin'),
+    streakLength: state.streak.consecutiveCorrect,
   };
   const newUnlocks = checkAllUnlocks(progress, new Set(state.unlockedCosmetics));
   if (newUnlocks.length > 0) {

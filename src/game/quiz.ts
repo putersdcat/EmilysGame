@@ -11,6 +11,8 @@ import { getQuestions, type QuizQuestion, type QuizDifficulty } from '../config/
 import { WORLD_CONFIG } from '../config/game.config';
 import { rephraseQuizQuestion } from '../engine/llm';
 import { shuffle } from '../engine/utils';
+import { contentPackLoader } from '../asset-pipeline/content-loader';
+import type { QuizQuestionPack } from '../types/content-pack.types';
 
 // ─── Difficulty Scaling ──────────────────────────────────────
 
@@ -245,6 +247,44 @@ export function createQuizState(): QuizState {
   };
 }
 
+// ─── Content-Pack Question Merge ─────────────────────────────
+
+/**
+ * Convert a content-pack question to the local QuizQuestion shape.
+ * Pack questions follow the same "first answer is correct" convention as
+ * static questions (see QuizQuestionPack's own doc comment) but don't
+ * carry an explicit correctIndex field, so it's set here for parity.
+ */
+function _convertPackQuestion(pq: QuizQuestionPack): QuizQuestion {
+  return {
+    id: pq.id,
+    category: pq.category,
+    difficulty: pq.difficulty,
+    question: pq.question,
+    answers: pq.answers,
+    correctIndex: 0,
+    hint: pq.hint,
+    rephraseHint: pq.rephraseHint,
+  };
+}
+
+/**
+ * Get the full eligible question pool: static QUIZ_QUESTIONS plus any
+ * loaded content-pack questions, optionally filtered by difficulty.
+ * contentPackLoader.getQuizzes() safely returns [] before/if the pack
+ * fails to load (bootstrapAssets() awaits initBookContent(), which loads
+ * the same pack, before the game loop starts -- see asset-bootstrap.ts --
+ * so in practice this is already populated by the time a player can
+ * trigger any quiz).
+ */
+export function getMergedQuestions(difficulty?: QuizDifficulty): QuizQuestion[] {
+  const staticQuestions = getQuestions(undefined, difficulty);
+  const packQuestions = contentPackLoader
+    .filterQuizzes(difficulty ? { difficulty } : {})
+    .map(_convertPackQuestion);
+  return [...staticQuestions, ...packQuestions];
+}
+
 /**
  * Start a quiz for the given difficulty.
  * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
@@ -256,8 +296,13 @@ export async function startQuiz(
   npcId: string | null,
   categoryBias?: Record<string, number>,
 ): Promise<void> {
-  // Filter eligible questions
-  const eligible = getQuestions(undefined, difficulty);
+  // Filter eligible questions -- merges the small static in-code bank with
+  // the (much larger) content-pack question corpus loaded at bootstrap
+  // (PR #106, 420 questions). Previously this called the static-only
+  // getQuestions() directly, meaning content-pack questions were loaded
+  // into memory (and counted for age-profile stats) but never actually
+  // reachable during real gameplay -- see Docs/VisionAlignmentAudit.md.
+  const eligible = getMergedQuestions(difficulty);
 
   if (eligible.length === 0) {
     state.active = false;

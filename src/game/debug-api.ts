@@ -17,13 +17,14 @@
 
 import { ASSET_DEFS } from '../config/assets.config';
 import { BIOME_DEFS, BIOME_TRANSITION_RULES } from '../config/biomes.config';
+import { getMerchantPersonaIdForBiome } from '../config/npc.config';
 import { type AgeBand } from '../types/content-pack.types';
 import { type Iso2AssemblyId } from '../engine/iso2-assemblies';
 import { isFootprintWalkable } from '../engine/mechanics';
 import { InputManager } from './input';
 import { type GameState } from './game-state';
 import { DIARRHEA_CONFIG } from './illness';
-import { setTimeOfDay, getCycleProgress, getCurrentLighting } from '../rendering/lighting';
+import { setTimeOfDay, getCycleProgress, getCurrentLighting, getPlayedSeconds } from '../rendering/lighting';
 import { toggleFlashlight, isFlashlightOn } from '../rendering/local-lights';
 import {
   AncientStone, BleachedPaddock, CottageStoneFoundation, HazelWattle, Limestone, MudBrick,
@@ -65,7 +66,8 @@ import {
 import {
   generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES,
 } from '../asset-pipeline/npc-sprites';
-import { getStreakDebugInfo, quizSelectIndex } from './quiz';
+import { getStreakDebugInfo, quizSelectIndex, getMergedQuestions } from './quiz';
+import { getQuestions as getStaticQuestions } from '../config/quiz.config';
 import { getWaterDebugInfo } from '../engine/world/Passability';
 import { getLockKeyDebugInfo } from '../engine/world/ObstacleSolver';
 import { getPlayabilityStats } from '../engine/world/Validation';
@@ -80,11 +82,11 @@ import {
 import {
   toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, getFogDebugInfo,
 } from '../rendering/fog';
-import { getTimeSlot } from './wildlife';
+import { getTimeSlot, getDiscoveredSpeciesArray } from './wildlife';
 // B5 micro-slice 11.13 (#268): getRevealedCreatures moved to
 // ./game/wildlife-render.ts and imported directly here (DI removed).
 import { getRevealedCreatures } from './wildlife-render';
-import { getBookContentStats, isPackContentLoaded } from '../ui/book-content';
+import { getBookContentStats, isPackContentLoaded, searchBookArticles, getBookArticlesBySubject } from '../ui/book-content';
 import { toggleBook, openArticle } from './knowledge';
 import { getAgeProfileDebug, setAgeBand } from './age-profile';
 import { perfStats, getFrameBenchmark, resetFrameHistory } from '../engine/perf';
@@ -154,6 +156,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     getBiomeDefs: () => BIOME_DEFS,
     getBiomeTransitionRules: () => BIOME_TRANSITION_RULES,
     sampleBiomeTransition,
+    // Wandering-merchant biome-persona mapping (VisionAlignmentAudit.md Finding #1)
+    getMerchantPersonaIdForBiome,
     iso2BrickMaterials: { RedClinker, MudBrick, SandstoneBrick },
     iso2StoneMaterials: { AncientStone, Limestone, CottageStoneFoundation },
     iso2HomesteadMaterials: { PlasterWhitewashWall, RoughWoodPlankWall },
@@ -192,6 +196,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
       }
     },
     checkUnlocks: () => checkCosmeticUnlocks(state),
+    // NPC interaction history (VisionAlignmentAudit.md Finding #10)
+    getTalkedToNpcs: () => Array.from(state.talkedToNpcs),
     // Music helpers (#74)
     musicPlay: () => musicPlay(state.music),
     musicPause: () => musicPause(state.music),
@@ -296,6 +302,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     getTimeSlot,
     // Night mode debug (#114)
     getRevealedCreatures: () => getRevealedCreatures().size,
+    getDiscoveredSpeciesArray,
+    getPlayedSeconds,
     // Book/Knowledge debug (#118, #120)
     getKnowledgeState: () => state.knowledge,
     openBookArticle: (id: string) => openArticle(state.knowledge, id),
@@ -305,6 +313,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     },
     getBookContentStats,
     isPackContentLoaded,
+    searchBookArticles,
+    getBookArticlesBySubject,
     // Age profile debug (#92)
     getAgeProfile: () => state.ageProfile,
     getAgeProfileDebug: () => getAgeProfileDebug(state.ageProfile),
@@ -317,6 +327,9 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     },
     shouldAutoRead: () => shouldAutoRead(state),
     quizSelectIndex: (idx: number) => quizSelectIndex(state.quiz, idx),
+    // Merged (static + content-pack) quiz pool (VisionAlignmentAudit.md gap fix)
+    getMergedQuestions,
+    getStaticQuestions,
     // Outhouse/hygiene debug (#110)
     startHygieneQuiz: () => startHygieneQuiz(state),
     getHygieneQuizActive: () => state._hygieneQuiz === true,

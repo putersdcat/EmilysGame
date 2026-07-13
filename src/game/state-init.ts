@@ -39,7 +39,21 @@ import { createStreakState } from './quiz';
 import { createAgeProfile } from './age-profile';
 import { createInitialDiarrheaState } from './illness';
 import { setPendingResolvedCells, ensureChunksAround } from './chunk-lifecycle';
+import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
 import type { AgeBand } from '../types/content-pack.types';
+// Save-fidelity parity fix (Docs/VisionAlignmentAudit.md Finding #10):
+// these restorations already existed in save-apply.ts's applySaveData
+// (used by the manual save-slot-load UI) but were silently missing from
+// this file's own inline restore-on-startup path, meaning a normal
+// close-and-reopen auto-resume lost wildlife discovery, survival status,
+// injury state, quiz streak history, and cumulative playtime -- even
+// though all of it was correctly saved and correctly restored via the
+// OTHER path.
+import { restoreDiscoveredSpecies } from './wildlife';
+import { deserializeStatus, resetTickCounter } from './status';
+import { deserializeInjury } from './injury';
+import { recordQuizResult } from './quiz';
+import { setPlayedSeconds } from '../rendering/lighting';
 
 // ─── Starter inventory for new games (#109) ─────────────────
 const STARTER_INVENTORY: ReadonlyArray<{ itemId: string; quantity: number }> = [
@@ -152,6 +166,38 @@ export function createInitialState(): InitialStateResult {
     if (save.ageBand) {
       setAgeBand(state.ageProfile, save.ageBand as AgeBand);
     }
+    // Restore NPC interaction history (Finding #10)
+    if (save.talkedToNpcs) state.talkedToNpcs = new Set(save.talkedToNpcs);
+    // Restore discovered wildlife (#68) -- previously missing from this
+    // path, see the import comment above for why this matters.
+    if (save.discoveredWildlife) {
+      restoreDiscoveredSpecies(save.discoveredWildlife);
+    }
+    // Restore survival status (#70) -- previously missing from this path.
+    if (save.playerStatus) {
+      state.status = deserializeStatus(save.playerStatus);
+      resetTickCounter();
+    }
+    // Restore injury state (#109) -- previously missing from this path.
+    if (save.injuryState) {
+      state.injury = deserializeInjury(save.injuryState);
+    }
+    // Restore quiz streak history (#103) -- previously missing from this path.
+    if (save.streakHistory) {
+      state.streak = createStreakState();
+      for (const outcome of save.streakHistory) {
+        recordQuizResult(state.streak, outcome);
+      }
+    }
+    // Restore cumulative playtime (#136) -- previously missing from this path.
+    if (save.playedSeconds != null) {
+      setPlayedSeconds(save.playedSeconds);
+    }
+    // Restore touch control visibility mode (#144) -- previously missing
+    // from this path.
+    if (save.touchControlMode) {
+      localStorage.setItem('emilys_game_touch_vis', save.touchControlMode);
+    }
   }
 
   // Give starter items for new games (#109)
@@ -166,6 +212,28 @@ export function createInitialState(): InitialStateResult {
 
   // Generate initial chunks
   ensureChunksAround(state);
+
+  // Guarantee the player's resolved spawn/resume position is never a
+  // softlock (2026-07-09, user-reported live bug with real LLM entropy
+  // enabled): unlike a brand-new game (fixed PLAYER_CONFIG.startPosition,
+  // safe-zone-cleared for chunk (0,0) by ensureSpawnClearance), a RESUMED
+  // save can land anywhere, in any chunk, and chunks are regenerated (not
+  // persisted) from the save's seed/entropy state on every load. Real LLM
+  // entropy expansion is not perfectly reproducible run-to-run (sampling
+  // variance), so the freshly-regenerated chunk around the saved position
+  // can differ from what was there when the game was saved -- occasionally
+  // dropping an obstacle exactly where the player was standing.
+  //
+  // Rather than mutating world content (which cell would even be "safe" to
+  // force-clear is unknowable here, unlike the fixed chunk-(0,0) case), we
+  // let the player stand -- visibly elevated above the obstruction -- and
+  // bypass collision until they take a step onto genuinely walkable
+  // ground, at which point normal collision resumes immediately. See
+  // `handleMovement` in main.ts for the resolution side of this.
+  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+    state.player.spawnEscape = true;
+    state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+  }
 
   return { state, hasSaveData: !!save };
 }

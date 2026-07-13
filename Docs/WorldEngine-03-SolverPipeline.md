@@ -209,6 +209,56 @@ If the solver encounters a contradiction it cannot resolve through targeted repl
 
 No macro assembly solver exists. The current engine generates chunks cell-by-cell using Perlin noise, then stamps 0–3 random world unit templates at non-overlapping positions without edge constraint checking. The target solver would replace this approach entirely for macro-tile-aligned generation, with the Perlin fill serving as the degraded fallback.
 
+*(Note, 2026-07-09: this status paragraph is now partially stale — a real AC-3 world-unit
+grid solver, `solveWorldUnitGrid` in `src/engine/world/WorldUnitSolver.ts`, exists and is
+wired into every chunk generation. It implements the bulk of Steps 1–5 above. See
+`ARCHITECTURE.md` §6 for the current, actively-maintained phase-by-phase status table —
+treat this document's own "Current Implementation Status" prose, here and elsewhere, as a
+hypothesis to verify against real source, not as ground truth.)*
+
+### 6.7 Distinct from: the Composite Assembly Sub-Solver
+
+Solver C above is the **generic, per-slot** world-unit filler — it works one 5×5 grid
+position at a time, from the full world-unit template library, governed by constraint
+propagation and mood weighting. It is deliberately **not** the mechanism responsible for
+assembling large, recognizable, multi-slot *composite scenes* (a homestead with a fence
+and gate, a general store, a coherent pond/lake) — LLM entropy and per-slot AC-3
+selection are scoped to regional variety and small-feature chains (rivers, walls, paths),
+not to improvising whole named structures nano-tile-by-nano-tile. (Clarified 2026-07-10.)
+
+For a *known* composite scene, the intended flow is a **separate delegation**, not a
+bigger/smarter version of Solver C:
+
+1. Some upstream decision (the world-unit solver's own placement logic, or the macro
+   tile's population step) determines that a footprint within the macro tile needs a
+   scene of a specific **type**, at a specific **footprint**, in a specific **biome
+   style**, with specific **parameters** (e.g. a gate's facing direction).
+2. That "recipe" is handed to a **Composite Assembly Sub-Solver** — a registry of
+   pre-authored, hand-tuned templates keyed by scene type (analogous to how world unit
+   templates are pre-authored and edge-tagged, just at a larger, named-scene grain).
+3. The sub-solver selects the template matching the recipe, resolves it against the
+   requested biome/style/orientation parameters, and stamps the *entire* footprint's
+   micro/nano cells in one atomic operation.
+4. The macro/world-unit solver treats the filled footprint as a single opaque unit
+   afterward (same as it treats a single world-unit template today) — it does not
+   second-guess or re-solve the composite's interior.
+
+This generalizes an **already-existing** mechanism: `stampIso2Assembly`
+(`src/engine/iso2-assemblies.ts`, currently supporting `'homestead-small'` and
+`'ruined-cathedral'`), called today from `stampStarterHomestead` (a fixed spawn-safe
+assembly) and `maybePlaceCastleLandmark` (a probabilistic castle-biome landmark). Neither
+caller today reserves its footprint *before* Solver C runs — they overwrite whatever
+Solver C already placed there, relying on the later passability/playability passes (Phase
+8/9) as a safety net. Formalizing a true up-front reservation handoff (Solver C excludes
+the footprint from its own candidate pool entirely, rather than a post-hoc overwrite) is
+future work, not yet built.
+
+This directly reframes the Vision Alignment Audit's Finding #3 (river-heavy mood's
+emergent water lattice, see repo memory `iso2-portback-plan.md`'s "Bug 3" entry): the
+appropriate fix is most likely a coherent **pond/lake composite template** requested
+explicitly via this mechanism, not smarter per-slot AC-3 candidate weighting (which was
+measured and found insufficient — see that same memory entry for the data).
+
 ---
 
 ## 7. Phase 5: Micro Fill and Auto-Tiling

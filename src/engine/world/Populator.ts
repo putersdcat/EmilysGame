@@ -32,6 +32,7 @@ import { type BiomeDef } from '../../config/biomes.config';
 import { type RotatedTemplate } from '../../config/tiles.config';
 import type { CellData } from '../../types/game.types';
 import { countWalkableNeighbors } from './GridUtils';
+import { getMerchantPersonaIdForBiome } from '../../config/npc.config';
 // B3 micro-slice 8.6 (#253): WU_SIZE + GRID_DIM are now sourced from
 // WorldGrid.ts (single source of truth shared with gen.ts and
 // WorldUnitSolver.ts). Populator uses WU_SIZE for the per-template
@@ -100,6 +101,13 @@ export function populateAnchors(
 ): void {
   // #104: Track which world-unit slots already have an NPC placed
   const npcPlacedInUnit = new Set<string>();
+  // Merchant spacing (WorldEngine-05 §4.1: "at least one macro tile between
+  // merchants"): macro tiles don't exist as a spatial unit yet (see
+  // VisionAlignmentAudit.md Finding #3), so this approximates the same
+  // intent at the next-best available granularity -- at most one wandering
+  // npc_merchant per chunk (populateAnchors is always called once per
+  // chunk). Object wrapper so nested placeNpcAtCell calls can mutate it.
+  const merchantTracker = { placed: false };
   // Debug counters
   let npcAttempts = 0;
   let npcPlaced = 0;
@@ -131,7 +139,7 @@ export function populateAnchors(
               npcDropped++;
               break;
             }
-            if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty)) {
+            if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty, merchantTracker)) {
               npcPlacedInUnit.add(unitKey);
               npcPlaced++;
             }
@@ -150,7 +158,7 @@ export function populateAnchors(
           case 'quest':
             // Merchant/quest anchors place NPCs when supported
             if (!npcPlacedInUnit.has(unitKey)) {
-              if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty)) {
+              if (placeNpcAtCell(cells, cx, cy, biome, rng, difficulty, merchantTracker)) {
                 npcPlacedInUnit.add(unitKey);
                 npcPlaced++;
               }
@@ -178,6 +186,7 @@ function placeNpcAtCell(
   cells: CellData[][], cx: number, cy: number,
   biome: BiomeDef, rng: () => number,
   difficulty?: DifficultyProfile,
+  merchantTracker?: { placed: boolean },
 ): boolean {
   // Respect biome NPC rate (skip some NPCs at random)
   if (rng() > biome.npcRate * 0.3) return false; // ~30% chance per anchor × npcRate
@@ -199,22 +208,39 @@ function placeNpcAtCell(
   // 4. Otherwise → biome pool
   let npcAsset: string;
 
+  const merchantAvailable = !merchantTracker?.placed;
+
   if (isNearGate(cells, cx, cy, size)) {
     // Guards at gates — always
     npcAsset = 'npc_guardian';
   } else if (rng() < guardianRatio) {
     // Difficulty-scaled guardian spawn — more guardians at higher difficulty
     npcAsset = 'npc_guardian';
-  } else if (walkableNeighbors >= 3) {
-    // Merchants at junctions (3+ passable directions = junction)
+  } else if (walkableNeighbors >= 3 && merchantAvailable) {
+    // Merchants at junctions (3+ passable directions = junction).
+    // Gated on merchantAvailable so at most one wandering merchant spawns
+    // per chunk (see merchantTracker comment in populateAnchors above).
     npcAsset = 'npc_merchant';
   } else {
-    // Standard biome pool selection
+    // Standard biome pool selection. Exclude npc_merchant from the pool
+    // once this chunk already has one, so the random pick can't sneak a
+    // second one in via the biome pool path.
     const pool = BIOME_NPC_POOL[biome.name] ?? ['npc_villager'];
-    npcAsset = pool[Math.floor(rng() * pool.length)];
+    const candidates = merchantAvailable ? pool : pool.filter((a) => a !== 'npc_merchant');
+    const finalPool = candidates.length ? candidates : pool; // never produce an empty pool
+    npcAsset = finalPool[Math.floor(rng() * finalPool.length)];
   }
 
-  const npcId = NPC_ID_MAP[npcAsset] ?? 'villager_default';
+  if (npcAsset === 'npc_merchant' && merchantTracker) merchantTracker.placed = true;
+
+  // Wandering merchants get a biome-specific persona/inventory (WorldEngine-05
+  // §4.1 gap fix); every other NPC type uses the flat asset->persona map,
+  // since those personas are already biome-distinct via BIOME_NPC_POOL's
+  // per-biome pool composition (farmer/ranger/miner/knight etc. only ever
+  // appear in their own biome's pool).
+  const npcId = npcAsset === 'npc_merchant'
+    ? getMerchantPersonaIdForBiome(biome.name)
+    : (NPC_ID_MAP[npcAsset] ?? 'villager_default');
 
   cells[cy][cx] = {
     assetKey: npcAsset,
