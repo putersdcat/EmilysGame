@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => ({
     // Proxy LLM API to avoid CORS in dev mode
     proxy: {
       '/api/llm': {
-        target: 'http://127.0.0.1:8000',
+        target: 'http://127.0.0.1:8005',
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/llm/, ''),
       },
