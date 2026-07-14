@@ -944,7 +944,46 @@ if (justKeys.interact && !state.player.isMoving) {
       facingDir, state.chunks, state.inventory,
     );
 
-    // Fallback: try all 4 cardinal neighbors if facing dir had nothing
+    // Fallback #1 (2026-07-13, gameplay-feel audit): this game's
+    // screen-relative movement (input.ts's getMovementVector — a 45°
+    // rotation converts screen intent to isometric grid-space, see its
+    // own doc comment) means a SINGLE arrow key produces a DIAGONAL grid
+    // facing (e.g. facingDx=1,facingDy=-1) — never pure-cardinal from one
+    // key alone. Obstacles (gates/fences/walls) are always cardinal-aligned
+    // single cells, so a diagonal facing aims BETWEEN two real candidate
+    // cells and can miss both of them (and the old 4-cardinal fallback
+    // below, which fires from the player's raw position, not from the
+    // facing direction's components). Decompose a diagonal facing into its
+    // two cardinal components and try those first — this is exactly the
+    // scenario a real player creates by holding one arrow key into a gate
+    // and pressing Space. See
+    // tests/gameplay/gate-interaction-after-natural-collision.spec.ts,
+    // which reproduces this failing without this fallback tier.
+    if (result.type === 'none' && facingDir.dx !== 0 && facingDir.dy !== 0) {
+      const components = [
+        { dx: facingDir.dx, dy: 0 },
+        { dx: 0, dy: facingDir.dy },
+      ];
+      for (const d of components) {
+        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
+        if (result.type !== 'none') break;
+      }
+    }
+
+    // Fallback #1b: the player's collision footprint (PLAYER_CONFIG
+    // .collisionHalfW/H = 0.3) can rest close enough to a blocked cell that
+    // the CENTER point itself rounds INTO that cell's own coordinates (the
+    // footprint's leading corner is what's actually stopped, not the
+    // center) — e.g. resting at x=12.6 against a wall at cell 13 rounds to
+    // 13, not 12. In that case the obstacle isn't a "neighbor" at all by
+    // any facing/offset check above — it's the player's own nominal
+    // current cell. Check that directly before the generic fallback.
+    if (result.type === 'none') {
+      result = interact(state.player.x, state.player.y, { dx: 0, dy: 0 }, state.chunks, state.inventory);
+    }
+
+    // Fallback #2: try all 4 cardinal neighbors if facing dir (+ its
+    // diagonal components) had nothing — last-resort catch-all.
     if (result.type === 'none') {
       const dirs = [
         { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
