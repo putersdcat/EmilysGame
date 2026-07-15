@@ -101,7 +101,7 @@ export function layCoinTrails(
       const cell = cells[y][x];
       if (cell.assetKey === 'chest' || cell.assetKey === 'sign' ||
           cell.npcId || cell.assetKey === 'door_locked' ||
-          cell.assetKey === 'toll_gate') {
+          cell.assetKey === 'toll_gate' || cell.assetKey === 'quiz_gate') {
         targets.push({ x, y });
       }
     }

@@ -68,6 +68,8 @@ export { enforcePassability, getWaterDebugInfo } from './world/Passability';
 // --- Obstacle Solver + Lock-Key DAG ---
 export {
   placeQuizGates,
+  sealTrivialQuizGateBypasses,
+  ensureMinimumQuizGates,
   placeBonfires,
   placeGatesInFenceRuns,
   promoteDoorGates,

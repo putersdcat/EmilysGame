@@ -52,6 +52,8 @@ export { enforcePassability, getWaterDebugInfo } from './Passability';
 // --- Obstacle Solver (slice 7) ---
 export {
   placeQuizGates,
+  sealTrivialQuizGateBypasses,
+  ensureMinimumQuizGates,
   placeBonfires,
   placeGatesInFenceRuns,
   promoteDoorGates,

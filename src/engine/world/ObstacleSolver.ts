@@ -9,7 +9,10 @@
  *
  * Public API (re-exported from gen.ts):
  *   - placeQuizGates          (Phase 5.4)  — convert some gate assets to
- *     quiz_gate + place standalone quiz gates at chokepoints (#43)
+ *     quiz_gate + place standalone quiz gates at chokepoints (#43);
+ *     prefers local cut-points on main corridors (Phase A unavoidability)
+ *   - sealTrivialQuizGateBypasses (Phase 5.43) — close short walk-arounds
+ *     around quiz_gates so they force engagement (Docs/13 §2 #1)
  *   - placeBonfires           (Phase 5.45) — 1-3 bonfires per chunk for
  *     night-time local lighting, biome-weighted fire variants (#67, #81)
  *   - placeGatesInFenceRuns   (Phase 5.42) — punch quiz_gate into fence
@@ -130,12 +133,157 @@ export function addExtraObstacles(
   }
 }
 
+// --- Quiz-gate unavoidability helpers (Phase A, 2026-07-15) ---
+// Flat-2D graph only: a quiz_gate is "unavoidable" when its walkable
+// cardinal neighbors fall into ≥2 connected components if the gate cell
+// is treated as blocked. Placement prefers local cut-points on corridors
+// from chunk entries; sealTrivialQuizGateBypasses repairs leftover short
+// detours after fence-run punches (Docs/13 §2 #1, Next-Engine Phase 1).
+
+const CARDINAL_DX = [1, 0, -1, 0];
+const CARDINAL_DY = [0, 1, 0, -1];
+const SIMPLE_TERRAIN = new Set(['grass', 'dirt', 'sand', 'stone_floor', 'path']);
+
+function walkableCardinalNeighbors(
+  cells: CellData[][],
+  x: number,
+  y: number,
+  size: number,
+  /** If set, this cell is treated as non-walkable (e.g. candidate gate). */
+  treatBlocked?: { x: number; y: number },
+): Array<{ x: number; y: number }> {
+  const out: Array<{ x: number; y: number }> = [];
+  for (let i = 0; i < 4; i++) {
+    const nx = x + CARDINAL_DX[i];
+    const ny = y + CARDINAL_DY[i];
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+    if (treatBlocked && nx === treatBlocked.x && ny === treatBlocked.y) continue;
+    if (!cells[ny][nx].walkable) continue;
+    out.push({ x: nx, y: ny });
+  }
+  return out;
+}
+
+/** True if treating (cx,cy) as blocked splits its walkable neighbors into ≥2 components. */
+function wouldBeLocalCutPoint(
+  cells: CellData[][],
+  cx: number,
+  cy: number,
+  size: number,
+): boolean {
+  const nbrs = walkableCardinalNeighbors(cells, cx, cy, size);
+  if (nbrs.length < 2) return false;
+
+  const key = (x: number, y: number) => y * size + x;
+  const seen = new Uint8Array(size * size);
+  const qx = [nbrs[0].x];
+  const qy = [nbrs[0].y];
+  seen[key(nbrs[0].x, nbrs[0].y)] = 1;
+  let head = 0;
+  while (head < qx.length) {
+    const x = qx[head];
+    const y = qy[head];
+    head++;
+    for (let i = 0; i < 4; i++) {
+      const nx = x + CARDINAL_DX[i];
+      const ny = y + CARDINAL_DY[i];
+      if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+      if (nx === cx && ny === cy) continue; // never step through candidate gate
+      if (!cells[ny][nx].walkable) continue;
+      const k = key(nx, ny);
+      if (seen[k]) continue;
+      seen[k] = 1;
+      qx.push(nx);
+      qy.push(ny);
+    }
+  }
+  for (let i = 1; i < nbrs.length; i++) {
+    if (!seen[key(nbrs[i].x, nbrs[i].y)]) return true; // at least one nbr unreachable → cut
+  }
+  return false;
+}
+
+/**
+ * Multi-source BFS from chunk mid-edge entries. Higher values = more
+ * "main corridor" traffic. Used only to bias placement scores.
+ */
+function buildCorridorTraffic(cells: CellData[][], size: number): Float32Array {
+  const traffic = new Float32Array(size * size);
+  const mid = Math.floor(size / 2);
+  const seeds: Array<{ x: number; y: number }> = [
+    { x: mid, y: 0 },
+    { x: mid, y: size - 1 },
+    { x: 0, y: mid },
+    { x: size - 1, y: mid },
+  ];
+  // Also seed any walkable border cell every ~size/4 for broader coverage
+  for (let i = 0; i < size; i += Math.max(4, Math.floor(size / 4))) {
+    seeds.push({ x: i, y: 0 }, { x: i, y: size - 1 }, { x: 0, y: i }, { x: size - 1, y: i });
+  }
+
+  for (const seed of seeds) {
+    if (!cells[seed.y]?.[seed.x]?.walkable) {
+      // Nudge seed to nearest walkable on that edge
+      let found = false;
+      for (let d = 0; d < size && !found; d++) {
+        for (const [ox, oy] of [[d, 0], [-d, 0], [0, d], [0, -d]] as const) {
+          const sx = seed.x + ox, sy = seed.y + oy;
+          if (sx < 0 || sy < 0 || sx >= size || sy >= size) continue;
+          // Keep seed on the same edge when possible
+          if (seed.y === 0 && sy !== 0) continue;
+          if (seed.y === size - 1 && sy !== size - 1) continue;
+          if (seed.x === 0 && sx !== 0) continue;
+          if (seed.x === size - 1 && sx !== size - 1) continue;
+          if (cells[sy][sx].walkable) {
+            seed.x = sx; seed.y = sy; found = true; break;
+          }
+        }
+      }
+      if (!found) continue;
+    }
+
+    const dist = new Int16Array(size * size);
+    dist.fill(-1);
+    const qx = [seed.x], qy = [seed.y];
+    dist[seed.y * size + seed.x] = 0;
+    let head = 0;
+    while (head < qx.length) {
+      const x = qx[head], y = qy[head];
+      head++;
+      const d = dist[y * size + x];
+      // Weight nearer cells more (corridor core near entries)
+      traffic[y * size + x] += Math.max(0, 40 - d);
+      if (d >= 40) continue;
+      for (let i = 0; i < 4; i++) {
+        const nx = x + CARDINAL_DX[i], ny = y + CARDINAL_DY[i];
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        if (!cells[ny][nx].walkable) continue;
+        const k = ny * size + nx;
+        if (dist[k] >= 0) continue;
+        dist[k] = d + 1;
+        qx.push(nx); qy.push(ny);
+      }
+    }
+  }
+  return traffic;
+}
+
+function pickSealAsset(biome: BiomeDef): string {
+  // Prefer fence in open biomes, wall in built-up ones (asset keys from assets.config)
+  if (biome.name === 'castle' || biome.name === 'cave') return 'wall';
+  return 'fence';
+}
+
 /**
  * Phase 5.4: Quiz Gate Placement (#43)
  * Templates produce door_gate / door_locked / toll_gate cells, but never quiz_gate.
  * This phase converts some existing gate cells to quiz_gate based on biome weight,
  * AND places standalone quiz gates at chokepoints when biome config warrants it.
  * Runs after anchor population so it can see the full gate picture.
+ *
+ * Phase A (2026-07-15): standalone placement prefers local cut-points on
+ * main corridors (entry BFS traffic) so gates force engagement rather than
+ * sitting in open terrain with trivial walk-arounds (Docs/13 §2 #1).
  */
 export function placeQuizGates(
   cells: CellData[][],
@@ -145,7 +293,7 @@ export function placeQuizGates(
   difficulty?: DifficultyProfile,
 ): void {
   const weight = biome.obstacleWeights['quiz_gate'] ?? 0;
-  if (weight <= 0) return; // e.g. meadow has no quiz gates
+  if (weight <= 0) return;
 
   // Difficulty-scaled quiz frequency: at higher difficulty, spawn more quiz gates
   const quizFreqMult = difficulty?.quizGateFrequency ?? 1.0;
@@ -153,11 +301,14 @@ export function placeQuizGates(
 
   // --- Strategy 1: Convert some existing gate-type obstacles to quiz_gate ---
   const CONVERTIBLE_GATES = ['door_gate', 'door_locked', 'toll_gate'];
-  const existingGates: Array<{ x: number; y: number }> = [];
+  const existingGates: Array<{ x: number; y: number; cut: boolean }> = [];
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (CONVERTIBLE_GATES.includes(cells[y][x].assetKey)) {
-        existingGates.push({ x, y });
+        // Existing gates are already non-walkable; cut-point uses current graph
+        // (neighbors already cannot step through the gate cell).
+        const cut = wouldBeLocalCutPoint(cells, x, y, size);
+        existingGates.push({ x, y, cut });
       }
     }
   }
@@ -169,11 +320,8 @@ export function placeQuizGates(
   ) + effectiveWeight;
   const conversionRate = Math.min(0.6, effectiveWeight / Math.max(totalGateWeight, 0.01));
 
-  // Shuffle existing gates and convert first N
-  for (let i = existingGates.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [existingGates[i], existingGates[j]] = [existingGates[j], existingGates[i]];
-  }
+  // Prefer converting cut-point gates first (more likely unavoidable)
+  existingGates.sort((a, b) => (b.cut ? 1 : 0) - (a.cut ? 1 : 0) || rng() - 0.5);
   const numToConvert = Math.max(0, Math.round(existingGates.length * conversionRate));
   for (let i = 0; i < numToConvert; i++) {
     const g = existingGates[i];
@@ -192,9 +340,11 @@ export function placeQuizGates(
   const remaining = Math.max(0, targetTotal - alreadyPlaced);
   if (remaining <= 0) return;
 
-  // Find chokepoint candidates: walkable cells with ≤ 2 walkable neighbors
-  // and at least 1 non-walkable neighbor (natural bottleneck)
-  const candidates: Array<{ x: number; y: number; score: number }> = [];
+  const traffic = buildCorridorTraffic(cells, size);
+
+  // Find chokepoint candidates: walkable cells with 2-3 walkable neighbors.
+  // Prefer local cut-points on high-traffic corridors (Phase A).
+  const candidates: Array<{ x: number; y: number; score: number; cut: boolean }> = [];
   for (let y = 1; y < size - 1; y++) {
     for (let x = 1; x < size - 1; x++) {
       const cell = cells[y][x];
@@ -206,8 +356,15 @@ export function placeQuizGates(
       const walkable = countWalkableNeighbors(cells, x, y, size);
       if (walkable < 2 || walkable > 3) continue; // 2-3 = corridor/chokepoint
 
-      // Score: prefer cells at corridor ends (fewer walkable neighbors = better gate spot)
-      candidates.push({ x, y, score: 4 - walkable + rng() * 0.5 });
+      const cut = wouldBeLocalCutPoint(cells, x, y, size);
+      const corridor = traffic[y * size + x] / 40; // ~0..N seed contributions
+      // Score: cut-points first, then corridor traffic, then tighter chokepoints
+      const score =
+        (cut ? 100 : 0) +
+        corridor * 2 +
+        (4 - walkable) +
+        rng() * 0.5;
+      candidates.push({ x, y, score, cut });
     }
   }
 
@@ -234,6 +391,203 @@ export function placeQuizGates(
       interactable: true,
     };
     placed++;
+  }
+}
+
+/**
+ * Phase 5.43: Seal trivial walk-arounds around existing quiz_gates.
+ *
+ * After placeQuizGates + placeGatesInFenceRuns, some gates still sit where a
+ * short detour reconnects both sides. For each bypassable quiz_gate with a
+ * short neighbor-to-neighbor path, place a single biome-appropriate barrier
+ * on the detour so the gate becomes a local cut-point — without a full
+ * re-solve. Skips seals that would fail the cut-point check or land on
+ * non-simple terrain / occupied cells.
+ *
+ * Called from ChunkGenerator after fence-run punches (Docs/13 §2 #1).
+ */
+export function sealTrivialQuizGateBypasses(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+): void {
+  const sealAsset = pickSealAsset(biome);
+  const MAX_BYPASS_LEN = 8; // only seal short detours (baseline mean was ~6.8)
+  const gates: Array<{ x: number; y: number }> = [];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (cells[y][x].assetKey === 'quiz_gate') gates.push({ x, y });
+    }
+  }
+
+  for (const g of gates) {
+    // Already a cut-point? leave alone
+    if (wouldBeLocalCutPoint(cells, g.x, g.y, size)) continue;
+
+    const nbrs = walkableCardinalNeighbors(cells, g.x, g.y, size);
+    if (nbrs.length < 2) continue;
+
+    // Find a short path between the first neighbor and any other (bypass)
+    const start = nbrs[0];
+    let bestPath: Array<{ x: number; y: number }> | null = null;
+
+    for (let ni = 1; ni < nbrs.length; ni++) {
+      const goal = nbrs[ni];
+      // BFS with parent pointers; never through the gate
+      const parent = new Int32Array(size * size);
+      parent.fill(-1);
+      const qx = [start.x], qy = [start.y];
+      const startK = start.y * size + start.x;
+      parent[startK] = startK; // self
+      let head = 0;
+      let foundK = -1;
+      while (head < qx.length) {
+        const x = qx[head], y = qy[head];
+        head++;
+        if (x === goal.x && y === goal.y) {
+          foundK = y * size + x;
+          break;
+        }
+        for (let i = 0; i < 4; i++) {
+          const nx = x + CARDINAL_DX[i], ny = y + CARDINAL_DY[i];
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          if (nx === g.x && ny === g.y) continue;
+          if (!cells[ny][nx].walkable) continue;
+          const k = ny * size + nx;
+          if (parent[k] >= 0) continue;
+          parent[k] = y * size + x;
+          qx.push(nx); qy.push(ny);
+        }
+      }
+      if (foundK < 0) continue;
+
+      // Rebuild path
+      const path: Array<{ x: number; y: number }> = [];
+      let cur = foundK;
+      const guard = size * size + 1;
+      let steps = 0;
+      while (steps++ < guard) {
+        const px = cur % size, py = (cur / size) | 0;
+        path.push({ x: px, y: py });
+        if (parent[cur] === cur) break;
+        cur = parent[cur];
+        if (cur < 0) break;
+      }
+      path.reverse();
+      if (path.length - 1 > MAX_BYPASS_LEN) continue;
+      if (!bestPath || path.length < bestPath.length) bestPath = path;
+    }
+
+    if (!bestPath || bestPath.length < 3) {
+      // Try perpendicular seal: if N-S corridor, plug E/W open cells beside gate
+      const hasN = nbrs.some(n => n.x === g.x && n.y === g.y - 1);
+      const hasS = nbrs.some(n => n.x === g.x && n.y === g.y + 1);
+      const hasE = nbrs.some(n => n.x === g.x + 1 && n.y === g.y);
+      const hasW = nbrs.some(n => n.x === g.x - 1 && n.y === g.y);
+      const trySeal = (sx: number, sy: number) => {
+        if (sx < 0 || sy < 0 || sx >= size || sy >= size) return false;
+        const cell = cells[sy][sx];
+        if (!cell.walkable || cell.itemId || cell.npcId) return false;
+        if (!SIMPLE_TERRAIN.has(cell.assetKey)) return false;
+        // Tentatively seal
+        const prev = { ...cell };
+        cells[sy][sx] = { assetKey: sealAsset, walkable: false, interactable: false };
+        const ok = wouldBeLocalCutPoint(cells, g.x, g.y, size);
+        if (!ok) {
+          cells[sy][sx] = prev;
+          return false;
+        }
+        return true;
+      };
+      if (hasN && hasS) {
+        trySeal(g.x + 1, g.y);
+        trySeal(g.x - 1, g.y);
+      } else if (hasE && hasW) {
+        trySeal(g.x, g.y + 1);
+        trySeal(g.x, g.y - 1);
+      }
+      continue;
+    }
+
+    // Seal one interior cell on the shortest bypass (not endpoints = gate nbrs)
+    const interior = bestPath.slice(1, -1);
+    // Shuffle lightly for variety while remaining seeded
+    for (let i = interior.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [interior[i], interior[j]] = [interior[j], interior[i]];
+    }
+    // Prefer cells closer to the gate (Manhattan)
+    interior.sort((a, b) =>
+      (Math.abs(a.x - g.x) + Math.abs(a.y - g.y)) - (Math.abs(b.x - g.x) + Math.abs(b.y - g.y))
+    );
+
+    for (const spot of interior) {
+      const cell = cells[spot.y][spot.x];
+      if (!cell.walkable || cell.itemId || cell.npcId) continue;
+      if (!SIMPLE_TERRAIN.has(cell.assetKey)) continue;
+      // Don't seal another quiz_gate or existing lock
+      if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'door_locked') continue;
+
+      const prev = { assetKey: cell.assetKey, walkable: cell.walkable, interactable: cell.interactable, itemId: cell.itemId, npcId: cell.npcId };
+      cells[spot.y][spot.x] = { assetKey: sealAsset, walkable: false, interactable: false };
+      if (wouldBeLocalCutPoint(cells, g.x, g.y, size)) {
+        break; // sealed successfully
+      }
+      // Revert and try next
+      cells[spot.y][spot.x] = {
+        assetKey: prev.assetKey,
+        walkable: prev.walkable,
+        interactable: prev.interactable,
+        itemId: prev.itemId,
+        npcId: prev.npcId,
+      };
+    }
+  }
+}
+
+/**
+ * Phase 5.44: Guarantee at least one quiz_gate in a chunk that has quiz
+ * content enabled, so leaving spawn always surfaces the core loop even
+ * when random placement + fence runs produced zero gates.
+ */
+export function ensureMinimumQuizGates(
+  cells: CellData[][],
+  size: number,
+  biome: BiomeDef,
+  rng: () => number,
+  minCount = 1,
+): void {
+  if ((biome.obstacleWeights['quiz_gate'] ?? 0) <= 0) return;
+  let count = 0;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (cells[y][x].assetKey === 'quiz_gate') count++;
+    }
+  }
+  if (count >= minCount) return;
+
+  const traffic = buildCorridorTraffic(cells, size);
+  const candidates: Array<{ x: number; y: number; score: number }> = [];
+  for (let y = 2; y < size - 2; y++) {
+    for (let x = 2; x < size - 2; x++) {
+      const cell = cells[y][x];
+      if (!cell.walkable || cell.itemId || cell.npcId) continue;
+      if (!['grass', 'dirt', 'sand', 'stone_floor'].includes(cell.assetKey)) continue;
+      const n = countWalkableNeighbors(cells, x, y, size);
+      if (n < 2 || n > 3) continue;
+      const cut = wouldBeLocalCutPoint(cells, x, y, size);
+      candidates.push({
+        x, y,
+        score: (cut ? 50 : 0) + traffic[y * size + x] + (4 - n) + rng() * 0.3,
+      });
+    }
+  }
+  candidates.sort((a, b) => b.score - a.score);
+  for (const c of candidates) {
+    if (count >= minCount) break;
+    cells[c.y][c.x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
+    count++;
   }
 }
 

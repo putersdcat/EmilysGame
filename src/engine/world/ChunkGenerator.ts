@@ -62,6 +62,8 @@ import { populateAnchors, clusterDecorations } from './Populator';
 import { enforcePassability } from './Passability';
 import {
   placeQuizGates,
+  sealTrivialQuizGateBypasses,
+  ensureMinimumQuizGates,
   placeBonfires,
   placeGatesInFenceRuns,
   promoteDoorGates,
@@ -245,24 +247,23 @@ function generateGridChunk(
   populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200), difficulty);
   clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist, difficulty);
   scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist, difficulty);
-  layCoinTrails(cells, size, seededRandom(featureSeed + 450));
 
-  // Phase 5.4: place quiz gates — convert some door_gate cells to quiz_gate (#43)
-  placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
-
-  // Phase 5.42: place gates at fence run openings for #223 conditional walk (AUTONOMOUS_LOOP.md).
-  // Scans horiz/vert runs of fence assets (>=3), punches quiz_gate (conditional via woodenGateNano + iso2-solver isPointWalkableInTile/buildWalkableMap).
-  // Complements template gates; creates openings in perimeters/fence lines. Default locked.
-  // Skip for very central starting chunks (using chunkX/chunkY) so the player can move freely at game start (playability).
-  // Features will appear in nearby chunks for exploration and the live gate/quiz mechanics per AUTONOMOUS_LOOP.md.
-  if (Math.abs(chunkX) > 1 || Math.abs(chunkY) > 1) {
+  // Phase 5.4–5.44: quiz/gate progression — skip entirely on origin so the
+  // starter homestead stays free to explore; every other chunk teaches the loop.
+  if (chunkX !== 0 || chunkY !== 0) {
+    placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
     placeGatesInFenceRuns(cells, size, seededRandom(featureSeed + 472), biome);
+    sealTrivialQuizGateBypasses(cells, size, biome, seededRandom(featureSeed + 473));
+    ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 474), 1);
   }
 
   // Phase 5.41: convert remaining door_gate → door_locked (#98)
   // door_gate cells that weren't converted to quiz_gate need to become
   // door_locked so the mechanics system can resolve them with keys.
   promoteDoorGates(cells, size);
+
+  // Coin trails after gates/doors exist so breadcrumbs can lead to them
+  layCoinTrails(cells, size, seededRandom(featureSeed + 450));
 
   // Phase 5.45: place bonfires for night-time local lighting (#67)
   placeBonfires(cells, size, biome, seededRandom(featureSeed + 475));

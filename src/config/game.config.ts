@@ -49,7 +49,9 @@ export const WORLD_CONFIG = {
 
 // ─── Player / Ego ────────────────────────────────────────────
 export const PLAYER_CONFIG = {
-  speed: 0.05,          // Grid units per frame
+  // 0.05 (~3 cells/s @60fps) felt leisurely/grindy for short sessions;
+  // 0.08 (~4.8 cells/s) keeps control while making explore→gate loops viable.
+  speed: 0.08,          // Grid units per frame
   startPosition: { x: 12.5, y: 12.5 }, // Center of cell at chunk midpoint (avoids footprint overlap with adjacent walls)
   height: 3,
   scale: 1.0,
@@ -157,8 +159,11 @@ export interface DifficultyProfile {
 }
 
 const DIFFICULTY_TIERS: DifficultyProfile[] = [
-  { tierName: 'Safe Zone',  tier: 0, obstacleDensity: 0.6, quizGateFrequency: 0.0, collectibleRate: 1.5, guardianRatio: 0.0, keyRate: 0.5, extraObstacles: 0 },
-  { tierName: 'Easy',       tier: 1, obstacleDensity: 0.8, quizGateFrequency: 0.6, collectibleRate: 1.2, guardianRatio: 0.2, keyRate: 0.8, extraObstacles: 0 },
+  // quizGateFrequency was 0.0 in Safe Zone which zeroed placeQuizGates even
+  // when biome weight > 0 (effectiveWeight = weight * mult). Small nonzero
+  // keeps the teaching loop present in the dist-0..1 ring without flooding.
+  { tierName: 'Safe Zone',  tier: 0, obstacleDensity: 0.6, quizGateFrequency: 0.45, collectibleRate: 1.5, guardianRatio: 0.0, keyRate: 0.5, extraObstacles: 0 },
+  { tierName: 'Easy',       tier: 1, obstacleDensity: 0.8, quizGateFrequency: 0.85, collectibleRate: 1.2, guardianRatio: 0.2, keyRate: 0.8, extraObstacles: 0 },
   { tierName: 'Medium',     tier: 2, obstacleDensity: 1.0, quizGateFrequency: 1.0, collectibleRate: 1.0, guardianRatio: 0.4, keyRate: 1.0, extraObstacles: 2 },
   { tierName: 'Hard',       tier: 3, obstacleDensity: 1.3, quizGateFrequency: 1.4, collectibleRate: 0.8, guardianRatio: 0.6, keyRate: 1.2, extraObstacles: 4 },
   { tierName: 'Extreme',    tier: 4, obstacleDensity: 1.6, quizGateFrequency: 1.8, collectibleRate: 0.6, guardianRatio: 0.8, keyRate: 1.5, extraObstacles: 6 },
