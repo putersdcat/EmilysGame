@@ -818,14 +818,14 @@ if (isMoving) {
 
   if (movedX || movedY) {
     // Terrain-aware footstep SFX (#108)
-    const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
+    const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
     const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
     const surface = footTileDef?.surface ?? 'grass';
     playFootstep(state.sfx, surface);
 
     // iso2 sinkDepth for negative Z (rivers, from walk integration per #223)
     // Use exact walk logic to detect if in channel
-    const currentCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
+    const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
     if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
       state.player.sinkDepth = 4; // match iso2 nano z for sink visual
     } else if (state.player.spawnEscape) {
@@ -837,8 +837,29 @@ if (isMoving) {
     // Wall bump SFX (#75) — debounce handles frame-spam
     playSfx(state.sfx, 'wall_bump');
     // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
-    const hitCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
+    const hitCell = getCellAt(Math.floor(newX), Math.floor(newY), state.chunks);
     const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+    const hitKey = hitCell?.cell.assetKey;
+    // Teach progression: walked into a gate/door → face it + Space
+    if (
+      hitKey === 'quiz_gate' ||
+      hitKey === 'door_locked' ||
+      hitKey === 'toll_gate' ||
+      hitKey === 'door_gate'
+    ) {
+      triggerHint('near_gate');
+      // Snap facing toward the blocked cell so Space hits it next press
+      const tcx = Math.floor(newX);
+      const tcy = Math.floor(newY);
+      const pcx = Math.floor(state.player.x);
+      const pcy = Math.floor(state.player.y);
+      const fdx = Math.sign(tcx - pcx);
+      const fdy = Math.sign(tcy - pcy);
+      if (fdx !== 0 || fdy !== 0) {
+        state.player.facingDx = fdx;
+        state.player.facingDy = fdy;
+      }
+    }
     const hazardDmg = hitDef?.hazardDamage ?? 0;
     if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
       const label = hitDef?.hazardLabel ?? 'something sharp';
@@ -868,9 +889,9 @@ if (isMoving) {
     playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
   }
 
-  // Camera follow (smooth)
-  state.camera.x += (state.player.x - state.camera.x) * 0.1;
-  state.camera.y += (state.player.y - state.camera.y) * 0.1;
+  // Camera follow (slightly snappier after player speed bump to 0.08)
+  state.camera.x += (state.player.x - state.camera.x) * 0.15;
+  state.camera.y += (state.player.y - state.camera.y) * 0.15;
 
   // Ensure chunks ONLY on chunk boundary crossing
   maybeLoadChunks(state);
@@ -888,47 +909,41 @@ if (isMoving) {
  * handleInteraction (from interaction-handler.ts).
  */
 function handleSpaceInteraction(state: GameState, justKeys: any): void {
-  if (justKeys.interact && !state.player.isMoving) {
-// --- Interaction (Space, edge-detected) ---
-if (justKeys.interact && !state.player.isMoving) {
-  // Try facing direction first, then check all 4 neighbors as fallback
-  // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
+  // Allow Space while still moving — kids hold a key into a gate and press
+  // interact in the same moment; requiring isMoving===false dropped presses.
+  if (!justKeys.interact) return;
+
+  // Settle motion so the next frames don't immediately walk away mid-dialog.
+  state.player.isMoving = false;
+
+  // Try facing direction first, then neighbors as fallback.
+  // NOTE: facingDx can be 0 — don't use || which treats 0 as falsy
   const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
   const facingDir = {
     dx: hasFacing ? state.player.facingDx : state.player.direction,
     dy: hasFacing ? state.player.facingDy : 0,
   };
 
-  // Wildlife interaction check (before tile-based interactions)
   const wildlifeHit = interactWithWildlife(
     state.player.x, state.player.y, facingDir.dx, facingDir.dy,
   );
   if (wildlifeHit) {
     const { species, entity } = wildlifeHit;
-    // Show creature dialog — use custom interaction lines if available (#142)
     const wildlifeLine = species.interactLines && species.interactLines.length > 0
       ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
       : `You spotted a ${species.name}! ${species.emoji}`;
     showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
     state.paused = true;
     playSfx(state.sfx, 'wildlife_discover');
-    // Speak wildlife discovery (#76)
     setLastDialogNpcId(null);
     speakLine(state.voice, wildlifeLine, null);
-    // Make creature flee after inspection
     entity.behavior = 'flee';
     entity.fleeCooldown = 180;
-    // Check cosmetic unlocks for wildlife discovery (#66)
     checkCosmeticUnlocks(state);
-    // Queue a quiz if species has a quiz category
     if (species.quizCategory) {
       const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
-      const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
+      const diff = modulateDifficulty(baseDiff, state.streak);
       const bias = { [species.quizCategory]: 2.0 };
-      // Pre-pick + prefetch (2026-07-10) -- same reasoning as
-      // interaction-handler.ts's npc/quiz_gate cases: the two-line
-      // wildlife dialog above gives the LLM a free head start before
-      // startQuiz() actually runs.
       const question = pickQuizQuestion(diff, bias);
       state.pendingQuiz = {
         difficulty: diff,
@@ -938,75 +953,56 @@ if (justKeys.interact && !state.player.isMoving) {
       };
       if (question) prefetchQuizRephrase(question.question);
     }
-  } else {
-    let result = interact(
-      state.player.x, state.player.y,
-      facingDir, state.chunks, state.inventory,
-    );
-
-    // Fallback #1 (2026-07-13, gameplay-feel audit): this game's
-    // screen-relative movement (input.ts's getMovementVector — a 45°
-    // rotation converts screen intent to isometric grid-space, see its
-    // own doc comment) means a SINGLE arrow key produces a DIAGONAL grid
-    // facing (e.g. facingDx=1,facingDy=-1) — never pure-cardinal from one
-    // key alone. Obstacles (gates/fences/walls) are always cardinal-aligned
-    // single cells, so a diagonal facing aims BETWEEN two real candidate
-    // cells and can miss both of them (and the old 4-cardinal fallback
-    // below, which fires from the player's raw position, not from the
-    // facing direction's components). Decompose a diagonal facing into its
-    // two cardinal components and try those first — this is exactly the
-    // scenario a real player creates by holding one arrow key into a gate
-    // and pressing Space. See
-    // tests/gameplay/gate-interaction-after-natural-collision.spec.ts,
-    // which reproduces this failing without this fallback tier.
-    if (result.type === 'none' && facingDir.dx !== 0 && facingDir.dy !== 0) {
-      const components = [
-        { dx: facingDir.dx, dy: 0 },
-        { dx: 0, dy: facingDir.dy },
-      ];
-      for (const d of components) {
-        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
-        if (result.type !== 'none') break;
-      }
-    }
-
-    // Fallback #1b: the player's collision footprint (PLAYER_CONFIG
-    // .collisionHalfW/H = 0.3) can rest close enough to a blocked cell that
-    // the CENTER point itself rounds INTO that cell's own coordinates (the
-    // footprint's leading corner is what's actually stopped, not the
-    // center) — e.g. resting at x=12.6 against a wall at cell 13 rounds to
-    // 13, not 12. In that case the obstacle isn't a "neighbor" at all by
-    // any facing/offset check above — it's the player's own nominal
-    // current cell. Check that directly before the generic fallback.
-    if (result.type === 'none') {
-      result = interact(state.player.x, state.player.y, { dx: 0, dy: 0 }, state.chunks, state.inventory);
-    }
-
-    // Fallback #2: try all 4 cardinal neighbors if facing dir (+ its
-    // diagonal components) had nothing — last-resort catch-all.
-    if (result.type === 'none') {
-      const dirs = [
-        { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-        { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
-      ];
-      for (const d of dirs) {
-        result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
-        if (result.type !== 'none') break;
-      }
-    }
-
-    // Eat worms desperation: if no interaction found and energy critically low (#110 Phase 3)
-    if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
-      result = { type: 'eat_worms', message: 'You found a worm in the ground... 🐛 Gulp!' };
-    }
-
-    handleInteraction(result, state);
+    return;
   }
+
+  const priority = (r: { type: string }): number => {
+    switch (r.type) {
+      case 'quiz_gate': return 100;
+      case 'obstacle': return 90;
+      case 'npc': return 80;
+      case 'chest': return 70;
+      case 'sign': return 60;
+      case 'shop': return 55;
+      case 'collect': return 50;
+      case 'outhouse': return 40;
+      case 'campfire': return 30;
+      case 'stream_drink': return 25;
+      case 'structure': return 10;
+      case 'eat_worms': return 5;
+      default: return 0;
+    }
+  };
+  const tryInteract = (dir: { dx: number; dy: number }) =>
+    interact(state.player.x, state.player.y, dir, state.chunks, state.inventory);
+
+  let result = tryInteract(facingDir);
+
+  // Diagonal facing → also try cardinal components; keep best hit
+  if (facingDir.dx !== 0 && facingDir.dy !== 0) {
+    for (const d of [{ dx: facingDir.dx, dy: 0 }, { dx: 0, dy: facingDir.dy }]) {
+      const r = tryInteract(d);
+      if (priority(r) > priority(result)) result = r;
+    }
+  }
+
+  // Current cell + 4 neighbors — prefer gate/NPC over fence flavor
+  for (const d of [
+    { dx: 0, dy: 0 },
+    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+  ]) {
+    const r = tryInteract(d);
+    if (priority(r) > priority(result)) result = r;
+  }
+
+  if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
+    result = { type: 'eat_worms', message: 'You found a worm in the ground... Gulp!' };
+  }
+
+  handleInteraction(result, state);
 }
 
-
-  }
-}
 
 function update(state: GameState, input: InputManager): void {
   // Poll gamepad state each frame (#124)
@@ -1050,6 +1046,13 @@ function update(state: GameState, input: InputManager): void {
   // --- Diarrhea control lock check (#133) ---
   if (handleDiarrheaControlLock(state)) {
     input.endFrame();
+    return;
+  }
+
+  // Hard pause (pause menu / overlays that set paused without early-return)
+  if (state.paused) {
+    input.endFrame();
+    _clearExtraKeys();
     return;
   }
 

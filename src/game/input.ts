@@ -163,6 +163,7 @@ export class InputManager {
         event.preventDefault();
         break;
       case ' ':
+      case 'enter':
         this.keyState.interact = true;
         this.pressQueue.interact = true;
         event.preventDefault();
@@ -195,6 +196,7 @@ export class InputManager {
         event.preventDefault();
         break;
       case ' ':
+      case 'enter':
         this.keyState.interact = false;
         event.preventDefault();
         break;

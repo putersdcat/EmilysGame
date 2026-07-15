@@ -180,7 +180,7 @@ export const HINTS: Record<string, HintDef> = {
   },
   near_gate: {
     id: 'near_gate',
-    text: 'A gate! I wonder what\'s behind it...',
+    text: 'A gate! Press Space to try it!',
     type: 'thought',
     priority: 5,
     duration: 4500,

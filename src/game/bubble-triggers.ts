@@ -83,9 +83,9 @@ export function checkBubbleTriggers(state: GameState): void {
     triggerHint('no_keys');
   }
 
-  // Nearby interactives — scan 3x3 cells around player
-  const rx = Math.round(px);
-  const ry = Math.round(py);
+  // Nearby interactives — scan around player (floor, not round: n.5 centers)
+  const rx = Math.floor(px);
+  const ry = Math.floor(py);
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
       const gx = rx + dx;
@@ -100,8 +100,20 @@ export function checkBubbleTriggers(state: GameState): void {
       if (!cell) continue;
 
       if (cell.npcId) triggerHint('near_npc');
-      if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'door') triggerHint('near_gate');
+      // door_locked/toll_gate/quiz_gate are the real progression blockers
+      if (
+        cell.assetKey === 'quiz_gate' ||
+        cell.assetKey === 'door_locked' ||
+        cell.assetKey === 'door_gate' ||
+        cell.assetKey === 'toll_gate' ||
+        cell.assetKey === 'door'
+      ) {
+        triggerHint('near_gate');
+      }
       if (cell.assetKey === 'chest') triggerHint('near_chest');
+      if (cell.assetKey === 'shop' || cell.assetKey?.startsWith('shop_')) {
+        triggerHint('near_shop');
+      }
     }
   }
 

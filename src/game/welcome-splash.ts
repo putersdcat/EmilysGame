@@ -32,10 +32,22 @@ export function showWelcomeSplash(): Promise<void> {
     const splash = document.getElementById('welcomeSplash')!;
     splash.style.display = 'flex';
 
-    document.getElementById('welcomeDismiss')!.onclick = () => {
+    const dismiss = () => {
       splash.style.display = 'none';
       localStorage.setItem(FIRST_RUN_KEY, '1');
+      document.getElementById('welcomeDismiss')!.onclick = null;
+      window.removeEventListener('keydown', onKey);
       resolve();
     };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+        e.preventDefault();
+        dismiss();
+      }
+    };
+
+    document.getElementById('welcomeDismiss')!.onclick = dismiss;
+    window.addEventListener('keydown', onKey);
   });
 }

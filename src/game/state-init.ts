@@ -60,6 +60,10 @@ const STARTER_INVENTORY: ReadonlyArray<{ itemId: string; quantity: number }> = [
   { itemId: 'bandage', quantity: 3 },
   { itemId: 'snack', quantity: 2 },
   { itemId: 'water_flask', quantity: 1 },
+  // One key so the first door_locked teaches use-item→open without softlock hunting
+  { itemId: 'key', quantity: 1 },
+  // Enough coins for one toll_gate lesson without a long grind
+  { itemId: 'coin', quantity: 10 },
 ];
 
 /**

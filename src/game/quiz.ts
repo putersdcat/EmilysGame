@@ -433,9 +433,11 @@ export function quizClose(state: QuizState): void {
 export function quizReward(difficulty: QuizDifficulty): { itemId: string; qty: number }[] {
   // Occasional bandage drop (#109) — 25% chance from easy/medium
   const bandageDrop = Math.random() < 0.25 ? [{ itemId: 'bandage', qty: 1 }] : [];
+  // Keys on easy/medium so door_locked stays reachable after quiz play (hard always grants)
+  const keyDrop = Math.random() < 0.35 ? [{ itemId: 'key', qty: 1 }] : [];
   switch (difficulty) {
-    case 'easy': return [{ itemId: 'coin', qty: 5 }, ...bandageDrop];
-    case 'medium': return [{ itemId: 'coin', qty: 15 }, { itemId: 'potion', qty: 1 }, ...bandageDrop];
+    case 'easy': return [{ itemId: 'coin', qty: 5 }, ...bandageDrop, ...keyDrop];
+    case 'medium': return [{ itemId: 'coin', qty: 15 }, { itemId: 'potion', qty: 1 }, ...bandageDrop, ...keyDrop];
     case 'hard': return [{ itemId: 'coin', qty: 30 }, { itemId: 'key', qty: 1 }];
   }
 }

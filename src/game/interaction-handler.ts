@@ -114,6 +114,10 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       } else {
         addToast(state.ui, result.message, '#f44336');
         playSfx(state.sfx, 'obstacle_blocked');
+        // Teach: locked doors need keys (cooldown prevents spam)
+        if (result.template?.requiredItem === 'key') {
+          triggerHint('no_keys');
+        }
       }
       break;
 
@@ -292,11 +296,9 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
 
     // --- Structure flavor text (#77) ---
     case 'structure':
-      showDialog(state.ui, '🏠 Structure', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
+      // Toast only — don't pause for fence/wall flavor (keeps roam snappy)
+      addToast(state.ui, result.message, '#9e9e9e', 1800);
+      playSfx(state.sfx, 'obstacle_blocked');
       break;
   }
 }
