@@ -7,17 +7,22 @@
 // ─── Rendering ───────────────────────────────────────────────
 /**
  * Pre-Iso2.0 on-screen diamond width when emojiSize/spriteSize (32/48) were
- * authored. tileWidth later jumped 64→256 (13ade67) without scaling entities,
- * so the avatar shrank to 1/8 of a diamond (was ~1/2). See
- * memories/repo/visual-scale-dpi-mismatch-2026-07-15.md.
+ * authored. See memories/repo/visual-scale-dpi-mismatch-2026-07-15.md.
+ *
+ * History: 64 → 256 (13ade67) zoomed the FOV way in without scaling entities.
+ * 2026-07-15: display diamonds 128×64 (2× legacy, half of 256) so more tiles
+ * fit the viewport; 144px nano source still supersamples into them. Player
+ * stays ~spriteSize in viewport pixels but is larger *relative to each tile*.
  */
 export const LEGACY_TILE_WIDTH = 64;
 
 export const RENDER_CONFIG = {
   canvasWidth: 800,
   canvasHeight: 600,
-  tileWidth: 256,       // Iso 2.0 diamond width in px (144px source micro tile)
-  tileHeight: 128,      // Iso 2.0 diamond height in px (2:1 projection)
+  // On-screen diamond (FOV). Smaller = zoomed out = more tiles visible.
+  // Keep 2:1 with ISO_DIAMOND_* in iso-renderer.types.ts / nano-tile.
+  tileWidth: 128,
+  tileHeight: 64,
   targetFPS: 60,
   renderScale: 1.0,   // Internal render resolution (0.5=half, 1.0=full).
   maxDrawCmds: 400,    // Max draw commands per frame (graceful degradation beyond this)
@@ -25,26 +30,26 @@ export const RENDER_CONFIG = {
   useWasmRenderer: false, // Disabled: JS path with object cache is faster (no marshal overhead)
   shadowAlpha: 0.5,
   shadowScale: { width: 22, height: 12 },
-  emojiSize: 32,        // Base emoji font size (source raster; display scaled via entityDisplayScale)
-  spriteSize: 48,       // Base SVG sprite render size (source; display scaled via entityDisplayScale)
+  emojiSize: 32,        // Base emoji font size (source raster)
+  spriteSize: 48,       // Base SVG sprite render size (source)
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
   /** Source pixel size of micro-tile SVGs fed into the isometric transform.
-   *  Iso 2.0 uses 144 so the nano sub-grid divides cleanly into 3×48px cells. */
+   *  Iso 2.0 uses 144 so the nano sub-grid divides cleanly into 3×48px cells.
+   *  Independent of on-screen tileWidth (supersample into smaller diamonds). */
   microTileSize: 144,
   /**
-   * Fraction of the raw DPI jump (tileWidth/64) applied to character sprites.
-   * 1.0 = full 4× restore (too tall vs cottage/fence in practice).
-   * ~0.5 ≈ 2× — avatar human-scale next to 1-cell cottage without towering.
-   * Nano geometry already fills the diamond and is not multiplied by this.
-   * See visual-scale-dpi-mismatch-2026-07-15.md.
+   * Character display scale = (tileWidth / LEGACY_TILE_WIDTH) * entityScaleFactor.
+   * With tileWidth 128 and factor 0.5 → scale 1.0: player stays ~48px on screen
+   * (not viewport-huge) while player∶tile ≈ 48/128 = 0.375 (was 0.125 at 256).
    */
-  entityScaleFactor: 0.55,
+  entityScaleFactor: 0.5,
 };  // Mutable: canvasWidth/canvasHeight updated on viewport resize
 
 /**
- * On-screen scale for player/NPC sprites relative to current diamond size.
- * Compensates the 64→256 tileWidth jump that left emojiSize/spriteSize fixed.
+ * On-screen scale for player/NPC sprites.
+ * With FOV zoom-out (tileWidth 128), default factor keeps viewport avatar size
+ * modest while improving ratio vs each diamond.
  */
 export function entityDisplayScale(): number {
   return (RENDER_CONFIG.tileWidth / LEGACY_TILE_WIDTH) * RENDER_CONFIG.entityScaleFactor;
@@ -54,7 +59,7 @@ export function entityDisplayScale(): number {
 export const WORLD_CONFIG = {
   chunkSize: 25,        // Cells per chunk side (25x25 = 5×5 world units)
   worldUnitSize: 5,     // Cells per world unit side
-  cellPixels: 128,      // Logical cell size in px
+  cellPixels: 64,       // Logical cell size in px (match on-screen tileHeight scale)
   viewportBuffer: 1,    // Extra chunks rendered off-screen (0 = tight, 1 = smooth)
 
   /** Density thresholds for procedural gen (0-100 from hash) */

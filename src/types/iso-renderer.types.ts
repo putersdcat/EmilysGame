@@ -11,8 +11,8 @@
  *   2. `TileType` vs `TileKind` — v1 uses snake_case (stone_wall), v2 uses kebab-case (stone-wall).
  *      v2 splits base biome (TileKind) from feature nanos (NanoTileKind).
  *      Use `IsoTileKind` as the merge-safe name during transition.
- *   3. Tile scale — v1 renders 32×32 → 64×32 diamonds; v2 renders 128×128 → 256×128.
- *      This is a renderer replacement decision, not a types change.
+ *   3. Tile scale — v1: 32→64×32 diamonds; Iso2 source 144 → on-screen diamond
+ *      is now RENDER_CONFIG.tileWidth/Height (default 128×64, was briefly 256×128).
  *
  * TODO: DOC — remove this file once full merge is complete; consolidate into existing
  *       type files. See issue #201 for migration plan.
@@ -25,11 +25,11 @@
 /** Logical pixel size of a single micro tile (144×144 px; 3×48px nano cells). */
 export const ISO_MICRO_TILE_SIZE = 144;
 
-/** Isometric diamond width after projection (256 px). */
-export const ISO_DIAMOND_WIDTH = 256;
+/** Isometric diamond width after projection (must match RENDER_CONFIG.tileWidth). */
+export const ISO_DIAMOND_WIDTH = 128;
 
-/** Isometric diamond height after projection (128 px). */
-export const ISO_DIAMOND_HEIGHT = 128;
+/** Isometric diamond height after projection (must match RENDER_CONFIG.tileHeight). */
+export const ISO_DIAMOND_HEIGHT = 64;
 
 /** World Unit Chunk dimension: 5 tiles per side. */
 export const ISO_CHUNK_TILES = 5;

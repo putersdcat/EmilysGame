@@ -54,4 +54,8 @@ V1 surfaces, V2 assemblies, V3 water basins improve *what* is placed and *how wa
 ## Status
 
 - Diagnosed 2026-07-15 from live PNGs + `game.config` history.
-- Implementation: start with (1) entity scale derived from tile width; capture `visual-scale-rebalance-*.png`.
+- **Pass A (wrong FOV):** only grew player on 256px diamonds → avatar huge in viewport.
+- **Pass B (user correction):** zoom **out** — on-screen diamonds **128×64** (was 256×128),
+  keep 144 micro source (supersample). `entityScaleFactor` 0.5 → `entityDisplayScale()≈1.0`
+  so player stays ~48px in the viewport (not larger on screen) but **larger vs each tile**
+  (≈0.375 of diamond width vs 0.125). More tiles visible. ISO_DIAMOND_* kept in sync.
