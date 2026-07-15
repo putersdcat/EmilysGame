@@ -81,15 +81,15 @@ test('Slice B audit: isolated water renders a visible, style-distinct basin', as
     expect(stats[tileType].ratio, `${tileType} isolated pond must paint visible pixels (was invisible pre-fix)`).toBeGreaterThan(0.05);
   }
 
-  // Threshold of 8 catches the real regression this test guards against
-  // (style discarded entirely -> distance ~0 for every pair), while still
-  // tolerating legitimately-close palettes (muddy-creek vs marsh-water are
-  // both earthy greens by design and sit ~9-10 apart).
+  // Threshold catches the real regression (style discarded entirely → distance
+  // ~0 for every pair). Muddy-creek vs marsh-water are both earthy greens;
+  // the V3 R2 basin fill blends more stops so they sit ~7–10 apart rather
+  // than the old canal-fill ~9–10. Keep floor above "styles collapsed".
   const names = WATER_TILE_TYPES;
   for (let i = 0; i < names.length; i++) {
     for (let j = i + 1; j < names.length; j++) {
       const dist = colorDistance(stats[names[i]].avg, stats[names[j]].avg);
-      expect(dist, `${names[i]} vs ${names[j]} isolated-pond average color must differ (style must not be discarded)`).toBeGreaterThan(8);
+      expect(dist, `${names[i]} vs ${names[j]} isolated-pond average color must differ (style must not be discarded)`).toBeGreaterThan(6);
     }
   }
 });

@@ -598,43 +598,106 @@ function drawSunkenCutFaces(
   // drew NOTHING here (both gates below were false), leaving an invisible
   // hole with no basin walls. Treat isolated as "walled on all 4 sides".
   const isolated = !hasH && !hasV;
-  const hStart = connections.left ? outerMin : off;
-  const hEnd = connections.right ? outerMax : off + channelW;
-  const vStart = connections.top ? outerMin : off;
-  const vEnd = connections.bottom ? outerMax : off + channelW;
+  // R2: open water bodies (tee/cross/isolated) use a full rim basin, not
+  // crossed canal banks that read as rectangular tanks.
+  const basin = isOpenWaterBody(connections);
+  const hStart = connections.left && !basin ? outerMin : off;
+  const hEnd = connections.right && !basin ? outerMax : off + channelW;
+  const vStart = connections.top && !basin ? outerMin : off;
+  const vEnd = connections.bottom && !basin ? outerMax : off + channelW;
 
   const bankA = rgba(style.bankOuter, 0.76);
   const bankB = rgba(style.bankInner, 0.78);
   const wetEdge = rgba(style.bankWet, 0.78);
 
-  if (hasH || isolated) {
-    const gapA = hasV ? low : null;
-    const gapB = hasV ? high : null;
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, low, low, hStart, hEnd, gapA, gapB, bankA);
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, high, high, hStart, hEnd, gapA, gapB, bankB);
-    if (!connections.left) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hStart, low, hStart, high, wetEdge);
-    if (!connections.right) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hEnd, low, hEnd, high, wetEdge);
+  if (basin || hasH || isolated) {
+    const gapA = !basin && hasV ? low : null;
+    const gapB = !basin && hasV ? high : null;
+    const hs = basin ? off : hStart;
+    const he = basin ? off + channelW : hEnd;
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, low, low, hs, he, gapA, gapB, bankA);
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, true, high, high, hs, he, gapA, gapB, bankB);
+    if (basin || !connections.left) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, hs, low, hs, high, wetEdge);
+    if (basin || !connections.right) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, he, low, he, high, wetEdge);
   }
 
-  if (hasV || isolated) {
-    const gapA = hasH ? low : null;
-    const gapB = hasH ? high : null;
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, low, low, vStart, vEnd, gapA, gapB, bankB);
-    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, high, high, vStart, vEnd, gapA, gapB, bankA);
-    if (!connections.top) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vStart, high, vStart, wetEdge);
-    if (!connections.bottom) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vEnd, high, vEnd, wetEdge);
+  if (basin || hasV || isolated) {
+    const gapA = !basin && hasH ? low : null;
+    const gapB = !basin && hasH ? high : null;
+    const vs = basin ? off : vStart;
+    const ve = basin ? off + channelW : vEnd;
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, low, low, vs, ve, gapA, gapB, bankB);
+    drawCutFaceSegments(ctx, cx, tileTopY, sinkPx, false, high, high, vs, ve, gapA, gapB, bankA);
+    if (basin || !connections.top) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, vs, high, vs, wetEdge);
+    if (basin || !connections.bottom) drawProjectedCutFace(ctx, cx, tileTopY, sinkPx, low, ve, high, ve, wetEdge);
   }
 }
 
+/**
+ * Open water bodies (isolated ponds, tees, crosses) must NOT be drawn as
+ * crossed H+V river canals — that is what produced the rectangular "tank"
+ * look (R2, iso2-port-remaining-work). Linear rivers (straight/end/corner)
+ * keep the channel path.
+ */
+function isOpenWaterBody(connections: FeatureConnections): boolean {
+  const n =
+    (connections.top ? 1 : 0) +
+    (connections.right ? 1 : 0) +
+    (connections.bottom ? 1 : 0) +
+    (connections.left ? 1 : 0);
+  // 0 = isolated pond; 3+ = tee/cross open body. n=1 end and n=2 straight/corner stay channels.
+  return n === 0 || n >= 3;
+}
+
+/** Soft oval basin fill for ponds / open water (R2). */
+function drawProceduralBasinWater(ctx: CanvasRenderingContext2D, style: WaterStyle): void {
+  const cx = MICRO_TILE_SIZE / 2;
+  const cy = MICRO_TILE_SIZE / 2;
+  const rx = MICRO_TILE_SIZE * 0.46;
+  const ry = MICRO_TILE_SIZE * 0.42;
+
+  ctx.save();
+  // Outer shallow shelf
+  const outer = ctx.createRadialGradient(cx, cy - 6, 4, cx, cy, rx);
+  outer.addColorStop(0, style.shallow);
+  outer.addColorStop(0.45, style.mid);
+  outer.addColorStop(0.82, rgba(style.deep, 0.55));
+  outer.addColorStop(1, rgba(style.bankWet, 0.35));
+  ctx.fillStyle = outer;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Deeper center
+  ctx.fillStyle = rgba(style.deep, 0.40);
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + 4, rx * 0.55, ry * 0.50, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Soft foam glints
+  ctx.strokeStyle = rgba(style.foam, 0.22);
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.ellipse(cx - 10, cy - 8, rx * 0.35, ry * 0.18, -0.3, 0, Math.PI * 1.2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(cx + 14, cy + 6, rx * 0.22, ry * 0.12, 0.4, 0, Math.PI);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: FeatureConnections, style: WaterStyle): void {
+  // R2: open water bodies use basin geometry (no crossed-canal tanks).
+  if (isOpenWaterBody(connections)) {
+    drawProceduralBasinWater(ctx, style);
+    return;
+  }
+
   const channelW = RIVER_CHANNEL_WIDTH;
   const off = (MICRO_TILE_SIZE - channelW) / 2;
   const over = 30;
   const hasH = connections.left || connections.right;
   const hasV = connections.top || connections.bottom;
-  // See drawSunkenCutFaces: isolated ponds must still fill a basin, not skip
-  // rendering entirely just because neither axis has a connected neighbor.
-  const isolated = !hasH && !hasV;
   const hStart = connections.left ? -over : off;
   const hEnd = connections.right ? MICRO_TILE_SIZE + over : off + channelW;
   const vStart = connections.top ? -over : off;
@@ -672,16 +735,13 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   };
 
   ctx.save();
-  if (hasH || isolated) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
-  if (hasV || isolated) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
+  if (hasH) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
+  if (hasV) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
 
-  // Cross/tee overlaps (and isolated ponds, treated the same way) get a
-  // soft radial highlight instead of a dark square.
-  if ((hasH && hasV) || isolated) {
-    ctx.fillStyle = rgba(style.mid, 0.64);
-    ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
-    const g = ctx.createRadialGradient(72, 68, 4, 72, 72, 34);
-    g.addColorStop(0, rgba(style.foam, 0.16));
+  // Corner junctions get a soft radial join (not a full tank square).
+  if (hasH && hasV) {
+    const g = ctx.createRadialGradient(72, 68, 4, 72, 72, 28);
+    g.addColorStop(0, rgba(style.foam, 0.14));
     g.addColorStop(1, rgba(style.mid, 0));
     ctx.fillStyle = g;
     ctx.fillRect(off - 4, off - 4, channelW + 8, channelW + 8);
@@ -690,7 +750,7 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   ctx.strokeStyle = foam;
   ctx.lineWidth = 1.1;
   ctx.lineCap = 'round';
-  if (hasH || isolated) {
+  if (hasH) {
     for (let x = hStart + 18; x < hEnd - 10; x += 34) {
       ctx.beginPath();
       ctx.moveTo(x, off + 18 + ((x / 17) % 4));
@@ -698,7 +758,7 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
       ctx.stroke();
     }
   }
-  if (hasV || isolated) {
+  if (hasV) {
     for (let y = vStart + 18; y < vEnd - 10; y += 34) {
       ctx.beginPath();
       ctx.moveTo(off + 18 + ((y / 17) % 4), y);
@@ -749,6 +809,12 @@ export function drawNegativeNano(
   }
 
   // Flat iso projection (same as base tiles) shifted down by sink depth.
+  // Open-water basins stay diamond-clipped so multi-cell ponds read as soft
+  // pools, not unclipped rectangular tanks (R2). Linear rivers stay unclipped
+  // so channels can flow across tile joins.
+  if (nano.kind === 'river' && isOpenWaterBody(connections)) {
+    clipDiamond(ctx, cx, cy, HALF_W, HALF_H);
+  }
   ctx.transform(ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, -ISO_X_PER_SOURCE_PX, ISO_Y_PER_SOURCE_PX, cx, screenY + sinkPx);
   if (nano.kind === 'river') {
     drawProceduralRiverWater(ctx, connections, waterStyle!);

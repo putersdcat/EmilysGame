@@ -140,14 +140,17 @@ Order is incremental; start at V1:
 
 ### Track V3 — Water & terrain polish
 
-1. **Water tanks / river bias** — ✅ partial 2026-07-15: cave Perlin water
-   removed; meadow/forest prefer river straights over lake/water_garden;
-   `removeOrphanWater` kills lone water salt. Modular `pond-clearing` remains
-   the intentional pool recipe. Renderer diamond tanks (R2 nano) still open.
-2. **WU diamond corner leaks (R1)** — still open (terrain-cache pre-fill).
+1. **Water tanks / river bias** — ✅ 2026-07-15: gen bias (no cave Perlin water;
+   river-over-lake weights; orphan water strip) + **R2 renderer**: open water
+   (isolated/tee/cross) uses soft oval **basin** fill instead of crossed H+V
+   canals that read as rectangular tanks. Linear rivers keep channels.
+   Proof: `tests/rendering/iso2-v3-water-basin-r2.spec.ts`.
+2. **WU diamond corner leaks (R1)** — ✅ hardened: Pass 1 grass diamonds under
+   **every** cell in the WU (not only non-base), so the 5×5 hull is fully
+   covered before dirt/sand/water paint.
 3. **Roofs-as-assembly-only** — ✅ `stripOrphanRoofShards` + proof test
    (roofCount=0). Starter cottage uses integrated nano roof.
-   Proof: `tests/world-gen/v3-water-roof-polish.spec.ts`. Golden → `311e8f88`.
+   Proof: `tests/world-gen/v3-water-roof-polish.spec.ts`.
 
 ### Track V4 — Scale / math pass (only if still needed)
 

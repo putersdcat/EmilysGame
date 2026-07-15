@@ -99,23 +99,19 @@ export function getCachedTerrain(
   const endCY = Math.min(SIZE, startCY + WU_SIZE);
   const endCX = Math.min(SIZE, startCX + WU_SIZE);
 
-  // Pass 1: draw grass base under every cell (so non-base cells like fence
-  // and water still have a grass floor). This guarantees the entire 5×5
-  // grid is covered with grass diamonds, with no rectangle corner leak.
+  // Pass 1 (R1 harden): grass diamond under EVERY cell in this WU — not only
+  // non-base. Guarantees the 5×5 hull is fully covered before pass 2 paints
+  // dirt/sand/water, so WU canvas corners never show as empty/dark triangles
+  // when a base tile fails or is transparent mid-load.
   for (let cy = startCY; cy < endCY; cy++) {
     for (let cx = startCX; cx < endCX; cx++) {
-      const cell = chunk.cells[cy][cx];
-      const def = ASSET_DEFS[cell.assetKey];
-      // For non-base cells we still want a grass floor underneath.
-      if (def && def.layer !== 'base') {
-        const localCX = cx - startCX;
-        const localCY = cy - startCY;
-        const lsx = (localCX - localCY) * HALF_TW + ORIGIN_X;
-        const lsy = (localCX + localCY) * HALF_TH + ORIGIN_Y;
-        const globalCX = chunk.chunkX * SIZE + cx;
-        const globalCY = chunk.chunkY * SIZE + cy;
-        drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
-      }
+      const localCX = cx - startCX;
+      const localCY = cy - startCY;
+      const lsx = (localCX - localCY) * HALF_TW + ORIGIN_X;
+      const lsy = (localCX + localCY) * HALF_TH + ORIGIN_Y;
+      const globalCX = chunk.chunkX * SIZE + cx;
+      const globalCY = chunk.chunkY * SIZE + cy;
+      drawSeamlessTerrainTile(ctx, 'grass', globalCX, globalCY, lsx, lsy);
     }
   }
 
