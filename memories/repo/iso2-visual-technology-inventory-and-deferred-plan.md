@@ -140,9 +140,14 @@ Order is incremental; start at V1:
 
 ### Track V3 — Water & terrain polish
 
-1. Fix water tank shapes / river continuity (known open visual bugs).  
-2. WU terrain diamond corner leaks (R1 in port remaining).  
-3. Enforce roofs-as-assembly-only.
+1. **Water tanks / river bias** — ✅ partial 2026-07-15: cave Perlin water
+   removed; meadow/forest prefer river straights over lake/water_garden;
+   `removeOrphanWater` kills lone water salt. Modular `pond-clearing` remains
+   the intentional pool recipe. Renderer diamond tanks (R2 nano) still open.
+2. **WU diamond corner leaks (R1)** — still open (terrain-cache pre-fill).
+3. **Roofs-as-assembly-only** — ✅ `stripOrphanRoofShards` + proof test
+   (roofCount=0). Starter cottage uses integrated nano roof.
+   Proof: `tests/world-gen/v3-water-roof-polish.spec.ts`. Golden → `311e8f88`.
 
 ### Track V4 — Scale / math pass (only if still needed)
 

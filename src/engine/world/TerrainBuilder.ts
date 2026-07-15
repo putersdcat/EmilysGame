@@ -40,6 +40,16 @@ const SALT_PRONE = new Set(['dirt', 'sand']);
  */
 const ORPHAN_STRUCTURES = new Set(['fence', 'wooden_fence', 'wall', 'stone_wall']);
 
+/** Roof tiles must only appear as part of authored assemblies (V3 S2). */
+const ROOF_SHARDS = new Set([
+  'starter_roof_left',
+  'starter_roof_right',
+  'starter_roof_ridge',
+  'roof_thatch_slope_left',
+  'roof_thatch_slope_right',
+  'roof_thatch_ridge',
+]);
+
 function structureFamily(assetKey: string): 'fence' | 'wall' | null {
   if (
     assetKey === 'fence' ||
@@ -216,6 +226,75 @@ export function removeOrphanStructures(cells: CellData[][], size: number): void 
       walkable: grassDef?.walkable ?? true,
       interactable: grassDef?.interactable ?? false,
     };
+  }
+}
+
+/**
+ * V3: strip lone water cells (0 same-type neighbors) that read as accidental
+ * tanks / salt pools. River runs and multi-cell ponds keep (same ≥ 1).
+ * Rewrites to majority neighboring core surface (grass default).
+ */
+export function removeOrphanWater(cells: CellData[][], size: number): void {
+  const rewrites: Array<{ x: number; y: number; assetKey: string }> = [];
+  const dirs: Array<[number, number]> = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (cells[y][x].assetKey !== 'water') continue;
+      let same = 0;
+      const neighborCounts = new Map<string, number>();
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const nk = cells[ny][nx].assetKey;
+        if (nk === 'water') same++;
+        if (CORE_SURFACES.has(nk)) neighborCounts.set(nk, (neighborCounts.get(nk) ?? 0) + 1);
+      }
+      if (same >= 1) continue;
+
+      let best = 'grass';
+      let bestN = -1;
+      for (const [nk, n] of neighborCounts) {
+        if (n > bestN) {
+          bestN = n;
+          best = nk;
+        }
+      }
+      rewrites.push({ x, y, assetKey: best });
+    }
+  }
+
+  for (const r of rewrites) {
+    const def = ASSET_DEFS[r.assetKey];
+    const prev = cells[r.y][r.x];
+    if (prev.itemId || prev.npcId) continue;
+    cells[r.y][r.x] = {
+      assetKey: r.assetKey,
+      walkable: def?.walkable ?? true,
+      interactable: def?.interactable ?? false,
+    };
+  }
+}
+
+/**
+ * V3 S2: roofs are assembly-only. Strip any free-floating roof shard tiles
+ * that may have been stamped by entropy/legacy weights (starter cottage uses
+ * integrated nano roof, not these cell keys).
+ */
+export function stripOrphanRoofShards(cells: CellData[][], size: number): void {
+  const grassDef = ASSET_DEFS['grass'];
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!ROOF_SHARDS.has(cells[y][x].assetKey)) continue;
+      const prev = cells[y][x];
+      if (prev.itemId || prev.npcId) continue;
+      cells[y][x] = {
+        assetKey: 'grass',
+        walkable: grassDef?.walkable ?? true,
+        interactable: grassDef?.interactable ?? false,
+      };
+    }
   }
 }
 

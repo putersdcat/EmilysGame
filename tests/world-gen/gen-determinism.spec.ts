@@ -42,10 +42,9 @@
  * content legitimately changed. Full tests/world-gen/ sweep (92 tests) is
  * clean except this single, expected, sanctioned hash diff.
  *
- * Re-captured 2026-07-15 (35536566 -> 9927620b) after V1 surface language +
- * V2 modular assemblies (farm/pond/gatehouse/bridge/church) via
- * maybePlaceModularScenes in ChunkGenerator. Intentional composition change
- * (Docs/13 §4 V1–V2).
+ * Re-captured 2026-07-15 (35536566 -> 311e8f88) after V1–V3 visual composition:
+ * surface language, modular assemblies, river-over-lake weights, orphan water
+ * + roof-shard strip, no cave Perlin water. Intentional (Docs/13 §4).
  *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
@@ -56,7 +55,7 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-const GOLDEN_HASH = '9927620b';
+const GOLDEN_HASH = '311e8f88';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

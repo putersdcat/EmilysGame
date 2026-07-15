@@ -60,7 +60,13 @@ import { validatePlayability } from './Validation';
 import { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 import { populateAnchors, clusterDecorations } from './Populator';
 import { enforcePassability } from './Passability';
-import { buildPerlinBase, cohereSurfacePatches, removeOrphanStructures } from './TerrainBuilder';
+import {
+  buildPerlinBase,
+  cohereSurfacePatches,
+  removeOrphanStructures,
+  removeOrphanWater,
+  stripOrphanRoofShards,
+} from './TerrainBuilder';
 import {
   placeQuizGates,
   sealTrivialQuizGateBypasses,
@@ -289,6 +295,12 @@ function generateGridChunk(
   // skips safe ring. Same pre-safety-net timing as castle landmarks.
   maybePlaceModularScenes(cells, size, biome, chunkDist, seededRandom(featureSeed + 477));
 
+  // Phase 5.48: modular scenes can overwrite soft terrain that previously held
+  // a minimum quiz_gate — re-assert non-origin density after stamps.
+  if (chunkX !== 0 || chunkY !== 0) {
+    ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 478), 1);
+  }
+
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);
 
@@ -312,6 +324,16 @@ function generateGridChunk(
 
   // Phase 7.6 (V1.3): kill lone fence/wall posts that are not part of a run.
   removeOrphanStructures(cells, size);
+
+  // Phase 7.7 (V3): kill lone water salt + free-floating roof shards.
+  removeOrphanWater(cells, size);
+  stripOrphanRoofShards(cells, size);
+
+  // Phase 7.8: final min quiz_gate pass AFTER every stamp/cleanup that could
+  // have erased earlier gates (modular scenes, balance, cohere, etc.).
+  if (chunkX !== 0 || chunkY !== 0) {
+    ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 790), 1);
+  }
 
   // Phase 8: playability validation (Solver F) (#46)
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));

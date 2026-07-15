@@ -100,8 +100,10 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'cave',
     displayName: 'Crystal Cavern',
     baseColor: '#2a2a3d',
+    // V3: no Perlin water salt — water only via river/pond chain templates /
+    // modular pond scenes (avoids square "tank" salt pools underground).
     terrainWeights: {
-      stone_floor: 0.6, dirt: 0.15, water: 0.08,
+      stone_floor: 0.68, dirt: 0.15,
       // #58 cave additions
       mushroom: 0.05, seedling: 0.02, sparkle: 0.03, maple_leaf: 0.02,
       rabbit: 0.02, fox: 0.01, wilted_flower: 0.02,

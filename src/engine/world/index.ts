@@ -68,7 +68,13 @@ export { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 
 // --- Terrain Builder (B5 / #253) ---
 // Phase 1 of chunk generation: Perlin noise base terrain.
-export { buildPerlinBase, cohereSurfacePatches, removeOrphanStructures } from './TerrainBuilder';
+export {
+  buildPerlinBase,
+  cohereSurfacePatches,
+  removeOrphanStructures,
+  removeOrphanWater,
+  stripOrphanRoofShards,
+} from './TerrainBuilder';
 
 // --- Chunk Generator (B6 / #253) ---
 // The chunk generation pipeline orchestrator — generateChunk (async, LLM),

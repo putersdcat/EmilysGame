@@ -109,8 +109,9 @@ Attach in this order (detail in that file):
    orphan fence/wall cleanup.
 2. **V2 — Assembly catalog** — ✅ modular recipes (farm, pond, church+graveyard,
    gatehouse, bridge) via `maybePlaceModularScenes` + catalog.ts.
-3. **V3 — Water & terrain polish** — river/pond shapes, WU diamond leaks,
-   roofs-as-assembly-only. **Next active track.**
+3. **V3 — Water & terrain polish** — ✅ partial 2026-07-15: river-over-lake
+   bias, orphan water strip, roofs-as-assembly-only. Open: WU diamond leaks
+   (R1) + water nano tank shape (R2) if still visible live.
 4. **V4 — Scale/math audit** — only if 144px / even-division contracts still
    fail end-to-end after V1–V3.
 

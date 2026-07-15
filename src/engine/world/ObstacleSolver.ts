@@ -590,14 +590,35 @@ export function ensureMinimumQuizGates(
     count++;
   }
 
-  // Last resort: any walkable simple terrain (still better than a gate-less chunk)
+  // Last resort: any walkable cell without content (flowers/animals count —
+  // meadow soft-terrain is full of them after decorations / modular stamps).
   if (count < minCount) {
-    for (let y = 2; y < size - 2 && count < minCount; y++) {
-      for (let x = 2; x < size - 2 && count < minCount; x++) {
+    for (let y = 1; y < size - 1 && count < minCount; y++) {
+      for (let x = 1; x < size - 1 && count < minCount; x++) {
         const cell = cells[y][x];
         if (!cell.walkable || cell.itemId || cell.npcId) continue;
-        if (!['grass', 'dirt', 'sand', 'stone_floor', 'path'].includes(cell.assetKey)) continue;
-        if (countWalkableNeighbors(cells, x, y, size) < 2) continue;
+        if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'water' || cell.assetKey === 'bridge') continue;
+        if (countWalkableNeighbors(cells, x, y, size) < 1) continue;
+        cells[y][x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
+        count++;
+      }
+    }
+  }
+
+  // Absolute last resort: force-overwrite the first walkable cell in the
+  // interior (even isolated). Better a weird gate than a gate-less chunk.
+  if (count < minCount) {
+    for (let y = 1; y < size - 1 && count < minCount; y++) {
+      for (let x = 1; x < size - 1 && count < minCount; x++) {
+        const cell = cells[y][x];
+        if (cell.assetKey === 'quiz_gate') continue;
+        if (cell.itemId || cell.npcId) continue;
+        // Prefer walkable; if none exist, punch a solid (tree/rock) instead
+        if (!cell.walkable && cell.assetKey !== 'rock' && cell.assetKey !== 'bush'
+            && cell.assetKey !== 'tree' && cell.assetKey !== 'tree_pine'
+            && cell.assetKey !== 'tree_palm' && cell.assetKey !== 'fence') {
+          continue;
+        }
         cells[y][x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
         count++;
       }
