@@ -151,8 +151,11 @@ test('real generated "wall" and "fence" cells now get exact footprint precision,
   });
 
   expect(result.farGrass, 'control: plain grass far from either cell must be walkable').toBe(true);
-  expect(result.wallEdgeReach, 'a corner just reaching into the real "wall" cell (outside its actual footprint) must be walkable -- proves the exact nano check ran').toBe(true);
-  expect(result.fenceEdgeReach, 'a corner just reaching into the real "fence" cell (outside its actual footprint) must be walkable -- proves the exact nano check ran').toBe(true);
+  // Functional-first (2026-07-15): wall/fence cells are full-tile solids.
+  // Proves bare assetKeys 'wall'/'fence' still route through the nano kind
+  // table and block predictably (not thin-footprint snag behavior).
+  expect(result.wallEdgeReach, 'corner into a wall cell must be blocked (full-tile)').toBe(false);
+  expect(result.fenceEdgeReach, 'corner into a fence cell must be blocked (full-tile)').toBe(false);
 });
 
 // ─── 4. Full live-pipeline wiring proof: biome actually changes what renders ─

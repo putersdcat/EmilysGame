@@ -225,9 +225,16 @@ export function interact(
   chunks: Map<string, ChunkData>,
   inventory: Inventory,
 ): InteractionResult {
-  // Target cell is 1 tile in facing direction
-  const tx = Math.round(playerX + facingDir.dx);
-  const ty = Math.round(playerY + facingDir.dy);
+  // Target = cell under the player's feet, stepped one cardinal tile in
+  // facing direction. MUST use floor(player) + facing — NOT
+  // Math.round(player + facing). With the usual cell-center rest position
+  // (n.5, n.5), round(n.5 + 1) becomes n+2 and misses the adjacent cell
+  // entirely (live MCP repro 2026-07-15: player at 2.5,5.5 facing N toward
+  // door_locked at 2,4 → round path targeted 3,5 and returned none).
+  const fdx = Math.sign(facingDir.dx);
+  const fdy = Math.sign(facingDir.dy);
+  const tx = Math.floor(playerX) + fdx;
+  const ty = Math.floor(playerY) + fdy;
 
   const hit = getCellAt(tx, ty, chunks);
   if (!hit) return { type: 'none' };
@@ -240,7 +247,11 @@ export function interact(
     return { type: 'stream_drink', message: 'You scoop up some water from the stream...' };
   }
 
-  if (!def?.interactable && !cell.itemId) return { type: 'none' };
+  // Cell-level interactable flag can be set by gen/stamps even when the
+  // static ASSET_DEFS entry is missing or lags behind (quiz_gate stamps, etc.)
+  if (!def?.interactable && !cell.interactable && !cell.itemId && !cell.npcId) {
+    return { type: 'none' };
+  }
 
   // --- Collectible on ground ---
   if (cell.itemId) {
@@ -365,6 +376,10 @@ export function interact(
     house: 'A cozy cottage. Smoke rises from the chimney.',
     hut: 'A small shelter made of branches and thatch.',
     fence: 'A sturdy fence marking a boundary.',
+    wooden_fence: 'A wooden fence. You cannot pass through here.',
+    wall: 'A solid wall blocks the way.',
+    rock: 'A large rock. Too heavy to move.',
+    barricade: 'A barricade blocks the path.',
   };
   if (STRUCTURE_FLAVOR[cell.assetKey]) {
     return { type: 'structure', assetKey: cell.assetKey, message: STRUCTURE_FLAVOR[cell.assetKey] };
@@ -383,23 +398,45 @@ export function autoCollect(
   chunks: Map<string, ChunkData>,
   inventory: Inventory,
 ): InteractionResult | null {
-  const hit = getCellAt(Math.round(playerX), Math.round(playerY), chunks);
-  if (!hit || !hit.cell.itemId) return null;
+  // Sample the cell under the player center and the four footprint corners so
+  // coins/keys near cell edges still pick up (player half-extent is 0.3).
+  const hw = PLAYER_CONFIG.collisionHalfW;
+  const hh = PLAYER_CONFIG.collisionHalfH;
+  const samples: Array<[number, number]> = [
+    [playerX, playerY],
+    [playerX - hw, playerY - hh],
+    [playerX + hw, playerY - hh],
+    [playerX - hw, playerY + hh],
+    [playerX + hw, playerY + hh],
+  ];
 
-  const def = ASSET_DEFS[hit.cell.itemId];
-  if (!def?.walkable) return null; // Only auto-collect walkable items (coins, flowers)
+  for (const [sx, sy] of samples) {
+    const hit = getCellAt(Math.floor(sx), Math.floor(sy), chunks);
+    if (!hit || !hit.cell.itemId) continue;
 
-  const id = hit.cell.itemId;
-  const chunk = chunks.get(hit.chunkKey)!;
-  chunk.cells[hit.ly][hit.lx].itemId = undefined;
-  invalidateObjectCache(hit.chunkKey);
-  inventory.addItem(id, 1);
+    const def = ASSET_DEFS[hit.cell.itemId];
+    if (!def?.walkable) continue; // Only auto-collect walkable items (coins, keys)
 
-  return {
-    type: 'collect',
-    itemId: id,
-    message: `+1 ${def.description || id}`,
-  };
+    const id = hit.cell.itemId;
+    const chunk = chunks.get(hit.chunkKey)!;
+    chunk.cells[hit.ly][hit.lx].itemId = undefined;
+    invalidateObjectCache(hit.chunkKey);
+    inventory.addItem(id, 1);
+
+    const shortName =
+      id === 'key' ? 'Key' :
+      id === 'crowbar' ? 'Crowbar' :
+      id === 'coin' ? 'Coin' :
+      (def.description || id);
+    return {
+      type: 'collect',
+      itemId: id,
+      message: id === 'key' ? '🔑 Key collected!' :
+        id === 'crowbar' ? '🛠️ Crowbar collected!' :
+        `+1 ${shortName}`,
+    };
+  }
+  return null;
 }
 
 /**

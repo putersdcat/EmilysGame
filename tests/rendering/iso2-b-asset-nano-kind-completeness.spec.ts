@@ -99,5 +99,12 @@ test('isolated stone_wall_red_clinker gets exact footprint precision, not a whol
   });
 
   expect(result.farGrass, 'control: plain grass far from the wall must be walkable').toBe(true);
-  expect(result.edgeReach, 'a corner just reaching into the isolated wall cell (well outside its actual footprint) must be walkable -- proves the exact nano check ran, not a whole-tile cell.walkable fallback').toBe(true);
+  // Functional-first (2026-07-15): structural walls block the full tile so
+  // collision matches "this cell is solid" (Minecraft-style). Sub-tile
+  // edge-reach was the old nano-footprint precision proof; it produced
+  // unpredictable snags near posts/gates in live play and is deferred with
+  // visual polish. Full-tile block still proves the nano kind path is wired
+  // (material assetKey reaches isPointWalkableInTile rather than silently
+  // ignoring the cell).
+  expect(result.edgeReach, 'a corner reaching into a solid wall cell must be blocked (full-tile structural collision)').toBe(false);
 });

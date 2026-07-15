@@ -81,8 +81,8 @@ export function updateFog(
 
   const radius = getRevealRadius(flashlightOn);
   const r2 = radius * radius;
-  const px = Math.round(playerX);
-  const py = Math.round(playerY);
+  const px = Math.floor(playerX);
+  const py = Math.floor(playerY);
 
   for (let dy = -radius; dy <= radius; dy++) {
     for (let dx = -radius; dx <= radius; dx++) {

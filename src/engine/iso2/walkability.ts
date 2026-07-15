@@ -13,10 +13,9 @@
  * `never`-walkable rule for the whole tile (matching the coarse map).
  */
 import type { IsoNanoTile as NanoTile } from '../../types/iso-renderer.types.js';
-import {
-  pointHitsWallFootprint,
-  pointHitsFenceFootprint,
-} from './footprints';
+// Footprint geometry stays in footprints.ts (render/tools + future sub-tile
+// collision restore). Gameplay collision for structures is full-tile now
+// (see nanoBlocksPoint). Consumers import footprints via iso2-solver barrel.
 
 /** Default world-unit dimension (5 in main iso config). */
 const N = 5;
@@ -24,36 +23,34 @@ const N = 5;
 /**
  * Test whether a single nano blocks a fractional point inside its tile.
  * Already-unlocked nanos (conditional+unlocked or always) never block.
- * Otherwise: walls use `pointHitsWallFootprint`, fences use
- * `pointHitsFenceFootprint`, other 'never' or locked conditional nanos
- * block the entire tile.
+ *
+ * Functional-first (2026-07-15): walls, fences, and locked gates block the
+ * **entire** micro tile — same as Minecraft-style solid cells. Sub-tile
+ * footprints (pointHitsWallFootprint / pointHitsFenceFootprint) looked
+ * correct for sliding along rails, but in live play they produced
+ * "random" snags and walk-pasts near posts/gates that did not match what
+ * the player expected from a solid obstacle. Visual/iso2 polish can restore
+ * thin footprints later; rivers still need non-full-tile rules only when
+ * a bridge/unlocked overlay is present (handled in isPointWalkableInTile).
  */
 function nanoBlocksPoint(
   nano: NanoTile,
   activeConditions: ReadonlyMap<string, 'locked' | 'unlocked'>,
-  localColFrac: number,
-  localRowFrac: number,
+  _localColFrac: number,
+  _localRowFrac: number,
 ): boolean {
   if (nano.walkable.type === 'always') return false;
   if (nano.walkable.type === 'conditional' && activeConditions.get(nano.walkable.conditionId) === 'unlocked') return false;
 
-  if (nano.kind === 'stone-wall' || nano.kind === 'cathedral-wall' || nano.kind === 'homestead-wall') {
-    return pointHitsWallFootprint(nano.variant ?? 'isolated', localColFrac, localRowFrac);
-  }
-  if (nano.kind === 'fence' || nano.kind === 'gate') {
-    return pointHitsFenceFootprint(nano.variant ?? 'isolated', localColFrac, localRowFrac);
-  }
-
-  // river / river-bank / other 'never' or locked conditional
+  // Structural solids + locked conditionals: full tile.
+  // River 'never' without bridge: full tile (bridge/always short-circuits above).
   return nano.walkable.type === 'never' || nano.walkable.type === 'conditional';
 }
 
 /**
- * Exact sub-tile walkability for fractional player positions.
- * The coarse `buildWalkableMap` says whether a micro tile is generally
- * blocked; this narrows structural nanos to their real footprint so
- * players can slide along walls/fences and stand on open portions of
- * the same micro tile.
+ * Sub-tile walkability for fractional player positions.
+ * Structural walls/fences/gates are full-tile when locked (see nanoBlocksPoint).
+ * Bridges / unlocked conditionals still open the whole tile.
  */
 export function isPointWalkableInTile(
   nanos: readonly NanoTile[] | undefined,

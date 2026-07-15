@@ -198,7 +198,9 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🪵', category: 'obstacle', height: 3, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
     description: 'Wooden barricade (needs crowbar)', tileType: 'wooden_fence',
-    hazardDamage: 0.3, hazardLabel: 'a splintery barricade',
+    // No passive hazard on bump: full-tile collision makes every approach a
+    // "hit"; injury should not punish normal blocking (use Space + crowbar).
+    hazardDamage: 0, hazardLabel: 'a splintery barricade',
   },
   toll_gate: {
     emoji: '🚧', category: 'obstacle', height: 4, layer: 'mid',

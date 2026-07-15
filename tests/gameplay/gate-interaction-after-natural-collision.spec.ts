@@ -160,8 +160,24 @@ test('walking a single arrow key toward a gate positioned on the natural diagona
     return { START_X, START_Y, GATE_COL, GATE_ROW };
   });
 
+  // Hold ArrowRight until the player is actually adjacent to the gate (or we
+  // time out). Fixed wall-clock holds (e.g. 3500ms) are flaky under headless
+  // frame rates: at ~30fps and speed 0.05 the player can stop short of the
+  // gate and Space correctly does nothing — a measurement artifact, not an
+  // interaction bug. Proximity wait is the real-player-equivalent of "keep
+  // walking until you hit the obstacle."
   await page.keyboard.down('ArrowRight');
-  await page.waitForTimeout(3500);
+  const reached = await page.waitForFunction(
+    ({ col, row }) => {
+      const p = (window as any).__gameDebug.state.player;
+      const dx = Math.abs(p.x - (col + 0.5));
+      const dy = Math.abs(p.y - (row + 0.5));
+      // Within ~1.2 cells of gate center = footprint-adjacent / pressed against it
+      return dx + dy < 1.8;
+    },
+    { col: setup.GATE_COL, row: setup.GATE_ROW },
+    { timeout: 12000 },
+  ).then(() => true).catch(() => false);
   await page.keyboard.up('ArrowRight');
   // Wait for the physics to genuinely settle (isMoving=false) rather than a
   // fixed guess -- avoids a race where an edge-detected Space press lands on
@@ -169,6 +185,11 @@ test('walking a single arrow key toward a gate positioned on the natural diagona
   // skipped (handleSpaceInteraction requires `!state.player.isMoving`).
   await page.waitForFunction(() => (window as any).__gameDebug.state.player.isMoving === false, undefined, { timeout: 2000 }).catch(() => {});
   await page.waitForTimeout(150);
+
+  expect(
+    reached,
+    `player never got within adjacency of gate (${setup.GATE_COL},${setup.GATE_ROW}) while holding ArrowRight for up to 12s — movement/collision setup issue, not Space targeting`,
+  ).toBe(true);
 
   const stopped = await page.evaluate(() => {
     const p = (window as any).__gameDebug.state.player;
