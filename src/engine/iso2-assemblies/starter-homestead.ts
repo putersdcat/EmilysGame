@@ -24,6 +24,9 @@ const STARTER_HOMESTEAD: readonly StarterPlacement[] = [
   { x: 3, y: 1, assetKey: 'stone_floor' }, { x: 4, y: 1, assetKey: 'stone_floor' }, { x: 5, y: 1, assetKey: 'stone_floor' },
   { x: 3, y: 2, assetKey: 'stone_floor' }, { x: 4, y: 2, assetKey: 'stone_floor' }, { x: 5, y: 2, assetKey: 'stone_floor' },
   { x: 4, y: 3, assetKey: 'starter_cottage' },
+  // Breadcrumb coins toward the south quiz_gate exit (player starts ~center)
+  { x: 3, y: 4, assetKey: 'dirt', itemId: 'coin' },
+  { x: 3, y: 5, assetKey: 'dirt', itemId: 'coin' },
   { x: 5, y: 5, assetKey: 'grass', itemId: 'coin' },
 ];
 

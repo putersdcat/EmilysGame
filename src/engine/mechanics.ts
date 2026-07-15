@@ -284,7 +284,12 @@ export function interact(
 
   // --- Sign ---
   if (cell.assetKey === 'sign') {
-    return { type: 'sign', message: 'A weathered sign reads: "Adventure awaits beyond the trees..."' };
+    return {
+      type: 'sign',
+      message:
+        'Welcome home! Explore the yard, then walk south to the glowing gate. ' +
+        'Press Space at the gate and answer a question to open the way!',
+    };
   }
 
   // --- Chest ---
