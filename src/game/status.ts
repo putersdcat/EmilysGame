@@ -173,6 +173,8 @@ export const STATUS_ITEM_EFFECTS: Record<string, StatusEffect> = {
   mushroom: { energy: 15 },
   snack: { energy: 30 },
   water_flask: { hydration: 35 },
+  // Merchant trades historically used id 'water' — same effect as water_flask
+  water: { hydration: 35 },
   bandage: { energy: 5, cleanliness: 5 }, // Note: main heal via injury.ts applyBandaid (#109)
   potion: { energy: 20, hydration: 15 },
   soap: { cleanliness: 50 },

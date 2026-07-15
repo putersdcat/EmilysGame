@@ -12,6 +12,7 @@ import type { CellData, ChunkData } from '../types/game.types';
 import { WORLD_CONFIG, PLAYER_CONFIG } from '../config/game.config';
 import type { Inventory } from '../game/inventory';
 import { invalidateObjectCache } from '../rendering/render';
+import { invalidateChunkTerrain } from '../rendering/terrain-cache';
 import { isPointWalkableInTile } from '../rendering/nano-tile-svgs';
 import { getNanoStack } from '../rendering/nano-tile-defs';
 import { sameFeatureNeighbor, variantFromConnections } from '../rendering/tile-variants';
@@ -349,6 +350,7 @@ export function interact(
         resolved: true,
       };
       invalidateObjectCache(chunkKey);
+      invalidateChunkTerrain(chunkKey);
       return {
         type: 'obstacle',
         template,
@@ -472,4 +474,7 @@ export function resolveQuizGate(
     resolved: true,
   };
   invalidateObjectCache(chunkKeyStr);
+  // Terrain bake may composite obstacles into the chunk canvas — force rebuild
+  // so the open door is visible immediately after a correct quiz answer.
+  invalidateChunkTerrain(chunkKeyStr);
 }

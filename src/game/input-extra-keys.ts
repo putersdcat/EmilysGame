@@ -223,7 +223,7 @@ export function setupExtraKeys(
             break;
           }
           // Normal consumable path
-          const consumables = ['snack', 'water_flask', 'soap', 'mushroom', 'bandage', 'potion'];
+          const consumables = ['snack', 'water_flask', 'water', 'soap', 'mushroom', 'bandage', 'potion'];
           for (const itemId of consumables) {
             if (state.inventory.hasItem(itemId)) {
               const result = useStatusItem(state.status, itemId);
@@ -231,7 +231,7 @@ export function setupExtraKeys(
                 state.inventory.removeItem(itemId, 1);
                 addToast(state.ui, result, '#88ccff', 2000);
                 // SFX based on consumable type (#75)
-                playSfx(state.sfx, itemId === 'water_flask' ? 'drink_water' : 'eat_food');
+                playSfx(state.sfx, (itemId === 'water_flask' || itemId === 'water') ? 'drink_water' : 'eat_food');
                 break;
               } else if (result === 'Already at full status!') {
                 addToast(state.ui, '✨ All stats are full!', '#aaa', 1200);
