@@ -57,6 +57,7 @@ import { DIARRHEA_CONFIG } from './illness';
 import { getQuizBias } from './knowledge';
 import { blendDifficulty, getDifficultyForPosition, modulateDifficulty, pickQuizQuestion } from './quiz';
 import { prefetchQuizRephrase } from '../engine/llm';
+import { doSave } from './save-build';
 import { type GameState } from './game-state';
 import { type InteractionResult } from '../engine/mechanics';
 
@@ -111,6 +112,7 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       if (result.resolved) {
         addToast(state.ui, result.message, '#4caf50');
         playSfx(state.sfx, 'obstacle_resolved');
+        doSave(state); // persist opened doors/tolls immediately
       } else {
         addToast(state.ui, result.message, '#f44336');
         playSfx(state.sfx, 'obstacle_blocked');

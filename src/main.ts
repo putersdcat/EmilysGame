@@ -407,6 +407,8 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
           playSfx(state.sfx, 'gate_open');
+          // Persist progress immediately so a quit mid-chunk doesn't re-lock gates
+          doSave(state);
         }
       } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
         // Wrong answer — gate stays closed
