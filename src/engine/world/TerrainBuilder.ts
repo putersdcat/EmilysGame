@@ -35,6 +35,31 @@ const CORE_SURFACES = new Set(['grass', 'dirt', 'sand', 'stone_floor', 'path']);
 const SALT_PRONE = new Set(['dirt', 'sand']);
 
 /**
+ * Structural assetKeys that look wrong as lone posts (V1.3 chain-aware feel).
+ * Barricades / locked doors are intentional single cells and are not listed.
+ */
+const ORPHAN_STRUCTURES = new Set(['fence', 'wooden_fence', 'wall', 'stone_wall']);
+
+function structureFamily(assetKey: string): 'fence' | 'wall' | null {
+  if (
+    assetKey === 'fence' ||
+    assetKey === 'wooden_fence' ||
+    assetKey.startsWith('wooden_fence_')
+  ) {
+    return 'fence';
+  }
+  if (
+    assetKey === 'wall' ||
+    assetKey === 'stone_wall' ||
+    assetKey.startsWith('stone_wall_') ||
+    assetKey === 'starter_wall_plaster'
+  ) {
+    return 'wall';
+  }
+  return null;
+}
+
+/**
  * Build the initial CellData[][] grid from Perlin noise channels.
  *
  * Three noise channels:
@@ -150,6 +175,46 @@ export function cohereSurfacePatches(cells: CellData[][], size: number): void {
       walkable: def?.walkable ?? true,
       // Keep interactable if the cell still has an item/NPC; else follow new surface
       interactable: !!(prev.itemId || prev.npcId) || (def?.interactable ?? false),
+    };
+  }
+}
+
+/**
+ * V1.3: remove lone fence/wall posts that are not part of a run (0 same-family
+ * 4-neighbors). Continuous fence_row / wall_segment stamps keep their runs;
+ * Perlin obstacle salt dies. Deterministic; rewrites to grass.
+ */
+export function removeOrphanStructures(cells: CellData[][], size: number): void {
+  const rewrites: Array<{ x: number; y: number }> = [];
+  const dirs: Array<[number, number]> = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const key = cells[y][x].assetKey;
+      if (!ORPHAN_STRUCTURES.has(key)) continue;
+      const fam = structureFamily(key);
+      if (!fam) continue;
+
+      let sameFamily = 0;
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        if (structureFamily(cells[ny][nx].assetKey) === fam) sameFamily++;
+      }
+      if (sameFamily === 0) rewrites.push({ x, y });
+    }
+  }
+
+  const grassDef = ASSET_DEFS['grass'];
+  for (const r of rewrites) {
+    const prev = cells[r.y][r.x];
+    // Don't erase if something gameplay-critical was attached
+    if (prev.itemId || prev.npcId) continue;
+    cells[r.y][r.x] = {
+      assetKey: 'grass',
+      walkable: grassDef?.walkable ?? true,
+      interactable: grassDef?.interactable ?? false,
     };
   }
 }

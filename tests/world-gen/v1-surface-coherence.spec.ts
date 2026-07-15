@@ -111,3 +111,62 @@ test('V1: meadow chunks have no sand salt and few isolated dirt cells', async ({
     }
   }
 });
+
+test('V1.3: meadow chunks have almost no orphan fence/wall posts', async ({ page }) => {
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(400);
+
+  const report = await page.evaluate(
+    ([wordlist, biomeSeed]: [string[], number]) => {
+      // @ts-expect-error Vite dynamic import
+      return import('/engine/gen.ts').then((gen: any) => {
+        gen.setWordlist(wordlist);
+        gen.setBiomeNoiseSeed(biomeSeed);
+        gen.restoreEntropyBuffer('');
+        const coords: Array<[number, number]> = [
+          [0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [2, 0], [0, 2],
+        ];
+        const orphanTargets = new Set(['fence', 'wooden_fence', 'wall', 'stone_wall']);
+        const family = (k: string) => {
+          if (k === 'fence' || k === 'wooden_fence' || k.startsWith('wooden_fence_')) return 'fence';
+          if (k === 'wall' || k === 'stone_wall' || k.startsWith('stone_wall_')) return 'wall';
+          return null;
+        };
+        const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]] as const;
+        const rows: Array<{ cx: number; cy: number; orphans: number; structures: number }> = [];
+        for (const [cx, cy] of coords) {
+          const c = gen.generateChunkSync(cx, cy);
+          const size = c.cells.length;
+          let orphans = 0;
+          let structures = 0;
+          for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+              const key = c.cells[y][x].assetKey;
+              if (!orphanTargets.has(key)) continue;
+              structures++;
+              const fam = family(key);
+              let same = 0;
+              for (const [dx, dy] of dirs) {
+                const nx = x + dx, ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                if (family(c.cells[ny][nx].assetKey) === fam) same++;
+              }
+              if (same === 0) orphans++;
+            }
+          }
+          rows.push({ cx, cy, orphans, structures });
+        }
+        return rows;
+      });
+    },
+    [FIXED_WORDLIST, BIOME_SEED] as [string[], number],
+  );
+
+  console.log('V1.3 orphan structure report:', JSON.stringify(report));
+  for (const row of report) {
+    expect(
+      row.orphans,
+      `chunk (${row.cx},${row.cy}): orphan fence/wall posts must be 0 (structures=${row.structures})`,
+    ).toBe(0);
+  }
+});

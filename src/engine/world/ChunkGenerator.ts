@@ -60,7 +60,7 @@ import { validatePlayability } from './Validation';
 import { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 import { populateAnchors, clusterDecorations } from './Populator';
 import { enforcePassability } from './Passability';
-import { buildPerlinBase, cohereSurfacePatches } from './TerrainBuilder';
+import { buildPerlinBase, cohereSurfacePatches, removeOrphanStructures } from './TerrainBuilder';
 import {
   placeQuizGates,
   sealTrivialQuizGateBypasses,
@@ -299,6 +299,9 @@ function generateGridChunk(
   // Phase 7.5 (V1): final surface cohere after entropy/obstacles may have
   // reintroduced lone dirt/sand salt cells.
   cohereSurfacePatches(cells, size);
+
+  // Phase 7.6 (V1.3): kill lone fence/wall posts that are not part of a run.
+  removeOrphanStructures(cells, size);
 
   // Phase 8: playability validation (Solver F) (#46)
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));
