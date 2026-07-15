@@ -769,11 +769,15 @@ function handleDiarrheaControlLock(state: GameState): boolean {
  * can read it via state.player.isMoving.
  */
 function handleMovement(state: GameState, input: InputManager): void {
-// --- Movement ---
-const mv = input.getMovementVector();
-const isMoving = mv.dx !== 0 || mv.dy !== 0;
+  const mv = input.getMovementVector();
+  const wantsMove = mv.dx !== 0 || mv.dy !== 0;
 
-if (isMoving) {
+  if (!wantsMove) {
+    updatePlayerVisuals(state, mv, false);
+    resetFootstepCounter();
+    return;
+  }
+
   // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
   const debuffs = getDebuffs(state.status);
   const injuryMult = getInjurySpeedMult(state.injury);
@@ -784,17 +788,11 @@ if (isMoving) {
   const newX = state.player.x + dx;
   const newY = state.player.y + dy;
 
-  // Axis-independent collision resolution with footprint (#151, #180)
-  // Try combined move first; if blocked, try each axis independently (wall-sliding)
-  // iso2: pass activeConditions so conditional gates (quiz-gate etc) use isPointWalkableInTile + cond state (per #223/AUTONOMOUS_LOOP.md)
+  // Axis-independent collision with footprint (#151, #180); slide on one axis when blocked.
   let movedX = false;
   let movedY = false;
   if (state.player.spawnEscape) {
-    // Spawn/resume escape hatch (2026-07-09): the player's resolved
-    // position landed on non-walkable terrain (see state-init.ts's
-    // writeup). Bypass collision entirely -- guaranteed free movement,
-    // even if fully enclosed -- until they reach genuinely walkable
-    // ground, at which point normal collision resumes this same frame.
+    // Escape hatch: bypass collision until on walkable ground (state-init writeup).
     state.player.x = newX;
     state.player.y = newY;
     movedX = true;
@@ -808,12 +806,10 @@ if (isMoving) {
     movedX = true;
     movedY = true;
   } else {
-    // Try X-only
     if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
       state.player.x = newX;
       movedX = true;
     }
-    // Try Y-only
     if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
       state.player.y = newY;
       movedY = true;
@@ -821,30 +817,25 @@ if (isMoving) {
   }
 
   if (movedX || movedY) {
-    // Terrain-aware footstep SFX (#108)
     const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
     const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
     const surface = footTileDef?.surface ?? 'grass';
     playFootstep(state.sfx, surface);
 
-    // iso2 sinkDepth for negative Z (rivers, from walk integration per #223)
-    // Use exact walk logic to detect if in channel
     const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
     if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
-      state.player.sinkDepth = 4; // match iso2 nano z for sink visual
+      state.player.sinkDepth = 4;
     } else if (state.player.spawnEscape) {
-      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX; // still escaping -- stay elevated
+      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
     } else {
       state.player.sinkDepth = 0;
     }
   } else {
-    // Wall bump SFX (#75) — debounce handles frame-spam
+    // Fully blocked this frame
     playSfx(state.sfx, 'wall_bump');
-    // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
     const hitCell = getCellAt(Math.floor(newX), Math.floor(newY), state.chunks);
     const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
     const hitKey = hitCell?.cell.assetKey;
-    // Teach progression: walked into a gate/door → face it + Space
     if (
       hitKey === 'quiz_gate' ||
       hitKey === 'door_locked' ||
@@ -852,7 +843,6 @@ if (isMoving) {
       hitKey === 'door_gate'
     ) {
       triggerHint('near_gate');
-      // Snap facing toward the blocked cell so Space hits it next press
       const tcx = Math.floor(newX);
       const tcy = Math.floor(newY);
       const pcx = Math.floor(state.player.x);
@@ -870,9 +860,8 @@ if (isMoving) {
       playSfx(state.sfx, 'ouch');
       triggerHint('ouch_injury');
       setTransientExpression(state, 'surprised', 3000);
-      triggerInjuryFlash(); // (#109 Phase 3) red screen flash
+      triggerInjuryFlash();
       addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
-      // Achievement milestones (#109 Phase 3)
       if (state.injury.injuryCount === 5) {
         addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
       } else if (state.injury.injuryCount === 10) {
@@ -883,35 +872,21 @@ if (isMoving) {
     }
   }
 
-  // Direction / facing / animation frame / sprite reload (#268 B5.45)
+  // Always update facing from held direction so Space aims at what you're pushing into
   updatePlayerVisuals(state, mv, true);
 
-  // Auto-collect walkable items
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
   if (collected && collected.type === 'collect') {
     addToast(state.ui, collected.message, '#ffd700', 1200);
     playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
   }
 
-  // Camera follow (slightly snappier after player speed bump to 0.08)
   state.camera.x += (state.player.x - state.camera.x) * 0.15;
   state.camera.y += (state.player.y - state.camera.y) * 0.15;
 
-  // Ensure chunks ONLY on chunk boundary crossing
   maybeLoadChunks(state);
-} else {
-  updatePlayerVisuals(state, mv, false);
-  resetFootstepCounter(); // Reset footstep cadence when idle (#108)
-}
 }
 
-/**
- * Handle space-key interaction (NPC, tile, eat-worms).
- * B5 micro-slice 11.34 (#268): extracted from update() in main.ts.
- * Tries wildlife first, then facing-direction tile, then 4 cardinal
- * neighbors, then eat-worms desperation. Delegates result to
- * handleInteraction (from interaction-handler.ts).
- */
 function handleSpaceInteraction(state: GameState, justKeys: any): void {
   // Allow Space while still moving — kids hold a key into a gate and press
   // interact in the same moment; requiring isMoving===false dropped presses.
