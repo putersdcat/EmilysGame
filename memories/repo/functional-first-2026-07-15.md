@@ -70,6 +70,14 @@ optional instrumentation only.
 4. User (2026-07-15): **auto-continue** without waiting for prompts
    (`auto-continue-directive.md`).
 
+## Quirky / fun adds (while playability shipping)
+
+- Campfire rest: cooldown + random cozy one-liners (no infinite energy farm)
+- Coin milestones 10/25/50/100 with cheer toasts
+- Flower/mushroom pick lines; cottage/tree/bush flavor on Space
+- First quiz-gate open + brain-streak cheers
+- Map scroll E-use; crowbar/map quiz drops; water_flask trade consistency
+
 ## Files touched
 
 - `src/engine/iso2/walkability.ts` — full-tile structural collision

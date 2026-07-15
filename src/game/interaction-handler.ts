@@ -94,12 +94,40 @@ export function setPendingPoopBurst(v: boolean): void { _pendingPoopBurst = v; }
  * Called from `update()` in main.ts when the player presses Space on
  * an interactive cell.
  */
+/** Campfire rest cooldown (ms) so Space-spam can't farm infinite energy. */
+const CAMPFIRE_COOLDOWN_MS = 45_000;
+const _campfireRestedAt = new Map<string, number>();
+
+/** Coin milestones for quirky progress cheers (set of thresholds already fired). */
+const _coinMilestonesFired = new Set<number>();
+const COIN_MILESTONES = [10, 25, 50, 100] as const;
+const COIN_MILESTONE_LINE: Record<number, string> = {
+  10: "💰 Ten shiny coins! Pocket's getting jingly!",
+  25: '💰 Twenty-five coins! A proper little fortune!',
+  50: '💰 Fifty coins! Merchants will smile at you!',
+  100: '💰 A hundred coins!! Legend of the clink!',
+};
+
+function maybeCoinMilestoneToast(state: GameState): void {
+  const n = state.inventory.countItem('coin');
+  for (const m of COIN_MILESTONES) {
+    if (n >= m && !_coinMilestonesFired.has(m)) {
+      _coinMilestonesFired.add(m);
+      addToast(state.ui, COIN_MILESTONE_LINE[m], '#ffd700', 3000);
+    }
+  }
+}
+
 export function handleInteraction(result: InteractionResult, state: GameState): void {
   switch (result.type) {
     case 'collect':
-      state.inventory.addItem(result.itemId, 1);
+      if (!state.inventory.addItem(result.itemId, 1)) {
+        addToast(state.ui, '🎒 Inventory full!', '#ff9800', 1800);
+        break;
+      }
       addToast(state.ui, result.message, '#ffd700');
       playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
+      if (result.itemId === 'coin') maybeCoinMilestoneToast(state);
       break;
 
     case 'chest': {
@@ -300,20 +328,44 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
 
     // --- Campfire rest interaction (#77) ---
     case 'campfire': {
+      // Cooldown keyed by player cell so spam-rest can't infinite-farm energy
+      const fireKey = `${Math.floor(state.player.x)},${Math.floor(state.player.y)}`;
+      const now = performance.now();
+      const last = _campfireRestedAt.get(fireKey) ?? 0;
+      if (now - last < CAMPFIRE_COOLDOWN_MS) {
+        const secs = Math.ceil((CAMPFIRE_COOLDOWN_MS - (now - last)) / 1000);
+        addToast(state.ui, `🔥 Embers still warm — rest again in ${secs}s`, '#ffab91', 2000);
+        break;
+      }
+      _campfireRestedAt.set(fireKey, now);
       const changes = applyStatusEffect(state.status, { energy: 25, hydration: 10 });
+      const restLines = [
+        'You toast imaginary marshmallows.',
+        'The fire crackles a secret only you hear.',
+        'Warm toes. Happy explorer.',
+        'A moth of courage lands nearby, then leaves.',
+      ];
+      const quirky = restLines[Math.floor(Math.random() * restLines.length)];
       const msg = changes.length > 0
-        ? `${result.message} ${changes.join(', ')}`
-        : `${result.message} You feel refreshed!`;
-      addToast(state.ui, msg, '#ff8844', 3000);
+        ? `🔥 ${quirky} ${changes.join(', ')}`
+        : `🔥 ${quirky} (You're already full of zip!)`;
+      addToast(state.ui, msg, '#ff8844', 3200);
       playSfx(state.sfx, 'pickup_item');
+      setTransientExpression(state, 'happy', 2000);
       break;
     }
 
     // --- Structure flavor text (#77) ---
     case 'structure':
       // Toast only — don't pause for fence/wall flavor (keeps roam snappy)
-      addToast(state.ui, result.message, '#9e9e9e', 1800);
-      playSfx(state.sfx, 'obstacle_blocked');
+      // Soft bump SFX only for solid blockers; cottages get a gentle ping
+      addToast(state.ui, result.message, '#9e9e9e', 2200);
+      playSfx(
+        state.sfx,
+        result.assetKey === 'house' || result.assetKey === 'hut' || result.assetKey === 'starter_cottage'
+          ? 'pickup_item'
+          : 'obstacle_blocked',
+      );
       break;
   }
 }
@@ -324,5 +376,7 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
  */
 export function resetInteractionState(): void {
   _lastDialogNpcId = null;
+  _campfireRestedAt.clear();
+  _coinMilestonesFired.clear();
   _pendingPoopBurst = false;
 }

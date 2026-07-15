@@ -433,6 +433,11 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
+          if (state.quizStats.correct === 1) {
+            addToast(state.ui, '🌟 First gate conquered! The world is a little bigger now.', '#ce93d8', 3500);
+          } else if (state.streak.consecutiveCorrect >= 3) {
+            addToast(state.ui, '🔥 Brain streak! The gate practically bowed.', '#ffab40', 2800);
+          }
           playSfx(state.sfx, 'gate_open');
           // Persist progress immediately so a quit mid-chunk doesn't re-lock gates
           doSave(state);
@@ -923,8 +928,8 @@ function handleMovement(state: GameState, input: InputManager): void {
 
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
   if (collected && collected.type === 'collect') {
-    addToast(state.ui, collected.message, '#ffd700', 1200);
-    playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
+    // Route through handleInteraction so milestones/full-bag logic stay one path
+    handleInteraction(collected, state);
   }
 
   state.camera.x += (state.player.x - state.camera.x) * 0.15;

@@ -17,6 +17,8 @@ export interface Inventory {
   slots: InventorySlot[];
   maxSlots: number;
   addItem(itemId: string, qty?: number): boolean;
+  /** True if addItem would succeed (stack room or free slot). */
+  canAddItem(itemId: string, qty?: number): boolean;
   removeItem(itemId: string, qty?: number): boolean;
   hasItem(itemId: string): boolean;
   countItem(itemId: string): number;
@@ -32,6 +34,18 @@ export function createInventory(maxSlots = 20): Inventory {
 
   function getDef(id: string): ItemDef | undefined {
     return ITEM_DEFS[id];
+  }
+
+  function canAddItem(itemId: string, qty = 1): boolean {
+    const def = getDef(itemId);
+    const existing = slots.find((s) => s.itemId === itemId);
+    if (existing) {
+      const max = def?.maxStack ?? 99;
+      if (def?.stackable && existing.quantity + qty <= max) return true;
+      if (def?.stackable) return existing.quantity < max; // partial stack still "can add" some
+      return false;
+    }
+    return slots.length < maxSlots;
   }
 
   function addItem(itemId: string, qty = 1): boolean {
@@ -96,6 +110,7 @@ export function createInventory(maxSlots = 20): Inventory {
     slots,
     maxSlots,
     addItem,
+    canAddItem,
     removeItem,
     hasItem,
     countItem,

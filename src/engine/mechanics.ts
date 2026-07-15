@@ -384,19 +384,23 @@ export function interact(
   }
 
   // --- Campfire rest (#77) ---
-  if (cell.assetKey === 'campfire') {
-    return { type: 'campfire', message: 'You rest by the warm campfire...' };
+  if (cell.assetKey === 'campfire' || cell.assetKey === 'bonfire' || cell.assetKey === 'biomass_fire') {
+    return { type: 'campfire', message: 'You rest by the warm fire...' };
   }
 
   // --- House / Hut / structure flavor (#77) ---
   const STRUCTURE_FLAVOR: Record<string, string> = {
-    house: 'A cozy cottage. Smoke rises from the chimney.',
-    hut: 'A small shelter made of branches and thatch.',
-    fence: 'A sturdy fence marking a boundary.',
-    wooden_fence: 'A wooden fence. You cannot pass through here.',
-    wall: 'A solid wall blocks the way.',
-    rock: 'A large rock. Too heavy to move.',
-    barricade: 'A barricade blocks the path.',
+    house: '🏠 A cozy cottage. Someone left the kettle on (probably).',
+    hut: '🛖 A tiny hut. Smells like adventures and damp socks.',
+    starter_cottage: '🏡 Home base! Your very own not-so-secret headquarters.',
+    fence: 'A sturdy fence. Manners say: walk around, not through.',
+    wooden_fence: 'Wooden rails. Good for leaning, bad for walking through.',
+    wall: 'Solid wall. Even heroic elbows bounce off.',
+    rock: '🪨 A rock. It wins the staring contest.',
+    barricade: '🪵 Barricade! Crowbar optional, bravery not.',
+    tree: '🌳 A friendly tree. It does not give high-fives.',
+    tree_pine: '🌲 Pine! Instant forest vibes.',
+    bush: '🌿 A bush. Possibly hiding a coin. Possibly just a bush.',
   };
   if (STRUCTURE_FLAVOR[cell.assetKey]) {
     return { type: 'structure', assetKey: cell.assetKey, message: STRUCTURE_FLAVOR[cell.assetKey] };
@@ -435,23 +439,27 @@ export function autoCollect(
     if (!def?.walkable) continue; // Only auto-collect walkable items (coins, keys)
 
     const id = hit.cell.itemId;
+    // Leave on ground if bag can't take it (handleInteraction is the inventory writer)
+    if (!inventory.canAddItem(id, 1)) continue;
+
     const chunk = chunks.get(hit.chunkKey)!;
     chunk.cells[hit.ly][hit.lx].itemId = undefined;
     invalidateObjectCache(hit.chunkKey);
-    inventory.addItem(id, 1);
 
-    const shortName =
-      id === 'key' ? 'Key' :
-      id === 'crowbar' ? 'Crowbar' :
-      id === 'coin' ? 'Coin' :
-      (def.description || id);
-    return {
-      type: 'collect',
-      itemId: id,
-      message: id === 'key' ? '🔑 Key collected!' :
-        id === 'crowbar' ? '🛠️ Crowbar collected!' :
-        `+1 ${shortName}`,
-    };
+    const FLOWER_PICK = [
+      '🌸 A wildflower for bravery!',
+      '🌼 Pocket posy acquired!',
+      '🌷 Nature high-five!',
+    ];
+    let message: string;
+    if (id === 'key') message = '🔑 Key collected!';
+    else if (id === 'crowbar') message = '🛠️ Crowbar collected!';
+    else if (id === 'coin') message = '💰 Coin!';
+    else if (id.startsWith('flower') || id === 'tulip' || id === 'sunflower') {
+      message = FLOWER_PICK[Math.floor(Math.random() * FLOWER_PICK.length)];
+    } else if (id === 'mushroom') message = '🍄 A mushroom! (Not for tossing at friends.)';
+    else message = `+1 ${def.description || id}`;
+    return { type: 'collect', itemId: id, message };
   }
   return null;
 }
