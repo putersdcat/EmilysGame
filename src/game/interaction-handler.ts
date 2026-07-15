@@ -58,6 +58,7 @@ import { getQuizBias } from './knowledge';
 import { blendDifficulty, getDifficultyForPosition, modulateDifficulty, pickQuizQuestion } from './quiz';
 import { prefetchQuizRephrase } from '../engine/llm';
 import { doSave } from './save-build';
+import { getCycleProgress } from '../rendering/lighting';
 import { type GameState } from './game-state';
 import { type InteractionResult } from '../engine/mechanics';
 
@@ -135,14 +136,20 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       for (const itemId of result.items) {
         if (state.inventory.addItem(itemId, 1)) granted.push(itemId);
       }
+      const chestLines = [
+        `📦 Treasure! ${granted.join(', ')}!`,
+        `✨ Loot! ${granted.join(', ')} — shiny!`,
+        `🪙 Chest says "share." You got ${granted.join(', ')}.`,
+      ];
       addToast(
         state.ui,
         granted.length > 0
-          ? `Opened chest! Found ${granted.join(', ')}!`
+          ? chestLines[Math.floor(Math.random() * chestLines.length)]
           : 'Opened chest — but inventory is full!',
         granted.length > 0 ? '#ffaa00' : '#ff9800',
       );
       playSfx(state.sfx, 'open_chest');
+      if (granted.includes('coin')) maybeCoinMilestoneToast(state);
       doSave(state);
       break;
     }
@@ -338,13 +345,24 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
         break;
       }
       _campfireRestedAt.set(fireKey, now);
-      const changes = applyStatusEffect(state.status, { energy: 25, hydration: 10 });
-      const restLines = [
-        'You toast imaginary marshmallows.',
-        'The fire crackles a secret only you hear.',
-        'Warm toes. Happy explorer.',
-        'A moth of courage lands nearby, then leaves.',
-      ];
+      // Night rests restore a little more (playability: night is harder)
+      const t = getCycleProgress();
+      const isNight = t >= 0.73;
+      const energy = isNight ? 35 : 25;
+      const hydration = isNight ? 15 : 10;
+      const changes = applyStatusEffect(state.status, { energy, hydration });
+      const restLines = isNight
+        ? [
+            'Night fire. Stars approve.',
+            'You warm your courage under the moon.',
+            'The dark feels friendlier by the flames.',
+          ]
+        : [
+            'You toast imaginary marshmallows.',
+            'The fire crackles a secret only you hear.',
+            'Warm toes. Happy explorer.',
+            'A moth of courage lands nearby, then leaves.',
+          ];
       const quirky = restLines[Math.floor(Math.random() * restLines.length)];
       const msg = changes.length > 0
         ? `🔥 ${quirky} ${changes.join(', ')}`

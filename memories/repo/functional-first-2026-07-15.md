@@ -72,10 +72,12 @@ optional instrumentation only.
 
 ## Quirky / fun adds (while playability shipping)
 
-- Campfire rest: cooldown + random cozy one-liners (no infinite energy farm)
+- Campfire rest: cooldown + random cozy one-liners (no infinite energy farm); night rest stronger
 - Coin milestones 10/25/50/100 with cheer toasts
 - Flower/mushroom pick lines; cottage/tree/bush flavor on Space
-- First quiz-gate open + brain-streak cheers
+- First quiz-gate open + brain-streak cheers; quiz correct 5/10/25 milestones
+- Varied quiz-gate dialog lines; quirky door/crowbar/toll success lines
+- First leave-home toast; richer difficulty-tier announcements
 - Map scroll E-use; crowbar/map quiz drops; water_flask trade consistency
 
 ## Files touched

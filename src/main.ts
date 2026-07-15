@@ -240,6 +240,8 @@ import { type GameState } from './game/game-state';
 
 /** Last difficulty tier we announced (playability feedback on exploration). */
 let _lastAnnouncedDiffTier = -1;
+/** Once: player left the origin chunk for the first time. */
+let _leftHomeAnnounced = false;
 
 /** Thin wrapper: boundary-cross chunk load + terrain eviction + auto-save. */
 function maybeLoadChunks(state: GameState): void {
@@ -249,6 +251,14 @@ function maybeLoadChunks(state: GameState): void {
   const pcy = Math.floor(state.player.y / size);
   // Evict distant terrain caches to stay under memory budget (#47)
   evictDistantChunks(pcx, pcy, 3);
+
+  // First step beyond the homestead chunk — teach that the world continues
+  if (!_leftHomeAnnounced && (pcx !== 0 || pcy !== 0)) {
+    _leftHomeAnnounced = true;
+    addToast(state.ui, '🧭 Beyond the yard! Keep exploring — more gates await.', '#81c784', 3500);
+    playSfx(state.sfx, 'pickup_item');
+  }
+
   // Announce difficulty tier changes so exploration progress is legible
   const dist = Math.abs(pcx) + Math.abs(pcy);
   const diff = getDifficulty(dist);
@@ -256,7 +266,14 @@ function maybeLoadChunks(state: GameState): void {
     const prev = _lastAnnouncedDiffTier;
     _lastAnnouncedDiffTier = diff.tier;
     if (prev >= 0) {
-      addToast(state.ui, `🗺️ Now entering: ${diff.tierName}`, '#ffd54f', 2800);
+      const tierLines: Record<number, string> = {
+        0: '🟢 Back to Safe Zone — soft grass and soft quizzes.',
+        1: '🟡 Easy wilds — stretch your legs (and brain).',
+        2: '🟠 Medium country — the gates mean business.',
+        3: '🔴 Hard lands — pack keys, coins, and courage.',
+        4: '💀 Extreme! Even the mushrooms look judgmental.',
+      };
+      addToast(state.ui, tierLines[diff.tier] ?? `🗺️ Now entering: ${diff.tierName}`, '#ffd54f', 3200);
       playSfx(state.sfx, 'pickup_item');
     }
   }
@@ -399,6 +416,14 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         playSfx(state.sfx, 'quiz_correct');
         // Transient expression: happy for 2s (#102)
         setTransientExpression(state, 'happy', 2000);
+        // Playability milestones — celebrate learning progress
+        if (state.quizStats.correct === 5) {
+          addToast(state.ui, '🏅 Five correct! Scholar of the meadow!', '#ffd54f', 3000);
+        } else if (state.quizStats.correct === 10) {
+          addToast(state.ui, '🏆 Ten correct! The Book is proud of you!', '#ffd54f', 3200);
+        } else if (state.quizStats.correct === 25) {
+          addToast(state.ui, '🧠 Twenty-five correct!! Walking encyclopedia!', '#e1bee7', 3500);
+        }
         checkCosmeticUnlocks(state);
 
         // Wound-care quiz bonus heal (#109)

@@ -316,12 +316,18 @@ export function interact(
 
   // --- Quiz Gate (knowledge-based obstacle, Doc 05 §3.5) ---
   if (cell.assetKey === QUIZ_GATE_ASSET) {
+    const GATE_LINES = [
+      'A mystical barrier hums: "Prove you know a thing!"',
+      'The gate yawns: "One clever answer, please."',
+      'Sparkles form a wall. Knowledge is the key here!',
+      'A glowing lock waits for a brainy password.',
+    ];
     return {
       type: 'quiz_gate',
       chunkKey,
       lx,
       ly,
-      message: 'A mystical barrier blocks your path. Answer a question to pass!',
+      message: GATE_LINES[Math.floor(Math.random() * GATE_LINES.length)],
     };
   }
 
@@ -351,11 +357,19 @@ export function interact(
       };
       invalidateObjectCache(chunkKey);
       invalidateChunkTerrain(chunkKey);
+      const successMsg =
+        template.obstacleAsset === 'door_locked'
+          ? '🔑 Click! The door swings open. Onward!'
+          : template.obstacleAsset === 'barricade'
+            ? '🛠️ Crowbar go *pry*! Path cleared!'
+            : template.obstacleAsset === 'toll_gate'
+              ? '💰 Toll paid! The keeper waves you through.'
+              : `Used ${template.requiredItem} — ${template.description}!`;
       return {
         type: 'obstacle',
         template,
         resolved: true,
-        message: `Used ${template.requiredItem} - ${template.description}!`,
+        message: successMsg,
       };
     } else {
       return {
