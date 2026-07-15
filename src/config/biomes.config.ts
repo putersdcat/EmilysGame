@@ -55,9 +55,12 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'meadow',
     displayName: 'Sunny Meadow',
     baseColor: '#1a5c1a',
+    // V1 surface language (2026-07-15): meadow is grass-first. No sand salt —
+    // sand belongs on shores/desert templates, not random Perlin cells.
+    // Dirt stays low so it forms rare mud patches (cohered in TerrainBuilder).
     terrainWeights: {
-      grass: 0.45, flower: 0.06, flower_pink: 0.04, flower_red: 0.04,
-      dirt: 0.06, sand: 0.02,
+      grass: 0.50, flower: 0.06, flower_pink: 0.04, flower_red: 0.04,
+      dirt: 0.04,
       // #58 new plants & animals
       tulip: 0.03, clover: 0.03, wheat: 0.04, sunflower: 0.02,
       chicken: 0.04, sheep: 0.03, cow: 0.02, pig: 0.02, duck: 0.02, rabbit: 0.02, dog: 0.01,
@@ -77,8 +80,9 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'forest',
     displayName: 'Deep Forest',
     baseColor: '#0f3d0f',
+    // V1: forest floor is grass + dirt (leaf litter / trails). No sand salt.
     terrainWeights: {
-      grass: 0.38, dirt: 0.25, sand: 0.03, flower: 0.04, flower_pink: 0.02, mushroom: 0.02,
+      grass: 0.40, dirt: 0.26, flower: 0.04, flower_pink: 0.02, mushroom: 0.02,
       // #58 forest additions
       clover: 0.03, maple_leaf: 0.03, seedling: 0.02, wilted_flower: 0.01,
       rabbit: 0.04, fox: 0.03, deer: 0.04, horse: 0.02, dog: 0.01,
@@ -114,8 +118,9 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'castle',
     displayName: 'Ruined Castle',
     baseColor: '#3d2a2a',
+    // V1: ruin dust is sparse dirt/sand patches, not sand-dominant salt.
     terrainWeights: {
-      stone_floor: 0.5, dirt: 0.08, grass: 0.06, sand: 0.14,
+      stone_floor: 0.55, dirt: 0.12, grass: 0.08, sand: 0.05,
       // #58 castle additions
       sparkle: 0.04, wilted_flower: 0.03, maple_leaf: 0.03,
       goat: 0.02, horse: 0.03, dog: 0.02, rooster: 0.02, chicken: 0.03,

@@ -1379,15 +1379,15 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Mixed terrain (grass/dirt natural variation) ---
+  // --- Mixed terrain (coherent dirt patch + soft grass fringe; V1 no checkerboard) ---
   {
     name: 'mixed_terrain',
     cells: [
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
     ],
     edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
     rotatable: false,
@@ -1404,15 +1404,15 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Meadow Garden (flower rows with item in center) ---
+  // --- Meadow Garden (grass lawn + dirt cross-path + flower beds; V1 no checkerboard) ---
   {
     name: 'meadow_garden',
     cells: [
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'flower', 'dirt', 'flower_pink', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'flower_red', 'dirt', 'tulip', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
     ],
     edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
     rotatable: false,
@@ -2186,15 +2186,16 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    meadow_base: 0.18,
-    meadow_garden: 0.06,
-    dirt_clearing: 0.08,
+    meadow_base: 0.20,
+    meadow_garden: 0.07,
+    dirt_clearing: 0.09,
     mixed_terrain: 0.05,
-    sandy_patch: 0.04,
+    // V1: no free-floating sandy_patch / sand_path / beach_cove in meadow —
+    // sand only via lake/river shore templates where it reads as water edge.
     forest_clearing: 0.04,
     lake: 0.03,
-    dirt_path_ns: 0.07,
-    dirt_path_ew: 0.07,
+    dirt_path_ns: 0.08,
+    dirt_path_ew: 0.08,
     path_bend_ne: 0.03,
     path_t_junction: 0.02,
     path_crossroads: 0.01,
@@ -2224,8 +2225,6 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     wall_corner_capped: 0.02,
     fenced_garden: 0.03,
     fence_row: 0.03,
-    beach_cove: 0.02,
-    sand_path: 0.03,
     // #99 Themed Structures
     homestead_compound: 0.05,
     seller_cart_yard: 0.04,

@@ -29,17 +29,23 @@ import type { CellData } from '../../types/game.types';
 
 // --- Phase 1: Perlin Noise Base Terrain ---
 
+/** Base ground surfaces that participate in V1 patch-coherence (not flowers/animals). */
+const CORE_SURFACES = new Set(['grass', 'dirt', 'sand', 'stone_floor', 'path']);
+/** Surfaces that look wrong as single-cell salt and should join a neighbor patch. */
+const SALT_PRONE = new Set(['dirt', 'sand']);
+
 /**
  * Build the initial CellData[][] grid from Perlin noise channels.
  *
  * Three noise channels:
  *   1. density (freq 0.1) — terrain vs obstacle vs water classification
- *   2. terrainTypeNoise (freq 0.04) — spatially coherent terrain type selection
+ *   2. terrainTypeNoise (freq 0.028) — spatially coherent terrain type selection
  *   3. obstacleTypeNoise (freq 0.04) — spatially coherent obstacle selection
  *
- * The low-frequency channels (0.04) replace Math.random() so nearby cells
+ * The low-frequency terrain channel replaces Math.random() so nearby cells
  * get the same terrain type → larger coherent patches (#261 coherence,
- * #265 determinism).
+ * #265 determinism). V1 (2026-07-15) lowered terrain freq 0.04→0.028 and
+ * runs {@link cohereSurfacePatches} to kill isolated dirt/sand salt cells.
  *
  * Climate affinity (#101): if the biome-weighted pick doesn't match the
  * chunk climate, try an alternative terrain that does. Falls back
@@ -69,13 +75,83 @@ export function buildPerlinBase(
       const gx = chunkX * size + x;
       const gy = chunkY * size + y;
       const density = perlin.noise100(gx * 0.1, gy * 0.1);
-      // Low-frequency noise (0.04) → large coherent patches of same terrain type
-      const typeNoise = terrainTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
+      // V1: 0.028 → larger coherent patches than 0.04 (less checkerboard salt)
+      const typeNoise = terrainTypeNoise.noise100(gx * 0.028, gy * 0.028) / 100;
       const obstacleNoise = obstacleTypeNoise.noise100(gx * 0.04, gy * 0.04) / 100;
       cells[y][x] = assignTerrainCell(density, biome, typeNoise, climate, obstacleNoise);
     }
   }
+  cohereSurfacePatches(cells, size);
   return cells;
+}
+
+/**
+ * V1 surface language: reassign true salt cells (isolated dirt/sand) to the
+ * majority neighboring core surface (usually grass).
+ *
+ * Rules (deliberately permissive for paths/shores):
+ * - dirt: only rewrite when it has **zero** same-type neighbors (path ends OK)
+ * - sand: rewrite when zero same-type neighbors **and** not next to water
+ *   (shore rings keep; lone meadow sand dies)
+ *
+ * Safe to run after WU stamping. Deterministic two-pass (no mid-scan cascade).
+ */
+export function cohereSurfacePatches(cells: CellData[][], size: number): void {
+  const rewrites: Array<{ x: number; y: number; assetKey: string }> = [];
+  const dirs: Array<[number, number]> = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const key = cells[y][x].assetKey;
+      if (!SALT_PRONE.has(key)) continue;
+
+      let same = 0;
+      let nextToWater = false;
+      const neighborCounts = new Map<string, number>();
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+        const nk = cells[ny][nx].assetKey;
+        if (nk === key) same++;
+        if (nk === 'water') nextToWater = true;
+        if (CORE_SURFACES.has(nk)) {
+          neighborCounts.set(nk, (neighborCounts.get(nk) ?? 0) + 1);
+        }
+      }
+
+      // Dirt path ends (1 neighbor) are fine; only pure salt (0) rewrites
+      if (key === 'dirt' && same >= 1) continue;
+      // Sand shore rings / pairs stay; lone sand not touching water rewrites
+      if (key === 'sand') {
+        if (same >= 1) continue;
+        if (nextToWater) continue;
+      }
+
+      let best = 'grass';
+      let bestN = -1;
+      for (const [nk, n] of neighborCounts) {
+        if (nk === key) continue;
+        if (n > bestN) {
+          bestN = n;
+          best = nk;
+        }
+      }
+      if (best !== key) rewrites.push({ x, y, assetKey: best });
+    }
+  }
+
+  for (const r of rewrites) {
+    const def = ASSET_DEFS[r.assetKey];
+    const prev = cells[r.y][r.x];
+    cells[r.y][r.x] = {
+      ...prev,
+      assetKey: r.assetKey,
+      walkable: def?.walkable ?? true,
+      // Keep interactable if the cell still has an item/NPC; else follow new surface
+      interactable: !!(prev.itemId || prev.npcId) || (def?.interactable ?? false),
+    };
+  }
 }
 
 /**

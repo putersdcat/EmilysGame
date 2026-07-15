@@ -60,6 +60,7 @@ import { validatePlayability } from './Validation';
 import { scatterCollectibles, layCoinTrails } from './CollectibleScatterer';
 import { populateAnchors, clusterDecorations } from './Populator';
 import { enforcePassability } from './Passability';
+import { buildPerlinBase, cohereSurfacePatches } from './TerrainBuilder';
 import {
   placeQuizGates,
   sealTrivialQuizGateBypasses,
@@ -73,7 +74,6 @@ import {
 } from './ObstacleSolver';
 import { solveWorldUnitGrid, stampWorldUnitGrid } from './WorldUnitSolver';
 import { WU_SIZE, GRID_DIM } from './WorldGrid';
-import { buildPerlinBase } from './TerrainBuilder';
 import { applyEntropyCellFlags } from './EntropyCellFlags';
 import { stampStarterHomestead, ensureSpawnClearance, maybePlaceCastleLandmark } from '../iso2-assemblies';
 import type {
@@ -240,6 +240,10 @@ function generateGridChunk(
   stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
   if (chunkX === 0 && chunkY === 0) stampStarterHomestead(cells);
 
+  // Phase 3.5 (V1 surface language): kill lone dirt/sand salt left by Perlin
+  // or WU stamps (path ends and water-adjacent sand shores are preserved).
+  cohereSurfacePatches(cells, size);
+
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
 
@@ -291,6 +295,10 @@ function generateGridChunk(
 
   // Phase 7: re-enforce passability after population may have added non-walkable objects
   enforcePassability(cells, size, seededRandom(featureSeed + 600));
+
+  // Phase 7.5 (V1): final surface cohere after entropy/obstacles may have
+  // reintroduced lone dirt/sand salt cells.
+  cohereSurfacePatches(cells, size);
 
   // Phase 8: playability validation (Solver F) (#46)
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));

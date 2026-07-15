@@ -117,7 +117,11 @@ Order is incremental; start at V1:
 
 ### Track V1 — Generation composition (biggest visual win per effort)
 
-1. **Biome surface language** — replace random sand-in-meadow style noise with coherent dirt patches / paths (soft weights or stamps, not per-cell salt).  
+1. **Biome surface language** — ✅ 2026-07-15: meadow/forest drop sand salt;
+   `cohereSurfacePatches` kills isolated dirt/sand; mixed_terrain/meadow_garden
+   no longer checkerboard; meadow drops sandy_patch/sand_path/beach_cove weights.
+   Proof: `tests/world-gen/v1-surface-coherence.spec.ts` (sandSalt=0, dirtSalt=0
+   on sample meadow chunks). Determinism golden re-captured → `a5a2b340`.
 2. **Material by biome** — ensure gen stamps material-bearing assetKeys (or resolvers) already audited in Slice D/E.  
 3. **Fence/wall runs only via chain-aware stamps** — fewer lone posts.
 

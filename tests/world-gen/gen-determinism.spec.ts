@@ -42,6 +42,12 @@
  * content legitimately changed. Full tests/world-gen/ sweep (92 tests) is
  * clean except this single, expected, sanctioned hash diff.
  *
+ * Re-captured 2026-07-15 (35536566 -> a5a2b340) after V1 surface-language
+ * pass: meadow/forest drop sand salt weights, mixed_terrain/meadow_garden
+ * lose checkerboard patterns, TerrainBuilder cohereSurfacePatches + lower
+ * type-noise frequency, meadow template weights drop sandy_patch/sand_path/
+ * beach_cove. Intentional visual-composition change (Docs/13 §4 V1).
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -51,7 +57,7 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-const GOLDEN_HASH = '35536566';
+const GOLDEN_HASH = 'a5a2b340';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {
