@@ -43,8 +43,16 @@ import { WU_SIZE, GRID_DIM } from './WorldGrid';
 
 /** Biome-specific decoration palettes for SCATTER (must all be walkable!) */
 const BIOME_SCATTER_DECORATIONS: Record<string, string[]> = {
-  meadow:  ['flower', 'flower', 'flower_pink', 'flower_red', 'sunflower', 'mushroom', 'tall_plant', 'stump'],
-  forest:  ['mushroom', 'mushroom', 'flower', 'flower_pink', 'tall_plant', 'stump', 'stump'],
+  // S5: flowers dominate; animals rare so they feel special (not field salt)
+  meadow:  [
+    'flower', 'flower', 'flower', 'flower_pink', 'flower_red', 'sunflower',
+    'mushroom', 'clover', 'tall_plant',
+    'chicken', 'rabbit', 'duck', // rare — 3 of ~12 slots
+  ],
+  forest:  [
+    'mushroom', 'mushroom', 'flower', 'flower_pink', 'tall_plant', 'stump', 'stump',
+    'rabbit', 'fox',
+  ],
   cave:    ['mushroom', 'mushroom', 'stump'],
   castle:  ['flower', 'flower_red', 'stump'],
 };
@@ -367,13 +375,12 @@ export function clusterDecorations(
 ): void {
   const palette = BIOME_SCATTER_DECORATIONS[biome.name] ?? ['flower'];
 
-  // Distance-based density: closer to origin = more welcoming, further = sparser
-  // Base coverage: 18-25% at origin, tapering to 10-15% at dist 7+
-  const distFactor = Math.max(0.5, 1.0 - chunkDist * 0.06);
-  // At high difficulty, obstacle density slightly increases decoration density
-  // (more obstacles = more visual clutter = more challenging navigation)
+  // S5 density (2026-07-15): FOV zoom-out shows more cells — lower coverage so
+  // structure language (fence/farm/pond) is not buried under emoji salt.
+  // Base: ~8–12% near origin (was 18–25%), tapering outward.
+  const distFactor = Math.max(0.45, 1.0 - chunkDist * 0.05);
   const obstacleMult = difficulty?.obstacleDensity ?? 1.0;
-  const targetCoverage = (0.18 + rng() * 0.07) * distFactor * Math.min(obstacleMult, 1.5);
+  const targetCoverage = (0.08 + rng() * 0.04) * distFactor * Math.min(obstacleMult, 1.3);
 
   // Gather eligible cells (walkable base terrain with no existing content)
   const eligible: Array<{ x: number; y: number }> = [];

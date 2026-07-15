@@ -214,8 +214,8 @@ export function maybePlaceCastleLandmark(
 
 // --- V2 modular scenes (meadow / forest / castle) --------------------------
 
-/** Overall chance a non-origin chunk attempts a modular scene stamp. */
-const MODULAR_SCENE_CHANCE = 0.28;
+/** Overall chance a non-origin chunk attempts a modular scene stamp (S5: slightly higher structure language). */
+const MODULAR_SCENE_CHANCE = 0.34;
 
 /**
  * Per-biome weighted recipe table. Weights are relative among candidates

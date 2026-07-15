@@ -37,22 +37,20 @@ export function scatterCollectibles(
   chunkDist: number = 0,
   difficulty?: DifficultyProfile,
 ): void {
-  // Distance scaling (Doc 05 §9.1):
-  // dist 0: high density (1.5x), dist 1-2: normal, dist 3-5: 0.8x, dist 6+: 0.6x
-  const distMultiplier = chunkDist === 0 ? 1.5
-    : chunkDist <= 2 ? 1.0
-    : chunkDist <= 5 ? 0.8
-    : 0.6;
+  // S5 density: origin no longer 1.5× coin salt (FOV shows more cells).
+  // dist 0–2: normal, dist 3–5: 0.75x, dist 6+: 0.55x
+  const distMultiplier = chunkDist <= 2 ? 1.0
+    : chunkDist <= 5 ? 0.75
+    : 0.55;
 
-  // Apply difficulty collectible rate if available (stacks with distance curve)
   const diffMult = difficulty?.collectibleRate ?? 1.0;
   const effectiveMultiplier = distMultiplier * diffMult;
 
-  // Coin density: ~2-4% of walkable base cells × collectibleRate × distance factor
-  const baseRate = (0.02 + rng() * 0.02) * biome.collectibleRate * effectiveMultiplier;
+  // Coin density: ~1.2–2.5% of walkable base cells (was ~2–4%)
+  const baseRate = (0.012 + rng() * 0.013) * biome.collectibleRate * effectiveMultiplier;
 
-  // Minimum spacing: 3 cells between same-type collectibles (Doc 05 §5.1)
-  const MIN_SPACING = 3;
+  // Minimum spacing: 4 cells (was 3) so trails stay readable
+  const MIN_SPACING = 4;
   const placed: Array<{ x: number; y: number }> = [];
 
   for (let y = 0; y < size; y++) {

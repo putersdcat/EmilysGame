@@ -126,7 +126,11 @@ Order is incremental; start at V1:
    keys; draw resolves materials). No gen rekey needed for V1.
 3. **Fence/wall runs only via chain-aware stamps** — ✅ 2026-07-15:
    `removeOrphanStructures` drops lone fence/wall posts (0 same-family
-   neighbors). Proof: V1.3 orphan test (orphans=0). Golden → `374b75e4`.
+   neighbors). Proof: V1.3 orphan test (orphans=0).
+4. **S5 density / FOV scale** — ✅ 2026-07-15: on-screen diamonds 128×64
+   (zoom out); player∶tile restored without viewport giant; meadow grass
+   ~0.72 + animals as rare salt; decoration coverage ~8–12% (was 18–25%);
+   lower coin salt; modular scene chance 0.34.
 
 ### Track V2 — Assembly catalog (modular scenes)
 

@@ -98,15 +98,18 @@ test.describe('Emoji Assets Library (#58)', () => {
   });
 
   // --- Biome integration ---
-  test('meadow biome includes farm animals in terrain weights', async ({ page }) => {
+  test('meadow biome keeps farm-animal asset keys (trace weights; not field salt)', async ({ page }) => {
     await waitForGame(page);
     const weights = await page.evaluate(() => {
       return (window as any).__gameDebug.getBiomeDefs()[0].terrainWeights;
     });
+    // S5: animals are rare Perlin salt + farm assemblies, not dense terrain
     expect(weights['chicken']).toBeGreaterThan(0);
     expect(weights['sheep']).toBeGreaterThan(0);
     expect(weights['cow']).toBeGreaterThan(0);
     expect(weights['pig']).toBeGreaterThan(0);
+    // Grass must dominate so FOV zoom-out is not emoji salt
+    expect(weights['grass']).toBeGreaterThan(0.5);
   });
 
   test('meadow biome includes new plants', async ({ page }) => {

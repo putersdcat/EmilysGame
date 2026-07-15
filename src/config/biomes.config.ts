@@ -55,15 +55,15 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'meadow',
     displayName: 'Sunny Meadow',
     baseColor: '#1a5c1a',
-    // V1 surface language (2026-07-15): meadow is grass-first. No sand salt —
-    // sand belongs on shores/desert templates, not random Perlin cells.
-    // Dirt stays low so it forms rare mud patches (cohered in TerrainBuilder).
+    // V1 surface + S5 density (2026-07-15): grass-first meadow. No sand salt.
+    // Animals are NOT Perlin terrain salt (they read as emoji clutter at FOV
+    // zoom-out) — rare animals live in farm assemblies + decoration clusters.
     terrainWeights: {
-      grass: 0.50, flower: 0.06, flower_pink: 0.04, flower_red: 0.04,
-      dirt: 0.04,
-      // #58 new plants & animals
-      tulip: 0.03, clover: 0.03, wheat: 0.04, sunflower: 0.02,
-      chicken: 0.04, sheep: 0.03, cow: 0.02, pig: 0.02, duck: 0.02, rabbit: 0.02, dog: 0.01,
+      grass: 0.72, flower: 0.05, flower_pink: 0.03, flower_red: 0.02,
+      dirt: 0.05,
+      tulip: 0.02, clover: 0.02, wheat: 0.02, sunflower: 0.02,
+      // Trace weights keep farm-animal keys alive (rare salt; main home is farm assembly)
+      chicken: 0.005, sheep: 0.005, cow: 0.005, pig: 0.005, rabbit: 0.005, duck: 0.005,
     },
     // quiz_gate > 0 so placeQuizGates runs in meadow (was hard-disabled at 0 —
     // left entire safe-zone biomes with no knowledge gates). Low weight keeps
@@ -80,13 +80,12 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'forest',
     displayName: 'Deep Forest',
     baseColor: '#0f3d0f',
-    // V1: forest floor is grass + dirt (leaf litter / trails). No sand salt.
+    // V1 + S5: forest floor grass/dirt; wildlife rare (assemblies/scatter).
     terrainWeights: {
-      grass: 0.40, dirt: 0.26, flower: 0.04, flower_pink: 0.02, mushroom: 0.02,
-      // #58 forest additions
-      clover: 0.03, maple_leaf: 0.03, seedling: 0.02, wilted_flower: 0.01,
-      rabbit: 0.04, fox: 0.03, deer: 0.04, horse: 0.02, dog: 0.01,
-      sparkle: 0.01, stump: 0.02,
+      grass: 0.48, dirt: 0.28, flower: 0.03, flower_pink: 0.02, mushroom: 0.03,
+      clover: 0.02, maple_leaf: 0.02, seedling: 0.02, wilted_flower: 0.01,
+      stump: 0.03, sparkle: 0.01,
+      rabbit: 0.01, fox: 0.01, deer: 0.01,
     },
     obstacleWeights: { tree: 0.25, tree_pine: 0.25, bush: 0.2, rock: 0.1, barricade: 0.05, quiz_gate: 0.05, hut: 0.05, campfire: 0.04, biomass_fire: 0.01, shop_snack: 0.02, shop_trading: 0.02 },
     featureWeights: { chest: 0.2, npc_merchant: 0.1, npc_villager: 0.1, coin: 0.4, mushroom: 0.2 },
