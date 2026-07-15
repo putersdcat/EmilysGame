@@ -64,7 +64,7 @@ import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cach
 
 import { searchBookArticles, getBookArticlesBySubject } from './ui/book-content';
 import { type SubjectId } from './config/knowledge.config';
-import { openArticle } from './game/knowledge';
+import { openArticle, getQuizBias } from './game/knowledge';
 import { getCycleProgress } from './rendering/lighting';
 import { getWeatherInfo } from './rendering/weather';
 import { isFlashlightOn } from './rendering/local-lights';
@@ -411,11 +411,20 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           doSave(state);
         }
       } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
-        // Wrong answer — gate stays closed
-        state.pendingGateQuiz = null;
+        // Wrong at a gate: keep the gate pending and deal another question
+        // immediately so kids don't have to walk away and re-press Space.
         addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
         playSfx(state.sfx, 'quiz_wrong');
         setTransientExpression(state, 'surprised', 1500);
+        state.quizStats.answered++;
+        const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
+        const gateDiff = modulateDifficulty(baseGateDiff, state.streak);
+        const gateBias = getQuizBias(state.knowledge);
+        const nextQ = pickQuizQuestion(gateDiff, gateBias);
+        if (nextQ) prefetchQuizRephrase(nextQ.question);
+        void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ);
+        state.paused = true;
+        return wasActive;
       } else if (state.quiz.result === 'wrong') {
         playSfx(state.sfx, 'quiz_wrong');
         setTransientExpression(state, 'surprised', 1500);

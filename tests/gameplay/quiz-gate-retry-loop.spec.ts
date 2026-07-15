@@ -182,7 +182,7 @@ test('a wrong answer at a quiz gate leaves it re-triable, and a later correct an
 
   // 4. Submit, then process the result.
   await pressSpace(page); // submit -> result = 'wrong'
-  await pressSpace(page); // process result -> toast + gate stays shut
+  await pressSpace(page); // process result -> toast + immediate new question (no re-walk)
 
   const toastsAfterWrong = await readToasts(page);
   expect(toastsAfterWrong.some(t => /remains shut/i.test(t)), `expected a "gate remains shut" toast, got: ${JSON.stringify(toastsAfterWrong)}`).toBe(true);
@@ -191,26 +191,15 @@ test('a wrong answer at a quiz gate leaves it re-triable, and a later correct an
   expect(gateAfterWrong.assetKey, 'a wrong answer must NOT resolve the gate -- it must stay quiz_gate').toBe('quiz_gate');
   expect(gateAfterWrong.walkable).toBe(false);
 
-  // 5. RETRY: re-approach the SAME still-locked gate. If this dialog opens
-  // again, the retry mechanism is proven genuinely unlimited (no attempt
-  // counter, no lockout).
-  await page.evaluate(() => {
-    const state = (window as any).__gameDebug.state;
-    state.player.isMoving = false;
-    state.paused = false;
-  });
-  await pressSpace(page);
-  dialog = await readDialog(page);
-  expect(dialog.visible, 'the SAME gate must remain interactable after a wrong answer -- this is the core retry-loop guarantee').toBe(true);
-  expect(dialog.name).toBe('Quiz Gate');
-
-  await pressSpace(page); // advance dialog -> new quiz starts (possibly a different random question)
+  // 5. RETRY: gate quizzes re-deal immediately (unlimited, no walk-away needed).
   await page.waitForTimeout(400);
   quiz = await page.evaluate(() => {
     const q = (window as any).__gameDebug.state.quiz;
-    return { active: q.active, correctIndex: q.correctIndex, choicesLen: q.choices.length };
+    return { active: q.active, correctIndex: q.correctIndex, choicesLen: q.choices.length, result: q.result };
   });
-  expect(quiz.active, 'retry must produce a genuinely new active quiz').toBe(true);
+  expect(quiz.active, 'retry must keep quiz active with a new pending question').toBe(true);
+  expect(quiz.result, 'retry question must be pending for another attempt').toBe('pending');
+  expect(quiz.choicesLen).toBeGreaterThan(1);
 
   // 6. This time, answer CORRECTLY.
   await page.evaluate((idx: number) => (window as any).__gameDebug.quizSelectIndex(idx), quiz.correctIndex);
