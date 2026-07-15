@@ -158,13 +158,17 @@ not consistently invoke the Iso 2.0 composition model**.
 | Modular assemblies | **Nascent** — starter homestead + rare castle landmark only |
 | Experiment folder | Still the **reference** for broader assembly/material catalog |
 
-Full inventory, “not abandoned” rationale, and deferred V1–V4 attachment
-order: `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
-and `13` §4. **Do not start V-tracks while core playability is the active
-campaign** unless a playability fix naturally touches the same code.
+Full inventory, “not abandoned” rationale, and V1–V4 attachment order:
+`/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
+and `13` §4.
+
+**Playability M1 complete (2026-07-15)** — see
+`/memories/repo/playability-milestone-1.md`. V-tracks are **unblocked**;
+start with V1 gen composition.
 
 ## 6. Where to go next
 
 - `13-Development-Roadmap.md` — how any of the above gets addressed, in
   what order, and under what constraint (no speculative rewrites).
-- After playability: Iso 2.0 visual re-attachment plan (`13` §4 + memory file).
+- **Active campaign:** Iso 2.0 visual re-attachment (`13` §4 + memory file),
+  starting at V1 generation composition.

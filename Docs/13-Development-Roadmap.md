@@ -81,7 +81,7 @@ For anyone (human or agent) picking up a new piece of work on Emily's Game:
    change — this has been this project's most reliably successful pattern
    across every audit pass referenced in `12`.
 
-## 4. Phase: Iso 2.0 visual technology re-attachment (AFTER playability)
+## 4. Phase: Iso 2.0 visual technology re-attachment
 
 **Not abandoned.** Iso 2.0 experimental work (even nano subdivision / higher
 detail scale, parametric materials, fence/wall/water families, seamless-ish
@@ -91,14 +91,20 @@ What is missing is **generation composition**: live worlds still salt random
 dirt/sand, under-stamp materials, and rarely call modular scene recipes —
 so the game *looks* pre-Iso2 even though the draw library exists.
 
-**Standing order (user, 2026-07-15):** finish mapped **core playability**
-first (functional loop: move, block, interact, quiz, unlock, progress).
-Visual re-attachment is the next major campaign, not a parallel rewrite.
+**Playability Milestone 1 — complete (2026-07-15).** Core loop
+(move → interact → quiz fail/retry → unlock → denser non-origin gates →
+progress save) is trustworthy enough to unlock this phase. Checklist + E2E
+proof: `/memories/repo/playability-milestone-1.md` and
+`tests/gameplay/playability-m1-core-loop.spec.ts`.
+
+**Standing order:** visual re-attachment is now the **active major campaign**
+(V1 gen composition first). Playability polish may continue in parallel but
+is no longer a hard gate before visual work.
 
 **Authoritative inventory + checklist:**
 `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
 
-When playability is solid enough, attach in this order (detail in that file):
+Attach in this order (detail in that file):
 
 1. **V1 — Gen composition** — coherent biome surfaces (no random sand-in-grass
    language); biome material wiring; chain-aware fence/wall runs.

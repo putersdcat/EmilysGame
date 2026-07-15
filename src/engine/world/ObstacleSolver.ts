@@ -589,6 +589,20 @@ export function ensureMinimumQuizGates(
     cells[c.y][c.x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
     count++;
   }
+
+  // Last resort: any walkable simple terrain (still better than a gate-less chunk)
+  if (count < minCount) {
+    for (let y = 2; y < size - 2 && count < minCount; y++) {
+      for (let x = 2; x < size - 2 && count < minCount; x++) {
+        const cell = cells[y][x];
+        if (!cell.walkable || cell.itemId || cell.npcId) continue;
+        if (!['grass', 'dirt', 'sand', 'stone_floor', 'path'].includes(cell.assetKey)) continue;
+        if (countWalkableNeighbors(cells, x, y, size) < 2) continue;
+        cells[y][x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
+        count++;
+      }
+    }
+  }
 }
 
 /**

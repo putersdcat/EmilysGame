@@ -1,9 +1,9 @@
 # Iso 2.0 visual technology — inventory, port status, deferred plan
 
 **Created:** 2026-07-15  
-**Status:** Planning / deferred attachment  
-**Standing order:** Do **not** prioritize this over core playability. Attach
-after the mapped play-loop goals are solid (functional-first campaign).  
+**Status:** **Unblocked** — Playability M1 complete (2026-07-15). V1 is next.  
+**Standing order:** Core play loop is solid enough; visual re-attachment is
+now the active major campaign (see `playability-milestone-1.md`).  
 **Primary sources:** `iso2-portback-plan.md`, `iso2-port-remaining-work.md`,
 `Docs/05`, `Docs/12`, `Docs/13`, `src/asset-pipeline/iso2-*`,
 `src/engine/iso2-assemblies*`, `experiment/isometric-2.0/`.
@@ -99,18 +99,21 @@ experience from the experiment exists as **engine capability**, not as
 
 ---
 
-## 5. Why this is deferred (not cancelled)
+## 5. Why this was deferred (now unblocked)
 
 1. **User 2026-07-15:** functional playability first; Minecraft look OK until loop works.  
 2. **Code-organization philosophy:** no speculative visual rewrite while the loop is soft.  
 3. **Iso2 port already proved** many materials/nanos *can* draw correctly in isolation tests; the remaining work is **generation composition + more assemblies + wiring**, which is a large product surface.  
-4. Risk: re-opening material/gen scale without a finished loop burns tokens and reintroduces collision/visual entanglement.
+4. Risk was re-opening material/gen scale without a finished loop — **M1 closed that gate.**
+
+**Unblocked 2026-07-15** after M1 checklist + E2E proof
+(`playability-milestone-1.md`, `playability-m1-core-loop.spec.ts`).
 
 ---
 
-## 6. Attachment plan (after core playability)
+## 6. Attachment plan (active after M1)
 
-Work only when playability goals from `13` §2 (gates that matter, loop reliability, etc.) are in good shape. Order is incremental:
+Order is incremental; start at V1:
 
 ### Track V1 — Generation composition (biggest visual win per effort)
 
@@ -156,4 +159,4 @@ Same as Iso2 port methodology: live gen or stamp → screenshot or pixel test �
 
 ## 8. One-sentence for status reports
 
-**Iso 2.0 materials, nanos, and a few assemblies are in main; world generation still underuses them, so the game looks pre-Iso2. We did not give up — we deferred full visual attachment until core playability is delivered, and this file is the checklist to reattach.**
+**Iso 2.0 materials, nanos, and a few assemblies are in main; world generation still underuses them, so the game looks pre-Iso2. Core playability M1 is done (2026-07-15) — this file is now the active checklist to reattach, starting at V1 gen composition.**

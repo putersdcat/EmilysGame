@@ -60,14 +60,18 @@ optional instrumentation only.
 | Space on quiz_gate | quiz active + barrier message |
 | Related Playwright suite (21 tests) | all green |
 
-## Next functional priorities (suggested)
+## Milestone 1 complete (2026-07-15)
 
-1. ~~Roam/spawn loop / progression density~~ — partial: non-origin min gate,
-   meadow quiz weight, fence-run gates, coin trails to gates, near_gate Space
-   teaching, starter key, Enter=Space.
-2. **Welcome splash / first-run** — still can block non-test play until dismiss.
-3. **Visuals / Iso2 materials** — only after core loop feels complete.
-4. User (2026-07-15): **auto-continue** without waiting for prompts
+All M1 checklist items ✅ including E2E:
+- `tests/gameplay/playability-m1-core-loop.spec.ts` — homestead fail→retry→open + non-origin ≥1 gate
+- `ensureMinimumQuizGates` last-resort terrain placement
+- Docs `12`/`13` + iso2 inventory mark visual track **unblocked**
+
+## Next priorities (post-M1)
+
+1. **Visuals / Iso2 V1 gen composition** — active campaign (`13` §4).
+2. Playability polish in parallel if needed (welcome splash, soft edges).
+3. User (2026-07-15): **auto-continue** without waiting for prompts
    (`auto-continue-directive.md`).
 
 ## Quirky / fun adds (while playability shipping)
