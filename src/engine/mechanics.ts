@@ -363,8 +363,12 @@ export function interact(
         template,
         resolved: false,
         message: template.coinCost
-          ? `Need ${template.coinCost} ${template.requiredItem}s to pass!`
-          : `Need a ${template.requiredItem}!`,
+          ? `Need ${template.coinCost} coins to pass! (you have ${inventory.countItem('coin')})`
+          : template.requiredItem === 'key'
+            ? 'Need a key! Find one, buy one, or win one from quizzes.'
+            : template.requiredItem === 'crowbar'
+              ? 'Need a crowbar! Buy one from a merchant or win one from harder quizzes.'
+              : `Need a ${template.requiredItem}!`,
       };
     }
   }

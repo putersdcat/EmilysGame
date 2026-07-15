@@ -102,11 +102,22 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
       break;
 
-    case 'chest':
-      for (const itemId of result.items) state.inventory.addItem(itemId, 1);
-      addToast(state.ui, result.message, '#ffaa00');
+    case 'chest': {
+      const granted: string[] = [];
+      for (const itemId of result.items) {
+        if (state.inventory.addItem(itemId, 1)) granted.push(itemId);
+      }
+      addToast(
+        state.ui,
+        granted.length > 0
+          ? `Opened chest! Found ${granted.join(', ')}!`
+          : 'Opened chest — but inventory is full!',
+        granted.length > 0 ? '#ffaa00' : '#ff9800',
+      );
       playSfx(state.sfx, 'open_chest');
+      doSave(state);
       break;
+    }
 
     case 'obstacle':
       if (result.resolved) {

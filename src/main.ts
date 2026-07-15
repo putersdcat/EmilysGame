@@ -4,7 +4,7 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG } from './config/game.config';
+import { WORLD_CONFIG, getDifficulty } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
 import { IsometricRenderer, setDialogNpc } from './rendering/render';
@@ -238,6 +238,9 @@ import { type GameState } from './game/game-state';
 // POSITIONAL_AUDIO_ASSETS registry moved to ./game/audio/positional-sources.ts.
 // Imported above. Call once per frame from update().
 
+/** Last difficulty tier we announced (playability feedback on exploration). */
+let _lastAnnouncedDiffTier = -1;
+
 /** Thin wrapper: boundary-cross chunk load + terrain eviction + auto-save. */
 function maybeLoadChunks(state: GameState): void {
   if (!loadChunksOnBoundaryCross(state)) return;
@@ -246,6 +249,17 @@ function maybeLoadChunks(state: GameState): void {
   const pcy = Math.floor(state.player.y / size);
   // Evict distant terrain caches to stay under memory budget (#47)
   evictDistantChunks(pcx, pcy, 3);
+  // Announce difficulty tier changes so exploration progress is legible
+  const dist = Math.abs(pcx) + Math.abs(pcy);
+  const diff = getDifficulty(dist);
+  if (diff.tier !== _lastAnnouncedDiffTier) {
+    const prev = _lastAnnouncedDiffTier;
+    _lastAnnouncedDiffTier = diff.tier;
+    if (prev >= 0) {
+      addToast(state.ui, `🗺️ Now entering: ${diff.tierName}`, '#ffd54f', 2800);
+      playSfx(state.sfx, 'pickup_item');
+    }
+  }
   // Auto-save on chunk exit
   doSave(state);
 }
@@ -366,8 +380,21 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
     if (state.quiz.result !== 'pending') {
       if (state.quiz.result === 'correct') {
         const rewards = quizReward(state.quiz.difficulty);
-        for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
-        addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
+        const granted: string[] = [];
+        let anyDenied = false;
+        for (const r of rewards) {
+          if (state.inventory.addItem(r.itemId, r.qty)) {
+            granted.push(`${r.qty} ${r.itemId}`);
+          } else {
+            anyDenied = true;
+          }
+        }
+        if (granted.length > 0) {
+          addToast(state.ui, `Quiz reward! +${granted.join(', ')}`, '#4caf50');
+        }
+        if (anyDenied) {
+          addToast(state.ui, '🎒 Inventory full — some rewards dropped!', '#ff9800', 2500);
+        }
         state.quizStats.correct++;
         playSfx(state.sfx, 'quiz_correct');
         // Transient expression: happy for 2s (#102)
@@ -421,7 +448,15 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         const gateDiff = modulateDifficulty(baseGateDiff, state.streak);
         const gateBias = getQuizBias(state.knowledge);
         const nextQ = pickQuizQuestion(gateDiff, gateBias);
-        if (nextQ) prefetchQuizRephrase(nextQ.question);
+        if (!nextQ) {
+          // No eligible questions — unpause so player is never soft-locked
+          addToast(state.ui, '📖 No more questions right now — try again later!', '#ff9800', 2500);
+          state.pendingGateQuiz = null;
+          quizClose(state.quiz);
+          state.paused = false;
+          return wasActive;
+        }
+        prefetchQuizRephrase(nextQ.question);
         void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ);
         state.paused = true;
         return wasActive;
@@ -849,9 +884,11 @@ function handleMovement(state: GameState, input: InputManager): void {
       hitKey === 'quiz_gate' ||
       hitKey === 'door_locked' ||
       hitKey === 'toll_gate' ||
-      hitKey === 'door_gate'
+      hitKey === 'door_gate' ||
+      hitKey === 'barricade'
     ) {
-      triggerHint('near_gate');
+      if (hitKey === 'barricade') triggerHint('need_crowbar');
+      else triggerHint('near_gate');
       const tcx = Math.floor(newX);
       const tcy = Math.floor(newY);
       const pcx = Math.floor(state.player.x);
