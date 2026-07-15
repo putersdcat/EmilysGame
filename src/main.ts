@@ -399,9 +399,11 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
         if (state.pendingGateQuiz) {
           const g = state.pendingGateQuiz;
+          // Cell rewrite to door_open is the real unlock. Do NOT set the
+          // global 'quiz-gate' condition to unlocked — that single id is
+          // shared by every quiz_gate in the world, so one solved gate
+          // would make all others walkable through the nano path.
           resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
-          // iso2: unlock cond so isPointWalkableInTile / buildWalkableMap see passable (supports cond path + morph to door_open)
-          state.activeConditions.set('quiz-gate', 'unlocked');
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
           playSfx(state.sfx, 'gate_open');

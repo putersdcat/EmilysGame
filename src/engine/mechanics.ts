@@ -165,6 +165,12 @@ function isPositionWalkable(
   if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
 
   const cell = chunk.cells[ly][lx];
+  // Unresolved quiz gates always use cell.walkable (false until resolveQuizGate
+  // rewrites the cell). Prevents the shared global 'quiz-gate' condition id
+  // from unlocking every gate after one is solved (see main.ts resolve path).
+  if (cell.assetKey === 'quiz_gate' && !cell.resolved) {
+    return cell.walkable;
+  }
   const nanoKind = getNanoKindForAsset(cell.assetKey);
   if (nanoKind) {
     // Infer variant using the same family-aware, cross-chunk-boundary-safe

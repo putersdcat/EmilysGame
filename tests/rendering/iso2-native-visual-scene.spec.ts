@@ -164,13 +164,20 @@ test('live gameplay #223 gate boundary in fence run: cannot walk locked, can aft
   // Assert cannot walk locked gate (uses exact footprint + cond from iso2-solver isPointWalkableInTile + mechanics; fence run simulates placer output from src/gen.ts per AUTONOMOUS_LOOP.md + #223)
   expect(lockedPos.y).toBeLessThanOrEqual(2.4);
 
-  // After locked attempt, move to gate and sim quiz trigger (or simulate unlock after correct answer; real UI would open quiz on interact at gate, correct sets cond via resolveCondition)
+  // After locked attempt, sim quiz-correct unlock the way gameplay does: rewrite cell
   await page.evaluate(() => {
     const debug = (window as any).__gameDebug;
     const state = debug.state;
-    state.player.y = 3.0; // at gate position for quiz trigger
-    // sim quiz correct -> unlock
-    state.activeConditions.set('quiz-gate', 'unlocked' as const);
+    state.player.y = 3.0;
+    // resolveQuizGate morph — not a global activeConditions unlock
+    const ch = state.chunks.get('0,0');
+    for (let y = 0; y < ch.cells.length; y++) {
+      for (let x = 0; x < ch.cells[y].length; x++) {
+        if (ch.cells[y][x].assetKey === 'quiz_gate') {
+          ch.cells[y][x] = { assetKey: 'door_open', walkable: true, interactable: false, resolved: true };
+        }
+      }
+    }
     debug.invalidateRenderCaches();
   });
 
@@ -238,7 +245,14 @@ test('visual delta capture: player south of gate after unlock (for clear PNG pro
   await page.evaluate(() => {
     const debug = (window as any).__gameDebug;
     const state = debug.state;
-    state.activeConditions.set('quiz-gate', 'unlocked' as const);
+    const ch = state.chunks.get('0,0');
+    for (let y = 0; y < ch.cells.length; y++) {
+      for (let x = 0; x < ch.cells[y].length; x++) {
+        if (ch.cells[y][x].assetKey === 'quiz_gate') {
+          ch.cells[y][x] = { assetKey: 'door_open', walkable: true, interactable: false, resolved: true };
+        }
+      }
+    }
     state.player.y = 4.5; // south side
     state.camera.y = 4.5;
     debug.invalidateRenderCaches();

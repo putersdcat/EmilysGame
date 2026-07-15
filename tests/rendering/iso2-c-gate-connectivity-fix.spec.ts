@@ -62,7 +62,11 @@ test('Slice C: quiz_gate embedded in a wooden_fence run blocks across the full r
     const lockedBlocksOffCenter = debug.isFootprintWalkable(11.5, 12.8) as boolean;
     const controlFarGrass = debug.isFootprintWalkable(5.5, 5.5) as boolean;
 
-    state.activeConditions.set('quiz-gate', 'unlocked');
+    // Real gameplay unlock rewrites the cell (resolveQuizGate → door_open).
+    // Global activeConditions 'quiz-gate' is intentionally NOT used for that —
+    // a shared id would open every quiz_gate at once.
+    chunk.cells[12][11] = { assetKey: 'door_open', walkable: true, interactable: false, resolved: true };
+    debug.invalidateRenderCaches();
     const unlockedPasses = debug.isFootprintWalkable(11.5, 12.5) as boolean;
 
     return { lockedBlocksOffCenter, controlFarGrass, unlockedPasses };
