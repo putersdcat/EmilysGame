@@ -512,7 +512,7 @@ export const TRADING_POST_PERSONA: NpcPersona = {
     { gives: 'bandage', wants: 'mushroom', cost: 2, description: 'Bandage (2 mushrooms)' },
     { gives: 'potion', wants: 'snack', cost: 3, description: 'Potion (3 snacks)' },
     { gives: 'torch', wants: 'snack', cost: 2, description: 'Torch (2 snacks)' },
-    { gives: 'soap', wants: 'water', cost: 2, description: 'Soap (2 water)' },
+    { gives: 'soap', wants: 'water_flask', cost: 2, description: 'Soap (2 water flasks)' },
     { gives: 'map_scroll', wants: 'key', cost: 1, description: 'Map Scroll (1 key)' },
   ],
   canQuiz: false,
