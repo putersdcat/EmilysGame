@@ -4,7 +4,7 @@
  * TODO: DOC - full rendering pipeline docs
  */
 
-import { RENDER_CONFIG, WORLD_CONFIG } from '../config/game.config';
+import { RENDER_CONFIG, WORLD_CONFIG, PLAYER_CONFIG, entityDisplayScale } from '../config/game.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { getBiome } from '../config/biomes.config';
@@ -298,7 +298,10 @@ export class IsometricRenderer {
     cmd.type = CMD_PLAYER;
     cmd.emoji = '🧑';
     cmd.sx = esx; cmd.sy = esy;
-    cmd.scale = 1.0; cmd.tint = 0;
+    // Scale with tile DPI so avatar∶diamond matches pre-Iso2 (64px) ratio —
+    // tileWidth jumped 64→256 without scaling sprites (see visual-scale-dpi-mismatch).
+    cmd.scale = entityDisplayScale() * PLAYER_CONFIG.scale;
+    cmd.tint = 0;
     cmd.img = egoImg;
     cmd.flipX = egoDir < 0;
     cmd.sinkPx = sinkPx;
@@ -650,22 +653,24 @@ export class IsometricRenderer {
           break;
         case CMD_PLAYER:
           // C2.3 (#257): apply sinkPx to drop the player sprite lower on rivers
-          this.drawShadow(cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), 1.0);
+          this.drawShadow(cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), cmd.scale);
           if (cmd.img) {
             this.drawSprite(cmd.img, cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), cmd.scale, cmd.flipX ?? false);
           } else {
             this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy + (cmd.sinkPx ?? 0), cmd.scale, cmd.tint);
           }
           break;
-        case CMD_NPC:
-          // Paper-cut NPC sprite with emoji fallback (#85)
-          if (cmd.shadow) this.drawShadow(cmd.sx, cmd.sy, cmd.scale);
+        case CMD_NPC: {
+          // Paper-cut NPC sprite with emoji fallback (#85) — DPI-matched to player
+          const npcScale = cmd.scale * entityDisplayScale();
+          if (cmd.shadow) this.drawShadow(cmd.sx, cmd.sy, npcScale);
           if (cmd.npcImg) {
-            this.drawSprite(cmd.npcImg, cmd.sx, cmd.sy - 8, cmd.scale, cmd.npcFlipX ?? false);
+            this.drawSprite(cmd.npcImg, cmd.sx, cmd.sy - 8 * entityDisplayScale(), npcScale, cmd.npcFlipX ?? false);
           } else {
-            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, cmd.scale, cmd.tint);
+            this.drawEmoji(cmd.emoji, cmd.sx, cmd.sy, npcScale, cmd.tint);
           }
           break;
+        }
       }
     }
   }

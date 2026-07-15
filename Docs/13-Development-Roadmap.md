@@ -113,8 +113,11 @@ Attach in this order (detail in that file):
    orphan water/roof strip, R1 grass under every WU cell, R2 open-water
    **basin** fills (no crossed-canal tanks). Proof: v3-water-roof-polish +
    iso2-v3-water-basin-r2.
-4. **V4 — Scale/math audit** — only if 144px / even-division contracts still
-   fail end-to-end after V1–V3.
+4. **V4 — Scale / avatar∶world∶viewport** — **active diagnosis 2026-07-15**:
+   tileWidth 64→256 left emoji/sprite/player unscaled (player∶tile 0.5→0.125).
+   Nano detail cannot read as an upgrade until entity scale (and optional
+   display zoom) track tile DPI. See `memories/repo/visual-scale-dpi-mismatch-2026-07-15.md`.
+   First fix: `entityDisplayScale()` restores pre-Iso2 avatar∶diamond ratio.
 
 **Do not** treat this section as permission to drop playability work for a
 big-bang visual rewrite. Proof bar remains Slice methodology + live/screenshot

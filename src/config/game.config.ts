@@ -5,6 +5,14 @@
  */
 
 // ─── Rendering ───────────────────────────────────────────────
+/**
+ * Pre-Iso2.0 on-screen diamond width when emojiSize/spriteSize (32/48) were
+ * authored. tileWidth later jumped 64→256 (13ade67) without scaling entities,
+ * so the avatar shrank to 1/8 of a diamond (was ~1/2). See
+ * memories/repo/visual-scale-dpi-mismatch-2026-07-15.md.
+ */
+export const LEGACY_TILE_WIDTH = 64;
+
 export const RENDER_CONFIG = {
   canvasWidth: 800,
   canvasHeight: 600,
@@ -17,14 +25,30 @@ export const RENDER_CONFIG = {
   useWasmRenderer: false, // Disabled: JS path with object cache is faster (no marshal overhead)
   shadowAlpha: 0.5,
   shadowScale: { width: 22, height: 12 },
-  emojiSize: 32,        // Base emoji font size
-  spriteSize: 48,       // Base SVG sprite render size
+  emojiSize: 32,        // Base emoji font size (source raster; display scaled via entityDisplayScale)
+  spriteSize: 48,       // Base SVG sprite render size (source; display scaled via entityDisplayScale)
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
   /** Source pixel size of micro-tile SVGs fed into the isometric transform.
    *  Iso 2.0 uses 144 so the nano sub-grid divides cleanly into 3×48px cells. */
   microTileSize: 144,
+  /**
+   * Fraction of the raw DPI jump (tileWidth/64) applied to character sprites.
+   * 1.0 = full 4× restore (too tall vs cottage/fence in practice).
+   * ~0.5 ≈ 2× — avatar human-scale next to 1-cell cottage without towering.
+   * Nano geometry already fills the diamond and is not multiplied by this.
+   * See visual-scale-dpi-mismatch-2026-07-15.md.
+   */
+  entityScaleFactor: 0.55,
 };  // Mutable: canvasWidth/canvasHeight updated on viewport resize
+
+/**
+ * On-screen scale for player/NPC sprites relative to current diamond size.
+ * Compensates the 64→256 tileWidth jump that left emojiSize/spriteSize fixed.
+ */
+export function entityDisplayScale(): number {
+  return (RENDER_CONFIG.tileWidth / LEGACY_TILE_WIDTH) * RENDER_CONFIG.entityScaleFactor;
+}
 
 // ─── Grid / World ────────────────────────────────────────────
 export const WORLD_CONFIG = {
@@ -54,6 +78,7 @@ export const PLAYER_CONFIG = {
   speed: 0.08,          // Grid units per frame
   startPosition: { x: 12.5, y: 12.5 }, // Center of cell at chunk midpoint (avoids footprint overlap with adjacent walls)
   height: 3,
+  /** Extra multiplier on top of entityDisplayScale() (tile DPI restore). */
   scale: 1.0,
   defaultVariation: 'blonde_pink',
   animationFrames: 6,   // Walking animation frame count
