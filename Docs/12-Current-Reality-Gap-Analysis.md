@@ -143,7 +143,28 @@ code change. It is now documented precisely enough that:
   framing is the target shape to move that specific piece toward — see
   `13` for how that kind of opportunistic alignment is meant to happen.
 
-## 5. Where to go next
+## 5. Iso 2.0 visual technology vs live world (2026-07-15)
+
+**Hypothesis confirmed by live screenshots + port history:** the player still
+sees checkerboard dirt, random sand, lone fence posts, and sparse structures
+**not** because materials/nanos were deleted, but because **generation does
+not consistently invoke the Iso 2.0 composition model**.
+
+| Layer | Status |
+|-------|--------|
+| Nano draw, materials, fence/water families | Largely **in main** (`src/asset-pipeline/iso2-*`, `nano-tile*`) |
+| Pixel/parity tests | Many **exist and pass** for isolated materials |
+| World gen surface language | Still **noise-like** (per-cell dirt/sand scatter) |
+| Modular assemblies | **Nascent** — starter homestead + rare castle landmark only |
+| Experiment folder | Still the **reference** for broader assembly/material catalog |
+
+Full inventory, “not abandoned” rationale, and deferred V1–V4 attachment
+order: `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
+and `13` §4. **Do not start V-tracks while core playability is the active
+campaign** unless a playability fix naturally touches the same code.
+
+## 6. Where to go next
 
 - `13-Development-Roadmap.md` — how any of the above gets addressed, in
   what order, and under what constraint (no speculative rewrites).
+- After playability: Iso 2.0 visual re-attachment plan (`13` §4 + memory file).

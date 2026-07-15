@@ -50,7 +50,7 @@ If you read nothing else, read **02**. Everything else assumes it.
 | 10 | [`10-UI-UX-and-Accessibility.md`](10-UI-UX-and-Accessibility.md) | HUD, menus, dialog, accessibility, touch/gamepad input |
 | 11 | [`11-Save-State-and-Persistence.md`](11-Save-State-and-Persistence.md) | What must persist, the save/load contract, determinism guarantees |
 | 12 | [`12-Current-Reality-Gap-Analysis.md`](12-Current-Reality-Gap-Analysis.md) | Honest, source-verified mapping of the current `src/` code against this model — what already matches, what's entangled, what's a known gap |
-| 13 | [`13-Development-Roadmap.md`](13-Development-Roadmap.md) | How to move forward incrementally — explicitly aligned with this repo's standing "no speculative rewrites" rule |
+| 13 | [`13-Development-Roadmap.md`](13-Development-Roadmap.md) | How to move forward incrementally — playability first; §4 defers Iso 2.0 visual re-attachment (materials, assemblies, coherent biomes) until the core loop is solid |
 
 ## 2. Status of this rewrite
 

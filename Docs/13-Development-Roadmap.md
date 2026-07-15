@@ -81,7 +81,41 @@ For anyone (human or agent) picking up a new piece of work on Emily's Game:
    change — this has been this project's most reliably successful pattern
    across every audit pass referenced in `12`.
 
-## 4. Keeping this document set alive
+## 4. Phase: Iso 2.0 visual technology re-attachment (AFTER playability)
+
+**Not abandoned.** Iso 2.0 experimental work (even nano subdivision / higher
+detail scale, parametric materials, fence/wall/water families, seamless-ish
+ground language, composite assemblies) was largely **ported into `src/`**
+(Slices A–E, material parity D, starter homestead, rare castle landmarks).
+What is missing is **generation composition**: live worlds still salt random
+dirt/sand, under-stamp materials, and rarely call modular scene recipes —
+so the game *looks* pre-Iso2 even though the draw library exists.
+
+**Standing order (user, 2026-07-15):** finish mapped **core playability**
+first (functional loop: move, block, interact, quiz, unlock, progress).
+Visual re-attachment is the next major campaign, not a parallel rewrite.
+
+**Authoritative inventory + checklist:**
+`/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
+
+When playability is solid enough, attach in this order (detail in that file):
+
+1. **V1 — Gen composition** — coherent biome surfaces (no random sand-in-grass
+   language); biome material wiring; chain-aware fence/wall runs.
+2. **V2 — Assembly catalog** — modular recipes (farm+animals, pond/lake,
+   church+graveyard, gatehouse, bridge, castle wall segment) that the world
+   builder stamps by biome/distance/rarity (extend `stampIso2Assembly` /
+   ChunkGenerator).
+3. **V3 — Water & terrain polish** — river/pond shapes, WU diamond leaks,
+   roofs-as-assembly-only.
+4. **V4 — Scale/math audit** — only if 144px / even-division contracts still
+   fail end-to-end after V1–V3.
+
+**Do not** treat this section as permission to drop playability work for a
+big-bang visual rewrite. Proof bar remains Slice methodology + live/screenshot
+evidence, not “import exists therefore done.”
+
+## 5. Keeping this document set alive
 
 Update `12` (and, if it materially changes, the relevant numbered doc) in
 the same session as any change that closes a gap, confirms a finding was
