@@ -82,6 +82,9 @@ export function checkBubbleTriggers(state: GameState): void {
   if (state.inventory.countItem('key') === 0) {
     triggerHint('no_keys');
   }
+  if (state.inventory.hasItem('map_scroll')) {
+    triggerHint('map_scroll_hint');
+  }
 
   // Nearby interactives — scan around player (floor, not round: n.5 centers)
   const rx = Math.floor(px);
@@ -111,6 +114,9 @@ export function checkBubbleTriggers(state: GameState): void {
         triggerHint('near_gate');
       }
       if (cell.assetKey === 'chest') triggerHint('near_chest');
+      if (cell.assetKey === 'barricade' && !state.inventory.hasItem('crowbar')) {
+        triggerHint('need_crowbar');
+      }
       if (cell.assetKey === 'shop' || cell.assetKey?.startsWith('shop_')) {
         triggerHint('near_shop');
       }

@@ -39,11 +39,6 @@ let fogEnabled = false; // #139: default OFF — user can enable via options
 
 // ─── Core API ───────────────────────────────────────────────
 
-/** Mark a cell as visited. */
-function markVisited(x: number, y: number): void {
-  visitedCells.add(`${x},${y}`);
-}
-
 /** Check if a cell has been visited. */
 function isVisited(x: number, y: number): boolean {
   return visitedCells.has(`${x},${y}`);
@@ -69,6 +64,34 @@ function getRevealRadius(flashlightOn: boolean): number {
 }
 
 /**
+ * Mark a circular area around (worldX, worldY) as visited.
+ * Used by map_scroll consumable and by the normal fog expansion pass.
+ * Works even when fog overlay is disabled so the minimap still fills in.
+ */
+export function revealFogAround(
+  worldX: number,
+  worldY: number,
+  radius: number,
+): number {
+  const r = Math.max(1, Math.floor(radius));
+  const r2 = r * r;
+  const px = Math.floor(worldX);
+  const py = Math.floor(worldY);
+  let newly = 0;
+  for (let dy = -r; dy <= r; dy++) {
+    for (let dx = -r; dx <= r; dx++) {
+      if (dx * dx + dy * dy > r2) continue;
+      const key = `${px + dx},${py + dy}`;
+      if (!visitedCells.has(key)) {
+        visitedCells.add(key);
+        newly++;
+      }
+    }
+  }
+  return newly;
+}
+
+/**
  * Expand visited set around the player position within the reveal radius.
  * Call once per game tick (not per frame).
  */
@@ -80,17 +103,7 @@ export function updateFog(
   if (!fogEnabled) return;
 
   const radius = getRevealRadius(flashlightOn);
-  const r2 = radius * radius;
-  const px = Math.floor(playerX);
-  const py = Math.floor(playerY);
-
-  for (let dy = -radius; dy <= radius; dy++) {
-    for (let dx = -radius; dx <= radius; dx++) {
-      if (dx * dx + dy * dy <= r2) {
-        markVisited(px + dx, py + dy);
-      }
-    }
-  }
+  revealFogAround(playerX, playerY, radius);
 }
 
 /**

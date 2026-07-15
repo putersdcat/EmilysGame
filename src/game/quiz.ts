@@ -435,9 +435,13 @@ export function quizReward(difficulty: QuizDifficulty): { itemId: string; qty: n
   const bandageDrop = Math.random() < 0.25 ? [{ itemId: 'bandage', qty: 1 }] : [];
   // Keys on easy/medium so door_locked stays reachable after quiz play (hard always grants)
   const keyDrop = Math.random() < 0.35 ? [{ itemId: 'key', qty: 1 }] : [];
+  // Crowbars so barricades are clearable without a long merchant hunt
+  const crowbarDrop = Math.random() < 0.2 ? [{ itemId: 'crowbar', qty: 1 }] : [];
+  // Map scrolls (medium+) for fog/minimap reveal via E key
+  const mapDrop = Math.random() < 0.15 ? [{ itemId: 'map_scroll', qty: 1 }] : [];
   switch (difficulty) {
     case 'easy': return [{ itemId: 'coin', qty: 5 }, ...bandageDrop, ...keyDrop];
-    case 'medium': return [{ itemId: 'coin', qty: 15 }, { itemId: 'potion', qty: 1 }, ...bandageDrop, ...keyDrop];
-    case 'hard': return [{ itemId: 'coin', qty: 30 }, { itemId: 'key', qty: 1 }];
+    case 'medium': return [{ itemId: 'coin', qty: 15 }, { itemId: 'potion', qty: 1 }, ...bandageDrop, ...keyDrop, ...crowbarDrop, ...mapDrop];
+    case 'hard': return [{ itemId: 'coin', qty: 30 }, { itemId: 'key', qty: 1 }, ...crowbarDrop, ...mapDrop];
   }
 }

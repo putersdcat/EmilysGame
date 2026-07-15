@@ -61,6 +61,8 @@ import { closeTrade, syncTradeDOM, toggleTradeMode, syncBarterQuizDOM } from './
 import { useStatusItem } from './status';
 import { applyBandaid, getWoundCareQuestion, startWoundCareQuiz } from './injury';
 import { setTransientExpression } from './expression';
+import { revealFogAround } from '../rendering/fog';
+import { ITEM_DEFS } from '../config/items.config';
 
 /**
  * Handler dependencies that the caller (main.ts) wires in. Keeping
@@ -204,7 +206,7 @@ export function setupExtraKeys(
         break;
       case 'e':
       case 'E':
-        // Use/consume best available status item (#70, #109)
+        // Use/consume best available item (#70, #109, map_scroll)
         if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active && !state.trade.active) {
           // Priority: if injured and have bandage, use bandage first (#109)
           if (state.injury.injured && state.inventory.hasItem('bandage')) {
@@ -220,6 +222,24 @@ export function setupExtraKeys(
               // Use quiz system with custom wound-care question
               startWoundCareQuiz(state, wq);
             }
+            break;
+          }
+          // Map scroll: reveal nearby fog/minimap area (items.config effect)
+          if (state.inventory.hasItem('map_scroll')) {
+            const radius = ITEM_DEFS.map_scroll?.effect?.value ?? 12;
+            // value is "chunks-ish" in the def (3) — use cells: ~3 * 8 = 24 radius
+            const cellRadius = Math.max(8, Math.round(radius * 8));
+            const newly = revealFogAround(state.player.x, state.player.y, cellRadius);
+            state.inventory.removeItem('map_scroll', 1);
+            playSfx(state.sfx, 'pickup_item');
+            addToast(
+              state.ui,
+              newly > 0
+                ? `🗺️ Map scroll! Revealed ${newly} new places nearby.`
+                : '🗺️ Map scroll unfurled — this area was already known.',
+              '#81d4fa',
+              2500,
+            );
             break;
           }
           // Normal consumable path

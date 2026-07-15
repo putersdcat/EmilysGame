@@ -116,9 +116,11 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       } else {
         addToast(state.ui, result.message, '#f44336');
         playSfx(state.sfx, 'obstacle_blocked');
-        // Teach: locked doors need keys (cooldown prevents spam)
+        // Teach: locked doors need keys; barricades need crowbars
         if (result.template?.requiredItem === 'key') {
           triggerHint('no_keys');
+        } else if (result.template?.requiredItem === 'crowbar') {
+          triggerHint('need_crowbar');
         }
       }
       break;
