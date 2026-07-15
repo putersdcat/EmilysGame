@@ -75,7 +75,12 @@ import {
 import { solveWorldUnitGrid, stampWorldUnitGrid } from './WorldUnitSolver';
 import { WU_SIZE, GRID_DIM } from './WorldGrid';
 import { applyEntropyCellFlags } from './EntropyCellFlags';
-import { stampStarterHomestead, ensureSpawnClearance, maybePlaceCastleLandmark } from '../iso2-assemblies';
+import {
+  stampStarterHomestead,
+  ensureSpawnClearance,
+  maybePlaceCastleLandmark,
+  maybePlaceModularScenes,
+} from '../iso2-assemblies';
 import type {
   BorderConstraints,
   ChunkData,
@@ -278,6 +283,11 @@ function generateGridChunk(
   // every other biome and most eligible chunks; runs before the Phase 6-8
   // safety net so any repair the landmark needs still happens.
   maybePlaceCastleLandmark(cells, size, biome, chunkDist, seededRandom(featureSeed + 476));
+
+  // Phase 5.47 (V2 visual): modular scene assemblies (farm, pond, gatehouse,
+  // bridge, church-graveyard) by biome + rarity. At most one per chunk;
+  // skips safe ring. Same pre-safety-net timing as castle landmarks.
+  maybePlaceModularScenes(cells, size, biome, chunkDist, seededRandom(featureSeed + 477));
 
   // Phase 5.5: LLM entropy cell flags (binary char code overrides) (#4)
   applyEntropyCellFlags(cells, size, featureSeed, chunkX, chunkY, biome);

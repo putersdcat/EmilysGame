@@ -97,23 +97,20 @@ progress save) is trustworthy enough to unlock this phase. Checklist + E2E
 proof: `/memories/repo/playability-milestone-1.md` and
 `tests/gameplay/playability-m1-core-loop.spec.ts`.
 
-**Standing order:** visual re-attachment is now the **active major campaign**
-(V1 gen composition first). Playability polish may continue in parallel but
-is no longer a hard gate before visual work.
+**Standing order:** visual re-attachment is the active major campaign.
+V1 + V2 landed 2026-07-15; **V3 water & terrain polish is next**.
 
 **Authoritative inventory + checklist:**
 `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
 
 Attach in this order (detail in that file):
 
-1. **V1 — Gen composition** — coherent biome surfaces (no random sand-in-grass
-   language); biome material wiring; chain-aware fence/wall runs.
-2. **V2 — Assembly catalog** — modular recipes (farm+animals, pond/lake,
-   church+graveyard, gatehouse, bridge, castle wall segment) that the world
-   builder stamps by biome/distance/rarity (extend `stampIso2Assembly` /
-   ChunkGenerator).
+1. **V1 — Gen composition** — ✅ coherent biome surfaces, surface cohere,
+   orphan fence/wall cleanup.
+2. **V2 — Assembly catalog** — ✅ modular recipes (farm, pond, church+graveyard,
+   gatehouse, bridge) via `maybePlaceModularScenes` + catalog.ts.
 3. **V3 — Water & terrain polish** — river/pond shapes, WU diamond leaks,
-   roofs-as-assembly-only.
+   roofs-as-assembly-only. **Next active track.**
 4. **V4 — Scale/math audit** — only if 144px / even-division contracts still
    fail end-to-end after V1–V3.
 

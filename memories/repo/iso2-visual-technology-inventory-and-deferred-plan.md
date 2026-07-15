@@ -130,9 +130,13 @@ Order is incremental; start at V1:
 
 ### Track V2 — Assembly catalog (modular scenes)
 
-1. Author 4–6 recipes: fenced farm+animals, pond/lake, church+graveyard, gatehouse, bridge crossing, castle outer wall segment.  
-2. Placement policy: biome + chunkDist + rarity + edge contracts.  
-3. Wire through `stampIso2Assembly` / ChunkGenerator phase (same pattern as homestead/castle).
+1. **Recipes** — ✅ 2026-07-15 in `iso2-assemblies/catalog.ts`:
+   fenced-farm, pond-clearing, gatehouse, bridge-crossing, church-graveyard
+   (+ existing homestead-small / ruined-cathedral).
+2. **Placement policy** — ✅ `maybePlaceModularScenes`: biome weights, chunkDist>1,
+   ~28% chance, fallback try-order, soft-terrain footprint (flowers/animals OK).
+3. **Wiring** — ✅ ChunkGenerator Phase 5.47. Proof:
+   `tests/world-gen/v2-modular-assemblies.spec.ts`. Golden → `9927620b`.
 
 ### Track V3 — Water & terrain polish
 
