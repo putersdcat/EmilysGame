@@ -109,6 +109,10 @@ const COIN_MILESTONE_LINE: Record<number, string> = {
   100: '💰 A hundred coins!! Legend of the clink!',
 };
 
+/** Rate-limit full-bag toast while standing on a collectible (autoCollect every frame). */
+const INVENTORY_FULL_TOAST_COOLDOWN_MS = 2500;
+let _lastInventoryFullToastAt = 0;
+
 function maybeCoinMilestoneToast(state: GameState): void {
   const n = state.inventory.countItem('coin');
   for (const m of COIN_MILESTONES) {
@@ -119,16 +123,31 @@ function maybeCoinMilestoneToast(state: GameState): void {
   }
 }
 
+/** Rate-limited inventory-full toast (shared by collect fail + inventory_full). */
+function toastInventoryFull(state: GameState): void {
+  const now = performance.now();
+  if (now - _lastInventoryFullToastAt < INVENTORY_FULL_TOAST_COOLDOWN_MS) return;
+  _lastInventoryFullToastAt = now;
+  // Keep existing duration — do not thrash toast timing for feel polish.
+  addToast(state.ui, '🎒 Inventory full!', '#ff9800', 1800);
+}
+
 export function handleInteraction(result: InteractionResult, state: GameState): void {
   switch (result.type) {
     case 'collect':
       if (!state.inventory.addItem(result.itemId, 1)) {
-        addToast(state.ui, '🎒 Inventory full!', '#ff9800', 1800);
+        toastInventoryFull(state);
         break;
       }
       addToast(state.ui, result.message, '#ffd700');
       playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
       if (result.itemId === 'coin') maybeCoinMilestoneToast(state);
+      break;
+
+    case 'inventory_full':
+      // autoCollect left the item on the ground; rate-limit so idle standing
+      // does not spam a toast every frame.
+      toastInventoryFull(state);
       break;
 
     case 'chest': {
@@ -396,5 +415,6 @@ export function resetInteractionState(): void {
   _lastDialogNpcId = null;
   _campfireRestedAt.clear();
   _coinMilestonesFired.clear();
+  _lastInventoryFullToastAt = 0;
   _pendingPoopBurst = false;
 }

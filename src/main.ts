@@ -854,121 +854,122 @@ function handleMovement(state: GameState, input: InputManager): void {
   if (!wantsMove) {
     updatePlayerVisuals(state, mv, false);
     resetFootstepCounter();
-    return;
-  }
-
-  // First accepted movement input = post-menu Done-when signal
-  markFirstMovableIfNeeded();
-
-  // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
-  const debuffs = getDebuffs(state.status);
-  const injuryMult = getInjurySpeedMult(state.injury);
-  const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-  const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
-  const dx = mv.dx * effectiveSpeed;
-  const dy = mv.dy * effectiveSpeed;
-  const newX = state.player.x + dx;
-  const newY = state.player.y + dy;
-
-  // Axis-independent collision with footprint (#151, #180); slide on one axis when blocked.
-  let movedX = false;
-  let movedY = false;
-  if (state.player.spawnEscape) {
-    // Escape hatch: bypass collision until on walkable ground (state-init writeup).
-    state.player.x = newX;
-    state.player.y = newY;
-    movedX = true;
-    movedY = true;
-    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
-      state.player.spawnEscape = false;
-    }
-  } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
-    state.player.x = newX;
-    state.player.y = newY;
-    movedX = true;
-    movedY = true;
+    // Idle path used to return here and skip autoCollect — standing on a coin
+    // never picked up. Collect is independent of held movement keys (P0 feel).
   } else {
-    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
+    // First accepted movement input = post-menu Done-when signal
+    markFirstMovableIfNeeded();
+
+    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
+    const debuffs = getDebuffs(state.status);
+    const injuryMult = getInjurySpeedMult(state.injury);
+    const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
+    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
+    const dx = mv.dx * effectiveSpeed;
+    const dy = mv.dy * effectiveSpeed;
+    const newX = state.player.x + dx;
+    const newY = state.player.y + dy;
+
+    // Axis-independent collision with footprint (#151, #180); slide on one axis when blocked.
+    let movedX = false;
+    let movedY = false;
+    if (state.player.spawnEscape) {
+      // Escape hatch: bypass collision until on walkable ground (state-init writeup).
       state.player.x = newX;
-      movedX = true;
-    }
-    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
       state.player.y = newY;
+      movedX = true;
       movedY = true;
-    }
-  }
-
-  if (movedX || movedY) {
-    const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
-    const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
-    const surface = footTileDef?.surface ?? 'grass';
-    playFootstep(state.sfx, surface);
-
-    const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
-    if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
-      state.player.sinkDepth = 4;
-    } else if (state.player.spawnEscape) {
-      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+      if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+        state.player.spawnEscape = false;
+      }
+    } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
+      state.player.x = newX;
+      state.player.y = newY;
+      movedX = true;
+      movedY = true;
     } else {
-      state.player.sinkDepth = 0;
-    }
-  } else {
-    // Fully blocked this frame
-    playSfx(state.sfx, 'wall_bump');
-    const hitCell = getCellAt(Math.floor(newX), Math.floor(newY), state.chunks);
-    const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
-    const hitKey = hitCell?.cell.assetKey;
-    if (
-      hitKey === 'quiz_gate' ||
-      hitKey === 'door_locked' ||
-      hitKey === 'toll_gate' ||
-      hitKey === 'door_gate' ||
-      hitKey === 'barricade'
-    ) {
-      if (hitKey === 'barricade') triggerHint('need_crowbar');
-      else triggerHint('near_gate');
-      const tcx = Math.floor(newX);
-      const tcy = Math.floor(newY);
-      const pcx = Math.floor(state.player.x);
-      const pcy = Math.floor(state.player.y);
-      const fdx = Math.sign(tcx - pcx);
-      const fdy = Math.sign(tcy - pcy);
-      if (fdx !== 0 || fdy !== 0) {
-        state.player.facingDx = fdx;
-        state.player.facingDy = fdy;
+      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
+        state.player.x = newX;
+        movedX = true;
+      }
+      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
+        state.player.y = newY;
+        movedY = true;
       }
     }
-    const hazardDmg = hitDef?.hazardDamage ?? 0;
-    if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
-      const label = hitDef?.hazardLabel ?? 'something sharp';
-      playSfx(state.sfx, 'ouch');
-      triggerHint('ouch_injury');
-      setTransientExpression(state, 'surprised', 3000);
-      triggerInjuryFlash();
-      addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
-      if (state.injury.injuryCount === 5) {
-        addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
-      } else if (state.injury.injuryCount === 10) {
-        addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
-      } else if (state.injury.injuryCount === 25) {
-        addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+
+    if (movedX || movedY) {
+      const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
+      const surface = footTileDef?.surface ?? 'grass';
+      playFootstep(state.sfx, surface);
+
+      const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+      if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
+        state.player.sinkDepth = 4;
+      } else if (state.player.spawnEscape) {
+        state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+      } else {
+        state.player.sinkDepth = 0;
+      }
+    } else {
+      // Fully blocked this frame
+      playSfx(state.sfx, 'wall_bump');
+      const hitCell = getCellAt(Math.floor(newX), Math.floor(newY), state.chunks);
+      const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+      const hitKey = hitCell?.cell.assetKey;
+      if (
+        hitKey === 'quiz_gate' ||
+        hitKey === 'door_locked' ||
+        hitKey === 'toll_gate' ||
+        hitKey === 'door_gate' ||
+        hitKey === 'barricade'
+      ) {
+        if (hitKey === 'barricade') triggerHint('need_crowbar');
+        else triggerHint('near_gate');
+        const tcx = Math.floor(newX);
+        const tcy = Math.floor(newY);
+        const pcx = Math.floor(state.player.x);
+        const pcy = Math.floor(state.player.y);
+        const fdx = Math.sign(tcx - pcx);
+        const fdy = Math.sign(tcy - pcy);
+        if (fdx !== 0 || fdy !== 0) {
+          state.player.facingDx = fdx;
+          state.player.facingDy = fdy;
+        }
+      }
+      const hazardDmg = hitDef?.hazardDamage ?? 0;
+      if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
+        const label = hitDef?.hazardLabel ?? 'something sharp';
+        playSfx(state.sfx, 'ouch');
+        triggerHint('ouch_injury');
+        setTransientExpression(state, 'surprised', 3000);
+        triggerInjuryFlash();
+        addToast(state.ui, \🤕 Ouch! You bumped into \!\, '#f44336', 2500);
+        if (state.injury.injuryCount === 5) {
+          addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
+        } else if (state.injury.injuryCount === 10) {
+          addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
+        } else if (state.injury.injuryCount === 25) {
+          addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+        }
       }
     }
+
+    // Always update facing from held direction so Space aims at what you're pushing into
+    updatePlayerVisuals(state, mv, true);
+
+    state.camera.x += (state.player.x - state.camera.x) * 0.15;
+    state.camera.y += (state.player.y - state.camera.y) * 0.15;
+
+    maybeLoadChunks(state);
   }
 
-  // Always update facing from held direction so Space aims at what you're pushing into
-  updatePlayerVisuals(state, mv, true);
-
+  // Idle + moving: auto-collect under footprint (full-bag → rate-limited toast)
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
-  if (collected && collected.type === 'collect') {
-    // Route through handleInteraction so milestones/full-bag logic stay one path
+  if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
     handleInteraction(collected, state);
   }
-
-  state.camera.x += (state.player.x - state.camera.x) * 0.15;
-  state.camera.y += (state.player.y - state.camera.y) * 0.15;
-
-  maybeLoadChunks(state);
 }
 
 function handleSpaceInteraction(state: GameState, justKeys: any): void {

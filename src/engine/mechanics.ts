@@ -22,6 +22,8 @@ import { sameFeatureNeighbor, variantFromConnections } from '../rendering/tile-v
 export type InteractionResult =
   | { type: 'none' }
   | { type: 'collect'; itemId: string; message: string }
+  /** Standing on a collectible but bag cannot accept it (item left on ground). */
+  | { type: 'inventory_full'; itemId: string }
   | { type: 'obstacle'; template: ObstacleTemplate; resolved: boolean; message: string }
   | { type: 'npc'; npcId: string; greeting: string }
   | { type: 'sign'; message: string }
@@ -425,7 +427,7 @@ export function interact(
 
 /**
  * Auto-collect: check if player is standing on a collectible cell.
- * Call each frame during movement.
+ * Call each frame while idle or moving so stop-on-coin still picks up.
  */
 export function autoCollect(
   playerX: number,
@@ -445,6 +447,10 @@ export function autoCollect(
     [playerX + hw, playerY + hh],
   ];
 
+  // Prefer a successful collect over full-bag feedback when one sample can
+  // take an item and another cannot.
+  let blockedItemId: string | undefined;
+
   for (const [sx, sy] of samples) {
     const hit = getCellAt(Math.floor(sx), Math.floor(sy), chunks);
     if (!hit || !hit.cell.itemId) continue;
@@ -453,8 +459,11 @@ export function autoCollect(
     if (!def?.walkable) continue; // Only auto-collect walkable items (coins, keys)
 
     const id = hit.cell.itemId;
-    // Leave on ground if bag can't take it (handleInteraction is the inventory writer)
-    if (!inventory.canAddItem(id, 1)) continue;
+    // Leave on ground if bag can't take it — still signal for rate-limited toast
+    if (!inventory.canAddItem(id, 1)) {
+      if (!blockedItemId) blockedItemId = id;
+      continue;
+    }
 
     const chunk = chunks.get(hit.chunkKey)!;
     chunk.cells[hit.ly][hit.lx].itemId = undefined;
@@ -475,6 +484,7 @@ export function autoCollect(
     else message = `+1 ${def.description || id}`;
     return { type: 'collect', itemId: id, message };
   }
+  if (blockedItemId) return { type: 'inventory_full', itemId: blockedItemId };
   return null;
 }
 
