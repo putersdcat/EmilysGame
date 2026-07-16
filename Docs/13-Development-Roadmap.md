@@ -97,8 +97,11 @@ progress save) is trustworthy enough to unlock this phase. Checklist + E2E
 proof: `/memories/repo/playability-milestone-1.md` and
 `tests/gameplay/playability-m1-core-loop.spec.ts`.
 
-**Standing order:** visual re-attachment is the active major campaign.
-V1 + V2 landed 2026-07-15; **V3 water & terrain polish is next**.
+**Standing order (2026-07-16 — definitive):** productize **this branch** via
+**scene-first generation** (places + paths + functional gates). Iso 2.0 nano/
+materials are **paint only** — freeze new presentation architecture. Do **not**
+restart from `main` or greenfield for product delivery. Full determination:
+`/memories/repo/definitive-path-forward-2026-07-16.md`.
 
 **Authoritative inventory + checklist:**
 `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
