@@ -149,6 +149,11 @@ export const CHURCH_GRAVEYARD: AssemblyRecipe = {
   openings: [{ x: 2, y: 3, kind: 'door_locked' }],
 };
 
+/**
+ * Scene recipe registry — **this is the primary expand surface**.
+ * Add a new place type here (or via {@link registerSceneRecipe}); do not
+ * invent nano kinds or open WorldUnitSolver for a new farm/church/market.
+ */
 export const ASSEMBLY_RECIPES: Record<string, AssemblyRecipe> = {
   'fenced-farm': FENCED_FARM,
   'pond-clearing': POND_CLEARING,
@@ -156,3 +161,23 @@ export const ASSEMBLY_RECIPES: Record<string, AssemblyRecipe> = {
   'bridge-crossing': BRIDGE_CROSSING,
   'church-graveyard': CHURCH_GRAVEYARD,
 };
+
+/**
+ * Thin register API for expandability rails (PR7).
+ * Catalog data is the source of truth; this helper is optional sugar for
+ * tests and future content loaders. Placement weights still live in
+ * `iso2-assemblies.ts` (`BIOME_SCENE_WEIGHTS` / `setBiomeSceneWeight`).
+ */
+export function registerSceneRecipe(recipe: AssemblyRecipe): AssemblyRecipe {
+  if (!recipe?.id) {
+    throw new Error('registerSceneRecipe: recipe.id is required');
+  }
+  if (!recipe.placements || recipe.placements.length === 0) {
+    throw new Error(`registerSceneRecipe: recipe "${recipe.id}" needs placements`);
+  }
+  if (recipe.width < 1 || recipe.height < 1) {
+    throw new Error(`registerSceneRecipe: recipe "${recipe.id}" needs positive width/height`);
+  }
+  ASSEMBLY_RECIPES[recipe.id] = recipe;
+  return recipe;
+}

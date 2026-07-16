@@ -15,6 +15,7 @@ import type { ChunkData, CellData } from '../types/game.types';
 import { countWalkableNeighbors } from './world/GridUtils';
 import {
   ASSEMBLY_RECIPES,
+  registerSceneRecipe,
   type AssemblyPlacement,
   type AssemblyRecipe,
 } from './iso2-assemblies/catalog';
@@ -33,6 +34,7 @@ export type {
   AssemblyPlacement,
   AssemblyRecipe,
 } from './iso2-assemblies/catalog';
+export { ASSEMBLY_RECIPES, registerSceneRecipe } from './iso2-assemblies/catalog';
 export {
   FUNCTIONAL_OPENING_KEYS,
   PATH_OPENING_KEYS,
@@ -45,6 +47,7 @@ export type {
   SceneOpeningViolation,
 } from './iso2-assemblies/scene-invariants';
 
+/** Built-in recipe ids + any runtime-registered catalog ids (expand rails). */
 export type Iso2AssemblyId =
   | 'homestead-small'
   | 'ruined-cathedral'
@@ -52,7 +55,8 @@ export type Iso2AssemblyId =
   | 'pond-clearing'
   | 'gatehouse'
   | 'bridge-crossing'
-  | 'church-graveyard';
+  | 'church-graveyard'
+  | (string & {});
 
 // ─── Legacy / landmark blueprints (Slice A) ───────────────────────────────
 
@@ -272,6 +276,24 @@ const BIOME_SCENE_WEIGHTS: Record<string, Partial<Record<Iso2AssemblyId, number>
     'bridge-crossing': 0.20,
   },
 };
+
+/**
+ * Expandability rail: attach a registered recipe id to a biome weight table
+ * without editing WorldUnitSolver / nano-tile. Prefer editing catalog + this
+ * helper (or the table above) over inventing free structure scatter.
+ */
+export function setBiomeSceneWeight(
+  biomeName: string,
+  recipeId: Iso2AssemblyId,
+  weight: number,
+): void {
+  if (!BIOME_SCENE_WEIGHTS[biomeName]) BIOME_SCENE_WEIGHTS[biomeName] = {};
+  if (weight <= 0) {
+    delete BIOME_SCENE_WEIGHTS[biomeName][recipeId];
+    return;
+  }
+  BIOME_SCENE_WEIGHTS[biomeName][recipeId] = weight;
+}
 
 function weightedPickId(
   weights: Partial<Record<Iso2AssemblyId, number>>,
