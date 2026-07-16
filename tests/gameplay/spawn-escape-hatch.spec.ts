@@ -80,13 +80,18 @@ test('a resumed save landing on a blocked cell elevates the player instead of tr
   expect(before.spawnEscape, 'spawnEscape must engage for a blocked resumed position').toBe(true);
   expect(before.sinkDepth, 'player must render elevated (SPAWN_ESCAPE_RISE_PX) while escaping').toBe(-40);
 
-  // Walk north toward the courtyard's stamped stone_floor. Collision is
-  // bypassed entirely while spawnEscape is true, so this is guaranteed to
-  // make progress regardless of surrounding entropy-driven content.
+  // Walk screen-north (iso NW in grid) toward courtyard stone_floor / grass yard.
+  // Collision is bypassed while spawnEscape is true. Wait until the footprint
+  // is genuinely walkable rather than a fixed timeout (escape needs ~0.8+ cells
+  // to clear the cottage under diagonal iso motion; fixed 500ms is flaky).
   await page.keyboard.down('w');
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => {
+    const debug = (window as any).__gameDebug;
+    const s = debug.state;
+    return debug.isFootprintWalkable(s.player.x, s.player.y) && !s.player.spawnEscape;
+  }, { timeout: 5000 });
   await page.keyboard.up('w');
-  await page.waitForTimeout(200);
+  await page.waitForTimeout(100);
 
   const after = await page.evaluate(() => {
     const debug = (window as any).__gameDebug;

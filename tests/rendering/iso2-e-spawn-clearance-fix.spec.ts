@@ -1,23 +1,13 @@
 /**
  * iso2-e-spawn-clearance-fix.spec.ts — player-spawns-inside-wall bug fix.
  *
- * User-reported (2026-07-09, live playtest + screenshot): "the player or
- * rather the world gets spawned so the player is inside a wall or other
- * structure." Root cause: `stampStarterHomestead`'s hand-authored cell list
- * is SPARSE -- cells inside its 7x7 footprint that aren't explicitly listed
- * silently retain whatever an EARLIER phase (most notably Phase 3's
- * WU-template stamping, which runs before this assembly) happened to place
- * there. `PLAYER_CONFIG.startPosition` (12.5, 12.5) resolves to grid cell
- * (12,12) = offset (3,4) inside the layout, which is exactly one of those
- * unstamped gaps -- if the underlying template placed a blocking obstacle
- * there, the player spawns on top of / inside it. Intermittent, because it
- * depends on which WU template / RNG outcome landed at that cell.
+ * Historical root cause (2026-07-09): sparse homestead stamp left unstamped
+ * gaps that retained earlier WU blockers. Homestead now stamps every cell of
+ * its 7×7 footprint (yard + structures), so stamp alone overwrites residue.
  *
- * Fix: `ensureSpawnClearance` runs LAST in chunk (0,0)'s generation pipeline
- * (after every phase that could plausibly place blocking content) and
- * force-clears the exact spawn cell + its 4 cardinal neighbors (a plus
- * shape, NOT a 3x3 box, so it never touches the cottage at diagonal offset
- * (4,3) or the campfire at (2,5)).
+ * `ensureSpawnClearance` still runs LAST on chunk (0,0) as a safety net for
+ * any later phase that re-blocks the spawn cell + 4 cardinal neighbors (plus
+ * shape, NOT 3×3 — cottage (4,3) and campfire (2,5) stay intact).
  */
 import { test, expect, Page } from '@playwright/test';
 
@@ -28,9 +18,9 @@ async function waitForGame(page: Page) {
   await page.waitForFunction(() => !!(window as any).__gameDebug?.state, { timeout: 15000 });
 }
 
-// ─── 1. Hand-constructed proof: simulate the exact bug scenario ───────────
+// ─── 1. Full 7×7 stamp fills former gaps; clearance still last-line safety ─
 
-test('ensureSpawnClearance clears a blocker at the exact spawn cell without touching the cottage/campfire/dirt/coin', async ({ page }) => {
+test('full homestead stamp fills yard cells; ensureSpawnClearance clears post-stamp re-block without touching cottage/campfire/dirt/coin', async ({ page }) => {
   await waitForGame(page);
 
   const result = await page.evaluate(async () => {
@@ -41,25 +31,26 @@ test('ensureSpawnClearance clears a blocker at the exact spawn cell without touc
       Array.from({ length: size }, () =>
         Array.from({ length: size }, () => ({ assetKey: 'grass', walkable: true, interactable: false })));
 
-    // Simulate the bug: pre-fill the exact unstamped gap cells (offsets
-    // (3,3)/(2,4)/(3,4)/(4,4) relative to ORIGIN {x:9,y:8} => absolute
-    // (12,11)/(11,12)/(12,12)/(13,12)) with a blocking obstacle, as if an
-    // earlier WU-template stamping pass had placed a fence there before
-    // stampStarterHomestead runs.
+    // Pre-seed former gap cells with blockers (as if WU stamped fence first).
+    // Offsets (3,3)/(2,4)/(3,4)/(4,4) → absolute (12,11)/(11,12)/(12,12)/(13,12).
     const cells = makeGrassCells();
-    const gapAbsolute: Array<[number, number]> = [[12, 11], [11, 12], [12, 12], [13, 12]];
-    for (const [x, y] of gapAbsolute) cells[y][x] = { assetKey: 'fence', walkable: false, interactable: false };
+    const formerGaps: Array<[number, number]> = [[12, 11], [11, 12], [12, 12], [13, 12]];
+    for (const [x, y] of formerGaps) cells[y][x] = { assetKey: 'fence', walkable: false, interactable: false };
 
     stampStarterHomestead(cells);
-    // Sanity: confirm the gap cells are STILL blocked after stampStarterHomestead
-    // alone (proves the bug is real -- the hand-authored layout does NOT
-    // cover these cells, so the pre-seeded fence survives untouched).
-    const stillBlockedAfterStamp = gapAbsolute.every(([x, y]) => !cells[y][x].walkable);
+    // Full 7×7 stamp must overwrite residue — yard walkable after stamp alone.
+    const yardWalkableAfterStamp = formerGaps.every(([x, y]) => cells[y][x].walkable);
 
+    // Simulate a later phase re-blocking the spawn plus-shape after stamp.
+    for (const [x, y] of formerGaps) {
+      cells[y][x] = { assetKey: 'fence', walkable: false, interactable: false };
+    }
+    // Re-assert intentional structure cells still present before clearance.
+    // Cottage / campfire / coin cell sit outside the re-block set.
     ensureSpawnClearance(cells);
 
     return {
-      stillBlockedAfterStamp,
+      yardWalkableAfterStamp,
       spawnWalkable: cells[12][12].walkable, // exact spawn cell
       northWalkable: cells[11][12].walkable,
       southWalkable: cells[13][12].walkable,
@@ -75,7 +66,7 @@ test('ensureSpawnClearance clears a blocker at the exact spawn cell without touc
     };
   });
 
-  expect(result.stillBlockedAfterStamp, 'sanity check: the gap cells must still be blocked by stampStarterHomestead alone, proving the bug is real').toBe(true);
+  expect(result.yardWalkableAfterStamp, 'full 7×7 stamp must overwrite former gap residue with walkable yard').toBe(true);
   expect(result.spawnWalkable, 'the exact spawn cell must be walkable after ensureSpawnClearance').toBe(true);
   expect(result.northWalkable, 'north cardinal neighbor must be walkable').toBe(true);
   expect(result.southWalkable, 'south cardinal neighbor (was already dirt) must remain walkable').toBe(true);
