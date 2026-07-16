@@ -46,6 +46,10 @@
  * surface language, modular assemblies, river-over-lake weights, orphan water
  * + roof-shard strip, no cave Perlin water. Intentional (Docs/13 §4).
  *
+ * Re-captured 2026-07-16 (278a7e25 -> 20da3166) after scene-first PR2:
+ * ban free outhouse_clearing WU weight + house/hut Perlin obstacles in early
+ * meadow/forest. Structures via scenes + starter homestead only.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -55,8 +59,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-15 after FOV zoom + S5 density (meadow grass-first, less coin/deco salt)
-const GOLDEN_HASH = '278a7e25';
+// Re-captured 2026-07-16 after scene-first free-structure ban (PR2)
+const GOLDEN_HASH = '20da3166';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

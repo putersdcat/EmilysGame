@@ -63,16 +63,19 @@ test.describe('Outhouse Structure (#110 Phase 2)', () => {
     expect(hasOuthouse).toBe(true);
   });
 
-  test('outhouse_clearing has biome weights in meadow and forest', async ({ page }) => {
+  test('outhouse_clearing free-placement weight is 0 in meadow and forest (scene-first)', async ({ page }) => {
     await waitForGame(page);
-    const weights = await page.evaluate(() => {
-      const config = (window as any).__gameDebug?.getTileConfig();
-      // Access BIOME_TEMPLATE_WEIGHTS indirectly — check if we can load it
-      // The weights are in tiles.config.ts but exposed via selectTemplate function
-      // For testing, just verify the template is valid and might be selected
-      return true;
+    const weights = await page.evaluate(async () => {
+      // Vite serves src/ at root; config is importable from the page.
+      const tiles = await import('/config/tiles.config.ts');
+      return {
+        meadow: tiles.BIOME_TEMPLATE_WEIGHTS?.meadow?.outhouse_clearing ?? null,
+        forest: tiles.BIOME_TEMPLATE_WEIGHTS?.forest?.outhouse_clearing ?? null,
+      };
     });
-    expect(weights).toBe(true);
+    // Template still exists for intentional stamps; free WU weight is banned.
+    expect(weights.meadow).toBe(0);
+    expect(weights.forest).toBe(0);
   });
 
   // ─── Interaction Logic ───────────────────────────────────
