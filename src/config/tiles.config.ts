@@ -2231,8 +2231,9 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     homestead_compound: 0.05,
     seller_cart_yard: 0.04,
     inn_compound: 0.03,
-    // #110 Outhouse
-    outhouse_clearing: 0.03,
+    // Scene-first (2026-07-16): ban free outhouse atoms — hygiene structure
+    // only via intentional scene stamps later; weight 0 is hard-skipped in WU pool.
+    outhouse_clearing: 0,
   },
   forest: {
     meadow_base: 0.05,
@@ -2277,8 +2278,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     homestead_compound: 0.04,
     seller_cart_yard: 0.03,
     inn_compound: 0.03,
-    // #110 Outhouse
-    outhouse_clearing: 0.02,
+    // Scene-first: ban free outhouse atoms in early biomes.
+    outhouse_clearing: 0,
   },
   cave: {
     rock_cluster: 0.08,

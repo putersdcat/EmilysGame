@@ -68,7 +68,13 @@ export const BIOME_DEFS: BiomeDef[] = [
     // quiz_gate > 0 so placeQuizGates runs in meadow (was hard-disabled at 0 —
     // left entire safe-zone biomes with no knowledge gates). Low weight keeps
     // tutorial meadow gentle but teaches the core solve-to-pass loop.
-    obstacleWeights: { rock: 0.15, bush: 0.25, tree: 0.12, tree_pine: 0.12, tree_palm: 0.12, fence: 0.06, quiz_gate: 0.04, house: 0.06, hut: 0.04, campfire: 0.04, shop: 0.04, shop_general: 0.03, shop_snack: 0.03 },
+    // Scene-first (2026-07-16): buildings are NOT Perlin obstacles — house/hut
+    // only via modular scenes + starter homestead. Shops stay for trading.
+    obstacleWeights: {
+      rock: 0.15, bush: 0.25, tree: 0.12, tree_pine: 0.12, tree_palm: 0.12,
+      fence: 0.06, quiz_gate: 0.04, campfire: 0.04,
+      shop: 0.04, shop_general: 0.03, shop_snack: 0.03,
+    },
     featureWeights: { chest: 0.15, sign: 0.1, npc_villager: 0.15, coin: 0.6 },
     collectibleRate: 1.0,
     npcRate: 1.0,
@@ -87,7 +93,12 @@ export const BIOME_DEFS: BiomeDef[] = [
       stump: 0.03, sparkle: 0.01,
       rabbit: 0.01, fox: 0.01, deer: 0.01,
     },
-    obstacleWeights: { tree: 0.25, tree_pine: 0.25, bush: 0.2, rock: 0.1, barricade: 0.05, quiz_gate: 0.05, hut: 0.05, campfire: 0.04, biomass_fire: 0.01, shop_snack: 0.02, shop_trading: 0.02 },
+    // Scene-first: no free hut atoms (buildings via scenes only).
+    obstacleWeights: {
+      tree: 0.25, tree_pine: 0.25, bush: 0.2, rock: 0.1, barricade: 0.05,
+      quiz_gate: 0.05, campfire: 0.04, biomass_fire: 0.01,
+      shop_snack: 0.02, shop_trading: 0.02,
+    },
     featureWeights: { chest: 0.2, npc_merchant: 0.1, npc_villager: 0.1, coin: 0.4, mushroom: 0.2 },
     collectibleRate: 0.8,
     npcRate: 0.7,

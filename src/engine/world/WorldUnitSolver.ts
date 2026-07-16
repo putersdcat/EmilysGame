@@ -823,7 +823,9 @@ const SAFE_ZONE_TEMPLATE_ALLOW = new Set([
   'meadow_base', 'meadow_garden', 'dirt_clearing', 'mixed_terrain', 'forest_clearing',
   'dirt_path_ns', 'dirt_path_ew', 'path_bend_ne', 'path_t_junction', 'path_crossroads', 'path_dead_end',
   'rocky_outcrop',
-  'homestead_compound', 'outhouse_clearing',
+  // Scene-first: no free outhouse_clearing in safe zone — structures via
+  // starter homestead + modular scene stamps only.
+  'homestead_compound',
 ]);
 
 /**
@@ -855,6 +857,12 @@ export function buildBiomeCandidatePool(
 
   for (const [templateName, rotations] of allRotations.entries()) {
     if (options?.safeZone && !SAFE_ZONE_TEMPLATE_ALLOW.has(templateName)) continue;
+    // Explicit weight 0 = hard ban (scene-first free-structure ban). Must skip
+    // before the 0.005 floor, or zeroed templates still leak into the pool.
+    if (Object.prototype.hasOwnProperty.call(biomeWeights, templateName)
+        && (biomeWeights[templateName] ?? 0) <= 0) {
+      continue;
+    }
     let weight = biomeWeights[templateName] ?? 0.01;
 
     // Apply mood modifiers (#46): additive bias from mood profile
@@ -873,7 +881,7 @@ export function buildBiomeCandidatePool(
       weight += 0.01;
     }
 
-    // Floor to prevent zero weights
+    // Floor to prevent zero weights (only for non-banned entries)
     weight = Math.max(0.005, weight);
 
     for (const rot of rotations) {
