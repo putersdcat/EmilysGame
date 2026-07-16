@@ -547,6 +547,29 @@ function isWaterBase(
   return tileType !== null && waterStyleForTileType(tileType, chunk.biomeId) !== null;
 }
 
+/**
+ * Waterway connectivity for paint: water cells + bridge decks.
+ * Bridges must not break river channel variants into end-caps/tanks on either bank.
+ * Cross-chunk neighbors use `allChunks` via {@link getBaseTileType}.
+ */
+function isWaterwayBase(
+  chunk: ChunkData,
+  cx: number,
+  cy: number,
+  allChunks?: Map<string, ChunkData>,
+): boolean {
+  const tileType = getBaseTileType(chunk, cx, cy, allChunks);
+  if (tileType === null) return false;
+  if (waterStyleForTileType(tileType, chunk.biomeId) !== null) return true;
+  return tileType === 'bridge';
+}
+
+/**
+ * Infer river/pond FeatureVariant from 4-neighbor waterway connectivity.
+ * Long runs → straight/end/corner/tee/cross (river channel or open-basin paint).
+ * True isolated basins (no waterway neighbor) → 'isolated' (deep-pond style path).
+ * After gen size≤2 dissolve, isolated should be rare in-chunk.
+ */
 function inferWaterVariant(
   chunk: ChunkData,
   cx: number,
@@ -554,10 +577,10 @@ function inferWaterVariant(
   allChunks?: Map<string, ChunkData>,
 ): FeatureVariant {
   return sharedVariantFromConnections(
-    isWaterBase(chunk, cx, cy - 1, allChunks),
-    isWaterBase(chunk, cx + 1, cy, allChunks),
-    isWaterBase(chunk, cx, cy + 1, allChunks),
-    isWaterBase(chunk, cx - 1, cy, allChunks),
+    isWaterwayBase(chunk, cx, cy - 1, allChunks),
+    isWaterwayBase(chunk, cx + 1, cy, allChunks),
+    isWaterwayBase(chunk, cx, cy + 1, allChunks),
+    isWaterwayBase(chunk, cx - 1, cy, allChunks),
   );
 }
 
@@ -567,6 +590,7 @@ function inferBridgeVariant(
   cy: number,
   allChunks?: Map<string, ChunkData>,
 ): FeatureVariant {
+  // Orient deck from pure water banks (waterway includes bridge; pure water is clearer).
   const vertical = isWaterBase(chunk, cx, cy - 1, allChunks) || isWaterBase(chunk, cx, cy + 1, allChunks);
   const horizontal = isWaterBase(chunk, cx - 1, cy, allChunks) || isWaterBase(chunk, cx + 1, cy, allChunks);
   // Bridge deck spans bank-to-bank, perpendicular to river flow.

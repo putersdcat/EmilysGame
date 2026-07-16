@@ -945,7 +945,7 @@ function handleMovement(state: GameState, input: InputManager): void {
         triggerHint('ouch_injury');
         setTransientExpression(state, 'surprised', 3000);
         triggerInjuryFlash();
-        addToast(state.ui, \🤕 Ouch! You bumped into \!\, '#f44336', 2500);
+        addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
         if (state.injury.injuryCount === 5) {
           addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
         } else if (state.injury.injuryCount === 10) {

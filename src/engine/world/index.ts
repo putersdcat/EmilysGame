@@ -73,6 +73,7 @@ export {
   cohereSurfacePatches,
   removeOrphanStructures,
   removeOrphanWater,
+  dissolveSmallWaterComponents,
   stripOrphanRoofShards,
 } from './TerrainBuilder';
 

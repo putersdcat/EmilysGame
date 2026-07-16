@@ -1,9 +1,13 @@
 /**
- * v3-water-roof-polish.spec.ts — Iso 2.0 visual V3 partial proof (2026-07-15)
+ * v3-water-roof-polish.spec.ts — Iso 2.0 visual V3 + playable-session water (2026-07-15/16)
  *
  * - No free-floating roof shard cells in generated chunks
- * - No true orphan water salt (0 same-type neighbors)
+ * - No waterway components with size ≤ 2 (BFS dissolve; subsumes orphan salt)
  * - Cave biome Perlin weights no longer include water (tank salt source)
+ *
+ * Note: component size uses water+bridge waterway connectivity (chunk-local),
+ * matching dissolveSmallWaterComponents. Cross-chunk edge bias may over-dissolve
+ * border pairs; it does not leave size≤2 tanks inside a chunk.
  */
 import { test, expect } from '@playwright/test';
 
@@ -32,7 +36,7 @@ test('V3: biome weights have no water salt in cave Perlin terrain', async ({ pag
   expect(cave.stone_floor, 'cave still stone-dominant').toBeGreaterThan(0.5);
 });
 
-test('V3: generated sample has no roof shards and no orphan water', async ({ page }) => {
+test('V3: generated sample has no roof shards and no size≤2 waterway components', async ({ page }) => {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 
@@ -45,32 +49,59 @@ test('V3: generated sample has no roof shards and no orphan water', async ({ pag
         gen.restoreEntropyBuffer('');
         const roofSet = new Set(roofs);
         const dirs = [[0, -1], [0, 1], [-1, 0], [1, 0]] as const;
+        const isWaterway = (k: string) => k === 'water' || k === 'bridge';
         const coords: Array<[number, number]> = [
           [0, 0], [1, 0], [0, 1], [-1, 0], [0, -1], [1, 1], [2, 0], [0, 2], [2, 2], [-2, 1],
         ];
         let roofCount = 0;
         let waterOrphans = 0;
         let waterTotal = 0;
+        let smallComponents = 0;
+        let keptComponents = 0;
         for (const [cx, cy] of coords) {
           const c = gen.generateChunkSync(cx, cy);
           const size = c.cells.length;
+          const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
           for (let y = 0; y < size; y++) {
             for (let x = 0; x < size; x++) {
               const key = c.cells[y][x].assetKey;
               if (roofSet.has(key)) roofCount++;
-              if (key !== 'water') continue;
-              waterTotal++;
-              let same = 0;
-              for (const [dx, dy] of dirs) {
-                const nx = x + dx, ny = y + dy;
-                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
-                if (c.cells[ny][nx].assetKey === 'water') same++;
+              if (key === 'water') {
+                waterTotal++;
+                let same = 0;
+                for (const [dx, dy] of dirs) {
+                  const nx = x + dx, ny = y + dy;
+                  if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                  if (isWaterway(c.cells[ny][nx].assetKey)) same++;
+                }
+                if (same === 0) waterOrphans++;
               }
-              if (same === 0) waterOrphans++;
+              if (visited[y][x] || !isWaterway(key)) continue;
+              // BFS waterway component (mirrors dissolveSmallWaterComponents)
+              let compSize = 0;
+              let hasWater = false;
+              const queue: Array<[number, number]> = [[x, y]];
+              visited[y][x] = true;
+              while (queue.length > 0) {
+                const [qx, qy] = queue.pop()!;
+                compSize++;
+                if (c.cells[qy][qx].assetKey === 'water') hasWater = true;
+                for (const [dx, dy] of dirs) {
+                  const nx = qx + dx, ny = qy + dy;
+                  if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                  if (visited[ny][nx]) continue;
+                  if (!isWaterway(c.cells[ny][nx].assetKey)) continue;
+                  visited[ny][nx] = true;
+                  queue.push([nx, ny]);
+                }
+              }
+              if (!hasWater) continue;
+              if (compSize <= 2) smallComponents++;
+              else keptComponents++;
             }
           }
         }
-        return { roofCount, waterOrphans, waterTotal };
+        return { roofCount, waterOrphans, waterTotal, smallComponents, keptComponents };
       });
     },
     [FIXED_WORDLIST, BIOME_SEED, ROOF_SHARDS] as [string[], number, string[]],
@@ -79,4 +110,5 @@ test('V3: generated sample has no roof shards and no orphan water', async ({ pag
   console.log('V3 water/roof report:', JSON.stringify(report));
   expect(report.roofCount, 'roofs are assembly-only (no free shards)').toBe(0);
   expect(report.waterOrphans, 'no lone water salt cells').toBe(0);
+  expect(report.smallComponents, 'no waterway components size ≤ 2 (BFS dissolve)').toBe(0);
 });

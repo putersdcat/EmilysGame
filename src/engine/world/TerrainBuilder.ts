@@ -230,38 +230,104 @@ export function removeOrphanStructures(cells: CellData[][], size: number): void 
 }
 
 /**
- * V3: strip lone water cells (0 same-type neighbors) that read as accidental
- * tanks / salt pools. River runs and multi-cell ponds keep (same ≥ 1).
- * Rewrites to majority neighboring core surface (grass default).
+ * Waterway membership for component cleanup / presentation.
+ * Bridges span water and must not split a river into size-1/2 tank fragments.
  */
-export function removeOrphanWater(cells: CellData[][], size: number): void {
-  const rewrites: Array<{ x: number; y: number; assetKey: string }> = [];
+function isWaterwayKey(assetKey: string): boolean {
+  return assetKey === 'water' || assetKey === 'bridge';
+}
+
+/**
+ * Pick majority neighboring core surface for a dissolved water cell (grass default).
+ */
+function majorityCoreSurface(
+  cells: CellData[][],
+  size: number,
+  x: number,
+  y: number,
+): string {
   const dirs: Array<[number, number]> = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const neighborCounts = new Map<string, number>();
+  for (const [dx, dy] of dirs) {
+    const nx = x + dx;
+    const ny = y + dy;
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+    const nk = cells[ny][nx].assetKey;
+    if (CORE_SURFACES.has(nk)) neighborCounts.set(nk, (neighborCounts.get(nk) ?? 0) + 1);
+  }
+  let best = 'grass';
+  let bestN = -1;
+  for (const [nk, n] of neighborCounts) {
+    if (n > bestN) {
+      bestN = n;
+      best = nk;
+    }
+  }
+  return best;
+}
+
+/**
+ * Single-pass BFS/flood-fill dissolve of small waterway components (chunk-local).
+ *
+ * Normative rule (playable-session recovery / Pillar C):
+ * - 4-connected flood-fill over waterway cells (`water` + `bridge`).
+ * - Dissolve components with **size ≤ maxSize** (default 2) by rewriting
+ *   their **water** cells to majority neighboring core surface (grass default).
+ * - Never rewrite bridge cells; never use local degree &lt; 2 (that erodes river ends).
+ * - No expand-to-pond-rectangle.
+ *
+ * Size includes bridge cells so intentional bridge crossings (water–bridge–water)
+ * stay size ≥ 3 and are not killed as pair tanks.
+ *
+ * Chunk-local only: pairs that would connect across chunk borders may be
+ * over-dissolved (edge bias). Multi-chunk BFS is out of scope.
+ *
+ * Size-1 orphans are a subset of size ≤ maxSize, so this fully subsumes the
+ * old degree-0 `removeOrphanWater` salt strip.
+ */
+export function dissolveSmallWaterComponents(
+  cells: CellData[][],
+  size: number,
+  maxSize: number = 2,
+): void {
+  const visited: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false));
+  const dirs: Array<[number, number]> = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+  const rewrites: Array<{ x: number; y: number; assetKey: string }> = [];
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      if (cells[y][x].assetKey !== 'water') continue;
-      let same = 0;
-      const neighborCounts = new Map<string, number>();
-      for (const [dx, dy] of dirs) {
-        const nx = x + dx;
-        const ny = y + dy;
-        if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
-        const nk = cells[ny][nx].assetKey;
-        if (nk === 'water') same++;
-        if (CORE_SURFACES.has(nk)) neighborCounts.set(nk, (neighborCounts.get(nk) ?? 0) + 1);
-      }
-      if (same >= 1) continue;
+      if (visited[y][x]) continue;
+      if (!isWaterwayKey(cells[y][x].assetKey)) continue;
 
-      let best = 'grass';
-      let bestN = -1;
-      for (const [nk, n] of neighborCounts) {
-        if (n > bestN) {
-          bestN = n;
-          best = nk;
+      // BFS component (chunk-local)
+      const component: Array<{ x: number; y: number }> = [];
+      const queue: Array<{ x: number; y: number }> = [{ x, y }];
+      visited[y][x] = true;
+      while (queue.length > 0) {
+        const cur = queue.pop()!;
+        component.push(cur);
+        for (const [dx, dy] of dirs) {
+          const nx = cur.x + dx;
+          const ny = cur.y + dy;
+          if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+          if (visited[ny][nx]) continue;
+          if (!isWaterwayKey(cells[ny][nx].assetKey)) continue;
+          visited[ny][nx] = true;
+          queue.push({ x: nx, y: ny });
         }
       }
-      rewrites.push({ x, y, assetKey: best });
+
+      if (component.length > maxSize) continue;
+
+      // Dissolve water cells only; leave bridge decks alone.
+      for (const c of component) {
+        if (cells[c.y][c.x].assetKey !== 'water') continue;
+        rewrites.push({
+          x: c.x,
+          y: c.y,
+          assetKey: majorityCoreSurface(cells, size, c.x, c.y),
+        });
+      }
     }
   }
 
@@ -275,6 +341,15 @@ export function removeOrphanWater(cells: CellData[][], size: number): void {
       interactable: def?.interactable ?? false,
     };
   }
+}
+
+/**
+ * V3 / playable-session: dissolve small waterway components (size ≤ 2).
+ * Kept as the ChunkGenerator call-site name; implementation is BFS size≤N
+ * (see {@link dissolveSmallWaterComponents}).
+ */
+export function removeOrphanWater(cells: CellData[][], size: number): void {
+  dissolveSmallWaterComponents(cells, size, 2);
 }
 
 /**
