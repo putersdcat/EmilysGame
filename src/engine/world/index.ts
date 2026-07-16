@@ -76,6 +76,14 @@ export {
   stripOrphanRoofShards,
 } from './TerrainBuilder';
 
+// --- Path Skeleton (scene-first P1 / PR4) ---
+// Early-chunk dirt corridor from border entry → landmark.
+export {
+  layPathSkeleton,
+  PATH_SKELETON_MAX_DIST,
+  type PathSkeletonResult,
+} from './PathSkeleton';
+
 // --- Chunk Generator (B6 / #253) ---
 // The chunk generation pipeline orchestrator — generateChunk (async, LLM),
 // generateChunkSync (sync, deterministic), and the internal pipeline

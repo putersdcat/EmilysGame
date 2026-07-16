@@ -11,6 +11,7 @@
  *   Phase 2: solveWorldUnitGrid (WorldUnitSolver) — AC-3 constraint propagation
  *   Phase 3: stampWorldUnitGrid (WorldUnitSolver) — stamp solved templates
  *   Phase 4: enforcePassability (Passability) — ensure walkability
+ *   Phase 4.5: layPathSkeleton (PathSkeleton) — early-chunk dirt corridor (scene-first P1)
  *   Phase 5: populateAnchors, clusterDecorations, scatterCollectibles, layCoinTrails,
  *            placeQuizGates, placeGatesInFenceRuns, promoteDoorGates, placeBonfires,
  *            maybePlaceCastleLandmark, applyEntropyCellFlags, addExtraObstacles
@@ -88,6 +89,7 @@ import {
   maybePlaceModularScenes,
   scanAndRepairFenceGaps,
 } from '../iso2-assemblies';
+import { layPathSkeleton } from './PathSkeleton';
 import type {
   BorderConstraints,
   ChunkData,
@@ -264,6 +266,12 @@ function generateGridChunk(
 
   // Phase 4: enforce passability
   enforcePassability(cells, size, seededRandom(featureSeed + 99));
+
+  // Phase 4.5 (scene-first P1): dirt path skeleton for early chunks (dist ≤ 2).
+  // AFTER base terrain + passability so borders/center are walkable; BEFORE
+  // population / modular scenes so corridors exist when farms/gates land.
+  // ensureMinimumQuizGates (later) still guarantees ≥1 quiz_gate on the chunk.
+  layPathSkeleton(cells, size, seededRandom(featureSeed + 150), chunkDist);
 
   // Phase 5: content population (anchors, decorations, collectibles)
   populateAnchors(cells, grid, biome, seededRandom(featureSeed + 200), difficulty);
