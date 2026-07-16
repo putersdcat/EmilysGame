@@ -50,9 +50,9 @@ export function bootMarkDuration(
   bootMark(name, { ...detail, ms });
 }
 
-/** Snapshot of all marks (for __gameDebug). */
+/** Snapshot of all marks (for __gameDebug). Returns a copy — not the live array. */
 export function getBootMarks(): readonly BootMark[] {
-  return _marks;
+  return _marks.slice();
 }
 
 /** Wall time since first import of this module (approx page script start). */

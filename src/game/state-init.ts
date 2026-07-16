@@ -42,6 +42,7 @@ import { setPendingResolvedCells, ensureChunksAroundYielding } from './chunk-lif
 import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
 import type { AgeBand } from '../types/content-pack.types';
 import { bootMarkDuration } from './boot-marks';
+import { releaseBootWordlistGate } from './wordlist-bootstrap';
 // Save-fidelity parity fix (Docs/VisionAlignmentAudit.md Finding #10):
 // these restorations already existed in save-apply.ts's applySaveData
 // (used by the manual save-slot-load UI) but were silently missing from
@@ -220,6 +221,9 @@ export async function createInitialState(): Promise<InitialStateResult> {
 
   // Generate initial chunks (boot-only yielding path — keeps tab responsive)
   await ensureChunksAroundYielding(state);
+  // Allow deferred LLM wordlist swap only after bulk boot gen finishes so
+  // mid-yield setWordlist cannot split entropy mid-batch (boot budget M2).
+  releaseBootWordlistGate();
 
   // Guarantee the player's resolved spawn/resume position is never a
   // softlock (2026-07-09, user-reported live bug with real LLM entropy

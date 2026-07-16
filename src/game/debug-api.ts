@@ -99,6 +99,7 @@ import {
 import { generateBarterQuiz, syncBarterQuizDOM } from './trading';
 import { hasAssetSprite } from '../asset-pipeline/asset-sprites';
 import { sampleBiomeTransition } from '../rendering/biome-transition-overlays';
+import { getBootMarks, type BootMark } from './boot-marks';
 
 // ─── Dependencies ────────────────────────────────────────────
 
@@ -132,6 +133,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
   } = deps;
 
   return {
+    // Boot budget marks (playable-session P0) — copy snapshot for playtests
+    bootMarks: (): readonly BootMark[] => getBootMarks(),
     // Time of day
     setTimeOfDay,
     getCycleProgress,

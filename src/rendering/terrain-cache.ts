@@ -28,7 +28,6 @@ import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #22
 // Populator.ts). The terrain cache uses it for pixel layout of the
 // per-world-unit pre-rendered canvas.
 import { WU_SIZE } from '../engine/world/WorldGrid';
-import { noteTerrainBake } from '../game/boot-marks';
 
 // --- Chunk canvas cache ---
 
@@ -48,17 +47,34 @@ const chunkCache = new Map<string, CachedWorldUnitTerrain>();
 let cacheStamp = 0;
 
 /**
- * Drop incomplete provisional WU entries so the next draw re-bakes with
- * decoded SVGs. Wired once to nano-tile SVG onload (playable-session P0).
- * Prevents the thrash where incomplete entries were never stored and every
- * frame rebuilt the full WU canvas until decode completed.
+ * Optional bake-cost hook (wired from game boot-marks). Avoids rendering →
+ * game import inversion; game registers noteTerrainBake at init.
  */
-function dropIncompleteTerrainEntries(): void {
-  for (const [key, entry] of chunkCache) {
-    if (!entry.allImagesLoaded) chunkCache.delete(key);
-  }
+let _terrainBakeHook: ((ms: number) => void) | null = null;
+
+/** Register a listener for WU terrain bake cost (ms). Pass null to clear. */
+export function setTerrainBakeHook(hook: ((ms: number) => void) | null): void {
+  _terrainBakeHook = hook;
 }
-onSvgImagesLoaded(dropIncompleteTerrainEntries);
+
+/**
+ * Drop incomplete provisional WU entries so the next draw re-bakes with
+ * decoded SVGs. Debounced to one rAF so staggered SVG onloads do not
+ * re-bake the visible set once per event. Prevents the thrash where
+ * incomplete entries were never stored and every frame rebuilt the full
+ * WU canvas until decode completed.
+ */
+let _dropIncompleteRaf = 0;
+function scheduleDropIncompleteTerrainEntries(): void {
+  if (_dropIncompleteRaf) return;
+  _dropIncompleteRaf = requestAnimationFrame(() => {
+    _dropIncompleteRaf = 0;
+    for (const [key, entry] of chunkCache) {
+      if (!entry.allImagesLoaded) chunkCache.delete(key);
+    }
+  });
+}
+onSvgImagesLoaded(scheduleDropIncompleteTerrainEntries);
 
 // Chunk content dimensions (computed from chunk size & tile dims)
 const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
@@ -231,7 +247,7 @@ export function getCachedTerrain(
   // do not re-bake the same WU every rAF. onSvgImagesLoaded drops incomplete
   // keys so the next getCachedTerrain rebuilds with decoded images.
   chunkCache.set(wuKey, entry);
-  noteTerrainBake(performance.now() - bakeStart);
+  _terrainBakeHook?.(performance.now() - bakeStart);
   return entry;
 }
 

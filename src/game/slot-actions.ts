@@ -14,6 +14,7 @@ import { buildSaveData } from './save-build';
 import { saveToSlot, loadFromSlot, deleteSlot } from './save';
 import { applySaveData } from './save-apply';
 import { withWorldLoading } from './boot-loading';
+import { ensureChunksAround } from './chunk-lifecycle';
 
 /** Slot save action: serialize state, persist to slot, mark UI dirty, toast. */
 export function makeSlotSaveHandler(state: GameState) {
@@ -25,16 +26,46 @@ export function makeSlotSaveHandler(state: GameState) {
   };
 }
 
-/** Slot load action: read slot, apply to state (yielding bulk gen), toast. */
+/**
+ * Slot load action: read slot, apply to state (yielding bulk gen), toast.
+ *
+ * Mid-session HUD load runs while rAF is live. Pause + re-entrancy lock
+ * prevent movement / boundary ensure interleaving during clear+yield gen.
+ */
 export function makeSlotLoadHandler(state: GameState) {
+  let loadInFlight = false;
+
   return (slot: number) => {
+    if (loadInFlight) {
+      addToast(state.ui, 'Still loading…', '#ffaa00', 1200);
+      return;
+    }
     const data = loadFromSlot(slot);
     if (!data) return;
-    // Fire-and-forget async apply under spinner (HUD callback is sync-typed).
-    void withWorldLoading(() => applySaveData(state, data), 'Loading world…').then(() => {
-      markSaveSlotsDirty();
-      addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-    });
+
+    loadInFlight = true;
+    const wasPaused = state.paused;
+    state.paused = true; // block handleMovement + boundary ensure while chunks rebuild
+
+    void withWorldLoading(() => applySaveData(state, data), 'Loading world…')
+      .then(() => {
+        markSaveSlotsDirty();
+        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
+      })
+      .catch((err: unknown) => {
+        console.error('[slot-load] applySaveData failed:', err);
+        addToast(state.ui, 'Load failed — try again', '#f44336', 2500);
+        // Best-effort: fill viewport if clear() already ran mid-failure
+        try {
+          ensureChunksAround(state);
+        } catch { /* ignore secondary ensure errors */ }
+      })
+      .finally(() => {
+        loadInFlight = false;
+        // Restore prior pause (e.g. pause menu was open). Otherwise unpause
+        // so play resumes after load.
+        state.paused = wasPaused;
+      });
   };
 }
 
