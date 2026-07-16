@@ -8,8 +8,8 @@
  *     per world unit (#104). Difficulty-aware guardian bias (#46).
  *   - clusterDecorations (Phase 5b): cluster-based placement of biome
  *     decorations (3-7 per cluster, 5-8 cell cluster spacing, sqrt-bias
- *     for denser cluster centers). Target coverage 15-25% scaled by
- *     distance and difficulty.
+ *     for denser cluster centers). Target coverage ~4–7% near origin,
+ *     scaled by distance and difficulty. Dirt path cells not eligible.
  *   - scatterDecorations (Phase 5b legacy): simple scatter fallback kept
  *     for test compatibility. Replaced by clusterDecorations in production.
  *
@@ -362,7 +362,7 @@ function placeFeatureAtCell(
  * Phase 5b: Cluster-based decoration placement (WorldEngine-05 §6.2).
  * Creates natural-looking clusters of 3-7 decorations around center points,
  * with biome-appropriate variety within each cluster.
- * Target coverage: 15-25% of eligible cells, scaled by distance from origin.
+ * Target coverage: ~4–7% of eligible cells near origin, scaled by distance.
  * TODO: DOC - decoration clustering algorithm details
  */
 export function clusterDecorations(
@@ -375,14 +375,14 @@ export function clusterDecorations(
 ): void {
   const palette = BIOME_SCATTER_DECORATIONS[biome.name] ?? ['flower'];
 
-  // S5 density (2026-07-15): FOV zoom-out shows more cells — lower coverage so
-  // structure language (fence/farm/pond) is not buried under emoji salt.
-  // Base: ~8–12% near origin (was 18–25%), tapering outward.
+  // S5 + playable-session P1: lower coverage so paths/structures read clearly.
+  // Base: ~4–7% near origin (was 8–12%), tapering outward.
   const distFactor = Math.max(0.45, 1.0 - chunkDist * 0.05);
   const obstacleMult = difficulty?.obstacleDensity ?? 1.0;
-  const targetCoverage = (0.08 + rng() * 0.04) * distFactor * Math.min(obstacleMult, 1.3);
+  const targetCoverage = (0.04 + rng() * 0.03) * distFactor * Math.min(obstacleMult, 1.3);
 
-  // Gather eligible cells (walkable base terrain with no existing content)
+  // Eligible: walkable soft base with no existing content.
+  // Exclude dirt so path/corridor cells stay visually clear (PathSkeleton paint).
   const eligible: Array<{ x: number; y: number }> = [];
   const eligibleSet = new Set<string>();
   for (let y = 0; y < size; y++) {
@@ -390,7 +390,7 @@ export function clusterDecorations(
       const cell = cells[y][x];
       if (!cell.walkable) continue;
       if (cell.itemId || cell.npcId) continue;
-      if (cell.assetKey !== 'grass' && cell.assetKey !== 'dirt' && cell.assetKey !== 'sand') continue;
+      if (cell.assetKey !== 'grass' && cell.assetKey !== 'sand') continue;
       eligible.push({ x, y });
       eligibleSet.add(`${x},${y}`);
     }

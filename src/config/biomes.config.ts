@@ -55,13 +55,14 @@ export const BIOME_DEFS: BiomeDef[] = [
     name: 'meadow',
     displayName: 'Sunny Meadow',
     baseColor: '#1a5c1a',
-    // V1 surface + S5 density (2026-07-15): grass-first meadow. No sand salt.
+    // V1 surface + S5 + playable-session P1: grass-first meadow. No sand salt.
+    // Flower-family Perlin salt cut so ground is not a flower carpet at spawn.
     // Animals are NOT Perlin terrain salt (they read as emoji clutter at FOV
     // zoom-out) — rare animals live in farm assemblies + decoration clusters.
     terrainWeights: {
-      grass: 0.72, flower: 0.05, flower_pink: 0.03, flower_red: 0.02,
+      grass: 0.82, flower: 0.025, flower_pink: 0.015, flower_red: 0.01,
       dirt: 0.05,
-      tulip: 0.02, clover: 0.02, wheat: 0.02, sunflower: 0.02,
+      tulip: 0.01, clover: 0.01, wheat: 0.01, sunflower: 0.01,
       // Trace weights keep farm-animal keys alive (rare salt; main home is farm assembly)
       chicken: 0.005, sheep: 0.005, cow: 0.005, pig: 0.005, rabbit: 0.005, duck: 0.005,
     },
