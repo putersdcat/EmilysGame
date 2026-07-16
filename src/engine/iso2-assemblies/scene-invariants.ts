@@ -4,12 +4,22 @@
  * Standing law: no barrier without function. Fence/wall openings must be
  * `quiz_gate`, `door_locked` (or open door), or an explicit open path entry.
  *
+ * Contract:
+ * - Declared `quiz_gate` openings must be `quiz_gate` on the grid.
+ * - Declared `door_locked` openings must be door-family (`door_locked` /
+ *   `door_open` / `door_gate`); repair places `door_locked` when missing.
+ * - Declared `path` openings must be walkable dirt/grass, or any functional
+ *   gate (functional supersedes path).
+ * - Opening coords must lie inside the recipe footprint [0,width)×[0,height).
+ * - Recipes without `openings` pass validation vacuously (migration); barrier-
+ *   bearing recipes should declare openings (see catalog comments / PR3).
+ *
  * Used after modular assembly stamps and as a light chunk-level pass.
  */
 
 import { ASSET_DEFS } from '../../config/assets.config';
 import type { CellData } from '../../types/game.types';
-import type { AssemblyRecipe } from './catalog';
+import type { AssemblyOpeningKind, AssemblyRecipe } from './catalog';
 
 /** Functional barrier openings (gates/doors that gate progression). */
 export const FUNCTIONAL_OPENING_KEYS = new Set([
@@ -20,11 +30,20 @@ export const FUNCTIONAL_OPENING_KEYS = new Set([
   'toll_gate',
 ]);
 
-/** Explicit open-path entry surfaces (walkable corridor through a barrier). */
+/**
+ * Explicit open-path entry surfaces (walkable corridor through a barrier).
+ * Only live terrain keys used as path openings today (no bare `path` asset).
+ */
 export const PATH_OPENING_KEYS = new Set([
   'dirt',
-  'path',
   'grass',
+]);
+
+/** Door-family keys that satisfy a declared `door_locked` opening. */
+const DOOR_FAMILY_KEYS = new Set([
+  'door_locked',
+  'door_open',
+  'door_gate',
 ]);
 
 /** Barrier materials that form enclosure rings / runs. */
@@ -62,10 +81,36 @@ function isPathOpening(cell: CellData): boolean {
   return cell.walkable && PATH_OPENING_KEYS.has(cell.assetKey);
 }
 
-function makeQuizGateCell(): CellData {
-  const def = ASSET_DEFS.quiz_gate;
+function isPathLikeKey(assetKey: string): boolean {
+  return PATH_OPENING_KEYS.has(assetKey);
+}
+
+function isBarrierKey(assetKey: string): boolean {
+  return BARRIER_KEYS.has(assetKey);
+}
+
+function keyAt(cells: CellData[][], x: number, y: number): string {
+  if (!inBounds(cells, x, y)) return '';
+  return cells[y][x].assetKey;
+}
+
+/** Whether the cell satisfies the declared opening kind (strict by kind). */
+function satisfiesDeclaredKind(assetKey: string, kind: AssemblyOpeningKind): boolean {
+  if (kind === 'path') {
+    return PATH_OPENING_KEYS.has(assetKey) || isFunctionalOpening(assetKey);
+  }
+  if (kind === 'quiz_gate') {
+    return assetKey === 'quiz_gate';
+  }
+  // door_locked — door family only (not quiz_gate / toll_gate)
+  return DOOR_FAMILY_KEYS.has(assetKey);
+}
+
+function makeFunctionalCell(kind: 'quiz_gate' | 'door_locked'): CellData {
+  const assetKey = kind === 'door_locked' ? 'door_locked' : 'quiz_gate';
+  const def = ASSET_DEFS[assetKey];
   return {
-    assetKey: 'quiz_gate',
+    assetKey,
     walkable: def?.walkable ?? false,
     interactable: def?.interactable ?? true,
   };
@@ -97,9 +142,22 @@ function hasFunctionalNearby(
   return false;
 }
 
+function isOpeningInsideRecipe(
+  openingX: number,
+  openingY: number,
+  recipe: AssemblyRecipe,
+): boolean {
+  return (
+    openingX >= 0 &&
+    openingY >= 0 &&
+    openingX < recipe.width &&
+    openingY < recipe.height
+  );
+}
+
 /**
  * Validate that every declared recipe opening is realized on the grid.
- * Recipes without `openings` pass vacuously.
+ * Recipes without `openings` pass vacuously (see module header / PR3).
  */
 export function validateSceneOpenings(
   cells: CellData[][],
@@ -115,6 +173,18 @@ export function validateSceneOpenings(
   const violations: SceneOpeningViolation[] = [];
 
   for (const opening of openings) {
+    if (!isOpeningInsideRecipe(opening.x, opening.y, recipe)) {
+      violations.push({
+        recipeId: recipe.id,
+        x: originX + opening.x,
+        y: originY + opening.y,
+        kind: opening.kind,
+        actual: '<recipe-oob>',
+        reason: `opening (${opening.x},${opening.y}) outside recipe ${recipe.width}×${recipe.height}`,
+      });
+      continue;
+    }
+
     const x = originX + opening.x;
     const y = originY + opening.y;
     if (!inBounds(cells, x, y)) {
@@ -124,7 +194,7 @@ export function validateSceneOpenings(
         y,
         kind: opening.kind,
         actual: '<oob>',
-        reason: 'opening cell out of bounds',
+        reason: 'opening cell out of grid bounds',
       });
       continue;
     }
@@ -133,29 +203,29 @@ export function validateSceneOpenings(
     const actual = cell.assetKey;
 
     if (opening.kind === 'path') {
-      // Explicit path OR a functional gate (gate is a stricter opening).
-      if (!isPathOpening(cell) && !isFunctionalOpening(actual)) {
+      // Path surface must be walkable when using path keys; functional always ok.
+      if (isFunctionalOpening(actual)) continue;
+      if (!isPathOpening(cell)) {
         violations.push({
           recipeId: recipe.id,
           x,
           y,
           kind: opening.kind,
           actual,
-          reason: 'path opening is not walkable dirt/path/grass (or functional gate)',
+          reason: 'path opening is not walkable dirt/grass (or functional gate)',
         });
       }
       continue;
     }
 
-    // quiz_gate | door_locked — any functional opening satisfies the contract.
-    if (!isFunctionalOpening(actual)) {
+    if (!satisfiesDeclaredKind(actual, opening.kind)) {
       violations.push({
         recipeId: recipe.id,
         x,
         y,
         kind: opening.kind,
         actual,
-        reason: `expected functional opening (${opening.kind}), got ${actual}`,
+        reason: `expected ${opening.kind}${opening.kind === 'door_locked' ? ' (or door_open/door_gate)' : ''}, got ${actual}`,
       });
     }
   }
@@ -165,9 +235,11 @@ export function validateSceneOpenings(
 
 /**
  * Repair declared openings after a stamp:
- * - `quiz_gate` / `door_locked`: place `quiz_gate` if no functional opening present
- * - `path`: ensure a walkable path surface (dirt) when not already path/functional
+ * - `quiz_gate`: place `quiz_gate` if not already quiz_gate
+ * - `door_locked`: place `door_locked` if not already door-family
+ * - `path`: ensure walkable dirt when not already path/functional
  *
+ * Opening coords outside the recipe footprint are skipped (validate reports them).
  * Returns the number of cells mutated.
  */
 export function repairSceneOpenings(
@@ -182,6 +254,8 @@ export function repairSceneOpenings(
   let repaired = 0;
 
   for (const opening of openings) {
+    if (!isOpeningInsideRecipe(opening.x, opening.y, recipe)) continue;
+
     const x = originX + opening.x;
     const y = originY + opening.y;
     if (!inBounds(cells, x, y)) continue;
@@ -195,9 +269,8 @@ export function repairSceneOpenings(
       continue;
     }
 
-    // Functional kinds: ensure a gate/door cell.
-    if (isFunctionalOpening(cell.assetKey)) continue;
-    cells[y][x] = makeQuizGateCell();
+    if (satisfiesDeclaredKind(cell.assetKey, opening.kind)) continue;
+    cells[y][x] = makeFunctionalCell(opening.kind);
     repaired++;
   }
 
@@ -205,11 +278,35 @@ export function repairSceneOpenings(
 }
 
 /**
- * Find single-cell gaps in fence/wall runs (barrier left+right or up+down)
+ * True when (x,y) is a path-like cell with barriers on both horizontal neighbors.
+ * Used to detect multi-cell horizontal corridors (do not treat as punch-through).
+ */
+function isHorizCorridorCell(cells: CellData[][], x: number, y: number): boolean {
+  if (!inBounds(cells, x, y)) return false;
+  const cell = cells[y][x];
+  if (!cell.walkable || !isPathLikeKey(cell.assetKey)) return false;
+  return isBarrierKey(keyAt(cells, x - 1, y)) && isBarrierKey(keyAt(cells, x + 1, y));
+}
+
+/**
+ * True when (x,y) is a path-like cell with barriers on both vertical neighbors.
+ */
+function isVertCorridorCell(cells: CellData[][], x: number, y: number): boolean {
+  if (!inBounds(cells, x, y)) return false;
+  const cell = cells[y][x];
+  if (!cell.walkable || !isPathLikeKey(cell.assetKey)) return false;
+  return isBarrierKey(keyAt(cells, x, y - 1)) && isBarrierKey(keyAt(cells, x, y + 1));
+}
+
+/**
+ * Find single-cell gaps in fence/wall runs (barrier left+right XOR up+down)
  * that are bare walkable dirt/grass and place `quiz_gate` when no functional
- * opening is nearby. Keeps multi-cell interiors alone (no opposite barriers).
+ * opening is nearby.
  *
- * Safe/simple: only classic 1-cell punch-through gaps.
+ * Guards against parallel-corridor false positives: only singleton punch-throughs
+ * (exactly one opposite-barrier axis; adjacent cells along the free axis must
+ * not themselves be opposite-barrier path cells).
+ *
  * Returns the number of gates placed.
  */
 export function scanAndRepairFenceGaps(cells: CellData[][], size: number): number {
@@ -228,18 +325,51 @@ export function scanAndRepairFenceGaps(cells: CellData[][], size: number): numbe
       if (!PATH_OPENING_KEYS.has(cell.assetKey)) continue;
       if (cell.itemId || cell.npcId) continue;
 
-      const left = inBounds(cells, x - 1, y) ? cells[y][x - 1].assetKey : '';
-      const right = inBounds(cells, x + 1, y) ? cells[y][x + 1].assetKey : '';
-      const up = inBounds(cells, x, y - 1) ? cells[y - 1][x].assetKey : '';
-      const down = inBounds(cells, x, y + 1) ? cells[y + 1][x].assetKey : '';
+      const left = keyAt(cells, x - 1, y);
+      const right = keyAt(cells, x + 1, y);
+      const up = keyAt(cells, x, y - 1);
+      const down = keyAt(cells, x, y + 1);
 
-      const horizGap = BARRIER_KEYS.has(left) && BARRIER_KEYS.has(right);
-      const vertGap = BARRIER_KEYS.has(up) && BARRIER_KEYS.has(down);
-      if (!horizGap && !vertGap) continue;
+      const horizGap = isBarrierKey(left) && isBarrierKey(right);
+      const vertGap = isBarrierKey(up) && isBarrierKey(down);
+      // Exactly one opposite-barrier axis (not a cross / corner mash).
+      if (horizGap === vertGap) continue;
+
+      // Singleton punch-through: multi-cell corridors have adjacent path cells
+      // that also sit between the same parallel barrier pair.
+      if (horizGap) {
+        if (isHorizCorridorCell(cells, x, y - 1) || isHorizCorridorCell(cells, x, y + 1)) {
+          continue;
+        }
+        // Continuity: at least one side continues the horizontal barrier run.
+        const leftContinues =
+          isBarrierKey(keyAt(cells, x - 2, y)) ||
+          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
+          isBarrierKey(keyAt(cells, x - 1, y + 1));
+        const rightContinues =
+          isBarrierKey(keyAt(cells, x + 2, y)) ||
+          isBarrierKey(keyAt(cells, x + 1, y - 1)) ||
+          isBarrierKey(keyAt(cells, x + 1, y + 1));
+        if (!leftContinues && !rightContinues) continue;
+      } else {
+        // vertGap
+        if (isVertCorridorCell(cells, x - 1, y) || isVertCorridorCell(cells, x + 1, y)) {
+          continue;
+        }
+        const upContinues =
+          isBarrierKey(keyAt(cells, x, y - 2)) ||
+          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
+          isBarrierKey(keyAt(cells, x + 1, y - 1));
+        const downContinues =
+          isBarrierKey(keyAt(cells, x, y + 2)) ||
+          isBarrierKey(keyAt(cells, x - 1, y + 1)) ||
+          isBarrierKey(keyAt(cells, x + 1, y + 1));
+        if (!upContinues && !downContinues) continue;
+      }
 
       if (hasFunctionalNearby(cells, x, y, 1)) continue;
 
-      cells[y][x] = makeQuizGateCell();
+      cells[y][x] = makeFunctionalCell('quiz_gate');
       placed++;
     }
   }

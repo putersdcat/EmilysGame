@@ -74,6 +74,8 @@ const LEGACY_RECIPES: Record<'homestead-small' | 'ruined-cathedral', AssemblyRec
     placements: HOMESTEAD_SMALL,
     openings: [{ x: 2, y: 4, kind: 'door_locked' }],
   },
+  // ruined-cathedral: barrier walls but no authored door gap yet — openings
+  // omitted (vacuous validate). PR3+ should declare openings if a gate is added.
   'ruined-cathedral': { id: 'ruined-cathedral', width: 3, height: 5, placements: RUINED_CATHEDRAL },
 };
 

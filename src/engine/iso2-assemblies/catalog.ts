@@ -64,11 +64,16 @@ export const FENCED_FARM: AssemblyRecipe = {
   ],
 };
 
-/** 5×5 pond: coherent water body + sand shore (no random salt). */
+/**
+ * 5×5 pond: coherent water body + sand shore (no random salt).
+ * No barrier openings — intentionally omits `openings` (vacuous validate).
+ * PR3+ may declare shore path entries if needed; not a fenced scene.
+ */
 export const POND_CLEARING: AssemblyRecipe = {
   id: 'pond-clearing',
   width: 5,
   height: 5,
+  // openings: omitted — no fence/wall gaps (see scene-invariants module header)
   placements: [
     { x: 0, y: 0, assetKey: 'grass' }, { x: 1, y: 0, assetKey: 'sand' }, { x: 2, y: 0, assetKey: 'sand' },
     { x: 3, y: 0, assetKey: 'sand' }, { x: 4, y: 0, assetKey: 'grass' },

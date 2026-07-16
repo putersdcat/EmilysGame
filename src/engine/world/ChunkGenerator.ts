@@ -252,8 +252,11 @@ function generateGridChunk(
   stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
   if (chunkX === 0 && chunkY === 0) stampStarterHomestead(cells);
   // Light scene-law pass: single-cell fence/wall dirt gaps → quiz_gate when
-  // no functional opening is nearby (starter homestead already has a gate).
-  scanAndRepairFenceGaps(cells, size);
+  // no functional opening is nearby. Origin-exempt (same policy as placeQuizGates):
+  // starter homestead authors its own quiz_gate; avoid injecting extra origin gates.
+  if (chunkX !== 0 || chunkY !== 0) {
+    scanAndRepairFenceGaps(cells, size);
+  }
 
   // Phase 3.5 (V1 surface language): kill lone dirt/sand salt left by Perlin
   // or WU stamps (path ends and water-adjacent sand shores are preserved).
@@ -301,8 +304,10 @@ function generateGridChunk(
   maybePlaceModularScenes(cells, size, biome, chunkDist, seededRandom(featureSeed + 477));
 
   // Phase 5.475: scene-law fence-gap repair after modular stamps (and any
-  // WU fence rings left with bare dirt punch-throughs).
-  scanAndRepairFenceGaps(cells, size);
+  // WU fence rings left with bare dirt punch-throughs). Origin-exempt.
+  if (chunkX !== 0 || chunkY !== 0) {
+    scanAndRepairFenceGaps(cells, size);
+  }
 
   // Phase 5.48: modular scenes can overwrite soft terrain that previously held
   // a minimum quiz_gate — re-assert non-origin density after stamps.
