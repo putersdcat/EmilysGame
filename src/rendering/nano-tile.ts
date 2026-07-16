@@ -39,6 +39,24 @@ import { drawNanoWeathering } from './nano-weathering';
 
 const _svgImageCache = new Map<string, HTMLImageElement>();
 
+/** Listeners notified when any pending nano SVG finishes decoding. */
+const _svgLoadListeners = new Set<() => void>();
+
+/**
+ * Register a one-shot or long-lived listener for SVG image load events.
+ * Used by terrain-cache to drop incomplete provisional entries and re-bake.
+ */
+export function onSvgImagesLoaded(cb: () => void): () => void {
+  _svgLoadListeners.add(cb);
+  return () => { _svgLoadListeners.delete(cb); };
+}
+
+function notifySvgImagesLoaded(): void {
+  for (const cb of _svgLoadListeners) {
+    try { cb(); } catch { /* ignore listener errors */ }
+  }
+}
+
 /**
  * Inject a pre-loaded image into the SVG cache (used by Node.js/napi-rs canvas adapter).
  * Without this, loadSvgImage() performs browser-side async load.
@@ -54,10 +72,12 @@ export function injectSvgImage(svg: string, img: HTMLImageElement): void {
  */
 export function loadSvgImage(svg: string): HTMLImageElement | null {
   let img = _svgImageCache.get(svg);
-  if (img) return img;
+  if (img) return img.complete ? img : null;
 
   // Browser async load — schedules decode, returns null on first call.
   img = new Image();
+  img.onload = () => { notifySvgImagesLoaded(); };
+  img.onerror = () => { notifySvgImagesLoaded(); };
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   _svgImageCache.set(svg, img);
   return img.complete ? img : null;

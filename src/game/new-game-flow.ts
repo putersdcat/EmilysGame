@@ -19,6 +19,7 @@ import {
 } from './tutorial';
 import { loadFromSlot } from './save';
 import { applySaveData } from './save-apply';
+import { withWorldLoading } from './boot-loading';
 
 /**
  * Run the full "new game" onboarding flow against the given state.
@@ -34,7 +35,8 @@ import { applySaveData } from './save-apply';
  * **Async** — awaits each step. Skipped entirely in test mode by caller.
  */
 export async function runNewGameFlow(state: GameState): Promise<void> {
-  resetGameState(state);
+  // Bulk chunk regen under spinner so New Game never freezes the tab.
+  await withWorldLoading(() => resetGameState(state), 'Loading world…');
   // Character customizer (no cancel on new game — must create character)
   const customVariation = (await showCustomizer(state.playerVariation))!;
   clearVariationCache('custom');
@@ -61,7 +63,7 @@ export async function runNewGameFlow(state: GameState): Promise<void> {
 export async function loadSlotIntoState(state: GameState, slot: number): Promise<boolean> {
   const data = loadFromSlot(slot);
   if (data) {
-    applySaveData(state, data);
+    await withWorldLoading(() => applySaveData(state, data), 'Loading world…');
     addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
     return true;
   }

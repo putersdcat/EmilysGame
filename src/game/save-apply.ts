@@ -50,7 +50,7 @@ import { createStreakState, recordQuizResult } from './quiz';
 import { deserializeVisited } from '../rendering/fog';
 import { setAgeBand } from './age-profile';
 import { setPlayedSeconds } from '../rendering/lighting';
-import { setPendingResolvedCells, ensureChunksAround } from './chunk-lifecycle';
+import { setPendingResolvedCells, ensureChunksAroundYielding } from './chunk-lifecycle';
 import { clearTerrainCache } from '../rendering/terrain-cache';
 import { clearObjectCache } from '../rendering/render';
 import { clearParticles } from '../rendering/particles';
@@ -65,8 +65,11 @@ import { type AgeBand } from '../types/content-pack.types';
  * Restore all game subsystems from a SaveData payload, then regenerate
  * the chunks around the player's restored position with any saved
  * resolved cells re-applied. Called from save-load flows in main.ts.
+ *
+ * **Async** — uses boot-only `ensureChunksAroundYielding` so bulk gen
+ * does not freeze the tab. Callers should show a loading spinner.
  */
-export function applySaveData(state: GameState, data: SaveData): void {
+export async function applySaveData(state: GameState, data: SaveData): Promise<void> {
   state.player.x = data.player.x;
   state.player.y = data.player.y;
   state.player.direction = data.player.direction;
@@ -143,8 +146,8 @@ export function applySaveData(state: GameState, data: SaveData): void {
   clearParticles();
   clearWeather();
   clearWildlife();
-  // Regenerate chunks around new player position
+  // Regenerate chunks around new player position (boot-only yielding path)
   state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
-  ensureChunksAround(state);
+  await ensureChunksAroundYielding(state);
 }

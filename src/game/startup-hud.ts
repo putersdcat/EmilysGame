@@ -24,6 +24,7 @@ import { doSave } from './save-build';
 import {
   makeSlotSaveHandler, makeSlotLoadHandler, makeSlotDeleteHandler,
 } from './slot-actions';
+import { getBootMarks } from './boot-marks';
 
 // ─── Localstorage keys ──────────────────────────────────────
 /** localStorage key for the user-saved fog-of-war toggle (#127). */
@@ -69,13 +70,16 @@ export function wireStartupHud(state: GameState, input: InputManager): void {
   // Debug hooks for testing (available via window.__gameDebug)
   // B5 micro-slice 11.5 (#268): __gameDebug surface extracted to
   // ./game/debug-api.ts. See createGameDebug() for the full API.
-  (window as any).__gameDebug = createGameDebug({
+  const dbg = createGameDebug({
     state,
     input,
     doSave,
     checkCosmeticUnlocks,
     shouldAutoRead,
   });
+  // Boot budget marks (playable-session P0) — also on __gameDebug for playtests
+  dbg.bootMarks = getBootMarks;
+  (window as any).__gameDebug = dbg;
 
   addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', WELCOME_TOAST_MS);
   if (isTestMode()) {

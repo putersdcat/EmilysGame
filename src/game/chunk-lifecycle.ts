@@ -19,7 +19,8 @@
  *
  * Public API:
  *   - chunkKey(cx, cy) — string key helper
- *   - ensureChunksAround(state) — load chunks in viewport buffer around player
+ *   - ensureChunksAround(state) — SYNC load for rAF / boundary crosses (must stay sync)
+ *   - ensureChunksAroundYielding(state) — ASYNC boot-only load (yield after each gen)
  *   - collectBorderConstraints(chunks, cx, cy) — read edge tags from neighbors
  *   - setPendingResolvedCells(cells) — store cells from save data
  *   - applyResolvedToChunk(key, chunk) — apply pending cells to fresh chunk
@@ -42,6 +43,7 @@ import { generateChunkSync, feedEntropy } from '../engine/gen';
 import { type GameState } from './game-state';
 import { type ChunkData, type BorderConstraints } from '../types/game.types';
 import { type ResolvedCell } from './save';
+import { bootMark } from './boot-marks';
 
 // ─── Module-level state ───────────────────────────────────────
 
@@ -59,6 +61,33 @@ export function chunkKey(cx: number, cy: number): string {
   return `${cx},${cy}`;
 }
 
+/** Yield to the browser event loop so the tab stays responsive during bulk gen. */
+function yieldToMain(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Generate a single missing chunk at (cx, cy) if needed.
+ * Returns true if a new chunk was generated.
+ */
+function ensureOneChunk(state: GameState, cx: number, cy: number): boolean {
+  const key = chunkKey(cx, cy);
+  if (state.chunks.has(key)) return false;
+
+  // Collect border constraints from already-generated neighbors (#17)
+  const bc = collectBorderConstraints(state.chunks, cx, cy);
+  const chunk = generateChunkSync(cx, cy, bc);
+  state.chunks.set(key, chunk);
+  // Re-apply any resolved cells from save data
+  applyResolvedToChunk(key, chunk);
+  // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
+  invalidateChunkTerrain(chunkKey(cx - 1, cy));
+  invalidateChunkTerrain(chunkKey(cx + 1, cy));
+  invalidateChunkTerrain(chunkKey(cx, cy - 1));
+  invalidateChunkTerrain(chunkKey(cx, cy + 1));
+  return true;
+}
+
 // ─── Chunk loading ───────────────────────────────────────────
 
 /**
@@ -66,6 +95,9 @@ export function chunkKey(cx: number, cy: number): string {
  * empty chunk in range, generate a new one, apply any pending
  * resolved cells from save data, and invalidate adjacent terrain
  * caches for cross-chunk auto-tile transitions.
+ *
+ * **SYNC — hot path.** Called from `loadChunksOnBoundaryCross` inside
+ * the rAF game loop. Must never become async / awaited in gameLoop.
  */
 export function ensureChunksAround(state: GameState): void {
   const size = WORLD_CONFIG.chunkSize;
@@ -75,24 +107,45 @@ export function ensureChunksAround(state: GameState): void {
 
   for (let dy = -buf; dy <= buf; dy++) {
     for (let dx = -buf; dx <= buf; dx++) {
-      const cx = pcx + dx;
-      const cy = pcy + dy;
-      const key = chunkKey(cx, cy);
-      if (!state.chunks.has(key)) {
-        // Collect border constraints from already-generated neighbors (#17)
-        const bc = collectBorderConstraints(state.chunks, cx, cy);
-        const chunk = generateChunkSync(cx, cy, bc);
-        state.chunks.set(key, chunk);
-        // Re-apply any resolved cells from save data
-        applyResolvedToChunk(key, chunk);
-        // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
-        invalidateChunkTerrain(chunkKey(cx - 1, cy));
-        invalidateChunkTerrain(chunkKey(cx + 1, cy));
-        invalidateChunkTerrain(chunkKey(cx, cy - 1));
-        invalidateChunkTerrain(chunkKey(cx, cy + 1));
+      ensureOneChunk(state, pcx + dx, pcy + dy);
+    }
+  }
+}
+
+/**
+ * Boot / session-orchestration bulk load with yields between chunks.
+ *
+ * Use ONLY from createInitialState / applySaveData / resetGameState /
+ * menu spinner paths. After each `generateChunkSync`, yields via
+ * setTimeout(0) so the browser can paint and process input (avoids
+ * "Page Unresponsive" on cold load and Load/New Game).
+ *
+ * **Forbidden:** calling this from gameLoop / handleMovement / boundary
+ * crosses — those must keep using sync `ensureChunksAround`.
+ */
+export async function ensureChunksAroundYielding(
+  state: GameState,
+): Promise<{ count: number; ms: number }> {
+  const t0 = performance.now();
+  const size = WORLD_CONFIG.chunkSize;
+  const pcx = Math.floor(state.player.x / size);
+  const pcy = Math.floor(state.player.y / size);
+  const buf = WORLD_CONFIG.viewportBuffer;
+  let count = 0;
+
+  for (let dy = -buf; dy <= buf; dy++) {
+    for (let dx = -buf; dx <= buf; dx++) {
+      if (ensureOneChunk(state, pcx + dx, pcy + dy)) {
+        count++;
+        // Yield after each generated chunk so the main thread is not solid.
+        await yieldToMain();
       }
     }
   }
+
+  const ms = Math.round((performance.now() - t0) * 10) / 10;
+  bootMark('boot.ensureChunks', { count, ms });
+  return { count, ms };
 }
 
 /**

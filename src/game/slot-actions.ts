@@ -13,6 +13,7 @@ import { addToast, markSaveSlotsDirty } from '../ui/ui';
 import { buildSaveData } from './save-build';
 import { saveToSlot, loadFromSlot, deleteSlot } from './save';
 import { applySaveData } from './save-apply';
+import { withWorldLoading } from './boot-loading';
 
 /** Slot save action: serialize state, persist to slot, mark UI dirty, toast. */
 export function makeSlotSaveHandler(state: GameState) {
@@ -24,15 +25,16 @@ export function makeSlotSaveHandler(state: GameState) {
   };
 }
 
-/** Slot load action: read slot, apply to state, mark UI dirty, toast. */
+/** Slot load action: read slot, apply to state (yielding bulk gen), toast. */
 export function makeSlotLoadHandler(state: GameState) {
   return (slot: number) => {
     const data = loadFromSlot(slot);
-    if (data) {
-      applySaveData(state, data);
+    if (!data) return;
+    // Fire-and-forget async apply under spinner (HUD callback is sync-typed).
+    void withWorldLoading(() => applySaveData(state, data), 'Loading world…').then(() => {
       markSaveSlotsDirty();
       addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-    }
+    });
   };
 }
 

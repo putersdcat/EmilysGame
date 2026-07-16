@@ -10,30 +10,37 @@
  */
 
 import { checkLlmHealth, isTestMode } from '../engine/llm';
+import { bootMarkDuration } from './boot-marks';
 
 /**
  * Show splash and poll LLM until connected. Skips in test mode.
  * Returns only when healthy, skipped, or test mode active.
  */
 export async function waitForLlm(): Promise<void> {
+  const t0 = performance.now();
   const splash = document.getElementById('llmSplash');
 
   // In test mode, skip LLM gate entirely (#26)
   if (isTestMode()) {
     console.log('[LLM] Test mode: skipping LLM health gate');
     if (splash) splash.style.display = 'none';
+    bootMarkDuration('boot.llm', t0, { skipped: true, testMode: true });
     return;
   }
 
   const statusEl = document.getElementById('llmStatus');
   const skipBtn = document.getElementById('btnSkipLlm');
-  if (!splash || !statusEl) return; // Fallback: skip if no splash DOM
+  if (!splash || !statusEl) {
+    bootMarkDuration('boot.llm', t0, { skipped: true, noDom: true });
+    return; // Fallback: skip if no splash DOM
+  }
 
   splash.style.display = 'flex';
 
   // Allow dev skip
   let skipped = false;
   if (skipBtn) {
+    skipBtn.style.display = '';
     skipBtn.onclick = () => { skipped = true; };
   }
 
@@ -46,6 +53,7 @@ export async function waitForLlm(): Promise<void> {
       statusEl.textContent = ok ? 'LLM connected! Starting game...' : 'Skipping LLM (dev mode)...';
       await new Promise((r) => setTimeout(r, 400));
       splash.style.display = 'none';
+      bootMarkDuration('boot.llm', t0, { ok: !!ok, skipped, attempts: attempt });
       return;
     }
     // Wait 2s before retry

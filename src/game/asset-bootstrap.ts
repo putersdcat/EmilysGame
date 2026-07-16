@@ -23,6 +23,7 @@ import { initMinimap } from '../rendering/minimap';
 import { initDebuffVisuals } from '../rendering/debuff-visuals';
 import { initBookContent, getBookContentStats } from '../ui/book-content';
 import { initWasmRenderer, wasmBenchmark } from '../rendering/wasm-bridge';
+import { bootMarkDuration } from './boot-marks';
 
 /**
  * Run the full asset/content/WASM pre-roll.
@@ -36,6 +37,8 @@ import { initWasmRenderer, wasmBenchmark } from '../rendering/wasm-bridge';
  * The function is safe to call from the test mode entry point.
  */
 export async function bootstrapAssets(): Promise<void> {
+  const t0 = performance.now();
+
   // Preload SVG tile sprites (async, must complete before rendering)
   await preloadTiles();
 
@@ -70,4 +73,6 @@ export async function bootstrapAssets(): Promise<void> {
   } else {
     console.log('[INIT] WASM unavailable, using JS renderer');
   }
+
+  bootMarkDuration('boot.assets', t0, { wasm: wasmOk });
 }

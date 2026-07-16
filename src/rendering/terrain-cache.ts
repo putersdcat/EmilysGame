@@ -15,7 +15,7 @@ import { getBiome } from '../config/biomes.config';
 import { getIsoTile, isTileType } from './tiles';
 import { drawSeamlessTerrainTile, type SeamlessTerrainType } from '../asset-pipeline/world-tile-textures';
 import { drawContinuousBiomeTransitions } from './biome-transition-overlays';
-import { drawNanoStack } from './nano-tile';
+import { drawNanoStack, onSvgImagesLoaded } from './nano-tile';
 import { getNanoStack, waterNano, waterStyleForTileType } from './nano-tile-defs';
 import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { cellJitter } from '../engine/utils';
@@ -28,6 +28,7 @@ import { buildWalkableMap } from '../engine/iso2-solver';  // minor wire for #22
 // Populator.ts). The terrain cache uses it for pixel layout of the
 // per-world-unit pre-rendered canvas.
 import { WU_SIZE } from '../engine/world/WorldGrid';
+import { noteTerrainBake } from '../game/boot-marks';
 
 // --- Chunk canvas cache ---
 
@@ -45,6 +46,19 @@ interface CachedWorldUnitTerrain {
 
 const chunkCache = new Map<string, CachedWorldUnitTerrain>();
 let cacheStamp = 0;
+
+/**
+ * Drop incomplete provisional WU entries so the next draw re-bakes with
+ * decoded SVGs. Wired once to nano-tile SVG onload (playable-session P0).
+ * Prevents the thrash where incomplete entries were never stored and every
+ * frame rebuilt the full WU canvas until decode completed.
+ */
+function dropIncompleteTerrainEntries(): void {
+  for (const [key, entry] of chunkCache) {
+    if (!entry.allImagesLoaded) chunkCache.delete(key);
+  }
+}
+onSvgImagesLoaded(dropIncompleteTerrainEntries);
 
 // Chunk content dimensions (computed from chunk size & tile dims)
 const SIZE = WORLD_CONFIG.chunkSize; // 25 (5×5 world units)
@@ -80,7 +94,11 @@ export function getCachedTerrain(
 ): CachedWorldUnitTerrain {
   const wuKey = `${chunkKey}:${startCX},${startCY}`;
   let entry = chunkCache.get(wuKey);
+  // Return complete OR provisional incomplete entries — do not rebuild every
+  // frame while SVGs decode (that thrash hung first frames post-menu).
   if (entry) return entry;
+
+  const bakeStart = performance.now();
 
   // Create offscreen canvas for this 5×5 world-unit terrain slice.
   const canvas = document.createElement('canvas');
@@ -209,7 +227,11 @@ export function getCachedTerrain(
     waterPositions,
     allImagesLoaded,
   };
-  if (allImagesLoaded) chunkCache.set(wuKey, entry);
+  // Always store — including provisional incomplete entries — so first frames
+  // do not re-bake the same WU every rAF. onSvgImagesLoaded drops incomplete
+  // keys so the next getCachedTerrain rebuilds with decoded images.
+  chunkCache.set(wuKey, entry);
+  noteTerrainBake(performance.now() - bakeStart);
   return entry;
 }
 

@@ -48,7 +48,7 @@ import { clearObjectCache } from '../rendering/render';
 import { clearParticles } from '../rendering/particles';
 import { clearWeather } from '../rendering/weather';
 import { deleteSave } from './save';
-import { ensureChunksAround, clearPendingResolved } from './chunk-lifecycle';
+import { ensureChunksAroundYielding, clearPendingResolved } from './chunk-lifecycle';
 import { resetBubbleTriggerState } from './bubble-triggers';
 import { resetInteractionState } from './interaction-handler';
 import { type GameState } from './game-state';
@@ -63,8 +63,11 @@ import { type GameState } from './game-state';
  *
  * Called from the new-game flow in main.ts (after the user picks
  * "New Game" from the pause menu).
+ *
+ * **Async** — uses boot-only `ensureChunksAroundYielding` so bulk gen
+ * does not freeze the tab. Callers should show a loading spinner.
  */
-export function resetGameState(state: GameState): void {
+export async function resetGameState(state: GameState): Promise<void> {
   state.player.x = PLAYER_CONFIG.startPosition.x;
   state.player.y = PLAYER_CONFIG.startPosition.y;
   state.player.direction = 1;
@@ -118,5 +121,5 @@ export function resetGameState(state: GameState): void {
   resetBubbleTriggerState(); // Reset bubble "last seen" state for fresh game (B5.18)
   resetInteractionState();   // Reset dialog + poop-burst flags for fresh game (B5.19)
   deleteSave();
-  ensureChunksAround(state);
+  await ensureChunksAroundYielding(state);
 }

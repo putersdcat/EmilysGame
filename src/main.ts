@@ -306,6 +306,8 @@ import { bootstrapWordlist } from './game/wordlist-bootstrap';
 import { bootstrapAssets } from './game/asset-bootstrap';
 import { createInitialState } from './game/state-init';
 import { exposeDebugGlobals } from './game/debug-expose';
+import { withWorldLoading } from './game/boot-loading';
+import { markFirstFrameIfNeeded, markFirstMovableIfNeeded } from './game/boot-marks';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -327,8 +329,11 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // Asset + content + WASM pre-roll (tile preload blocks render, #82)
   await bootstrapAssets();
 
-  // State init + save restore (creates GameState, generates initial chunks)
-  const { state, hasSaveData } = createInitialState();
+  // State init + save restore under spinner (bulk yielding chunk gen)
+  const { state, hasSaveData } = await withWorldLoading(
+    () => createInitialState(),
+    'Loading world…',
+  );
 
   // Expose debug globals for E2E tests + browser DevTools
   exposeDebugGlobals(state);
@@ -852,6 +857,9 @@ function handleMovement(state: GameState, input: InputManager): void {
     return;
   }
 
+  // First accepted movement input = post-menu Done-when signal
+  markFirstMovableIfNeeded();
+
   // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
   const debuffs = getDebuffs(state.status);
   const injuryMult = getInjurySpeedMult(state.injury);
@@ -1225,6 +1233,8 @@ function gameLoop(
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state, perfStats);
+  // Post-menu: first completed frame after menu resolve
+  markFirstFrameIfNeeded();
   const _frameEnd = performance.now();
   const totalMs = _frameEnd - _frameStart;
   perfStats.total = perfSmooth(perfStats.total, totalMs);

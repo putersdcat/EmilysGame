@@ -38,9 +38,10 @@ import { createVoiceState } from './audio/npc-voice';
 import { createStreakState } from './quiz';
 import { createAgeProfile } from './age-profile';
 import { createInitialDiarrheaState } from './illness';
-import { setPendingResolvedCells, ensureChunksAround } from './chunk-lifecycle';
+import { setPendingResolvedCells, ensureChunksAroundYielding } from './chunk-lifecycle';
 import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
 import type { AgeBand } from '../types/content-pack.types';
+import { bootMarkDuration } from './boot-marks';
 // Save-fidelity parity fix (Docs/VisionAlignmentAudit.md Finding #10):
 // these restorations already existed in save-apply.ts's applySaveData
 // (used by the manual save-slot-load UI) but were silently missing from
@@ -83,12 +84,15 @@ export interface InitialStateResult {
  * then layers save-specific overrides on top. For new games (no save),
  * gives the player the starter inventory bundle.
  *
- * Also kicks off the initial chunk generation around the spawn point.
+ * Also kicks off the initial chunk generation around the spawn point
+ * via boot-only `ensureChunksAroundYielding` (yields between chunks so
+ * the tab stays responsive).
  *
- * **Synchronous** — does not await the LLM wordlist (already swapped
- * in async by bootstrapWordlist).
+ * **Async** for bulk chunk gen only — does not await the LLM wordlist
+ * (already swapped in async by bootstrapWordlist).
  */
-export function createInitialState(): InitialStateResult {
+export async function createInitialState(): Promise<InitialStateResult> {
+  const t0 = performance.now();
   // Load char sprite (initial idle)
   // Try loading saved game first to get player variation
   const save = loadGame();
@@ -214,8 +218,8 @@ export function createInitialState(): InitialStateResult {
   // Prepare resolved cells from save for application during chunk generation
   setPendingResolvedCells(save?.resolvedCells ?? []);
 
-  // Generate initial chunks
-  ensureChunksAround(state);
+  // Generate initial chunks (boot-only yielding path — keeps tab responsive)
+  await ensureChunksAroundYielding(state);
 
   // Guarantee the player's resolved spawn/resume position is never a
   // softlock (2026-07-09, user-reported live bug with real LLM entropy
@@ -239,5 +243,6 @@ export function createInitialState(): InitialStateResult {
     state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
   }
 
+  bootMarkDuration('boot.stateInit', t0, { hasSaveData: !!save });
   return { state, hasSaveData: !!save };
 }

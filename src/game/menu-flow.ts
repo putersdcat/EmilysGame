@@ -16,6 +16,7 @@ import { isTestMode } from '../engine/llm';
 import { showWelcomeSplash } from './welcome-splash';
 import { showMainMenu } from './main-menu';
 import { runNewGameFlow, loadSlotIntoState } from './new-game-flow';
+import { markMenuInteractive, markMenuResolved } from './boot-marks';
 
 /** Prefix returned by `showMainMenu()` when the user picks a save slot. */
 const LOAD_SLOT_PREFIX = 'load-slot-';
@@ -40,11 +41,17 @@ export async function runMenuFlow(
   hasSaveData: boolean,
   onOpenOptions: () => void,
 ): Promise<void> {
-  if (isTestMode()) return;
+  if (isTestMode()) {
+    // Tests skip the menu — treat as immediately resolved for post-menu marks.
+    markMenuResolved();
+    return;
+  }
 
   // Welcome splash for first-time players (#117)
   await showWelcomeSplash();
 
+  // Menu is about to be shown and accept input (end of pre-menu budget).
+  markMenuInteractive();
   const choice = await showMainMenu(hasSaveData, onOpenOptions);
 
   if (choice === 'new-game') {
@@ -54,4 +61,7 @@ export async function runMenuFlow(
     await loadSlotIntoState(state, slot);
   }
   // 'continue' → auto-save already loaded by init()
+
+  // Session play is about to start (post-menu phase).
+  markMenuResolved();
 }
