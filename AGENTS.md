@@ -64,9 +64,27 @@ If not using `/execute-plan`, implement **PR Plan order only** (PR1 → PR2 → 
 
 ---
 
-## Out of scope until campaign acceptance
+## Campaign status (2026-07-16)
+
+| PR | Slice | Status |
+|----|-------|--------|
+| 1 | Scene invariant infrastructure | ✅ |
+| 2 | Ban free structure atoms | ✅ |
+| 3 | Functional fence openings + farm gate | ✅ |
+| 4 | Path skeleton early chunks | ✅ |
+| 5 | Demote structure-bearing WU templates | ✅ |
+| 6 | Proof bar + docs campaign lock | ✅ |
+| 7 | Expandability rails | ✅ |
+
+**Proof bar (visual):** `tests/screenshots/proof-scene-law-spawn.png` (+ explore)  
+**Expand next:** `memories/repo/expandability-rails.md` — new place = recipe; new learning = content pack.  
+**Green suite:** scene-invariants, ban-free-structure-atoms, path-skeleton, playability-m1-core-loop, gen-determinism.
+
+## Out of scope until post-campaign product growth needs it
 
 - New material factories / nano primitives for their own sake  
 - Speculative engine rewrites or main-branch dual trunk  
 - EDGE_COMPAT full symmetry rewrite  
 - V4 scale thrash (256 diamonds, etc.)
+
+Post-campaign default work is **content + scene recipes** on this locked base.

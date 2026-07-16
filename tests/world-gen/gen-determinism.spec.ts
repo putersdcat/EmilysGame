@@ -55,6 +55,12 @@
  * wall stubs, homestead/seller/inn compounds, fence_row) to weight 0 so
  * only terrain/path/river/lake remain in the free WU pool.
  *
+ * Re-captured 2026-07-16 (5c5f5568 -> 7ab005e8) after scene-first PR6
+ * proof-bar verification against the integrated PR1–5 tip (path skeleton +
+ * scene openings + structure demotion). Prior PR5 golden was captured under
+ * a stale Vite root that lacked PathSkeleton; this is the intentional
+ * product-tip hash for the campaign lock.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -64,8 +70,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-16 after scene-first structure WU demotion (PR5)
-const GOLDEN_HASH = '5c5f5568';
+// Re-captured 2026-07-16 after scene-first PR6 campaign lock (integrated PR1–5 tip)
+const GOLDEN_HASH = '7ab005e8';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

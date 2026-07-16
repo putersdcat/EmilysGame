@@ -1,9 +1,15 @@
 # Definitive path forward — one determination (2026-07-16)
 
-**Status:** Binding recommendation (single path — not a menu)  
+**Status:** Binding recommendation — **campaign P0–P2 executed (2026-07-16)**  
 **Question answered:** What path is *most likely* to deliver the best long-term outcome in the *shortest* calendar time — not merely a throwaway MVP, but a **clean, focused base engine/game** that can grow learning content, assets, characters, and side quests?
 
 **Prior note:** `first-principles-path-forward-2026-07-16.md` surveyed options. This document **collapses to one path** with evidence and a concrete operating model.
+
+**Execution status (2026-07-16):** Scene-first PR Plan 1–7 complete on the
+`execute-plan/4baf1950-*` integrated tip. Proof:
+`tests/screenshots/proof-scene-law-spawn.png` (+ explore). Expand rails:
+`memories/repo/expandability-rails.md`. Next growth = recipes + content packs
+(P3 paint optional).
 
 ---
 
@@ -242,23 +248,17 @@ After P1, a competent agent can add a new place type by writing one scene recipe
 
 ---
 
-## 7. Immediate next engineering action (when execution resumes)
+## 7. Immediate next engineering action
 
-**Macro plan + PR DAG (not a one-off micro fix):**  
-`memories/repo/design-scene-first-productization.md` — Phases P0–P3 and PR 1–7.
+**Campaign PR 1–7 complete.** Default work is now **content growth on the locked base**:
 
-**Automation:**
+1. New places via `catalog.ts` / `registerSceneRecipe` + biome weights (`expandability-rails.md`).  
+2. New quizzes/Book via `public/content/packs/…` (no gen edits).  
+3. Optional **P3 paint/audio** only when a stamped scene looks wrong — freeze nano architecture.  
+4. Keep proof suite green; re-capture golden deliberately when gen policy changes.
 
-```
-/execute-plan memories/repo/design-scene-first-productization.md --concurrency 2 --no-graphite
-```
-
-PR 1 is intentionally small (scene invariant infrastructure) — it is the
-**first node in a 7-PR DAG** that ends at expandability rails and proof bar,
-not the whole campaign.
-
-Manual fallback if execute-plan unavailable: implement PR 1→7 in order per
-that design doc; re-read `AGENTS.md` each session.
+Macro plan (historical + acceptance checkboxes):  
+`memories/repo/design-scene-first-productization.md`.
 
 ---
 

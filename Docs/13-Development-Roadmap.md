@@ -103,6 +103,23 @@ materials are **paint only** — freeze new presentation architecture. Do **not*
 restart from `main` or greenfield for product delivery. Full determination:
 `/memories/repo/definitive-path-forward-2026-07-16.md`.
 
+**Scene-first productization campaign — locked (2026-07-16, PR1–7):**
+
+| Phase | Outcome | Status |
+|-------|---------|--------|
+| **P0 Scene law** | Openings contract + repair; ban free structure atoms; farm/homestead gates | ✅ PR1–3 |
+| **P1 Scene-primary early world** | Path skeleton (dist≤2); demote structure WU templates | ✅ PR4–5 |
+| **P2 Expand rails** | Recipe + content how-to; `registerSceneRecipe` / catalog registry | ✅ PR7 — `memories/repo/expandability-rails.md` |
+| **Proof bar** | Live intentional places + M1 + invariants + determinism | ✅ PR6 — `tests/screenshots/proof-scene-law-spawn.png` (+ explore) |
+
+**Visual bar for gen work:** `proof-scene-law-spawn.png` (gated homestead /
+intentional places) **replaces** `visual-s5-density-spawn.png` as the campaign
+acceptance screenshot. Capture: `tests/world-gen/proof-scene-law-capture.spec.ts`.
+
+**Expand next:** new place = catalog recipe + openings + biome weight; new
+learning = content pack. Do **not** open `WorldUnitSolver.ts` or invent nano
+kinds for content growth. See `memories/repo/expandability-rails.md`.
+
 **Authoritative inventory + checklist:**
 `/memories/repo/iso2-visual-technology-inventory-and-deferred-plan.md`
 
@@ -111,20 +128,23 @@ Attach in this order (detail in that file):
 1. **V1 — Gen composition** — ✅ coherent biome surfaces, surface cohere,
    orphan fence/wall cleanup.
 2. **V2 — Assembly catalog** — ✅ modular recipes (farm, pond, church+graveyard,
-   gatehouse, bridge) via `maybePlaceModularScenes` + catalog.ts.
+   gatehouse, bridge) via `maybePlaceModularScenes` + catalog.ts; scene openings
+   + `registerSceneRecipe` expand rail.
 3. **V3 — Water & terrain polish** — ✅ 2026-07-15: river-over-lake bias,
    orphan water/roof strip, R1 grass under every WU cell, R2 open-water
    **basin** fills (no crossed-canal tanks). Proof: v3-water-roof-polish +
    iso2-v3-water-basin-r2.
-4. **V4 — Scale / avatar∶world∶viewport** — **active diagnosis 2026-07-15**:
-   tileWidth 64→256 left emoji/sprite/player unscaled (player∶tile 0.5→0.125).
-   Nano detail cannot read as an upgrade until entity scale (and optional
-   display zoom) track tile DPI. See `memories/repo/visual-scale-dpi-mismatch-2026-07-15.md`.
-   First fix: `entityDisplayScale()` restores pre-Iso2 avatar∶diamond ratio.
+4. **V4 — Scale / avatar∶world∶viewport** — **settled product contract 2026-07-16**:
+   on-screen diamonds **128×64**, `entityDisplayScale` ~1.0. No further tileWidth
+   thrash without written RFC. (Earlier diagnosis of 64→256 DPI mismatch is
+   historical; FOV/scale are campaign-locked.)
+
+**P3 Paint/audio (after P1 feels good):** selective Iso2 materials on stamped
+scenes + loop SFX polish only — still no new presentation architecture.
 
 **Do not** treat this section as permission to drop playability work for a
 big-bang visual rewrite. Proof bar remains Slice methodology + live/screenshot
-evidence, not “import exists therefore done.”
+evidence (`proof-scene-law-*`), not “import exists therefore done.”
 
 ## 5. Keeping this document set alive
 

@@ -1,8 +1,8 @@
 # Design: Scene-first productization of experiment/isometric-2.0
 
-**Status:** Ready for `/execute-plan`  
+**Status:** PR Plan complete (PR1–7 landed on execute-plan integrated tip)  
 **Date:** 2026-07-16  
-**Branch:** `experiment/isometric-2.0`  
+**Branch:** `experiment/isometric-2.0` (campaign work on `execute-plan/4baf1950-*`)  
 **Authority:** `definitive-path-forward-2026-07-16.md`, `docs/01`–`04`, `AGENTS.md`
 
 ---
@@ -76,10 +76,10 @@ Validator fails gen (or repairs) if openings are bare decorative gaps without fu
 
 | Phase | Outcome | Done when |
 |-------|---------|-----------|
-| **P0 Scene law** | Invariants + farm gate + ban free structures | Proof PNG + tests |
-| **P1 Scene-primary early world** | dist≤2–3 mostly scenes+path | Live 5-min session feels designed |
-| **P2 Expand rails** | Document recipe+content add paths | New scene/quiz without solver edits |
-| **P3 Paint/audio** | Selective Iso2 look + loop SFX polish | Looks cozy without new architecture |
+| **P0 Scene law** | Invariants + farm gate + ban free structures | ✅ Proof PNG + tests (PR1–3, PR6) |
+| **P1 Scene-primary early world** | dist≤2–3 mostly scenes+path | ✅ Path skeleton + WU demotion (PR4–5) |
+| **P2 Expand rails** | Document recipe+content add paths | ✅ `expandability-rails.md` + register API (PR7) |
+| **P3 Paint/audio** | Selective Iso2 look + loop SFX polish | Open — post-campaign, paint only |
 
 ---
 
@@ -145,11 +145,12 @@ None blocking execution — product decision already made in definitive-path doc
 
 ## Acceptance (campaign)
 
-- [ ] PR 1–7 landed (or equivalent sequential commits if not using Graphite)  
-- [ ] `proof-scene-law-spawn.png` replaces S5 density as visual bar  
-- [ ] M1 green; scene-invariants green; determinism golden updated deliberately  
-- [ ] AGENTS.md still describes the same finish line  
-- [ ] New scene can be added without editing WorldUnitSolver/nano-tile  
+- [x] PR 1–7 landed (or equivalent sequential commits if not using Graphite)  
+- [x] `proof-scene-law-spawn.png` replaces S5 density as visual bar  
+- [x] M1 green; scene-invariants green; determinism golden updated deliberately  
+- [x] AGENTS.md still describes the same finish line  
+- [x] New scene can be added without editing WorldUnitSolver/nano-tile (`expandability-rails.md` + `registerSceneRecipe`)  
+
 
 ## Execution
 
