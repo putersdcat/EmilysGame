@@ -244,11 +244,21 @@ After P1, a competent agent can add a new place type by writing one scene recipe
 
 ## 7. Immediate next engineering action (when execution resumes)
 
-1. Implement **fence-opening → gate** invariant in gen + Playwright proof.  
-2. Remove/ban free placement of outhouse and non-scene houses from early meadow.  
-3. Upgrade **fenced-farm** recipe: closed fence **must** include `quiz_gate` or `door_locked` on south opening (not bare dirt gap only).  
-4. Capture `proof-scene-law-spawn.png` replacing S5 density as the visual bar.  
-5. Update `docs/13` standing order: **scene-first productization; nano freeze.**
+**Macro plan + PR DAG (not a one-off micro fix):**  
+`memories/repo/design-scene-first-productization.md` — Phases P0–P3 and PR 1–7.
+
+**Automation:**
+
+```
+/execute-plan memories/repo/design-scene-first-productization.md --concurrency 2 --no-graphite
+```
+
+PR 1 is intentionally small (scene invariant infrastructure) — it is the
+**first node in a 7-PR DAG** that ends at expandability rails and proof bar,
+not the whole campaign.
+
+Manual fallback if execute-plan unavailable: implement PR 1→7 in order per
+that design doc; re-read `AGENTS.md` each session.
 
 ---
 
