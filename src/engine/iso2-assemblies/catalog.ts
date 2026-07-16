@@ -49,8 +49,8 @@ export const FENCED_FARM: AssemblyRecipe = {
     { x: 0, y: 1, assetKey: 'fence' }, { x: 4, y: 1, assetKey: 'fence' },
     { x: 0, y: 2, assetKey: 'fence' }, { x: 4, y: 2, assetKey: 'fence' },
     { x: 0, y: 3, assetKey: 'fence' }, { x: 4, y: 3, assetKey: 'fence' },
-    // South fence with dirt entry gap (center repaired to quiz_gate via openings)
-    { x: 0, y: 4, assetKey: 'fence' }, { x: 1, y: 4, assetKey: 'dirt' }, { x: 2, y: 4, assetKey: 'dirt' },
+    // South fence: dirt flanks + functional quiz_gate at entry center (not dirt-only)
+    { x: 0, y: 4, assetKey: 'fence' }, { x: 1, y: 4, assetKey: 'dirt' }, { x: 2, y: 4, assetKey: 'quiz_gate' },
     { x: 3, y: 4, assetKey: 'dirt' }, { x: 4, y: 4, assetKey: 'fence' },
     // Yard interior
     { x: 1, y: 1, assetKey: 'wheat' }, { x: 2, y: 1, assetKey: 'hut' }, { x: 3, y: 1, assetKey: 'wheat' },

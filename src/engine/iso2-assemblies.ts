@@ -20,7 +20,13 @@ import {
 } from './iso2-assemblies/catalog';
 import { repairSceneOpenings } from './iso2-assemblies/scene-invariants';
 
-export { stampStarterHomestead, ensureSpawnClearance } from './iso2-assemblies/starter-homestead';
+export {
+  stampStarterHomestead,
+  ensureSpawnClearance,
+  STARTER_HOMESTEAD_RECIPE,
+  STARTER_HOMESTEAD_OPENINGS,
+  STARTER_HOMESTEAD_ORIGIN,
+} from './iso2-assemblies/starter-homestead';
 export type {
   AssemblyOpening,
   AssemblyOpeningKind,

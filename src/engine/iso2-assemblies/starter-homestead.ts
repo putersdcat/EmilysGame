@@ -3,6 +3,8 @@
 import { ASSET_DEFS } from '../../config/assets.config';
 import { PLAYER_CONFIG } from '../../config/game.config';
 import type { CellData } from '../../types/game.types';
+import type { AssemblyOpening, AssemblyPlacement, AssemblyRecipe } from './catalog';
+import { repairSceneOpenings } from './scene-invariants';
 
 interface StarterPlacement {
   readonly x: number;
@@ -11,7 +13,20 @@ interface StarterPlacement {
   readonly itemId?: string;
 }
 
-const ORIGIN = { x: 9, y: 8 } as const;
+/** Grid origin of the 7×7 homestead footprint inside chunk (0,0). */
+export const STARTER_HOMESTEAD_ORIGIN = { x: 9, y: 8 } as const;
+
+const ORIGIN = STARTER_HOMESTEAD_ORIGIN;
+
+/**
+ * South fence openings: dirt flanks + quiz_gate at center exit.
+ * Mirrors scene-law openings used by modular fenced recipes.
+ */
+export const STARTER_HOMESTEAD_OPENINGS: readonly AssemblyOpening[] = [
+  { x: 2, y: 6, kind: 'path' },
+  { x: 3, y: 6, kind: 'quiz_gate' },
+  { x: 4, y: 6, kind: 'path' },
+];
 
 const STARTER_HOMESTEAD: readonly StarterPlacement[] = [
   { x: 0, y: 0, assetKey: 'fence' }, { x: 1, y: 0, assetKey: 'fence' }, { x: 2, y: 0, assetKey: 'fence' }, { x: 3, y: 0, assetKey: 'fence' }, { x: 4, y: 0, assetKey: 'fence' }, { x: 5, y: 0, assetKey: 'fence' }, { x: 6, y: 0, assetKey: 'fence' },
@@ -30,6 +45,18 @@ const STARTER_HOMESTEAD: readonly StarterPlacement[] = [
   { x: 5, y: 5, assetKey: 'grass', itemId: 'coin' },
 ];
 
+/**
+ * Scene-recipe view of the starter homestead (openings declared for invariants).
+ * Not in ASSEMBLY_RECIPES / modular placement — origin-only stamp.
+ */
+export const STARTER_HOMESTEAD_RECIPE: AssemblyRecipe = {
+  id: 'starter-homestead',
+  width: 7,
+  height: 7,
+  placements: STARTER_HOMESTEAD as readonly AssemblyPlacement[],
+  openings: STARTER_HOMESTEAD_OPENINGS,
+};
+
 function makeCell(p: StarterPlacement): CellData {
   const def = ASSET_DEFS[p.assetKey];
   if (!def) throw new Error(`Unknown starter homestead asset: ${p.assetKey}`);
@@ -43,6 +70,8 @@ export function stampStarterHomestead(cells: CellData[][]): void {
     if (y < 0 || y >= cells.length || x < 0 || x >= cells[y].length) continue;
     cells[y][x] = makeCell(p);
   }
+  // Scene law: south openings stay functional (quiz_gate + path flanks).
+  repairSceneOpenings(cells, ORIGIN.x, ORIGIN.y, STARTER_HOMESTEAD_RECIPE);
 }
 
 /**

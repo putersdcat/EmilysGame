@@ -781,17 +781,17 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Wooden fence enclosure (square fence with opening) ---
+  // --- Wooden fence enclosure (square fence with functional quiz_gate opening) ---
   {
     name: 'fence_enclosure',
     cells: [
-      ['wooden_fence', 'wooden_fence', 'grass', 'wooden_fence', 'wooden_fence'],
+      ['wooden_fence', 'wooden_fence', 'quiz_gate', 'wooden_fence', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence'],
     ],
-    edgeTags: { n: 'fence', s: 'fence', e: 'fence', w: 'fence' },
+    edgeTags: { n: 'gate', s: 'fence', e: 'fence', w: 'fence' },
     rotatable: true,
     terminator: true,
     chainType: 'fence',
@@ -1950,7 +1950,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 
   // ─────────── Fence Templates (fence-post edges) ─────────────
 
-  // --- Fenced Garden (enclosed by fences with post termination) ---
+  // --- Fenced Garden (enclosed by fences; south opening is functional quiz_gate) ---
   {
     name: 'fenced_garden',
     cells: [
@@ -1958,9 +1958,9 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
-      ['grass', 'wooden_fence', 'grass', 'wooden_fence', 'grass'],
+      ['grass', 'wooden_fence', 'quiz_gate', 'wooden_fence', 'grass'],
     ],
-    edgeTags: { n: 'fence-post', s: 'fence-post', e: 'fence-post', w: 'fence-post' },
+    edgeTags: { n: 'fence-post', s: 'gate', e: 'fence-post', w: 'fence-post' },
     rotatable: false,
     terminator: true,
     chainType: 'fence',

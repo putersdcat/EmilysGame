@@ -1,9 +1,11 @@
 /**
- * scene-invariants.spec.ts — Scene opening contract + repair (PR1).
+ * scene-invariants.spec.ts — Scene opening contract + repair (PR1/PR3).
  *
  * Standing law: fence openings must be quiz_gate / door_locked / open path.
  * - Bare fence ring with dirt gap fails validation until repaired.
- * - fenced-farm recipe openings validate after stamp (repair places gate).
+ * - fenced-farm stamps quiz_gate at south entry center (not dirt-only).
+ * - starter-homestead declares openings and validates after stamp.
+ * - Fenced recipes never expose bare dirt-only entries without a gate.
  * - Kind-specific repair, recipe-footprint OOB, idempotency, corridor guard.
  */
 import { test, expect, Page } from '@playwright/test';
@@ -145,13 +147,25 @@ test('fenced-farm recipe openings validated after stamp', async ({ page }) => {
 
     const openingCells = (recipe.openings ?? []).map((o) => ({
       kind: o.kind,
+      x: o.x,
+      y: o.y,
       assetKey: cells[oy + o.y][ox + o.x].assetKey,
       walkable: cells[oy + o.y][ox + o.x].walkable,
     }));
 
+    // Placement data itself must stamp quiz_gate (not rely only on repair).
+    const placementCenter = recipe.placements.find((p) => p.x === 2 && p.y === 4);
     const gateCount = cells.flat().filter((c) => c.assetKey === 'quiz_gate').length;
     const fenceCount = cells.flat().filter((c) => c.assetKey === 'fence').length;
-    const hasCenterGate = cells[oy + 4][ox + 2].assetKey === 'quiz_gate';
+    const southCenter = cells[oy + 4][ox + 2].assetKey;
+    const southLeft = cells[oy + 4][ox + 1].assetKey;
+    const southRight = cells[oy + 4][ox + 3].assetKey;
+
+    // Bare dirt-only entry would mean all three south gap cells are path-only.
+    const southGap = [southLeft, southCenter, southRight];
+    const bareDirtOnlyEntry =
+      southGap.every((k) => k === 'dirt' || k === 'grass') &&
+      !southGap.some((k) => k === 'quiz_gate' || k === 'door_locked' || k === 'door_open' || k === 'door_gate');
 
     return {
       ok: validation.ok,
@@ -160,18 +174,160 @@ test('fenced-farm recipe openings validated after stamp', async ({ page }) => {
       openingCells,
       gateCount,
       fenceCount,
-      hasCenterGate,
+      southCenter,
+      placementCenterKey: placementCenter?.assetKey ?? null,
+      bareDirtOnlyEntry,
     };
   });
 
   expect(result.openingsDeclared, 'fenced-farm declares openings').toBeGreaterThanOrEqual(1);
   expect(result.ok, `farm openings should validate: ${JSON.stringify(result.violations)}`).toBe(true);
-  expect(result.hasCenterGate, 'south-center opening repaired to quiz_gate').toBe(true);
+  expect(result.placementCenterKey, 'recipe placements stamp quiz_gate at south center').toBe('quiz_gate');
+  expect(result.southCenter, 'south-center stamp cell is quiz_gate not dirt').toBe('quiz_gate');
+  expect(result.bareDirtOnlyEntry, 'fenced-farm must not be bare dirt-only entry').toBe(false);
   expect(result.gateCount).toBeGreaterThanOrEqual(1);
   expect(result.fenceCount).toBeGreaterThanOrEqual(12);
 
   const center = result.openingCells.find((c) => c.kind === 'quiz_gate');
   expect(center?.assetKey).toBe('quiz_gate');
+});
+
+test('starter-homestead declares openings and validates after stamp', async ({ page }) => {
+  await waitForGame(page);
+
+  const result = await page.evaluate(async () => {
+    const {
+      stampStarterHomestead,
+      validateSceneOpenings,
+      STARTER_HOMESTEAD_RECIPE,
+      STARTER_HOMESTEAD_ORIGIN,
+    } = await import('/engine/iso2-assemblies.ts');
+
+    const size = 32;
+    const cells = Array.from({ length: size }, () =>
+      Array.from({ length: size }, () => ({
+        assetKey: 'grass',
+        walkable: true,
+        interactable: false,
+      })));
+
+    stampStarterHomestead(cells);
+
+    const recipe = STARTER_HOMESTEAD_RECIPE;
+    const ox = STARTER_HOMESTEAD_ORIGIN.x;
+    const oy = STARTER_HOMESTEAD_ORIGIN.y;
+    const validation = validateSceneOpenings(cells, ox, oy, recipe);
+
+    const gateCell = cells[oy + 6][ox + 3];
+    const openings = (recipe.openings ?? []).map((o) => ({
+      kind: o.kind,
+      assetKey: cells[oy + o.y][ox + o.x].assetKey,
+    }));
+
+    return {
+      openingsDeclared: (recipe.openings ?? []).length,
+      hasQuizGateOpening: (recipe.openings ?? []).some((o) => o.kind === 'quiz_gate'),
+      ok: validation.ok,
+      violations: validation.violations,
+      gateAsset: gateCell.assetKey,
+      openings,
+    };
+  });
+
+  expect(result.openingsDeclared, 'starter homestead declares openings').toBeGreaterThanOrEqual(1);
+  expect(result.hasQuizGateOpening, 'starter homestead declares quiz_gate opening').toBe(true);
+  expect(result.ok, `starter openings should validate: ${JSON.stringify(result.violations)}`).toBe(true);
+  expect(result.gateAsset).toBe('quiz_gate');
+});
+
+test('fenced recipes require functional gate openings (no bare dirt-only entry)', async ({ page }) => {
+  await waitForGame(page);
+
+  const result = await page.evaluate(async () => {
+    const { stampAssemblyOntoCells, validateSceneOpenings } = await import('/engine/iso2-assemblies.ts');
+    const { ASSEMBLY_RECIPES } = await import('/engine/iso2-assemblies/catalog.ts');
+
+    const FENCED_IDS = ['fenced-farm', 'gatehouse', 'church-graveyard'] as const;
+    const FUNCTIONAL = new Set(['quiz_gate', 'door_locked', 'door_open', 'door_gate', 'toll_gate']);
+
+    const reports: Array<{
+      id: string;
+      openingsDeclared: number;
+      hasFunctionalOpening: boolean;
+      validateOk: boolean;
+      bareDirtOnlyFunctionalMissing: boolean;
+    }> = [];
+
+    for (const id of FENCED_IDS) {
+      const recipe = ASSEMBLY_RECIPES[id];
+      if (!recipe) continue;
+
+      const size = 16;
+      const cells = Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => ({
+          assetKey: 'grass',
+          walkable: true,
+          interactable: false,
+        })));
+
+      const ox = 2;
+      const oy = 2;
+      stampAssemblyOntoCells(cells, id, ox, oy);
+      const validation = validateSceneOpenings(cells, ox, oy, recipe);
+      const openings = recipe.openings ?? [];
+
+      const hasFunctionalOpening = openings.some((o) => {
+        if (o.kind === 'quiz_gate' || o.kind === 'door_locked') return true;
+        const key = cells[oy + o.y][ox + o.x].assetKey;
+        return FUNCTIONAL.has(key);
+      });
+
+      // Among openings, if any is declared path-only cluster with no functional
+      // neighbor opening, flag bare entry. For fenced recipes we require ≥1 functional.
+      const functionalOnGrid = openings.filter((o) => {
+        const key = cells[oy + o.y][ox + o.x].assetKey;
+        return FUNCTIONAL.has(key);
+      });
+
+      const bareDirtOnlyFunctionalMissing =
+        openings.length > 0 &&
+        functionalOnGrid.length === 0 &&
+        openings.every((o) => {
+          const key = cells[oy + o.y][ox + o.x].assetKey;
+          return key === 'dirt' || key === 'grass';
+        });
+
+      reports.push({
+        id,
+        openingsDeclared: openings.length,
+        hasFunctionalOpening,
+        validateOk: validation.ok,
+        bareDirtOnlyFunctionalMissing,
+      });
+    }
+
+    // LEGACY homestead-small also fenced with door
+    const { stampAssemblyOntoCells: stamp2 } = await import('/engine/iso2-assemblies.ts');
+    const size = 16;
+    const cells = Array.from({ length: size }, () =>
+      Array.from({ length: size }, () => ({
+        assetKey: 'grass',
+        walkable: true,
+        interactable: false,
+      })));
+    stamp2(cells, 'homestead-small', 2, 2);
+    const door = cells[2 + 4][2 + 2].assetKey;
+
+    return { reports, homesteadDoor: door };
+  });
+
+  for (const r of result.reports) {
+    expect(r.openingsDeclared, `${r.id} declares openings`).toBeGreaterThanOrEqual(1);
+    expect(r.hasFunctionalOpening, `${r.id} has functional gate opening`).toBe(true);
+    expect(r.validateOk, `${r.id} openings validate`).toBe(true);
+    expect(r.bareDirtOnlyFunctionalMissing, `${r.id} not bare dirt-only entry`).toBe(false);
+  }
+  expect(result.homesteadDoor).toBe('door_locked');
 });
 
 test('gatehouse door_locked opening validates without forced quiz_gate', async ({ page }) => {
