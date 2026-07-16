@@ -86,6 +86,7 @@ import {
   ensureSpawnClearance,
   maybePlaceCastleLandmark,
   maybePlaceModularScenes,
+  scanAndRepairFenceGaps,
 } from '../iso2-assemblies';
 import type {
   BorderConstraints,
@@ -250,6 +251,9 @@ function generateGridChunk(
   // (the module doesn't read WORLD_CONFIG.worldUnitSize directly).
   stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
   if (chunkX === 0 && chunkY === 0) stampStarterHomestead(cells);
+  // Light scene-law pass: single-cell fence/wall dirt gaps → quiz_gate when
+  // no functional opening is nearby (starter homestead already has a gate).
+  scanAndRepairFenceGaps(cells, size);
 
   // Phase 3.5 (V1 surface language): kill lone dirt/sand salt left by Perlin
   // or WU stamps (path ends and water-adjacent sand shores are preserved).
@@ -293,7 +297,12 @@ function generateGridChunk(
   // Phase 5.47 (V2 visual): modular scene assemblies (farm, pond, gatehouse,
   // bridge, church-graveyard) by biome + rarity. At most one per chunk;
   // skips safe ring. Same pre-safety-net timing as castle landmarks.
+  // stampAssemblyOntoCells already repairs declared openings.
   maybePlaceModularScenes(cells, size, biome, chunkDist, seededRandom(featureSeed + 477));
+
+  // Phase 5.475: scene-law fence-gap repair after modular stamps (and any
+  // WU fence rings left with bare dirt punch-throughs).
+  scanAndRepairFenceGaps(cells, size);
 
   // Phase 5.48: modular scenes can overwrite soft terrain that previously held
   // a minimum quiz_gate — re-assert non-origin density after stamps.

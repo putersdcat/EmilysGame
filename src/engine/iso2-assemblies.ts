@@ -18,9 +18,26 @@ import {
   type AssemblyPlacement,
   type AssemblyRecipe,
 } from './iso2-assemblies/catalog';
+import { repairSceneOpenings } from './iso2-assemblies/scene-invariants';
 
 export { stampStarterHomestead, ensureSpawnClearance } from './iso2-assemblies/starter-homestead';
-export type { AssemblyPlacement, AssemblyRecipe } from './iso2-assemblies/catalog';
+export type {
+  AssemblyOpening,
+  AssemblyOpeningKind,
+  AssemblyPlacement,
+  AssemblyRecipe,
+} from './iso2-assemblies/catalog';
+export {
+  FUNCTIONAL_OPENING_KEYS,
+  PATH_OPENING_KEYS,
+  repairSceneOpenings,
+  scanAndRepairFenceGaps,
+  validateSceneOpenings,
+} from './iso2-assemblies/scene-invariants';
+export type {
+  SceneOpeningValidation,
+  SceneOpeningViolation,
+} from './iso2-assemblies/scene-invariants';
 
 export type Iso2AssemblyId =
   | 'homestead-small'
@@ -50,7 +67,13 @@ const RUINED_CATHEDRAL: readonly AssemblyPlacement[] = [
 ];
 
 const LEGACY_RECIPES: Record<'homestead-small' | 'ruined-cathedral', AssemblyRecipe> = {
-  'homestead-small': { id: 'homestead-small', width: 5, height: 5, placements: HOMESTEAD_SMALL },
+  'homestead-small': {
+    id: 'homestead-small',
+    width: 5,
+    height: 5,
+    placements: HOMESTEAD_SMALL,
+    openings: [{ x: 2, y: 4, kind: 'door_locked' }],
+  },
   'ruined-cathedral': { id: 'ruined-cathedral', width: 3, height: 5, placements: RUINED_CATHEDRAL },
 };
 
@@ -75,7 +98,7 @@ function makeCell(placement: AssemblyPlacement): CellData {
   };
 }
 
-/** Shared stamp loop — out-of-bounds placements skipped. */
+/** Shared stamp loop — out-of-bounds placements skipped; openings repaired after stamp. */
 export function stampAssemblyOntoCells(
   cells: CellData[][],
   id: Iso2AssemblyId,
@@ -89,6 +112,8 @@ export function stampAssemblyOntoCells(
     if (y < 0 || y >= cells.length || x < 0 || x >= cells[y].length) continue;
     cells[y][x] = makeCell(p);
   }
+  // Scene law: declared openings must be functional gates or explicit paths.
+  repairSceneOpenings(cells, originX, originY, recipe);
 }
 
 /** Stamp an assembly into one already-loaded main-game chunk. */

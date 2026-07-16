@@ -3,7 +3,21 @@
  *
  * Multi-cell stamps using existing asset keys. Placement policy lives in
  * iso2-assemblies.ts (`maybePlaceModularScenes`); this file is data only.
+ *
+ * Scene openings (scene-first productization): every barrier gap declares
+ * either a functional gate (`quiz_gate` / `door_locked`) or an explicit
+ * open path entry. Validated/repaired by `scene-invariants.ts`.
  */
+
+/** How a recipe opening must be realized on the grid. */
+export type AssemblyOpeningKind = 'quiz_gate' | 'door_locked' | 'path';
+
+/** Relative cell that must be a functional gate or open path entry. */
+export interface AssemblyOpening {
+  readonly x: number;
+  readonly y: number;
+  readonly kind: AssemblyOpeningKind;
+}
 
 export interface AssemblyPlacement {
   readonly x: number;
@@ -18,6 +32,8 @@ export interface AssemblyRecipe {
   readonly width: number;
   readonly height: number;
   readonly placements: readonly AssemblyPlacement[];
+  /** Required openings — fence/wall gaps must be functional or explicit path. */
+  readonly openings?: readonly AssemblyOpening[];
 }
 
 /** 5×5 fenced farmyard: perimeter fence, south entry, hut, crops, animals. */
@@ -33,13 +49,18 @@ export const FENCED_FARM: AssemblyRecipe = {
     { x: 0, y: 1, assetKey: 'fence' }, { x: 4, y: 1, assetKey: 'fence' },
     { x: 0, y: 2, assetKey: 'fence' }, { x: 4, y: 2, assetKey: 'fence' },
     { x: 0, y: 3, assetKey: 'fence' }, { x: 4, y: 3, assetKey: 'fence' },
-    // South fence with dirt entry gap
+    // South fence with dirt entry gap (center repaired to quiz_gate via openings)
     { x: 0, y: 4, assetKey: 'fence' }, { x: 1, y: 4, assetKey: 'dirt' }, { x: 2, y: 4, assetKey: 'dirt' },
     { x: 3, y: 4, assetKey: 'dirt' }, { x: 4, y: 4, assetKey: 'fence' },
     // Yard interior
     { x: 1, y: 1, assetKey: 'wheat' }, { x: 2, y: 1, assetKey: 'hut' }, { x: 3, y: 1, assetKey: 'wheat' },
     { x: 1, y: 2, assetKey: 'chicken' }, { x: 2, y: 2, assetKey: 'dirt' }, { x: 3, y: 2, assetKey: 'sheep' },
     { x: 1, y: 3, assetKey: 'wheat' }, { x: 2, y: 3, assetKey: 'cow' }, { x: 3, y: 3, assetKey: 'pig' },
+  ],
+  openings: [
+    { x: 1, y: 4, kind: 'path' },
+    { x: 2, y: 4, kind: 'quiz_gate' },
+    { x: 3, y: 4, kind: 'path' },
   ],
 };
 
@@ -80,6 +101,7 @@ export const GATEHOUSE: AssemblyRecipe = {
     { x: 0, y: 3, assetKey: 'grass' }, { x: 1, y: 3, assetKey: 'dirt' }, { x: 2, y: 3, assetKey: 'dirt' },
     { x: 3, y: 3, assetKey: 'dirt' }, { x: 4, y: 3, assetKey: 'grass' },
   ],
+  openings: [{ x: 2, y: 1, kind: 'door_locked' }],
 };
 
 /** 5×3 bridge over a short water channel with dirt approaches. */
@@ -94,6 +116,10 @@ export const BRIDGE_CROSSING: AssemblyRecipe = {
     { x: 3, y: 1, assetKey: 'water' }, { x: 4, y: 1, assetKey: 'sand' },
     { x: 0, y: 2, assetKey: 'grass' }, { x: 1, y: 2, assetKey: 'dirt' }, { x: 2, y: 2, assetKey: 'dirt' },
     { x: 3, y: 2, assetKey: 'dirt' }, { x: 4, y: 2, assetKey: 'grass' },
+  ],
+  openings: [
+    { x: 2, y: 0, kind: 'path' },
+    { x: 2, y: 2, kind: 'path' },
   ],
 };
 
@@ -115,6 +141,7 @@ export const CHURCH_GRAVEYARD: AssemblyRecipe = {
     { x: 0, y: 4, assetKey: 'flower' }, { x: 1, y: 4, assetKey: 'rock' }, { x: 2, y: 4, assetKey: 'dirt' },
     { x: 3, y: 4, assetKey: 'rock' }, { x: 4, y: 4, assetKey: 'flower_pink' },
   ],
+  openings: [{ x: 2, y: 3, kind: 'door_locked' }],
 };
 
 export const ASSEMBLY_RECIPES: Record<string, AssemblyRecipe> = {
