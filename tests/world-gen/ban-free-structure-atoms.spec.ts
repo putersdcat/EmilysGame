@@ -1,31 +1,73 @@
 /**
- * ban-free-structure-atoms.spec.ts — Scene-first PR2
+ * ban-free-structure-atoms.spec.ts — Scene-first PR2 + PR5
  *
- * Free structure atoms (outhouse via WU templates; house/hut as Perlin
- * obstacles) must not appear in early meadow generation weights. Buildings
- * come from modular scene stamps + starter homestead only.
+ * Free structure atoms (outhouse / fence pens / wall stubs via WU templates;
+ * house/hut as Perlin obstacles) must not appear in early meadow/forest
+ * generation weights. Buildings come from modular scene stamps + starter
+ * homestead only. Terrain / path / river / lake templates stay weighted.
  */
 import { test, expect, Page } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:5173/?test=1';
+
+/** Structure/enclosure WU templates demoted in meadow (PR5). */
+const MEADOW_STRUCTURE_TEMPLATES = [
+  'fence_enclosure',
+  'wall_gate',
+  'wall_segment',
+  'wall_corner',
+  'wall_end',
+  'wall_bastion',
+  'wall_corner_capped',
+  'fenced_yard',
+  'fenced_garden',
+  'fence_row',
+  'market_square',
+  'homestead_compound',
+  'seller_cart_yard',
+  'inn_compound',
+  'outhouse_clearing',
+] as const;
+
+/** Structure/enclosure WU templates demoted in forest (PR5). */
+const FOREST_STRUCTURE_TEMPLATES = [
+  'fence_enclosure',
+  'wall_segment',
+  'wall_gate',
+  'wall_bastion',
+  'wall_corner_capped',
+  'fenced_yard',
+  'fenced_garden',
+  'fence_row',
+  'homestead_compound',
+  'seller_cart_yard',
+  'inn_compound',
+  'outhouse_clearing',
+] as const;
 
 async function waitForGame(page: Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
 }
 
-test.describe('Ban free structure atoms (scene-first PR2)', () => {
-  test('meadow BIOME_TEMPLATE_WEIGHTS has outhouse_clearing weight 0', async ({ page }) => {
+test.describe('Ban free structure atoms (scene-first PR2 + PR5)', () => {
+  test('meadow/forest structure-bearing WU template weights are 0', async ({ page }) => {
     await waitForGame(page);
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async ([meadowKeys, forestKeys]) => {
       const tiles = await import('/config/tiles.config.ts');
-      return {
-        meadow: tiles.BIOME_TEMPLATE_WEIGHTS.meadow.outhouse_clearing,
-        forest: tiles.BIOME_TEMPLATE_WEIGHTS.forest.outhouse_clearing,
-      };
-    });
-    expect(result.meadow).toBe(0);
-    expect(result.forest).toBe(0);
+      const meadow: Record<string, number> = {};
+      const forest: Record<string, number> = {};
+      for (const k of meadowKeys) meadow[k] = tiles.BIOME_TEMPLATE_WEIGHTS.meadow[k] ?? -1;
+      for (const k of forestKeys) forest[k] = tiles.BIOME_TEMPLATE_WEIGHTS.forest[k] ?? -1;
+      return { meadow, forest };
+    }, [MEADOW_STRUCTURE_TEMPLATES as unknown as string[], FOREST_STRUCTURE_TEMPLATES as unknown as string[]]);
+
+    for (const k of MEADOW_STRUCTURE_TEMPLATES) {
+      expect(result.meadow[k], `meadow.${k}`).toBe(0);
+    }
+    for (const k of FOREST_STRUCTURE_TEMPLATES) {
+      expect(result.forest[k], `forest.${k}`).toBe(0);
+    }
   });
 
   test('meadow obstacleWeights exclude free house/hut buildings', async ({ page }) => {
@@ -43,29 +85,32 @@ test.describe('Ban free structure atoms (scene-first PR2)', () => {
     expect(weights.quiz_gate).toBeGreaterThan(0);
   });
 
-  test('buildBiomeCandidatePool hard-skips outhouse_clearing for meadow', async ({ page }) => {
+  test('buildBiomeCandidatePool hard-skips structure WU templates for meadow', async ({ page }) => {
     await waitForGame(page);
-    const result = await page.evaluate(async () => {
+    const result = await page.evaluate(async (banned: string[]) => {
       const tiles = await import('/config/tiles.config.ts');
       const wus = await import('/engine/world/WorldUnitSolver.ts');
       const rotations: Map<string, any[]> = tiles.getAllRotations();
 
       if (!rotations || !wus.buildBiomeCandidatePool) {
-        return { ok: false, reason: 'missing helpers', count: 0, hasOuthouse: true };
+        return { ok: false, reason: 'missing helpers', count: 0, bannedInPool: banned };
       }
 
       const pool = wus.buildBiomeCandidatePool({ name: 'meadow' }, rotations);
-      const poolNames = pool.map((c: any) => c.template?.baseName ?? '');
+      const poolNames = new Set(pool.map((c: any) => c.template?.baseName ?? ''));
+      const bannedInPool = banned.filter((n) => poolNames.has(n));
       return {
         ok: true,
-        hasOuthouse: poolNames.includes('outhouse_clearing'),
-        sample: [...new Set(poolNames)].slice(0, 8),
-        count: poolNames.length,
+        bannedInPool,
+        hasPath: poolNames.has('dirt_path_ns') || poolNames.has('meadow_base'),
+        sample: [...poolNames].slice(0, 12),
+        count: pool.length,
       };
-    });
+    }, MEADOW_STRUCTURE_TEMPLATES as unknown as string[]);
 
     expect(result.ok, JSON.stringify(result)).toBe(true);
-    expect(result.hasOuthouse).toBe(false);
+    expect(result.bannedInPool, JSON.stringify(result)).toEqual([]);
+    expect(result.hasPath).toBe(true);
     expect(result.count).toBeGreaterThan(0);
   });
 

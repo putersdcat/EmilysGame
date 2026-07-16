@@ -50,6 +50,11 @@
  * ban free outhouse_clearing WU weight + house/hut Perlin obstacles in early
  * meadow/forest. Structures via scenes + starter homestead only.
  *
+ * Re-captured 2026-07-16 (20da3166 -> 5c5f5568) after scene-first PR5:
+ * demote structure/enclosure WU templates in meadow/forest (fence pens,
+ * wall stubs, homestead/seller/inn compounds, fence_row) to weight 0 so
+ * only terrain/path/river/lake remain in the free WU pool.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -59,8 +64,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-16 after scene-first free-structure ban (PR2)
-const GOLDEN_HASH = '20da3166';
+// Re-captured 2026-07-16 after scene-first structure WU demotion (PR5)
+const GOLDEN_HASH = '5c5f5568';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

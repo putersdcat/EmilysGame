@@ -823,9 +823,8 @@ const SAFE_ZONE_TEMPLATE_ALLOW = new Set([
   'meadow_base', 'meadow_garden', 'dirt_clearing', 'mixed_terrain', 'forest_clearing',
   'dirt_path_ns', 'dirt_path_ew', 'path_bend_ne', 'path_t_junction', 'path_crossroads', 'path_dead_end',
   'rocky_outcrop',
-  // Scene-first: no free outhouse_clearing in safe zone — structures via
-  // starter homestead + modular scene stamps only.
-  'homestead_compound',
+  // Scene-first PR5: no free structure/enclosure WU templates in safe zone —
+  // buildings + fences only via starter homestead + modular scene stamps.
 ]);
 
 /**
