@@ -287,7 +287,11 @@ export function drawCachedChunkTerrain(
       if (destX + WU_PX_W < 0 || destX > cw || destY + WU_PX_H < 0 || destY > ch) continue;
 
       const cached = getCachedTerrain(chunkKey, chunk, allChunks, wx, wy);
-      ctx.drawImage(cached.canvas, destX, destY);
+      // Snap to integer pixels: destX/destY come from the smooth-follow camera
+      // (fractional), and a sub-pixel blit of the big pre-rendered chunk canvas
+      // resamples it with bilinear filtering — that is the visible whole-ground
+      // blur. Rounding makes it an exact 1:1 copy (≤0.5px sub-cell jitter).
+      ctx.drawImage(cached.canvas, Math.round(destX), Math.round(destY));
 
       if (cached.waterPositions.length > 0) {
         drawWaterOverlays(ctx, cached.waterPositions, destX, destY, waterAnimFrame);
@@ -379,7 +383,7 @@ function drawWaterOverlays(
     // Quick per-tile bounds check
     if (wx + TW < 0 || wx > RENDER_CONFIG.canvasWidth ||
         wy + TH < 0 || wy > RENDER_CONFIG.canvasHeight) continue;
-    ctx.drawImage(overlay, wx, wy);
+    ctx.drawImage(overlay, Math.round(wx), Math.round(wy));
   }
 }
 

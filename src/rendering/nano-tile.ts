@@ -669,6 +669,13 @@ function isOpenWaterBody(connections: FeatureConnections): boolean {
   return n === 0 || n >= 3;
 }
 
+/** Deterministic 0..1 hash for stable water/terrain grain (no per-frame jitter). */
+function hash01(x: number, y: number, salt: number): number {
+  let h = Math.imul(x + salt * 17, 374761393) ^ Math.imul(y + salt * 31, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0;
+  return ((h ^ (h >>> 16)) >>> 0) / 0xffffffff;
+}
+
 /** Soft oval basin fill for ponds / open water (R2). */
 function drawProceduralBasinWater(ctx: CanvasRenderingContext2D, style: WaterStyle): void {
   const cx = MICRO_TILE_SIZE / 2;
@@ -703,6 +710,40 @@ function drawProceduralBasinWater(ctx: CanvasRenderingContext2D, style: WaterSty
   ctx.beginPath();
   ctx.ellipse(cx + 14, cy + 6, rx * 0.22, ry * 0.12, 0.4, 0, Math.PI);
   ctx.stroke();
+
+  // Crisp high-frequency ripple + sparkle detail so the water reads as
+  // textured surface, not a smooth blurred gradient (anti-blur pass).
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  ctx.clip();
+  // Bright glint flecks (high contrast against mid tone)
+  for (let y = 0; y < MICRO_TILE_SIZE; y += 4) {
+    for (let x = 0; x < MICRO_TILE_SIZE; x += 4) {
+      const v = hash01(x, y, 7331);
+      if (v > 0.78) {
+        ctx.fillStyle = rgba(style.glint, 0.5 + v * 0.3);
+        ctx.fillRect(x, y, 2, 1);
+      } else if (v > 0.5) {
+        ctx.fillStyle = rgba(style.foam, 0.28 + v * 0.2);
+        ctx.fillRect(x, y, 2, 1);
+      } else if (v < 0.18) {
+        ctx.fillStyle = rgba(style.deep, 0.3);
+        ctx.fillRect(x, y, 2, 2);
+      }
+    }
+  }
+  // A few crisp horizontal ripple strokes for surface definition
+  ctx.strokeStyle = rgba(style.glint, 0.4);
+  ctx.lineWidth = 1;
+  for (let ry2 = cy - ry * 0.5; ry2 < cy + ry * 0.6; ry2 += 9) {
+    const w = Math.cos((ry2 - cy) / ry * Math.PI * 0.5) * rx * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(cx - w, ry2 + (hash01(ry2, 1, 88) - 0.5) * 3);
+    ctx.lineTo(cx + w, ry2 + (hash01(ry2, 2, 88) - 0.5) * 3);
+    ctx.stroke();
+  }
+  ctx.restore();
   ctx.restore();
 }
 
@@ -757,6 +798,16 @@ function drawProceduralRiverWater(ctx: CanvasRenderingContext2D, connections: Fe
   ctx.save();
   if (hasH) fillHChannel(hStart, off - 4, hEnd - hStart, channelW + 8);
   if (hasV) fillVChannel(off - 4, vStart, channelW + 8, vEnd - vStart);
+
+  // Crisp ripple grain over the smooth channel gradient (anti-blur pass).
+  for (let y = Math.max(0, off - 4); y < Math.min(MICRO_TILE_SIZE, off + channelW + 4); y += 3) {
+    for (let x = 0; x < MICRO_TILE_SIZE; x += 3) {
+      const v = hash01(x, y, 5442);
+      if (v < 0.55) continue;
+      ctx.fillStyle = v > 0.85 ? rgba(style.foam, 0.10) : rgba(style.deep, 0.06 + v * 0.05);
+      ctx.fillRect(x, y, v > 0.85 ? 2 : 1, 1);
+    }
+  }
 
   // Corner junctions get a soft radial join (not a full tank square).
   if (hasH && hasV) {

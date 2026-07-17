@@ -847,9 +847,15 @@ function handleDiarrheaControlLock(state: GameState): boolean {
  * Sets state.player.isMoving = true/false as a side effect; callers
  * can read it via state.player.isMoving.
  */
-function handleMovement(state: GameState, input: InputManager): void {
+function handleMovement(state: GameState, input: InputManager, dtMs: number = 16.67): void {
   const mv = input.getMovementVector();
   const wantsMove = mv.dx !== 0 || mv.dy !== 0;
+
+  // Frame-rate independent scaling: `player.speed` is tuned for 60fps
+  // (grid-units per 16.67ms frame). Scale by real dt so 120Hz displays,
+  // low-fps hitches, and background tabs all move at the same world speed.
+  // Clamp dt to avoid huge teleports after a long stall (tab refocus).
+  const dt = Math.min(Math.max(dtMs, 0), 100) / 16.6667;
 
   if (!wantsMove) {
     updatePlayerVisuals(state, mv, false);
@@ -864,7 +870,7 @@ function handleMovement(state: GameState, input: InputManager): void {
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
     const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
+    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult * dt;
     const dx = mv.dx * effectiveSpeed;
     const dy = mv.dy * effectiveSpeed;
     const newX = state.player.x + dx;
@@ -959,8 +965,10 @@ function handleMovement(state: GameState, input: InputManager): void {
     // Always update facing from held direction so Space aims at what you're pushing into
     updatePlayerVisuals(state, mv, true);
 
-    state.camera.x += (state.player.x - state.camera.x) * 0.15;
-    state.camera.y += (state.player.y - state.camera.y) * 0.15;
+    // Frame-rate independent smoothing: 0.15/frame @60fps ≈ time-constant.
+    const camLerp = 1 - Math.pow(1 - 0.15, dt);
+    state.camera.x += (state.player.x - state.camera.x) * camLerp;
+    state.camera.y += (state.player.y - state.camera.y) * camLerp;
 
     maybeLoadChunks(state);
   }
@@ -1068,7 +1076,7 @@ function handleSpaceInteraction(state: GameState, justKeys: any): void {
 }
 
 
-function update(state: GameState, input: InputManager): void {
+function update(state: GameState, input: InputManager, dtMs: number = 16.67): void {
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
 
@@ -1120,7 +1128,7 @@ function update(state: GameState, input: InputManager): void {
     return;
   }
 
-  handleMovement(state, input);
+  handleMovement(state, input, dtMs);
 
   handleSpaceInteraction(state, justKeys);  // --- Toggle Debug (F3) ---
   // Handled in extended input listener below
@@ -1223,14 +1231,19 @@ function renderFrame(
 
 // ─── Game Loop ───────────────────────────────────────────────
 
+let _lastFrameTime = 0;
+
 function gameLoop(
-  _time: number,
+  time: number,
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
   const _frameStart = performance.now();
+  // Real frame delta (ms) for frame-rate independent movement/camera.
+  const dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : 16.67;
+  _lastFrameTime = time;
   tickWaterAnimation();
   const _updateStart = performance.now();
-  update(ctx.state, ctx.input);
+  update(ctx.state, ctx.input, dtMs);
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state, perfStats);

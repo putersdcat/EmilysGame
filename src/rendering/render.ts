@@ -10,7 +10,7 @@ import { getEmojiSprite } from '../asset-pipeline/emoji-cache';
 import { getBiome } from '../config/biomes.config';
 import { getIsoTile, isTileType, type TileType } from './tiles';
 import { getNanoStack, hasNanoRenderer, wallTileTypeForBiome, fenceTileTypeForBiome } from './nano-tile-defs';
-import { drawNanoStack } from './nano-tile';
+import { drawNanoObjectCached, clearNanoObjectCache } from './nano-object-cache';
 import { drawCachedChunkTerrain } from './terrain-cache';
 import type { ChunkData, Camera } from '../types/game.types';
 import { cellJitter, cellJitterX, cellJitterY } from '../engine/utils';
@@ -31,6 +31,7 @@ export { setDialogNpc } from './mouth-animation';
 // B6.1 (#272): tile variant inference + object-cell cache extracted to tile-variants.ts
 import { inferTileVariant, getObjectCells, clearObjectCache, invalidateObjectCache } from './tile-variants';
 export { clearObjectCache, invalidateObjectCache };
+export { clearNanoObjectCache };
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -166,10 +167,12 @@ export class IsometricRenderer {
   private drawTile(tileType: TileType | string, sx: number, sy: number, variant?: FeatureVariant): void {
     const nanos = getNanoStack(tileType, variant);
     if (nanos) {
-      this.ctx.save();
-      this.ctx.translate(sx - RENDER_CONFIG.tileWidth / 2, sy - RENDER_CONFIG.tileHeight / 2);
-      drawNanoStack(this.ctx, nanos, 0, 0);
-      this.ctx.restore();
+      // Bake the procedural nano stack (extrusion + weathering pixel-scatter)
+      // into an offscreen canvas once, then blit. Avoids ~10k fillRects/frame.
+      drawNanoObjectCached(
+        this.ctx, tileType, variant, nanos, sx, sy,
+        RENDER_CONFIG.tileWidth, RENDER_CONFIG.tileHeight,
+      );
       return;
     }
     if (!isTileType(tileType)) return;

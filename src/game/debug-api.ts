@@ -33,7 +33,7 @@ import {
   SandstoneBrick, SplitRailOak, ThatchRoof, WaterFamily, WeatheredPostRail,
 } from '../asset-pipeline/iso2-materials';
 import { clearTerrainCache } from '../rendering/terrain-cache';
-import { clearObjectCache, setDialogNpc } from '../rendering/render';
+import { clearObjectCache, setDialogNpc, clearNanoObjectCache } from '../rendering/render';
 import { getNanoStack } from '../rendering/nano-tile-defs';
 import { stampIso2Assembly } from '../engine/iso2-assemblies';
 import { getDebuffs, useStatusItem } from './status';
@@ -145,7 +145,7 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // State access (read-only for tests)
     state,
     // Render cache invalidation
-    invalidateRenderCaches: () => { clearTerrainCache(); clearObjectCache(); },
+    invalidateRenderCaches: () => { clearTerrainCache(); clearObjectCache(); clearNanoObjectCache(); },
     // Iso2 assembly stamping
     stampIso2Assembly: (chunkKey: string, id: Iso2AssemblyId, originX: number, originY: number) => {
       const chunk = state.chunks.get(chunkKey);

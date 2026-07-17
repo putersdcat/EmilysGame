@@ -68,23 +68,23 @@ function drawGrassFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, 
   ctx.fillStyle = '#4FAE53';
   ctx.fillRect(0, 0, size, size);
 
-  // Fine high-frequency speckle (3-4px, varied alpha + color) — reads as grass
-  // texture instead of a flat color block when projected to the iso diamond.
-  for (let wy = wy0; wy < wy0 + size; wy += 4) {
-    for (let wx = wx0; wx < wx0 + size; wx += 4) {
+  // Fine high-frequency speckle (varied alpha + color) — reads as crisp grass
+  // texture instead of a flat blurred color block when projected to the iso diamond.
+  for (let wy = wy0; wy < wy0 + size; wy += 3) {
+    for (let wx = wx0; wx < wx0 + size; wx += 3) {
       const v = hash01(wx, wy, 42);
-      if (v < 0.25) continue;
+      if (v < 0.2) continue;
       const lx = wx - wx0;
       const ly = wy - wy0;
-      const a = 0.10 + v * 0.18;
-      if (v > 0.78) {
-        ctx.fillStyle = `rgba(30, 110, 30, ${a})`;
+      const a = 0.18 + v * 0.28;
+      if (v > 0.74) {
+        ctx.fillStyle = `rgba(24, 96, 28, ${a})`;
         ctx.fillRect(lx, ly, 2, 2);
-      } else if (v > 0.55) {
-        ctx.fillStyle = `rgba(140, 220, 100, ${a * 0.85})`;
+      } else if (v > 0.5) {
+        ctx.fillStyle = `rgba(150, 235, 105, ${a * 0.9})`;
         ctx.fillRect(lx, ly, 2, 2);
       } else {
-        ctx.fillStyle = `rgba(70, 160, 70, ${a * 0.6})`;
+        ctx.fillStyle = `rgba(64, 158, 66, ${a * 0.7})`;
         ctx.fillRect(lx, ly, 2, 1);
       }
     }
@@ -133,6 +133,19 @@ function drawDirtFace(ctx: CanvasRenderingContext2D, wx0: number, wy0: number, s
   baseGrad.addColorStop(1, '#6A4A26');
   ctx.fillStyle = baseGrad;
   ctx.fillRect(0, 0, size, size);
+
+  // High-frequency grain over the smooth gradient so the surface reads as
+  // soil texture, not a blurred color ramp (anti-blur pass).
+  for (let wy = wy0; wy < wy0 + size; wy += 3) {
+    for (let wx = wx0; wx < wx0 + size; wx += 3) {
+      const v = hash01(wx, wy, 9017);
+      if (v < 0.5) continue;
+      const lx = wx - wx0;
+      const ly = wy - wy0;
+      ctx.fillStyle = v > 0.8 ? `rgba(50, 34, 20, ${0.06 + v * 0.06})` : `rgba(150, 112, 72, ${0.05 + v * 0.05})`;
+      ctx.fillRect(lx, ly, 1, 1);
+    }
+  }
 
   // Fine high-frequency speckle — pebble/soil grain
   for (let wy = wy0; wy < wy0 + size; wy += 4) {
