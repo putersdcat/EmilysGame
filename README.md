@@ -1,23 +1,45 @@
-**Project Vision**  
-Emily's Game is an isometric, procedural world adventure designed for educational exploration and discovery. Players navigate a vast 1024×1024 cell world generated using novel LLM entropy mechanics, where language model outputs are mathematically processed into deterministic world seeds. The game incorporates educational elements through dynamic quizzes, a searchable in-game encyclopedia ("Book of Knowledge"), and subject-biased learning paths. Key features include biome progression (Forest → Cave → Castle), LLM entropy via SHA-256 hashed verb/noun pairs, 100-500 Q&A pairs per subject rewritten for 12-year-olds, isometric Canvas 2D rendering with occlusion, and hierarchical tile-based procedural generation.
+# Emily's Game
 
-**Documentation**  
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** — canonical engine architecture: layered structure, spatial hierarchy, rendering & generation pipelines, state/save model. Read this first.  
-- **[AGENTS.md](AGENTS.md)** — how AI agents (and humans) add code, run visual tests, and follow conventions.  
-- **[Docs/EngineDecompositionMap.md](Docs/EngineDecompositionMap.md)** — file-by-file decomposition plan for the engine refactor (EPIC #247).  
+Isometric browser adventure (TypeScript + Vite + Canvas 2D): places, quiz gates, procedural world, educational Book of Knowledge.
 
-**How to Run**  
-- **Prerequisites**: Node.js 16+, npm 8+, optional local LLM server (BitNet) on `http://127.0.0.1:8002`.  
-- **Installation**: Run `npm install`.  
-- **Development**: Start dev server with `npm run dev` (opens at `http://localhost:5173`).  
-- **Build**: Use `npm run build` for production.  
-- **Controls**: Move with arrow keys/WASD, interact with Space (when implemented), answer quizzes to progress, explore biomes and collect items.
+## Start here (humans & coding agents)
 
-**Current Status**  
-- PoC complete: isometric rendering with occlusion, player movement, collision, character sprites/animations, UI sidebar.  
-- Core gameplay implemented: tile/world generation, LLM entropy integration, save/load.  
-- Educational features: Book of Knowledge encyclopedia, subject selection (Math, Language, History, Science, Technology), quiz biasing.  
-- In progress: obstacle templates, knowledge capture pipeline, sound effects, polish.  
-- Infrastructure: performance optimizations, CI/CD via GitHub Actions; GitHub Pages disabled due to local LLM requirement.
+| Doc | Why |
+|-----|-----|
+| **[AGENTS.md](AGENTS.md)** | Product laws, branch, where code goes — **read first** |
+| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Engine layers, pipelines, save model |
+| **[Docs/00-INDEX.md](Docs/00-INDEX.md)** | Design doc map (`docs/01`–`11`) |
+| **[.github/copilot-instructions.md](.github/copilot-instructions.md)** | Copilot session habits |
 
-The original file has been saved to: /home/workdir/artifacts/browsed_files/578fbffaf4b3a91c.text
+**Product branch:** `experiment/isometric-2.0`  
+**App code:** `src/` (not the nested `experiment/` package — that is AiTools + legacy iso sources for MCP).
+
+## Run
+
+```bash
+npm install
+npm run dev          # http://localhost:5173
+npx tsc --noEmit
+npx playwright test --reporter=line   # or a single path under tests/
+```
+
+Optional local LLM is proxied via Vite (`/api/llm`). Port is machine-local — check health before assuming a number from old docs.
+
+## Layout
+
+```
+src/engine/      # sim, gen, mechanics, quiz, llm
+src/rendering/   # isometric paint
+src/game/        # loop systems, save, audio, menus
+src/ui/          # DOM HUD
+src/config/      # content knobs
+tests/           # Playwright
+Docs/            # design (01–11)
+memories/repo/   # short agent design notes (not session chat dumps)
+.github/agents/  # optional Copilot personas (GameMan, …)
+experiment/isometric-2.0/AiTools/  # isoSvgRenderer MCP (optional)
+```
+
+## Status
+
+Playable product base on the branch tip: scene-first gen law + playable-session recovery (boot/coins/water/density/homestead). Expand via **content + scene recipes**, not new world ontology. See `AGENTS.md`.

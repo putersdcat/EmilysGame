@@ -10,7 +10,7 @@
  *   4) Full-tile collision blocks mid-gate while locked
  *   5) Sampled non-origin chunks (fixed seed) each have ≥1 quiz_gate
  *
- * See memories/repo/playability-milestone-1.md
+ * See AGENTS.md + Docs/01–02 for product loop context
  */
 import { test, expect, Page } from '@playwright/test';
 

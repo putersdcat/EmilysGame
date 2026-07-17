@@ -1,50 +1,64 @@
+# Dependencies & builds
 node_modules/
 dist/
+**/node_modules/
+**/dist/
 .DS_Store
 *.log
 .env
+.env.local
+.env.*.local
+
+# Test / browser artifacts
 playwright-report/
 test-results/
 .playwright-mcp/
 OnlyFails/
-test-output.txt
-test-output2.txt
-test-output-weather.txt
-.vscode/
-.env.local
-.env.*.local
-
-# Temporary migration file
-MigrateToGitHubNativeProjectWork.md
-# WASM build artifacts
-public/wasm/
-game-*.png
-
-# Note: docs/ directory is committed (contains game-screenshot.png for README)
-!docs/game-screenshot.png
+test-output*.txt
+test-results-*.txt
 core-test-result.txt
 struct-test-result.txt
-test-regression-output.txt
-cancel-test-result.txt
-cust-test-result.txt
-test-results-*.txt
+*-test-result.txt
 inventory-*.png
 torch-*.png
+game-*.png
 
-# A/B test runs (keep README only)
-# asset-dev/Export/A-B-Tests/run-*/
+# Local IDE / agent noise
+.vscode/
+.mypy_cache/
+terminals/
+.grok/
+mcps/
 
-# Stuff from alpha build testing
-public/audio/piano-mp3/manifest.json
-temp_log.txt
+# Experiment / tool scratch (keep source; never commit eval dumps)
+experiment/**/ProgressEvaluations/
+experiment/**/tmp/
+experiment/**/*.log
+experiment/**/tsc-out.txt
+experiment/**/screenshot.png
+experiment/**/test-ss.png
+experiment/**/AiTools/corner-debug*.png
+experiment/**/AiTools/node_modules/
+experiment/**/AiTools/tmp/
+CopilotSvgToolv2/node_modules/
 
-# Content pipeline cache (source snapshots)
+# Legacy / local media dumps (not product)
+asset-dev/
+archived-planning/
+MusicAssetTemp/
+Docs/archive-*/
+live-feel-*.png
+menu-screenshot-*.png
+Proompts.md
+
+# Screenshots: only intentional proof images belong under tests/screenshots/
+# (tests may write more locally; don't auto-commit noise)
+
+# WASM build intermediates
+public/wasm/
+# Content pipeline cache
 scripts/content-pipeline/.cache/
-
-# QA reports (generated artifacts)
 public/content/packs/*/qa-reports/
-asset-dev/Export/WorldTileAssets_OG_Backup.zip
-asset-dev/Export/
 
-# grok build stuff
-mcps/*
+# Generated audio manifests (machine-specific)
+public/audio/piano-mp3/manifest.json

@@ -13,7 +13,7 @@ back into monoliths:
 
 | File | Current line budget | Hard ceiling | Why it matters |
 |---|---|---|---|
-| `src/main.ts` | 2,807 | **2,800** | Game-loop orchestrator — extract anything not strictly orchestration |
+| `src/main.ts` | ~1,200 | **1,600** | Game-loop orchestrator — extract anything not strictly orchestration |
 | `src/engine/gen.ts` | 71 | **150** | World-gen barrel re-export |
 | `src/rendering/render.ts` | 704 | **800** | Render orchestrator (class with `render()` / `renderWasm()`) |
 | `src/ui/ui.ts` | 117 | **200** | UI orchestrator + types |
@@ -35,7 +35,7 @@ Every `.ts` file under `src/` should follow these soft limits:
 | 251–400 lines | 🟠 Should split | Plan extraction next time the file is touched |
 | > 400 lines | 🔴 God-file | **Block the PR** until extraction |
 
-## Layer Boundaries (from `AGENTS.md` §3)
+## Layer Boundaries (same tree as root `AGENTS.md`)
 
 ```
 Is it pure logic — no Canvas, no DOM, no window?

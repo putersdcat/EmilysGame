@@ -6,13 +6,12 @@ applyTo: "src/main.ts"
 # main.ts — Game-Loop Orchestrator
 
 ## Status: Partially Decomposed (B5 series complete)
-`main.ts` is **~2,807 lines** (down from ~3,317). The B5 series (#268) extracted
-6 focused modules. Further extraction is the next priority — see "Remaining
-Extraction Targets" below.
+`main.ts` is **~1,170 lines** (was multi-thousand). B5 (#268) extracted focused
+modules under `src/game/`. Prefer orchestration-only growth; extract new
+subsystems rather than re-inflating this file.
 
-See `.github/instructions/architecture.instructions.md` for the **hard ceiling
-of 2,800 lines**. New commits that push main.ts over this limit must include
-extractions, not just additions.
+See `.github/instructions/architecture.instructions.md` for module-size
+discipline. Do not re-open bulk extraction campaigns unless the user asks.
 
 ## B5 Extraction History (issue #268)
 

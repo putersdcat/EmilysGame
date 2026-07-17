@@ -5,7 +5,10 @@ applyTo: "{src/asset-pipeline/iso2-materials.ts,src/engine/iso2-assemblies.ts,sr
 
 # Iso 2.0 Main Engine Port Instructions
 
-## Port-Back Contract (C1 — issue #259)
+> **2026-07 product freeze:** Iso2 on the product tip is **paint only** (root `AGENTS.md`).  
+> Do not restart a full port architecture campaign, new nano kinds, or FOV thrash from this file.
+
+## Port-Back Contract (historical C1 — issue #259)
 
 A "mergeable iso2 module" satisfies **all** of the following:
 

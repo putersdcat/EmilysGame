@@ -1,12 +1,9 @@
 # Emily's Game — Engine Architecture
 
-**Status:** Living document · **Owner EPIC:** #247 · **Issue:** #250 (A1)
-**Last updated:** 2026-06-11 · **Branch:** `refactor/engine-phase1`
+**Status:** Living document · **Product branch:** `experiment/isometric-2.0`
 
-> This is the canonical architectural reference for Emily's Game. Read this plus
-> [AGENTS.md](../AGENTS.md) before touching engine code. Companion documents:
-> [EngineDecompositionMap.md](EngineDecompositionMap.md) (file-by-file split plan, #249)
-> and [RefactoringPlan_11-06-26.md](RefactoringPlan_11-06-26.md) (the phased plan).
+> Canonical architectural reference. Read with root [AGENTS.md](AGENTS.md).
+> Module-size discipline: [`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md).
 
 ---
 
@@ -45,7 +42,8 @@ Two god-files still need internal decomposition (Phase B2/B3):
 Layering is now enforced by folder boundaries (see §3 rules). This document defines the target
 layering; Phase B (#251–#254) executes the move.
 
-See [EngineDecompositionMap.md](EngineDecompositionMap.md) for the complete list of
+See layer layout in [AGENTS.md](AGENTS.md) and module budgets in
+[`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md) for the complete list of
 files > 400 lines with measured line counts and per-file split plans.
 
 ---
@@ -305,7 +303,7 @@ Mandatory pre-commit checks: `npx tsc --noEmit` (root **and**
 
 ## 9. Files > 400 lines (responsibility index)
 
-Full split plan in [EngineDecompositionMap.md](EngineDecompositionMap.md). Summary:
+Module discipline: [`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md). Summary:
 
 | File | Lines | Primary responsibility | Target layer |
 |------|------:|------------------------|--------------|

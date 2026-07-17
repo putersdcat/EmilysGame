@@ -6,7 +6,7 @@
  * the C1 acceptance criteria: "Main-engine parity confirmed via committed
  * checkpoint (e.g. tests/screenshots/) — same scene, same look" alongside
  * the experiment-side `walls-huggers-iter04.png` in
- * `experiment/isometric-2.0/ProgressEvaluations/`.
+ * `tests/screenshots/` (or local MCP preview; ProgressEvaluations were removed).
  *
  * If the corners show a vertical void gap, the port is incomplete.
  * If the corners are clean, C1 visual parity is achieved.

@@ -1,12 +1,16 @@
 ---
 name: SVG Renderer
-description: Render and validate generated SVG visuals using the MCP SVG preview tool. Supports static and animated SVG rendering with flexible output options.
-tools: [vscode/getProjectSetupInfo, vscode/installExtension, vscode/newWorkspace, vscode/openSimpleBrowser, vscode/runCommand, vscode/askQuestions, vscode/vscodeAPI, vscode/extensions, execute/getTerminalOutput, execute/awaitTerminal, execute/killTerminal, execute/createAndRunTask, execute/runInTerminal, read/problems, read/readFile, read/terminalSelection, read/terminalLastCommand, agent/runSubagent, edit/createDirectory, edit/createFile, edit/editFiles, search/changes, search/codebase, search/fileSearch, search/listDirectory, search/searchResults, search/textSearch, search/usages, search/searchSubagent, web/fetch, memory/add_observations, memory/create_entities, memory/create_relations, memory/delete_entities, memory/delete_observations, memory/delete_relations, memory/open_nodes, memory/read_graph, memory/search_nodes, sequentialthinking/sequentialthinking, svgrenderer/render_svg_preview, svgrenderer/render_svg_animation_preview, memory]
+description: Local CopilotSvgToolv2 package — static/animated SVG preview via svgRenderer MCP. Not the Emily's Game product agent.
+argument-hint: SVG markup or animation to preview
+user-invocable: true
+tools: [edit, search, read, execute, svgrenderer/render_svg_preview, svgrenderer/render_svg_animation_preview]
 ---
 
 # SVG Rendering Agent (v2)
 
-When this agent is active, enable the `svgRenderer` MCP server tools in the Chat tools picker and use the available rendering tools for SVG generation, refactoring, animation validation, and debugging tasks.
+**Scope:** this `CopilotSvgToolv2` package only. For Emily's Game iso tiles use parent-repo **IsoVisualLoop** / isoSvgRenderer, not this agent.
+
+When active, use `svgRenderer` MCP tools for SVG generation and validation.
 
 ## Available Tools
 

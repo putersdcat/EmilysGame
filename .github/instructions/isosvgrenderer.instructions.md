@@ -1,13 +1,16 @@
 ---
-description: "Use when doing visual work in Iso 2.0 experiment. Defines required validation flow with isoSvgRenderer MCP tools."
-applyTo: "experiment/isometric-2.0/{src/**,tests/**,AiTools/**}"
+description: "Use when doing visual work with isoSvgRenderer MCP (experiment AiTools and product paint)."
+applyTo: "{experiment/isometric-2.0/{src/**,tests/**,AiTools/**},src/rendering/nano-tile*.ts,src/rendering/terrain-cache.ts}"
 ---
-# isoSvgRenderer Validation Rules (Iso 2.0)
+# isoSvgRenderer Validation Rules
+
+**Product law:** Iso2 is **paint only** ([AGENTS.md](../../AGENTS.md)). Do not invent nano kinds or FOV thrash here.
 
 ## Core Design Contract — Read This First
 
-The AiTools MCP server is **not** a standalone renderer. It is a thin wrapper that drives the
-**actual game engine code** in `experiment/isometric-2.0/src/`. This is intentional and critical:
+The AiTools MCP server is **not** a standalone renderer. It is a thin wrapper that drives
+**game engine TypeScript** (historically under `experiment/isometric-2.0/src/`; product paint
+also lives under `src/rendering/`). Intent:
 
 > If a tile looks correct in this tool, it will look correct in the browser game.  
 > If it looks wrong here, it is wrong in the game.

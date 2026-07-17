@@ -1,90 +1,57 @@
-# AGENTS.md — Emily's Game productization campaign
+# AGENTS.md — Emily's Game
 
-**Read first every session:**  
-`memories/repo/definitive-path-forward-2026-07-16.md`  
-`memories/repo/design-scene-first-productization.md`  
-`docs/01` + `docs/02` (vision + flat-sim principle)
+**Product branch:** `experiment/isometric-2.0`  
+**Always-on Copilot context:** this file + [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Path rules auto-attach from [`.github/instructions/`](.github/instructions/). Named personas live in [`.github/agents/`](.github/agents/).
 
 ---
 
-## Campaign objective (macro — the finish line)
+## Product goal
 
-Deliver a **clean, focused product base** on branch `experiment/isometric-2.0` such that:
+A child can play a **satisfying 5–15 min session**: spawn in a place → move reliably → hit a real quiz gate → fail gently → open → leave → see another intentional place. Expand via **scene recipes**, **content packs**, **NPC personas** — not new world ontology.
 
-1. A child can complete a **satisfying 5–15 min session**: spawn in a *place* → move reliably → hit a **real** quiz gate → fail gently → open → leave → see another intentional place.  
-2. World generation **authors places** (scenes + paths + functional barriers), not decorative atom soup.  
-3. **Iso 2.0 nano/materials are paint only** — no new presentation architecture, no new world ontology.  
-4. Expansion is cheap: new **scene recipe**, **quiz/Book content**, **NPC persona**, **side-quest flag** without opening `WorldUnitSolver.ts` or inventing nano kinds.  
-5. FOV/scale stay locked (on-screen diamonds **128×64**, `entityDisplayScale` ~1.0) unless a written RFC says otherwise.
+## Standing laws
 
-**This is not “MVP then abandon.”** It is the durable base for continuous content growth.
+1. **Stay on `experiment/isometric-2.0`** for product work (no silent trunk switch / greenfield).
+2. **Scene-first gen** — free structure atoms (random towers, gate-less fence pens) are bugs.
+3. **No barrier without function** — openings are `quiz_gate` | `door_locked` | explicit open path.
+4. **Flat sim owns walkability/progression** — presentation never decides gate open (`docs/02`).
+5. **Iso2 is paint only** — no new nano systems, FOV thrash, or material-factory campaigns.
+6. **FOV locked** — on-screen diamonds **128×64**, `entityDisplayScale` ~1.0 unless written RFC.
+7. **No speculative reorgs** for line-count aesthetics (`memories/repo/code-organization-philosophy.md`).
+8. **Proof = playtest** — live session feel beats green tests alone (tests stay a regression net).
 
----
+## Campaign status (keep short)
 
-## Standing laws (non-negotiable)
+| Campaign | Status |
+|----------|--------|
+| Scene-first productization (PR1–7) | ✅ Done — do **not** re-run that plan |
+| Playable-session recovery (boot/coins/water/density/homestead) | ✅ Landed on tip — re-open only if playtest still fails |
+| Next default | Content + recipes + residual **feel** fixes only |
 
-1. **Stay on this branch** for product work. Do not greenfield or switch daily trunk to `main` without user decision.  
-2. **Scene-first gen.** Free structure atoms (outhouse, random house/tower, decorative fence pens without gates) are bugs.  
-3. **No barrier without function.** Fence/wall openings must be `quiz_gate`, `door_locked`, or an explicit open path entry.  
-4. **Flat sim owns walkability/progression.** Presentation never decides if a gate is open (`docs/02`).  
-5. **Iso2 freeze for architecture.** Paint OK; new nano systems / tileWidth thrash not OK.  
-6. **No speculative reorgs** for line counts (`memories/repo/code-organization-philosophy.md`).  
-7. **Auto-continue** along the PR Plan in `design-scene-first-productization.md` until blocked or phase done.  
-8. **Proof bar:** live screenshot of intentional places + green M1 + scene-invariant tests — not material showcase alone.
+Canonical designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `memories/repo/design-playable-session-recovery.md`, `memories/repo/expandability-rails.md`.  
+Vision/arch: `docs/01`, `docs/02`.
 
----
+## Where code goes
 
-## Long-running execution (how agents stay on track)
+| Kind | Put it in |
+|------|-----------|
+| Pure logic (walkability, gen, quiz rules, math) | `src/engine/` |
+| Canvas / iso projection / nano paint | `src/rendering/` |
+| Sprites / materials pipeline | `src/asset-pipeline/` |
+| Loop orchestration, save, input, audio systems | `src/game/` |
+| DOM HUD / menus | `src/ui/` |
+| Tunables / content tables | `src/config/*.config.ts` (`as const`) |
+| Shared types used by 2+ layers | `src/types/` |
 
-| Mechanism | Use |
-|-----------|-----|
-| This `AGENTS.md` | Loaded every session — campaign memory |
-| `design-scene-first-productization.md` | Full phases + **PR Plan DAG** for `/execute-plan` |
-| `definitive-path-forward-2026-07-16.md` | Why this path (evidence) |
-| `/execute-plan <design-doc>` | Multi-PR orchestrated implementation with review loops |
-| `/design …` | Only if the design doc must be re-opened |
-| `/check-work` | After each PR slice |
-| Subagents (`plan` / `explore` / `general-purpose`) | Parallel research/impl when needed |
+Prefer surgical edits. Do not invent parallel ontologies under `experiment/` for product features already on tip.
 
-**Preferred long-horizon command (user or agent-orchestrated):**
+## Agent workflow (all tools)
 
-```text
-/execute-plan memories/repo/design-scene-first-productization.md --concurrency 2 --no-graphite
-```
+- Ground claims in **repo files** and **playtest**; do not invent paths or “done” without verification.
+- Prefer small PR slices with player **Done-when** + a short test command.
+- Do **not** auto-continue closed PR plans. Only run `/execute-plan` / multi-PR stacks when the user points at a **current** design doc.
+- Visual asset loops: use isoSvgRenderer MCP when available; do not dump full-page Playwright screenshots into chat (413 risk). Live game feel → Vite + manual or targeted Playwright specs.
 
-(Add `--auto-pr` only if opening draft PRs is desired.)
+## Out of scope by default
 
-Resume after interruption:
-
-```text
-/execute-plan --resume <PLAN_ID>
-```
-
-If not using `/execute-plan`, implement **PR Plan order only** (PR1 → PR2 → …), one slice per session if needed, always re-read this file first.
-
----
-
-## Campaign status (2026-07-16)
-
-| PR | Slice | Status |
-|----|-------|--------|
-| 1 | Scene invariant infrastructure | ✅ |
-| 2 | Ban free structure atoms | ✅ |
-| 3 | Functional fence openings + farm gate | ✅ |
-| 4 | Path skeleton early chunks | ✅ |
-| 5 | Demote structure-bearing WU templates | ✅ |
-| 6 | Proof bar + docs campaign lock | ✅ |
-| 7 | Expandability rails | ✅ |
-
-**Proof bar (visual):** `tests/screenshots/proof-scene-law-spawn.png` (+ explore)  
-**Expand next:** `memories/repo/expandability-rails.md` — new place = recipe; new learning = content pack.  
-**Green suite:** scene-invariants, ban-free-structure-atoms, path-skeleton, playability-m1-core-loop, gen-determinism.
-
-## Out of scope until post-campaign product growth needs it
-
-- New material factories / nano primitives for their own sake  
-- Speculative engine rewrites or main-branch dual trunk  
-- EDGE_COMPAT full symmetry rewrite  
-- V4 scale thrash (256 diamonds, etc.)
-
-Post-campaign default work is **content + scene recipes** on this locked base.
+New nano kinds, EDGE_COMPAT rewrites, V4 scale thrash, dual-trunk main rewrites, greenfield repos “for cleanliness.”
