@@ -7,7 +7,7 @@
 import { WORLD_CONFIG, getDifficulty } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
-import { IsometricRenderer, setDialogNpc } from './rendering/render';
+import { IsometricRenderer, setDialogNpc, setRenderFrameDelta } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { feedEntropy } from './engine/gen';
@@ -1242,6 +1242,7 @@ function gameLoop(
   const dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : 16.67;
   _lastFrameTime = time;
   tickWaterAnimation(dtMs);
+  setRenderFrameDelta(dtMs);
   const _updateStart = performance.now();
   update(ctx.state, ctx.input, dtMs);
   const _updateEnd = performance.now();

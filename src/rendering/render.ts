@@ -119,10 +119,18 @@ const _scratchScreen = { x: 0, y: 0 };
 
 // ─── Renderer ────────────────────────────────────────────────
 
-// Monotonic frame counter — incremented at the top of every render call.
+// Monotonic frame counter — advanced at the top of every render call.
 // Used to throttle animations (shadow cache, fire sprites) so we don't
 // pay the per-frame sprite rebuild cost on every rAF tick.
+// Advanced by a real-time scale (dtMs/16.67) so fire/shadow/water animation
+// cadence is frame-rate independent (was +1/frame → raced at high FPS).
 let _renderFrameCount = 0;
+/** Pending real-time frame increment for the next render call (set by game loop). */
+let _renderFrameAdvance = 1;
+/** Set the frame-count advance for the next render, from real dt (ms). */
+export function setRenderFrameDelta(dtMs: number): void {
+  _renderFrameAdvance = Math.min(Math.max(dtMs, 0), 100) / 16.6667;
+}
 
 export class IsometricRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -263,7 +271,7 @@ export class IsometricRenderer {
     // Data-driven draw commands using pre-allocated pool (no per-frame alloc)
     jsPoolIdx = 0;
     occluderCount = 0;   // reset occluder tracking (#181)
-    _renderFrameCount++;
+    _renderFrameCount += _renderFrameAdvance;
     const maxCmds = RENDER_CONFIG.maxDrawCmds; // draw call budget for graceful degradation
 
     // Iterate ONLY visible chunks (viewport culling) — builds draw commands
