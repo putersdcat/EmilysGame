@@ -67,13 +67,38 @@ often.** Audit + convert to dtMs/time-based:
 
 | System | File | Mechanism | Status |
 |--------|------|-----------|--------|
-| Status drain | `game/status.ts` | was 300 frames → time-based | ✅ FIXED (commit 957142d) |
-| Footsteps | `game/audio/sfx.ts` | was 12 frames → ~5/sec time-based | ✅ FIXED (commit 387de3a) |
-| Player walk anim | `game/player-visuals.ts` | was 6 frames → ~10fps time-based | ✅ FIXED (commit 387de3a) |
-| Water anim | `rendering/terrain-cache.ts` `tickWaterAnimation` | every 15 frames (~4fps@60) | ⬜ faster now — cosmetic, low pri |
-| Fire anim | `render.ts` `getFireAnimation(frameCount)` | `_renderFrameCount` | ⬜ cosmetic |
-| Wildlife/ambient ticks | `game/wildlife.ts`, thought-bubbles | various | ⬜ audit |
-| Minimap | `rendering/minimap.ts` every 10th frame | throttle | ⬜ fine (just cheaper) |
+| Status drain | `game/status.ts` | was 300 frames → time-based | ✅ FIXED (957142d) |
+| Footsteps | `game/audio/sfx.ts` | was 12 frames → ~5/sec time-based | ✅ FIXED (387de3a) |
+| Player walk anim | `game/player-visuals.ts` | was 6 frames → ~10fps time-based | ✅ FIXED (387de3a) |
+| Water anim | `rendering/terrain-cache.ts` `tickWaterAnimation` | was 15 frames → ~250ms | ✅ FIXED (77fd017) |
+| Fire/shadow/frame-cycle | `render.ts` `_renderFrameCount` | was +1/frame → real-time scale | ✅ FIXED (206546e) |
+| Wildlife ticks | `game/wildlife.ts` | audited — no frame-count cadence | ✅ clean |
+| Light flicker / minimap | `local-lights.ts`, `minimap.ts` | continuous-phase / cost-throttle only | ✅ not cadence bugs |
+
+**Audit complete.** All periodic-cadence timers are now real-time. Remaining
+frame counters are continuous phases (fire/light flicker via `sin(t)`) or pure
+cost-throttles (minimap redraw) — neither is a "machine-gun" cadence bug.
+
+## Asset inventory finding (2026-07-18) — placeholder concern is mostly a non-gap
+
+User asked to replace emoji placeholders with procedural assets. Measured via
+`__gameDebug.getAssetDefs()` + `hasAssetSprite()` + live teleports:
+
+- **Structures** (starter_cottage/wall_plaster/roof×3, castle_keep,
+  cathedral_chapel/wall): have `tileType` → render as **procedural nano
+  geometry** (stone walls, fences, roofs). Emoji is only an unused fallback.
+  Verified live — homestead renders as real stone+fence+roof, no emoji.
+- **NPCs** (merchant, villager, guardian, farmer, beekeeper, ranger, hermit,
+  miner, knight): render via the **parametric paper-cut sprite system**
+  (`npc-sprites.ts` NPC_APPEARANCES) — recombinant parts/colors/hats, not emoji.
+  Only ghost + cats intentionally stay emoji (non-human).
+- **Covered by SVG asset sprites:** trees, plants, collectibles, fire (animated),
+  gates, signs, chest, house/shop/hut/outhouse, bridge, animals (chicken…horse).
+
+**Conclusion:** the world is already procedural/parametric, not emoji-placeholder.
+The visual "soft/blurry" impression was (a) the resample bug (fixed) and (b) the
+dehydration health overlay (fixed), not missing assets. Remaining asset work is
+*polish/variety*, not replacing missing coverage.
 
 ## Test-verification notes (2026-07-18)
 - **Rendering batch (23 tests): PASS** with all changes (terrain-blend, visual,
