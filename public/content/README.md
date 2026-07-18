@@ -9,14 +9,14 @@ Emily's Game now has a scalable educational content system with externalized con
 ### Quiz Questions: see **`manifest.json`** (default-v1)
 - **Categories:** Math, Science, History, Language, Logic, Geography, Technology, Art
 - **Age Bands:** 5–7, 8–10, 11–12+
-- **Shards:** `quizzes-001` … `quizzes-006`
-  - `005` nature/explore · `006` **spaceflight history → today**
+- **Shards:** `quizzes-001` … `quizzes-007`
+  - `005` nature · `006` spaceflight · `007` **oceans & marine**
 - Live totals always in `manifest.json` stats
 
 ### Knowledge Articles: see **`manifest.json`**
 - **Subjects:** Math, Science, History, Language, Technology, Geography, Art
-- **Shards:** `articles-001` … `articles-003`
-  - `002` nature/meadow Book · `003` **spaceflight history Book**
+- **Shards:** `articles-001` … `articles-004`
+  - `002` nature · `003` spaceflight · `004` **oceans & marine Book**
 - Long-term target still ~120+ articles
 
 ## Architecture
@@ -65,16 +65,17 @@ Scans all shards and creates `manifest.json` with statistics.
 content/packs/default-v1/
 ├── manifest.json
 ├── quizzes/
-│   ├── quizzes-001.json … quizzes-005.json
-│   └── quizzes-006.json   # spaceflight history → today (2026-07)
+│   ├── quizzes-001.json … quizzes-006.json
+│   └── quizzes-007.json   # oceans & marine (2026-07)
 └── articles/
-    ├── articles-001.json … articles-002.json
-    └── articles-003.json  # spaceflight Book (2026-07)
+    ├── articles-001.json … articles-003.json
+    └── articles-004.json  # oceans Book (2026-07)
 ```
 
 Optional regenerators:
 - `python scripts/content-pipeline/author_nature_pack_slice.py`
 - `python scripts/content-pipeline/author_spaceflight_history_slice.py`
+- `python scripts/content-pipeline/author_oceans_marine_slice.py`
 
 ## Usage Example
 

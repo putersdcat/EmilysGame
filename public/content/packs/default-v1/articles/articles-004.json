@@ -1,0 +1,529 @@
+{
+  "shardId": "articles-004",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:36:24.000Z",
+  "articles": [
+    {
+      "id": "article_ocean_blue_planet_001",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Earth: The Blue Planet",
+      "summary": "Why our world looks so watery from space.",
+      "content": "From space, Earth looks mostly **blue** because oceans cover so much of the surface. Oceans store heat, make weather, and are home to countless animals.\n\nEven if you live far from the coast, rain that falls on meadows may have evaporated from the sea long ago. The ocean and the land are connected through the **water cycle**.",
+      "keyTerms": [
+        "ocean",
+        "Earth",
+        "water cycle",
+        "blue planet"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_water_cycle_link_002",
+        "article_ocean_salty_003"
+      ]
+    },
+    {
+      "id": "article_ocean_water_cycle_link_002",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Oceans and the Water Cycle",
+      "summary": "How seas feed clouds and rain.",
+      "content": "The Sun warms the ocean surface. Water **evaporates**, rises, forms clouds, and later falls as **precipitation**. Rivers return much of that water to the sea.\n\nOceans are the giant engine of Earth’s water cycle. When ocean temperatures change, weather patterns far inland can change too.",
+      "keyTerms": [
+        "evaporation",
+        "precipitation",
+        "ocean",
+        "weather"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_blue_planet_001",
+        "article_ocean_currents_006"
+      ]
+    },
+    {
+      "id": "article_ocean_salty_003",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Why Is the Ocean Salty?",
+      "summary": "Dissolved minerals from land and vents.",
+      "content": "Rain washes tiny amounts of minerals from rocks into rivers. Rivers carry those minerals to the sea. Over long ages, salts build up in the ocean.\n\nThat is why ocean water tastes salty and is not for drinking without special treatment. Different seas can be a bit more or less salty depending on rivers, ice, and evaporation.",
+      "keyTerms": [
+        "salt",
+        "minerals",
+        "rivers",
+        "salinity"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_blue_planet_001",
+        "article_ocean_tides_004"
+      ]
+    },
+    {
+      "id": "article_ocean_tides_004",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Tides: The Ocean’s Daily Rise and Fall",
+      "summary": "How the Moon helps pull the sea.",
+      "content": "**Tides** are regular rises and falls of sea level along coasts. The **Moon’s gravity** pulls on Earth’s oceans (the Sun helps too).\n\nAs Earth turns, shorelines move through tidal bulges, so many places see high and low tide each day. Tide pools left at low tide are great places to spot small ocean creatures — carefully and without harming them.",
+      "keyTerms": [
+        "tides",
+        "Moon",
+        "gravity",
+        "tide pool"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_salty_003",
+        "article_ocean_habitats_007"
+      ]
+    },
+    {
+      "id": "article_ocean_waves_005",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "How Waves Form",
+      "summary": "Wind energy dancing across the surface.",
+      "content": "Most waves you see at a beach start with **wind**. Air friction transfers energy into the water surface. Stronger, longer winds over more distance make bigger waves.\n\nWaves move energy; water particles mostly bob in place until the wave breaks near shore. Surfers ride that moving energy — carefully, with respect for the ocean’s power.",
+      "keyTerms": [
+        "waves",
+        "wind",
+        "energy",
+        "beach"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_tides_004",
+        "article_ocean_currents_006"
+      ]
+    },
+    {
+      "id": "article_ocean_currents_006",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Ocean Currents: Highways of Water",
+      "summary": "Moving heat and life around the planet.",
+      "content": "**Currents** are large-scale flows of ocean water. Winds, Earth’s rotation, temperature, and salinity all help shape them.\n\nCurrents carry warm and cold water, nutrients, and plankton. They influence climates of coastal cities and the routes ships choose. Scientists track currents with satellites, floats, and models to understand weather and climate.",
+      "keyTerms": [
+        "current",
+        "heat transport",
+        "climate",
+        "gyre"
+      ],
+      "readingLevel": 5.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_waves_005",
+        "article_ocean_climate_012"
+      ]
+    },
+    {
+      "id": "article_ocean_habitats_007",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Homes in the Sea",
+      "summary": "Reefs, kelp forests, and open water.",
+      "content": "The ocean is not one single habitat. It includes:\n- **Coral reefs** — busy cities of fish and coral\n- **Kelp forests** — tall seaweed “trees”\n- **Open ocean** — wide blue water\n- **Deep sea** — dark, cold, and mysterious\n\nEach place has animals adapted to its light, temperature, and food. Protecting habitats helps protect the animals that need them.",
+      "keyTerms": [
+        "habitat",
+        "coral reef",
+        "kelp",
+        "deep sea"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_coral_008",
+        "article_ocean_food_web_009"
+      ]
+    },
+    {
+      "id": "article_ocean_coral_008",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Coral Reefs: Living Walls",
+      "summary": "Tiny animals that build big ecosystems.",
+      "content": "**Corals** are animals. Many reef-building corals host tiny algae that share food from sunlight. Together they build rocky structures over long times.\n\nReefs shelter huge numbers of species. When water gets too warm or polluted, corals can **bleach** and weaken. Scientists and communities work to reduce stress and protect remaining reefs.",
+      "keyTerms": [
+        "coral",
+        "reef",
+        "algae",
+        "biodiversity"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_habitats_007",
+        "article_ocean_conservation_014"
+      ]
+    },
+    {
+      "id": "article_ocean_food_web_009",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Who Eats Whom in the Ocean?",
+      "summary": "From plankton to predators.",
+      "content": "Most ocean food webs start with tiny **phytoplankton** that make food from sunlight. Zooplankton eat them; small fish eat plankton; larger fish, seals, and sharks eat smaller animals.\n\nIf one link is damaged by overfishing or pollution, effects can ripple through the web. That is why ocean health matters even if you never go fishing yourself.",
+      "keyTerms": [
+        "food web",
+        "plankton",
+        "predator",
+        "prey"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_habitats_007",
+        "article_ocean_mammals_010"
+      ]
+    },
+    {
+      "id": "article_ocean_mammals_010",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Ocean Mammals",
+      "summary": "Whales, dolphins, and seals — air breathers at sea.",
+      "content": "Not every ocean animal is a fish! **Whales**, **dolphins**, and **seals** are **mammals**. They breathe air with lungs, are warm-blooded, and feed milk to babies.\n\nWhales may dive deep, but they must return to the surface to breathe. Watching them (from a safe distance) is a reminder that the ocean is full of surprising lives.",
+      "keyTerms": [
+        "whale",
+        "dolphin",
+        "mammal",
+        "breathe"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_food_web_009",
+        "article_ocean_blue_planet_001"
+      ]
+    },
+    {
+      "id": "article_ocean_deep_011",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "The Deep Sea",
+      "summary": "Darkness, pressure, and strange adaptations.",
+      "content": "Below the sunlit surface, light fades quickly. The **deep sea** is cold, dark, and under crushing pressure. Yet life thrives near **hydrothermal vents**, on abyssal plains, and in midwater with **bioluminescent** animals.\n\nHumans explore with **submersibles** and **ROVs** because divers cannot safely go that deep unaided. Every expedition still finds species new to science.",
+      "keyTerms": [
+        "deep sea",
+        "pressure",
+        "bioluminescence",
+        "ROV"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_exploration_013",
+        "article_ocean_food_web_009"
+      ]
+    },
+    {
+      "id": "article_ocean_climate_012",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Oceans and Climate",
+      "summary": "Heat storage, carbon, and changing seas.",
+      "content": "Oceans absorb huge amounts of heat and carbon dioxide. That slows some atmospheric warming but also causes **ocean warming**, **sea-level rise** (from expansion and melting ice), and **acidification** that stresses shell-builders.\n\nUnderstanding ocean climate helps societies prepare for storms, fisheries shifts, and coastal change. Science tools include satellites, tide gauges, and drifting Argo floats.",
+      "keyTerms": [
+        "climate",
+        "sea level",
+        "acidification",
+        "heat"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_currents_006",
+        "article_ocean_conservation_014"
+      ]
+    },
+    {
+      "id": "article_ocean_exploration_013",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Exploring the Ocean",
+      "summary": "Ships, sonar, satellites, and robots.",
+      "content": "We map and study oceans with many tools:\n- **Research ships** collect samples\n- **Sonar** measures depth with sound\n- **Satellites** watch temperature and color from space\n- **ROVs and AUVs** explore where people cannot easily go\n\nOcean exploration is still young compared with maps of land — most of the deep seafloor remains only roughly charted.",
+      "keyTerms": [
+        "sonar",
+        "satellite",
+        "ROV",
+        "research ship"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_deep_011",
+        "article_ocean_history_015"
+      ]
+    },
+    {
+      "id": "article_ocean_conservation_014",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Protecting the Ocean",
+      "summary": "What kids and communities can understand and support.",
+      "content": "Healthy oceans need less pollution, smarter fishing, and protected habitats. Helpful ideas include:\n- Reducing single-use plastics and never littering\n- Supporting **marine protected areas**\n- Choosing sustainable seafood when adults shop\n- Learning and sharing accurate science\n\nSmall actions add up when millions of people join in. The ocean is vast — and worth caring for.",
+      "keyTerms": [
+        "conservation",
+        "plastic",
+        "protected area",
+        "stewardship"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_coral_008",
+        "article_ocean_climate_012"
+      ]
+    },
+    {
+      "id": "article_ocean_history_015",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Ocean Science History Highlights",
+      "summary": "From ancient voyaging to modern oceanography.",
+      "content": "People have read coasts and currents for millennia. **Polynesian wayfinders** crossed the Pacific using stars and swells. Later, scientific voyages such as the **Challenger expedition** (1870s) helped found modern **oceanography** by measuring depths, chemistry, and life worldwide.\n\nToday’s global observing systems continue that mission with robots and satellites — a partnership of exploration and data.",
+      "keyTerms": [
+        "oceanography",
+        "Challenger",
+        "navigation",
+        "wayfinding"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_exploration_013",
+        "article_ocean_blue_planet_001"
+      ]
+    },
+    {
+      "id": "article_ocean_coasts_016",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Coasts and Beaches",
+      "summary": "Where land and sea shake hands.",
+      "content": "A **coast** is where land meets the ocean. **Beaches** form from sand, pebbles, or shells moved by waves. Storms can reshape a beach in a single night!\n\nCoasts are fun places to visit. Stay safe: watch waves, listen to lifeguards, and leave living creatures where they belong.",
+      "keyTerms": [
+        "coast",
+        "beach",
+        "waves",
+        "safety"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_waves_005",
+        "article_ocean_tides_004"
+      ]
+    },
+    {
+      "id": "article_ocean_fish_017",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Fishy Facts",
+      "summary": "Gills, fins, and scales.",
+      "content": "Most fish use **gills** to take oxygen from water. **Fins** help them steer and swim. Many have **scales** that protect their bodies.\n\nFish live in shallow reefs, open ocean, cold polar seas, and deep dark waters. Some school together for safety; others hide in sand or coral.",
+      "keyTerms": [
+        "fish",
+        "gills",
+        "fins",
+        "scales"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_food_web_009",
+        "article_ocean_habitats_007"
+      ]
+    },
+    {
+      "id": "article_ocean_careers_018",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Ocean Careers",
+      "summary": "Jobs that study and protect the sea.",
+      "content": "People who work with oceans include:\n- **Marine biologists** — study living things\n- **Oceanographers** — study water, climate, and seafloor\n- **Engineers** — build ships, sensors, and robots\n- **Conservationists** — protect habitats and species\n- **Educators** — teach others what the ocean needs\n\nCuriosity, careful measurement, and teamwork matter more than any single superpower.",
+      "keyTerms": [
+        "career",
+        "marine biologist",
+        "oceanographer",
+        "engineer"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      },
+      "related": [
+        "article_ocean_exploration_013",
+        "article_ocean_conservation_014"
+      ]
+    }
+  ]
+}

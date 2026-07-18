@@ -1,12 +1,12 @@
 {
   "schemaVersion": "1.0.0",
   "packName": "Default Educational Content Pack",
-  "packVersion": "2.2.0",
-  "description": "Educational content for Emily's Game — quizzes and Book articles across subjects and age bands. Includes nature/explore (2026-07) and spaceflight history to today.",
+  "packVersion": "2.3.0",
+  "description": "Educational content for Emily's Game — quizzes and Book articles. Expansions: nature/explore, spaceflight history, oceans & marine science.",
   "author": "Emily's Game Content Pipeline + agent educational content 2026-07",
   "license": "CC0-1.0",
   "createdAt": "2026-02-17T08:50:38.741Z",
-  "updatedAt": "2026-07-18T14:14:18.000Z",
+  "updatedAt": "2026-07-18T14:36:24.000Z",
   "shards": {
     "quizzes": [
       "quizzes-001.json",
@@ -14,40 +14,42 @@
       "quizzes-003.json",
       "quizzes-004.json",
       "quizzes-005.json",
-      "quizzes-006.json"
+      "quizzes-006.json",
+      "quizzes-007.json"
     ],
     "articles": [
       "articles-001.json",
       "articles-002.json",
-      "articles-003.json"
+      "articles-003.json",
+      "articles-004.json"
     ]
   },
   "stats": {
-    "totalQuizzes": 496,
-    "totalArticles": 68,
+    "totalQuizzes": 551,
+    "totalArticles": 86,
     "categoryCounts": {
-      "math": 123,
-      "science": 144,
-      "history": 69,
-      "language": 47,
-      "logic": 34,
-      "geography": 37,
-      "technology": 35,
-      "art": 7
+      "math": 127,
+      "science": 174,
+      "history": 73,
+      "language": 49,
+      "logic": 35,
+      "geography": 45,
+      "technology": 40,
+      "art": 8
     },
     "subjectCounts": {
       "math": 7,
-      "science": 19,
-      "history": 15,
+      "science": 31,
+      "history": 16,
       "language": 6,
-      "technology": 10,
-      "geography": 7,
+      "technology": 12,
+      "geography": 10,
       "art": 4
     },
     "ageBandCounts": {
-      "5-7": 144,
-      "8-10": 180,
-      "11-12+": 172
+      "5-7": 162,
+      "8-10": 198,
+      "11-12+": 191
     }
   }
 }
