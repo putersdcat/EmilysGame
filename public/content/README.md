@@ -24,8 +24,15 @@ Emily's Game now has a scalable educational content system with externalized con
 ### Schema v1 (`src/types/content-pack.types.ts`)
 - **QuizQuestionPack:** Quiz questions with metadata
 - **KnowledgeArticlePack:** Educational articles with metadata
+- **Optional `image`:** `{ url, alt, credit?, license? }` hero illustration in Book UI
 - **ContentPackManifest:** Pack-level metadata and statistics
 - **Sharding:** Max 100 questions or 50 articles per shard file
+
+### Book images
+- Structured field `article.image` (preferred) and/or markdown `![alt](url)` in body
+- **Allow-listed URLs only:** `/content/…`, `https://upload.wikimedia.org/…`, `https://images-assets.nasa.gov/…`
+- Pack ships free NASA public-domain files under `packs/default-v1/images/`
+- Renderer: `src/ui/markdown.ts` + Book CSS in `src/index.html`
 
 ### Metadata Features
 - **Age Banding:** 5-7, 8-10, 11-12+ with min/max age filtering

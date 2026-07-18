@@ -30,7 +30,13 @@
       "related": [
         "article_ocean_water_cycle_link_002",
         "article_ocean_salty_003"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_water_cycle_link_002",
@@ -59,7 +65,13 @@
       "related": [
         "article_ocean_blue_planet_001",
         "article_ocean_currents_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_salty_003",
@@ -88,7 +100,13 @@
       "related": [
         "article_ocean_blue_planet_001",
         "article_ocean_tides_004"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_tides_004",
@@ -117,7 +135,13 @@
       "related": [
         "article_ocean_salty_003",
         "article_ocean_habitats_007"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_waves_005",
@@ -146,7 +170,13 @@
       "related": [
         "article_ocean_tides_004",
         "article_ocean_currents_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_currents_006",
@@ -175,7 +205,13 @@
       "related": [
         "article_ocean_waves_005",
         "article_ocean_climate_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_habitats_007",
@@ -204,7 +240,13 @@
       "related": [
         "article_ocean_coral_008",
         "article_ocean_food_web_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_coral_008",
@@ -233,7 +275,13 @@
       "related": [
         "article_ocean_habitats_007",
         "article_ocean_conservation_014"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/coral.jpg",
+        "alt": "Underwater / reef-related NASA science imagery",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_food_web_009",
@@ -262,7 +310,13 @@
       "related": [
         "article_ocean_habitats_007",
         "article_ocean_mammals_010"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_mammals_010",
@@ -291,7 +345,13 @@
       "related": [
         "article_ocean_food_web_009",
         "article_ocean_blue_planet_001"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_deep_011",
@@ -320,7 +380,13 @@
       "related": [
         "article_ocean_exploration_013",
         "article_ocean_food_web_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_climate_012",
@@ -349,7 +415,13 @@
       "related": [
         "article_ocean_currents_006",
         "article_ocean_conservation_014"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_exploration_013",
@@ -378,7 +450,13 @@
       "related": [
         "article_ocean_deep_011",
         "article_ocean_history_015"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_conservation_014",
@@ -407,7 +485,13 @@
       "related": [
         "article_ocean_coral_008",
         "article_ocean_climate_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_history_015",
@@ -436,7 +520,13 @@
       "related": [
         "article_ocean_exploration_013",
         "article_ocean_blue_planet_001"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_coasts_016",
@@ -465,7 +555,13 @@
       "related": [
         "article_ocean_waves_005",
         "article_ocean_tides_004"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_fish_017",
@@ -494,7 +590,13 @@
       "related": [
         "article_ocean_food_web_009",
         "article_ocean_habitats_007"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_ocean_careers_018",
@@ -523,7 +625,13 @@
       "related": [
         "article_ocean_exploration_013",
         "article_ocean_conservation_014"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     }
   ]
 }

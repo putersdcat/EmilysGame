@@ -12,7 +12,7 @@ import {
   getBookArticleById, searchBookArticles,
   getBookArticlesBySubject,
 } from '../ui/book-content';
-import { renderMarkdown, escapeHtml } from '../ui/markdown';
+import { renderMarkdown, escapeHtml, renderBookImageFigure } from '../ui/markdown';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -315,8 +315,9 @@ function renderBrowseView(container: HTMLElement, state: KnowledgeState): void {
 
 function renderArticleView(container: HTMLElement, article: KnowledgeArticle, state: KnowledgeState): void {
   const subject = SUBJECTS.find(s => s.id === article.subject);
-  // Render markdown content to structured HTML (lists, headings, bold, etc.)
+  // Render markdown content to structured HTML (lists, headings, bold, images, etc.)
   const formattedContent = renderMarkdown(article.content);
+  const heroImageHtml = article.image ? renderBookImageFigure(article.image) : '';
 
   let keyTermsHtml = '';
   if (article.keyTerms.length > 0) {
@@ -347,6 +348,7 @@ function renderArticleView(container: HTMLElement, article: KnowledgeArticle, st
         <span style="color:${subject?.color || '#fff'}">${subject?.icon || '📖'}</span>
         <span class="book-article-full-title">${escapeHtml(article.title)}</span>
       </div>
+      ${heroImageHtml}
       <div class="book-article-body">${formattedContent}</div>
       ${keyTermsHtml}
       ${relatedHtml}

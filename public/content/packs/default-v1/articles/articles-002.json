@@ -30,7 +30,13 @@
       "related": [
         "article_nature_bees_002",
         "article_nature_photosynthesis_003"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_nature_bees_002",
@@ -59,7 +65,13 @@
       "related": [
         "article_nature_meadow_001",
         "article_nature_photosynthesis_003"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_nature_photosynthesis_003",
@@ -88,7 +100,13 @@
       "related": [
         "article_nature_meadow_001",
         "article_nature_water_cycle_004"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_nature_water_cycle_004",
@@ -117,7 +135,13 @@
       "related": [
         "article_geo_rivers_005",
         "article_nature_photosynthesis_003"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_geo_rivers_005",
@@ -146,7 +170,13 @@
       "related": [
         "article_nature_water_cycle_004",
         "article_hist_towns_rivers_008"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth photographed from space",
+        "credit": "NASA / Apollo program",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_geo_maps_006",
@@ -174,7 +204,13 @@
       },
       "related": [
         "article_geo_rivers_005"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth photographed from space",
+        "credit": "NASA / Apollo program",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_hist_castles_007",
@@ -203,7 +239,13 @@
       "related": [
         "article_hist_towns_rivers_008",
         "article_tech_simple_machines_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/sputnik.jpg",
+        "alt": "Sputnik 1 satellite replica",
+        "credit": "NASA / NSSDC (via Wikimedia)",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_hist_towns_rivers_008",
@@ -232,7 +274,13 @@
       "related": [
         "article_geo_rivers_005",
         "article_hist_castles_007"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth photographed from space",
+        "credit": "NASA / Apollo program",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_lang_nouns_009",
@@ -259,7 +307,13 @@
       },
       "related": [
         "article_lang_story_010"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_lang_story_010",
@@ -287,7 +341,13 @@
       },
       "related": [
         "article_lang_nouns_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_tech_algorithms_011",
@@ -315,7 +375,13 @@
       },
       "related": [
         "article_tech_simple_machines_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_tech_simple_machines_012",
@@ -344,7 +410,13 @@
       "related": [
         "article_tech_algorithms_011",
         "article_hist_castles_007"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_art_color_013",
@@ -371,7 +443,13 @@
       },
       "related": [
         "article_art_landscape_014"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/nebula.jpg",
+        "alt": "Colorful nebula in space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_art_landscape_014",
@@ -400,7 +478,13 @@
       "related": [
         "article_art_color_013",
         "article_nature_meadow_001"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/nebula.jpg",
+        "alt": "Colorful nebula in space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_math_garden_015",
@@ -427,7 +511,13 @@
       },
       "related": [
         "article_math_area_016"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_math_area_016",
@@ -455,7 +545,13 @@
       },
       "related": [
         "article_math_garden_015"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_science_seasons_017",
@@ -485,7 +581,13 @@
       "related": [
         "article_nature_meadow_001",
         "article_nature_deciduous_018"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_nature_deciduous_018",
@@ -514,7 +616,13 @@
       "related": [
         "article_science_seasons_017",
         "article_nature_photosynthesis_003"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_logic_patterns_019",
@@ -541,7 +649,13 @@
       },
       "related": [
         "article_tech_algorithms_011"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-night.jpg",
+        "alt": "Earth and ocean from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_geo_compass_020",
@@ -570,7 +684,13 @@
       },
       "related": [
         "article_geo_maps_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth photographed from space",
+        "credit": "NASA / Apollo program",
+        "license": "Public domain (NASA)"
+      }
     }
   ]
 }

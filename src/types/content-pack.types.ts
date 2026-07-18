@@ -61,6 +61,18 @@ export interface QuizQuestionPack {
 
 // ─── Knowledge Article Schema ────────────────────────────────
 
+/** Optional hero / inline illustration for Book articles (allow-listed hosts only). */
+export interface KnowledgeArticleImage {
+  /** Absolute https URL or site-root path under /content/… */
+  url: string;
+  /** Accessible alt text */
+  alt: string;
+  /** Short credit line shown under the image (license + source) */
+  credit?: string;
+  /** License short code, e.g. "Public Domain", "CC BY-SA 4.0" */
+  license?: string;
+}
+
 export interface KnowledgeArticlePack {
   id: string;
   subject: SubjectId;
@@ -74,6 +86,8 @@ export interface KnowledgeArticlePack {
   related?: string[];
   /** Reading level estimate (Flesch-Kincaid grade level) */
   readingLevel?: number;
+  /** Optional illustration shown at the top of the article view */
+  image?: KnowledgeArticleImage;
   provenance: ProvenanceMetadata;
 }
 

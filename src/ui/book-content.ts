@@ -80,6 +80,14 @@ function _convertPackArticle(pa: KnowledgeArticlePack): KnowledgeArticle {
     content: pa.content,
     keyTerms: pa.keyTerms,
     related: pa.related,
+    image: pa.image
+      ? {
+          url: pa.image.url,
+          alt: pa.image.alt,
+          credit: pa.image.credit,
+          license: pa.image.license,
+        }
+      : undefined,
   };
 }
 

@@ -31,7 +31,13 @@
       "related": [
         "article_space_gagarin_002",
         "article_space_orbit_basics_010"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/sputnik.jpg",
+        "alt": "Sputnik 1 satellite replica",
+        "credit": "NASA / NSSDC (via Wikimedia)",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_gagarin_002",
@@ -61,7 +67,13 @@
       "related": [
         "article_space_age_begins_001",
         "article_space_apollo11_004"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_women_pioneers_003",
@@ -91,7 +103,13 @@
       "related": [
         "article_space_gagarin_002",
         "article_space_iss_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_apollo11_004",
@@ -121,7 +139,13 @@
       "related": [
         "article_space_apollo_program_005",
         "article_space_artemis_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
+        "alt": "The Moon from Apollo",
+        "credit": "NASA / Apollo",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_apollo_program_005",
@@ -151,7 +175,13 @@
       "related": [
         "article_space_apollo11_004",
         "article_space_shuttle_007"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
+        "alt": "The Moon from Apollo",
+        "credit": "NASA / Apollo",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_iss_006",
@@ -181,7 +211,13 @@
       "related": [
         "article_space_orbit_basics_010",
         "article_space_commercial_008"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_shuttle_007",
@@ -211,7 +247,13 @@
       "related": [
         "article_space_iss_006",
         "article_space_telescopes_011"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_commercial_008",
@@ -241,7 +283,13 @@
       "related": [
         "article_space_iss_006",
         "article_space_artemis_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_artemis_009",
@@ -271,7 +319,13 @@
       "related": [
         "article_space_apollo11_004",
         "article_space_mars_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
+        "alt": "The Moon from Apollo",
+        "credit": "NASA / Apollo",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_orbit_basics_010",
@@ -301,7 +355,13 @@
       "related": [
         "article_space_age_begins_001",
         "article_space_iss_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_telescopes_011",
@@ -331,7 +391,13 @@
       "related": [
         "article_space_shuttle_007",
         "article_space_mars_012"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/hubble-galaxy.jpg",
+        "alt": "Galaxy image from space telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_mars_012",
@@ -361,7 +427,13 @@
       "related": [
         "article_space_artemis_009",
         "article_space_probes_013"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/mars-rover.jpg",
+        "alt": "Mars rover",
+        "credit": "NASA / JPL",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_probes_013",
@@ -391,7 +463,13 @@
       "related": [
         "article_space_mars_012",
         "article_space_orbit_basics_010"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_rockets_014",
@@ -421,7 +499,13 @@
       "related": [
         "article_space_orbit_basics_010",
         "article_space_commercial_008"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_timeline_015",
@@ -453,7 +537,13 @@
         "article_space_age_begins_001",
         "article_space_commercial_008",
         "article_space_artemis_009"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_careers_016",
@@ -483,7 +573,13 @@
       "related": [
         "article_space_iss_006",
         "article_space_rockets_014"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_china_india_017",
@@ -513,7 +609,13 @@
       "related": [
         "article_space_timeline_015",
         "article_space_iss_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     },
     {
       "id": "article_space_safety_018",
@@ -543,7 +645,13 @@
       "related": [
         "article_space_rockets_014",
         "article_space_iss_006"
-      ]
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Space Shuttle and Hubble Space Telescope",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
     }
   ]
 }

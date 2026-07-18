@@ -7,16 +7,34 @@
  *   - Unordered lists (- or • prefix)
  *   - Ordered lists (1. 2. 3. prefix)
  *   - **Header:** patterns (bold text ending in colon → <h4>)
+ *   - Images: ![alt](url) — only allow-listed URL prefixes
  *   - Inline emoji preserved
  *
  * All output is sanitized through a strict allow-list.
- * No raw innerHTML from user/pack content passes through unsanitized.
- *
- * TODO: DOC - Markdown renderer feature overview
  */
 
-// ─── Markdown Parser ────────────────────────────────────────
-// #159: sanitizer (sanitizeHtml, filterAttributes, escapeAttrValue) deleted — recoverable from git
+// ─── Safe image URLs (Book illustrations) ───────────────────
+
+/** Hosts / path prefixes allowed for embedded Book images. */
+export const BOOK_IMAGE_ALLOWLIST: readonly string[] = [
+  'https://upload.wikimedia.org/',
+  'http://upload.wikimedia.org/',
+  'https://images-assets.nasa.gov/',
+  'http://images-assets.nasa.gov/',
+  '/content/',
+  'content/',
+];
+
+/**
+ * Return true if `url` is safe to use in a Book <img src>.
+ */
+export function isAllowedBookImageUrl(url: string): boolean {
+  const u = (url || '').trim();
+  if (!u) return false;
+  // Block obvious script / data abuse
+  if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return false;
+  return BOOK_IMAGE_ALLOWLIST.some((prefix) => u.startsWith(prefix));
+}
 
 /**
  * Render a markdown-subset string to sanitized HTML.
@@ -35,6 +53,15 @@ export function renderMarkdown(text: string): string {
 
     const lines = trimmed.split('\n');
 
+    // Standalone image paragraph: ![alt](url)
+    if (lines.length === 1) {
+      const imgHtml = tryParseImageLine(lines[0].trim());
+      if (imgHtml) {
+        blocks.push(imgHtml);
+        continue;
+      }
+    }
+
     // Check if this paragraph is entirely a list
     const listResult = tryParseList(lines);
     if (listResult) {
@@ -42,16 +69,15 @@ export function renderMarkdown(text: string): string {
       continue;
     }
 
-    // Check if first line is a standalone bold header (e.g. "**Parts of an Atom:**")
-    // followed by list items
+    // Check if first line is a standalone bold header followed by list items
     const headerListResult = tryParseHeaderWithList(lines);
     if (headerListResult) {
       blocks.push(headerListResult);
       continue;
     }
 
-    // Regular paragraph — apply inline formatting
-    const formattedLines = lines.map(l => formatInline(l.trim()));
+    // Regular paragraph — apply inline formatting (including inline images)
+    const formattedLines = lines.map((l) => formatInline(l.trim()));
     blocks.push(`<p>${formattedLines.join('<br>')}</p>`);
   }
 
@@ -62,6 +88,7 @@ export function renderMarkdown(text: string): string {
 
 const UL_RE = /^[-•]\s+(.+)$/;
 const OL_RE = /^(\d+)[.)]\s+(.+)$/;
+const IMG_RE = /^!\[([^\]]*)\]\(([^)]+)\)$/;
 
 function isUnorderedListLine(line: string): boolean {
   return UL_RE.test(line.trim());
@@ -71,19 +98,30 @@ function isOrderedListLine(line: string): boolean {
   return OL_RE.test(line.trim());
 }
 
+function tryParseImageLine(line: string): string | null {
+  const m = line.match(IMG_RE);
+  if (!m) return null;
+  const alt = m[1];
+  const url = m[2].trim();
+  if (!isAllowedBookImageUrl(url)) return null;
+  return (
+    `<figure class="book-md-figure">` +
+    `<img class="book-md-img" src="${escapeAttr(url)}" alt="${escapeAttr(alt)}" loading="lazy" decoding="async" />` +
+    `</figure>`
+  );
+}
+
 function tryParseList(lines: string[]): string | null {
-  // Check unordered list
-  if (lines.every(l => isUnorderedListLine(l))) {
-    const items = lines.map(l => {
+  if (lines.every((l) => isUnorderedListLine(l))) {
+    const items = lines.map((l) => {
       const m = l.trim().match(UL_RE);
       return `<li>${formatInline(m![1])}</li>`;
     });
     return `<ul>${items.join('')}</ul>`;
   }
 
-  // Check ordered list
-  if (lines.every(l => isOrderedListLine(l))) {
-    const items = lines.map(l => {
+  if (lines.every((l) => isOrderedListLine(l))) {
+    const items = lines.map((l) => {
       const m = l.trim().match(OL_RE);
       return `<li>${formatInline(m![2])}</li>`;
     });
@@ -97,23 +135,21 @@ function tryParseHeaderWithList(lines: string[]): string | null {
   if (lines.length < 2) return null;
 
   const firstLine = lines[0].trim();
-  // Check if first line is a bold header pattern: **Something:**
   const headerMatch = firstLine.match(/^\*\*(.+?):\*\*\s*$/);
   if (!headerMatch) return null;
 
   const restLines = lines.slice(1);
 
-  // Rest should be a list
-  if (restLines.every(l => isUnorderedListLine(l))) {
-    const items = restLines.map(l => {
+  if (restLines.every((l) => isUnorderedListLine(l))) {
+    const items = restLines.map((l) => {
       const m = l.trim().match(UL_RE);
       return `<li>${formatInline(m![1])}</li>`;
     });
     return `<h4>${formatInline(headerMatch[1])}</h4><ul>${items.join('')}</ul>`;
   }
 
-  if (restLines.every(l => isOrderedListLine(l))) {
-    const items = restLines.map(l => {
+  if (restLines.every((l) => isOrderedListLine(l))) {
+    const items = restLines.map((l) => {
       const m = l.trim().match(OL_RE);
       return `<li>${formatInline(m![2])}</li>`;
     });
@@ -125,31 +161,41 @@ function tryParseHeaderWithList(lines: string[]): string | null {
 
 // ─── Inline Formatting ──────────────────────────────────────
 
-/**
- * Apply inline markdown formatting to a single line.
- * Handles **bold**, *italic*, and escapes HTML entities.
- */
 function formatInline(text: string): string {
-  // First escape any raw HTML
   let safe = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // **bold** → <strong>
-  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Images first (so brackets inside alt/url aren't mangled by bold)
+  safe = safe.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_full, alt: string, url: string) => {
+    const u = url.trim();
+    if (!isAllowedBookImageUrl(u)) {
+      return escapeHtml(alt || 'image');
+    }
+    return (
+      `<img class="book-md-img book-md-img-inline" src="${escapeAttr(u)}" ` +
+      `alt="${escapeAttr(alt)}" loading="lazy" decoding="async" />`
+    );
+  });
 
-  // *italic* (but not **) → <em>
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   safe = safe.replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
 
   return safe;
 }
 
-// ─── Public Helpers ─────────────────────────────────────────
+function escapeAttr(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 /**
  * Escape a string for safe use in HTML text content.
- * Use for titles, summaries, and any single-line text.
  */
 export function escapeHtml(text: string): string {
   return text
@@ -158,4 +204,28 @@ export function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+/**
+ * Build a safe figure HTML block for a structured article image field.
+ * Returns empty string if URL is not allow-listed.
+ */
+export function renderBookImageFigure(image: {
+  url: string;
+  alt: string;
+  credit?: string;
+  license?: string;
+}): string {
+  if (!isAllowedBookImageUrl(image.url)) return '';
+  const creditBits = [image.credit, image.license].filter(Boolean).join(' · ');
+  const cap = creditBits
+    ? `<figcaption class="book-image-credit">${escapeHtml(creditBits)}</figcaption>`
+    : '';
+  return (
+    `<figure class="book-article-figure">` +
+    `<img class="book-article-img" src="${escapeAttr(image.url)}" ` +
+    `alt="${escapeAttr(image.alt)}" loading="lazy" decoding="async" />` +
+    cap +
+    `</figure>`
+  );
 }
