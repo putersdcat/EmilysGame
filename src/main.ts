@@ -730,15 +730,15 @@ function handleTradeInput(state: GameState, justKeys: any, input: InputManager):
  * All subsystems are throttled (frame-count modulo) to avoid CPU churn.
  * No early-return semantics — runs every frame, no input.endFrame() needed.
  */
-function tickSubsystems(state: GameState, justKeys: any): void {
+function tickSubsystems(state: GameState, justKeys: any, dtMs: number = 16.67): void {
   // --- Survival Status tick (#70) ---
-  // tickStatus self-throttles internally (every 300 frames)
+  // tickStatus self-throttles internally by real elapsed ms (frame-rate independent)
   {
     const cs = WORLD_CONFIG.chunkSize;
     const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
     const chunk = state.chunks.get(cKey);
     const biomeId = chunk?.biomeId ?? 0;
-    tickStatus(state.status, state.player.isMoving, biomeId);
+    tickStatus(state.status, state.player.isMoving, biomeId, dtMs);
     // Music biome awareness (#74) — switch tracks on biome change
     musicSetBiome(state.music, biomeId);
   }
@@ -1134,7 +1134,7 @@ function update(state: GameState, input: InputManager, dtMs: number = 16.67): vo
   // Handled in extended input listener below
 
   // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
-  tickSubsystems(state, justKeys);
+  tickSubsystems(state, justKeys, dtMs);
 
   // Snapshot input for edge detection next frame
   input.endFrame();

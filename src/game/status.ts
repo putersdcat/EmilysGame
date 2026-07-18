@@ -25,8 +25,11 @@ export interface StatusDebuff {
 
 // ─── Constants ───────────────────────────────────────────────
 
-/** How often status ticks (every N frames). Game runs ~60fps, so 300 = ~5 seconds. */
-const TICK_INTERVAL = 300;
+/** How often status ticks, in real milliseconds (frame-rate independent).
+ *  Was "every 300 frames" — which assumed 60fps, but the render loop can run
+ *  far faster (or slower), draining status several times too fast. Time-based
+ *  so the drain rate is constant in real seconds. */
+const TICK_INTERVAL_MS = 5000;
 
 /** Base drain per tick (very slow — takes ~20 minutes to empty from 100) */
 const ENERGY_DRAIN = 0.4;
@@ -60,20 +63,22 @@ export function createPlayerStatus(): PlayerStatus {
 
 // ─── Tick Logic ──────────────────────────────────────────────
 
-let tickCounter = 0;
+let tickAccumMs = 0;
 
 /**
- * Called every frame. Internally throttled to TICK_INTERVAL.
- * Returns true if status actually ticked (for UI update optimization).
+ * Called every frame. Internally throttled to TICK_INTERVAL_MS of real time.
+ * Pass the frame's real delta time (dtMs) so the throttle is frame-rate
+ * independent. Returns true if status actually ticked (for UI update optimization).
  */
 export function tickStatus(
   status: PlayerStatus,
   isMoving: boolean,
   biomeId: number,
+  dtMs: number = 16.67,
 ): boolean {
-  tickCounter++;
-  if (tickCounter < TICK_INTERVAL) return false;
-  tickCounter = 0;
+  tickAccumMs += dtMs;
+  if (tickAccumMs < TICK_INTERVAL_MS) return false;
+  tickAccumMs = 0;
 
   // Energy drain
   status.energy -= ENERGY_DRAIN;
@@ -232,7 +237,7 @@ export function getStatusColor(value: number): string {
   return '#f44336';
 }
 
-/** Reset tick counter (for testing) */
+/** Reset tick accumulator (for testing / save-load / new game) */
 export function resetTickCounter(): void {
-  tickCounter = 0;
+  tickAccumMs = 0;
 }
