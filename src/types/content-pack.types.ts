@@ -21,7 +21,7 @@ export interface AgeMetadata {
 // ─── Difficulty & Categories ─────────────────────────────────
 
 export type QuizDifficulty = 'easy' | 'medium' | 'hard';
-export type QuizCategory = 'math' | 'science' | 'history' | 'language' | 'logic' | 'geography' | 'technology';
+export type QuizCategory = 'math' | 'science' | 'history' | 'language' | 'logic' | 'geography' | 'technology' | 'art';
 export type SubjectId = 'math' | 'science' | 'history' | 'language' | 'technology' | 'geography' | 'art';
 
 // ─── Provenance & Versioning ─────────────────────────────────

@@ -1,0 +1,1603 @@
+{
+  "shardId": "quizzes-005",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:09:00.000Z",
+  "questions": [
+    {
+      "id": "q_nature_s_e_001",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do green plants need to make their food?",
+      "answers": [
+        "Sunlight, water, and air",
+        "Only rocks",
+        "Only darkness",
+        "Only salt"
+      ],
+      "hint": "Think of a sunny garden after rain.",
+      "explanation": "Plants use sunlight, water, and carbon dioxide from the air to make food.",
+      "tags": [
+        "plants",
+        "nature",
+        "photosynthesis"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_e_002",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Which animal is famous for making honey?",
+      "answers": [
+        "Bee",
+        "Cat",
+        "Frog",
+        "Horse"
+      ],
+      "hint": "Buzz!",
+      "explanation": "Honeybees collect nectar and turn it into honey.",
+      "tags": [
+        "animals",
+        "insects",
+        "farm"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_e_003",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do most birds use to fly?",
+      "answers": [
+        "Wings",
+        "Fins",
+        "Roots",
+        "Wheels"
+      ],
+      "hint": "Look at a bird’s arms.",
+      "explanation": "Birds have wings with feathers that help them fly.",
+      "tags": [
+        "animals",
+        "birds"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_e_004",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A baby chick usually hatches from a…",
+      "answers": [
+        "Egg",
+        "Puddle",
+        "Cloud",
+        "Stone"
+      ],
+      "hint": "Farmyard clue.",
+      "explanation": "Chicks hatch from eggs.",
+      "tags": [
+        "animals",
+        "farm"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_e_005",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What falls from clouds as liquid water?",
+      "answers": [
+        "Rain",
+        "Only lightning",
+        "Only smoke",
+        "Only dust"
+      ],
+      "hint": "Wet weather.",
+      "explanation": "Rain is liquid water falling from clouds.",
+      "tags": [
+        "weather",
+        "water"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_e_006",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Which animal says “moo” and gives milk people drink?",
+      "answers": [
+        "Cow",
+        "Owl",
+        "Snake",
+        "Fish"
+      ],
+      "hint": "Farm animal.",
+      "explanation": "Cows are farm animals that produce milk.",
+      "tags": [
+        "animals",
+        "farm"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_m_007",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is the name of the process plants use to make sugar from sunlight?",
+      "answers": [
+        "Photosynthesis",
+        "Digestion",
+        "Erosion",
+        "Freezing"
+      ],
+      "hint": "Photo means light.",
+      "explanation": "Photosynthesis turns light energy into chemical energy stored as sugar.",
+      "tags": [
+        "plants",
+        "photosynthesis"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_m_008",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why do bees visit flowers?",
+      "answers": [
+        "For nectar and pollen",
+        "To eat only rocks",
+        "To drink oil",
+        "To hunt foxes"
+      ],
+      "hint": "Sweet fuel for the hive.",
+      "explanation": "Bees collect nectar and pollen; they also pollinate plants as they travel.",
+      "tags": [
+        "insects",
+        "pollination",
+        "nature"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_m_009",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a habitat?",
+      "answers": [
+        "A place where a living thing lives",
+        "A type of metal only",
+        "A weather report",
+        "A math formula"
+      ],
+      "hint": "Think “home.”",
+      "explanation": "A habitat is the natural home of plants and animals.",
+      "tags": [
+        "ecology",
+        "habitat"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_m_010",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Which gas do plants take in during photosynthesis?",
+      "answers": [
+        "Carbon dioxide",
+        "Helium",
+        "Only hydrogen",
+        "Neon"
+      ],
+      "hint": "We breathe out some of it.",
+      "explanation": "Plants take in carbon dioxide and release oxygen.",
+      "tags": [
+        "plants",
+        "air"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_m_011",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What do roots mostly help a plant do?",
+      "answers": [
+        "Take up water and hold the plant in place",
+        "Only make music",
+        "Only fly",
+        "Only melt ice"
+      ],
+      "hint": "Underground helpers.",
+      "explanation": "Roots absorb water and nutrients and anchor the plant.",
+      "tags": [
+        "plants",
+        "roots"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_h_012",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is pollination?",
+      "answers": [
+        "Moving pollen so plants can make seeds",
+        "Melting glaciers only",
+        "Digging tunnels only",
+        "Counting stars only"
+      ],
+      "hint": "Pollen travel.",
+      "explanation": "Pollination transfers pollen so seeds (and often fruit) can form.",
+      "tags": [
+        "pollination",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_h_013",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A simple food chain usually starts with…",
+      "answers": [
+        "Producers like plants",
+        "Only large predators",
+        "Clouds",
+        "Metals"
+      ],
+      "hint": "Who makes food first?",
+      "explanation": "Producers (often plants) capture energy first; other organisms eat that energy.",
+      "tags": [
+        "ecology",
+        "food-chain"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_h_014",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does deciduous mean for many trees?",
+      "answers": [
+        "They shed leaves in a season",
+        "They never grow leaves",
+        "They live only underwater",
+        "They are artificial"
+      ],
+      "hint": "Autumn clue.",
+      "explanation": "Deciduous trees lose their leaves seasonally, often in fall.",
+      "tags": [
+        "trees",
+        "nature"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_nature_s_h_015",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Why is compost useful in a garden?",
+      "answers": [
+        "It returns nutrients to the soil",
+        "It turns soil into plastic",
+        "It removes all water forever",
+        "It stops sunlight"
+      ],
+      "hint": "Recycling for dirt.",
+      "explanation": "Compost breaks down plant waste into nutrients plants can use again.",
+      "tags": [
+        "soil",
+        "gardening",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_e_001",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is a river?",
+      "answers": [
+        "Fresh water that flows across land",
+        "A mountain made of cheese",
+        "A cloud of only dust",
+        "A type of star"
+      ],
+      "hint": "It moves and can make a bridge useful.",
+      "explanation": "A river is a flowing body of fresh water that travels across land toward a lake, sea, or ocean.",
+      "tags": [
+        "water",
+        "river",
+        "nature"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_e_002",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Which is bigger: a hill or a mountain (usually)?",
+      "answers": [
+        "A mountain",
+        "A pebble",
+        "A raindrop",
+        "A seed"
+      ],
+      "hint": "Taller landform.",
+      "explanation": "Mountains are generally much taller and steeper than hills.",
+      "tags": [
+        "landforms"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_e_003",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call a large area of flat grassy land?",
+      "answers": [
+        "A plain or meadow",
+        "A volcano crater only",
+        "An iceberg only",
+        "A canyon always"
+      ],
+      "hint": "Open green space.",
+      "explanation": "Plains and meadows are open grassy lands; meadows often have wildflowers too.",
+      "tags": [
+        "meadow",
+        "landforms"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_m_004",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a map’s compass rose for?",
+      "answers": [
+        "Showing directions like north and south",
+        "Measuring only temperature",
+        "Telling only jokes",
+        "Counting only animals"
+      ],
+      "hint": "N, S, E, W.",
+      "explanation": "A compass rose marks cardinal directions on a map.",
+      "tags": [
+        "maps",
+        "direction"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_m_005",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Fresh water you can often drink (after cleaning) usually comes from…",
+      "answers": [
+        "Rivers, lakes, and underground aquifers",
+        "Only ocean saltwater straight from the sea",
+        "Only volcano lava",
+        "Only empty space"
+      ],
+      "hint": "Not the salty ocean as-is.",
+      "explanation": "Most drinking water comes from freshwater sources like rivers, lakes, and groundwater.",
+      "tags": [
+        "water",
+        "resources"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_m_006",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an island?",
+      "answers": [
+        "Land completely surrounded by water",
+        "A cloud",
+        "A desert with no edges",
+        "A single raindrop"
+      ],
+      "hint": "Water all around.",
+      "explanation": "An island is a piece of land surrounded by water.",
+      "tags": [
+        "landforms",
+        "water"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_h_007",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is the water cycle’s main driver of evaporation on Earth?",
+      "answers": [
+        "Energy from the Sun",
+        "Moon rocks only",
+        "Underground magnets only",
+        "Human whistling only"
+      ],
+      "hint": "Heat from above.",
+      "explanation": "Sunlight heats water so it evaporates; later it condenses and falls as precipitation.",
+      "tags": [
+        "water-cycle",
+        "weather"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_geo_h_008",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A watershed is best described as…",
+      "answers": [
+        "Land that drains into a common river or lake",
+        "A single raindrop",
+        "A type of cloud only",
+        "A mountain’s shadow only"
+      ],
+      "hint": "Where rain ends up.",
+      "explanation": "A watershed is an area of land where all water drains toward the same body of water.",
+      "tags": [
+        "water",
+        "rivers",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_e_001",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Long ago, many people wrote on paper-like sheets made from plants in Egypt called…",
+      "answers": [
+        "Papyrus",
+        "Plastic wrap",
+        "Aluminum foil",
+        "Rubber"
+      ],
+      "hint": "Ancient river culture.",
+      "explanation": "Ancient Egyptians used papyrus, made from a river plant, as a writing surface.",
+      "tags": [
+        "ancient",
+        "writing"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_e_002",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A castle’s high lookout wall is often called a…",
+      "answers": [
+        "Tower or battlement area",
+        "Pillow fort only",
+        "Kitchen sink",
+        "Rain cloud"
+      ],
+      "hint": "Stone fortress.",
+      "explanation": "Castles used towers and walls so people could see far and stay safer.",
+      "tags": [
+        "castles",
+        "middle-ages"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_m_003",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why were many old towns built near rivers?",
+      "answers": [
+        "Water for drinking, travel, and farming",
+        "Rivers block all sunlight",
+        "Rivers create deserts only",
+        "Rivers remove gravity"
+      ],
+      "hint": "Water = life and roads.",
+      "explanation": "Rivers provided water, fish, fertile soil, and routes for boats and trade.",
+      "tags": [
+        "settlements",
+        "rivers"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_m_004",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What was a common job of a medieval blacksmith?",
+      "answers": [
+        "Making tools and metal items",
+        "Only painting clouds",
+        "Only counting stars",
+        "Only weaving rain"
+      ],
+      "hint": "Hammer and fire.",
+      "explanation": "Blacksmiths heated and shaped metal into tools, horseshoes, and more.",
+      "tags": [
+        "middle-ages",
+        "crafts"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_h_005",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "The Silk Road was mainly a network for…",
+      "answers": [
+        "Trade and cultural exchange across Asia and beyond",
+        "Only underwater swimming races",
+        "Only ice skating",
+        "Only building sandcastles"
+      ],
+      "hint": "Long-distance goods.",
+      "explanation": "The Silk Road linked regions through trade of goods, ideas, and technologies.",
+      "tags": [
+        "trade",
+        "world-history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_hist_h_006",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Why do historians use multiple sources?",
+      "answers": [
+        "To check facts and reduce mistakes or bias",
+        "To make stories longer only",
+        "To avoid reading",
+        "To erase maps"
+      ],
+      "hint": "Cross-checking.",
+      "explanation": "Comparing sources helps historians build a more accurate picture of the past.",
+      "tags": [
+        "methods",
+        "evidence"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_e_001",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Which word is a noun (a person, place, or thing)?",
+      "answers": [
+        "River",
+        "Quickly",
+        "Happy",
+        "Run"
+      ],
+      "hint": "Name of a thing.",
+      "explanation": "River names a place/thing; quickly is an adverb; happy is often an adjective; run is a verb.",
+      "tags": [
+        "grammar",
+        "noun"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_e_002",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we put at the end of a telling sentence?",
+      "answers": [
+        "A period (.)",
+        "Only a question mark always",
+        "Only a comma forever",
+        "Nothing ever"
+      ],
+      "hint": "Stop sign for sentences.",
+      "explanation": "Statements usually end with a period.",
+      "tags": [
+        "punctuation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_m_003",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "A synonym is a word that…",
+      "answers": [
+        "Means nearly the same as another word",
+        "Means the opposite always",
+        "Is always a number",
+        "Is always silent"
+      ],
+      "hint": "Same-ish meaning.",
+      "explanation": "Synonyms have similar meanings (happy / glad).",
+      "tags": [
+        "vocabulary",
+        "synonym"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_m_004",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "An antonym is a word that…",
+      "answers": [
+        "Means the opposite",
+        "Means exactly the same always",
+        "Has no letters",
+        "Is only used in math"
+      ],
+      "hint": "Opposite pair.",
+      "explanation": "Antonyms are opposites (hot / cold).",
+      "tags": [
+        "vocabulary",
+        "antonym"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_h_005",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What is a metaphor?",
+      "answers": [
+        "A comparison that says one thing is another",
+        "A list of only numbers",
+        "A type of rock",
+        "A weather tool"
+      ],
+      "hint": "Not using like or as.",
+      "explanation": "A metaphor compares by saying something is something else (time is a thief).",
+      "tags": [
+        "figurative-language",
+        "metaphor"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_lang_h_006",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A topic sentence usually…",
+      "answers": [
+        "States the main idea of a paragraph",
+        "Ends every story with a joke only",
+        "Deletes evidence",
+        "Removes punctuation"
+      ],
+      "hint": "Main idea first.",
+      "explanation": "Topic sentences introduce what the paragraph is about.",
+      "tags": [
+        "writing",
+        "paragraphs"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_logic_e_001",
+      "category": "logic",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "If all flowers need water, and roses are flowers, then roses…",
+      "answers": [
+        "Need water",
+        "Never need water",
+        "Are made of metal",
+        "Cannot grow"
+      ],
+      "hint": "Follow the rule.",
+      "explanation": "If the rule applies to all flowers, it applies to roses too.",
+      "tags": [
+        "reasoning",
+        "deduction"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_logic_m_002",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Pattern: 2, 4, 6, 8, … What comes next?",
+      "answers": [
+        "10",
+        "9",
+        "1",
+        "100"
+      ],
+      "hint": "Even numbers stepping up.",
+      "explanation": "The pattern adds 2 each time.",
+      "tags": [
+        "patterns",
+        "sequences"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_logic_m_003",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "You have 3 boxes: one labeled wrong, one empty, one with apples — wait: simpler: A fence has 3 sides already. How many more sides to close a square pen?",
+      "answers": [
+        "1",
+        "4",
+        "0",
+        "10"
+      ],
+      "hint": "Square has 4 sides total.",
+      "explanation": "A square pen needs 4 sides; 3 built means 1 remaining.",
+      "tags": [
+        "spatial",
+        "counting"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_logic_h_004",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If it rains, the ground gets wet. The ground is dry. What can you conclude?",
+      "answers": [
+        "It is not raining now (from this rule)",
+        "It must be raining hard",
+        "The sun cannot exist",
+        "Water is impossible"
+      ],
+      "hint": "Contrapositive thinking.",
+      "explanation": "If rain always wets the ground, dry ground means it is not currently raining (under that simple rule).",
+      "tags": [
+        "reasoning",
+        "implication"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_e_001",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What does a computer program tell a computer?",
+      "answers": [
+        "What steps to follow",
+        "Only how to rain",
+        "Only how to grow trees",
+        "Only how to sleep forever"
+      ],
+      "hint": "Instructions.",
+      "explanation": "Programs are step-by-step instructions a computer can run.",
+      "tags": [
+        "computers",
+        "coding-basics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_e_002",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Which tool helps you talk to someone far away with your voice?",
+      "answers": [
+        "Telephone or phone",
+        "Shovel only",
+        "Paintbrush only",
+        "Compass only"
+      ],
+      "hint": "Call a friend.",
+      "explanation": "Phones send voice (and more) over long distances.",
+      "tags": [
+        "communication"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_m_003",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is an algorithm in everyday words?",
+      "answers": [
+        "A clear set of steps to solve a problem",
+        "A random pile of rocks",
+        "A type of cloud",
+        "A silent letter only"
+      ],
+      "hint": "Recipe for a problem.",
+      "explanation": "An algorithm is a finite sequence of instructions to accomplish a task.",
+      "tags": [
+        "algorithms",
+        "coding-basics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_m_004",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why do games and apps need updates sometimes?",
+      "answers": [
+        "To fix bugs and improve features",
+        "To remove electricity forever",
+        "To delete all files always",
+        "To stop the sun"
+      ],
+      "hint": "Patches and improvements.",
+      "explanation": "Updates can fix mistakes, improve security, and add features.",
+      "tags": [
+        "software"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_h_005",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Binary in computers mostly uses which two digits?",
+      "answers": [
+        "0 and 1",
+        "2 and 3 only",
+        "A and Z only",
+        "5 and 9 only"
+      ],
+      "hint": "On/off pairs.",
+      "explanation": "Digital systems encode information with bits, often written as 0 and 1.",
+      "tags": [
+        "binary",
+        "computers"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_tech_h_006",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "What does “input” mean for a device?",
+      "answers": [
+        "Information or signals going into it",
+        "Only heat leaving it",
+        "Only deleting memory always",
+        "Only painting the case"
+      ],
+      "hint": "Keyboard and mouse are examples.",
+      "explanation": "Input is data or signals provided to a system; output is what it produces.",
+      "tags": [
+        "systems",
+        "input-output"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_e_001",
+      "category": "art",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Red, blue, and yellow are often called…",
+      "answers": [
+        "Primary colors",
+        "Only shadows",
+        "Only numbers",
+        "Only metals"
+      ],
+      "hint": "Paint starter colors.",
+      "explanation": "Primary colors can mix to make many other colors.",
+      "tags": [
+        "color",
+        "painting"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_e_002",
+      "category": "art",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A drawing that uses only lines and no color fill is often called a…",
+      "answers": [
+        "Line drawing or sketch",
+        "Symphony",
+        "Equation",
+        "Compass rose only"
+      ],
+      "hint": "Pencil lines.",
+      "explanation": "Sketches and line drawings focus on outlines and form.",
+      "tags": [
+        "drawing"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_m_003",
+      "category": "art",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "In painting, a “landscape” usually shows…",
+      "answers": [
+        "Outdoor scenery like land and sky",
+        "Only a single letter",
+        "Only a math graph",
+        "Only a phone menu"
+      ],
+      "hint": "Outside view.",
+      "explanation": "Landscapes depict natural or outdoor scenes.",
+      "tags": [
+        "genres",
+        "painting"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_m_004",
+      "category": "art",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Mixing blue and yellow paint often makes…",
+      "answers": [
+        "Green",
+        "Only red",
+        "Only black always",
+        "Only white always"
+      ],
+      "hint": "Primary mix.",
+      "explanation": "Blue + yellow commonly yields green in subtractive paint mixing.",
+      "tags": [
+        "color",
+        "mixing"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_h_005",
+      "category": "art",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Perspective in drawing helps create the illusion of…",
+      "answers": [
+        "Depth and distance",
+        "Louder sound only",
+        "Higher temperature only",
+        "Faster time only"
+      ],
+      "hint": "Near and far.",
+      "explanation": "Linear perspective uses vanishing points so scenes look three-dimensional.",
+      "tags": [
+        "perspective",
+        "drawing"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_art_h_006",
+      "category": "art",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A sculpture is art that is mainly…",
+      "answers": [
+        "Three-dimensional (has height, width, and depth)",
+        "Only flat ink on paper always",
+        "Only a recorded song",
+        "Only a silent film"
+      ],
+      "hint": "You can walk around it.",
+      "explanation": "Sculpture occupies space in three dimensions.",
+      "tags": [
+        "sculpture",
+        "form"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_math_e_n01",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A nest has 3 eggs. Two more eggs are laid. How many eggs now?",
+      "answers": [
+        "5",
+        "1",
+        "6",
+        "0"
+      ],
+      "hint": "3 + 2.",
+      "explanation": "3 + 2 = 5 eggs.",
+      "tags": [
+        "addition",
+        "nature"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_math_e_n02",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "You pick 10 berries and eat 4. How many are left?",
+      "answers": [
+        "6",
+        "14",
+        "4",
+        "10"
+      ],
+      "hint": "10 − 4.",
+      "explanation": "10 − 4 = 6 berries left.",
+      "tags": [
+        "subtraction",
+        "nature"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_math_m_n03",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "A path is 12 meters long. You walk half of it. How far did you walk?",
+      "answers": [
+        "6 meters",
+        "24 meters",
+        "12 meters",
+        "2 meters"
+      ],
+      "hint": "Half of 12.",
+      "explanation": "Half of 12 is 6.",
+      "tags": [
+        "fractions",
+        "measurement"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    },
+    {
+      "id": "q_math_h_n04",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A rectangular garden is 8 m long and 3 m wide. What is its area?",
+      "answers": [
+        "24 square meters",
+        "11 square meters",
+        "5 square meters",
+        "32 square meters"
+      ],
+      "hint": "Length × width.",
+      "explanation": "Area of a rectangle = length × width = 8 × 3 = 24 m².",
+      "tags": [
+        "area",
+        "geometry"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      }
+    }
+  ]
+}

@@ -6,18 +6,16 @@ Emily's Game now has a scalable educational content system with externalized con
 
 ## Content Delivered (Issue #8)
 
-### Quiz Questions: 420 total (COMPLETED second doubling goal!)
-- **Categories:** Math (125), Science (125), History (39), Language (43), Logic (30), Geography (37), Technology (20), Art (1)
-- **Age Bands:** 5-7 years (120), 8-10 years (152), 11-12+ years (148)
-- **Difficulties:** Easy (124), Medium (154), Hard (142)
-- **Shards:** 5 shard files (100+100+100+100+20 questions)
-- **Progress:** 105→210→330→420 ✅ GOAL ACHIEVED
+### Quiz Questions: **436** (default-v1, 2026-07 nature/explore slice)
+- **Categories:** Math, Science, History, Language, Logic, Geography, Technology, Art
+- **Age Bands:** 5–7, 8–10, 11–12+
+- **Shards:** `quizzes-001` … `quizzes-005` (newest shard = nature/explore expansion)
+- See `manifest.json` for live counts
 
-### Knowledge Articles: 31 total (Baseline complete, expansion to 120 in progress)
-- **Subjects:** Math (5), Science (8), History (5), Language (4), Technology (4), Geography (3), Art (2)
-- **Age Bands:** 5-7 years (8), 8-10 years (14), 11-12+ years (9)
-- **Shards:** 2 shard files
-- **Progress:** 15→30→31 (targeting 120)
+### Knowledge Articles: **50** (baseline + 2026-07 Book expansion)
+- **Subjects:** Math, Science, History, Language, Technology, Geography, Art
+- **Shards:** `articles-001.json`, `articles-002.json` (meadow, bees, water cycle, castles, maps, …)
+- Target remains ~120 long-term; 50 is a solid Book baseline for play
 
 ## Architecture
 
@@ -63,13 +61,16 @@ Scans all shards and creates `manifest.json` with statistics.
 
 ```
 content/packs/default-v1/
-├── manifest.json          # Pack metadata and statistics (210 quizzes, 30 articles)
+├── manifest.json
 ├── quizzes/
-│   ├── quizzes-001.json  # 100 questions
-│   ├── quizzes-002.json  # 100 questions
-│   └── quizzes-003.json  # 10 questions
+│   ├── quizzes-001.json … quizzes-004.json
+│   └── quizzes-005.json   # nature / explore expansion (2026-07)
 └── articles/
-    └── articles-001.json  # 30 articles
+    ├── articles-001.json
+    └── articles-002.json  # Book expansion (2026-07)
+```
+
+Regenerate nature slice (optional): `python scripts/content-pipeline/author_nature_pack_slice.py`
 ```
 
 ## Usage Example
