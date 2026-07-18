@@ -503,8 +503,15 @@ export class IsometricRenderer {
     // Item jitter uses item's own jitter range (#82)
     const ijr = itemDef.jitter ?? 0;
     const { dx: ijdx, dy: ijdy } = cellJitter(gx, gy, ijr);
+    // Gentle bob + pulse so collectibles read as alive/inviting to a child,
+    // and are easier to spot on busy ground (feedback pillar). Time-based via
+    // the (now real-time-scaled) _renderFrameCount; phase offset per-cell so
+    // nearby items don't bob in lockstep.
+    const phase = gx * 1.7 + gy * 2.3;
+    const bob = Math.sin(_renderFrameCount * 0.12 + phase) * 2.5;
+    const pulse = 1 + Math.sin(_renderFrameCount * 0.15 + phase) * 0.08;
     cmd.sortKey = gy + 0.05; cmd.type = CMD_ITEM; cmd.emoji = itemDef.emoji;
-    cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy; cmd.scale = itemDef.scale * 0.7; cmd.tint = 0;
+    cmd.sx = sx + ijdx; cmd.sy = sy - 2 + ijdy + bob; cmd.scale = itemDef.scale * 0.7 * pulse; cmd.tint = 0;
   }
 
   /**
