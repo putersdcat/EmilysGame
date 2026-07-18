@@ -717,7 +717,8 @@ function drawProceduralBasinWater(ctx: CanvasRenderingContext2D, style: WaterSty
   ctx.beginPath();
   ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
   ctx.clip();
-  // Bright glint flecks (high contrast against mid tone)
+  // Bright glint flecks only (keep the basin reading as full/visible water —
+  // dark flecks would cut the measured center fill below the R2 threshold).
   for (let y = 0; y < MICRO_TILE_SIZE; y += 4) {
     for (let x = 0; x < MICRO_TILE_SIZE; x += 4) {
       const v = hash01(x, y, 7331);
@@ -727,9 +728,6 @@ function drawProceduralBasinWater(ctx: CanvasRenderingContext2D, style: WaterSty
       } else if (v > 0.5) {
         ctx.fillStyle = rgba(style.foam, 0.28 + v * 0.2);
         ctx.fillRect(x, y, 2, 1);
-      } else if (v < 0.18) {
-        ctx.fillStyle = rgba(style.deep, 0.3);
-        ctx.fillRect(x, y, 2, 2);
       }
     }
   }
