@@ -100,6 +100,17 @@ The visual "soft/blurry" impression was (a) the resample bug (fixed) and (b) the
 dehydration health overlay (fixed), not missing assets. Remaining asset work is
 *polish/variety*, not replacing missing coverage.
 
+## Core-loop playtest verification (2026-07-18) — WORKS end-to-end
+
+Drove the live game (`?test=1`) through the full Doc-01 loop with synthetic input:
+spawn → move (dt-consistent) → quiz_gate → dialog → quiz open → wrong answer
+(retriable, no softlock) → correct answer → reward (coins 12→17, +5) → gate
+opens (sparkle gate removed) → game unpauses. Status stayed healthy throughout
+(99/99/100 — no instant-zero drain). Player/camera/movement/anim all coherent.
+
+This confirms the 5–15 min core-loop promise is functionally intact after the
+perf + status + timer fixes. Remaining work is *content/polish*, not core function.
+
 ## Test-verification notes (2026-07-18)
 - **Rendering batch (23 tests): PASS** with all changes (terrain-blend, visual,
   weathering, pipeline, wall/fence).
