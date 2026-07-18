@@ -29,6 +29,10 @@ Tight **visual** iteration for Emily's Game iso paint (product tip + legacy expe
 
 Hot-reload: engine TS pulled live by the MCP worker when configured — don’t force restarts unless schema (`index.ts`) changed. See [.github/instructions/isosvgrenderer.instructions.md](../instructions/isosvgrenderer.instructions.md) when `applyTo` matches.
 
+## Run mode
+
+Keep the loop going until the visual criterion is met (or hard-blocked). Do not stop after one MCP render to ask permission to iterate.
+
 ## Don’t
 
 - Full game boot / Playwright screenshot spam for tile work  

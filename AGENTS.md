@@ -1,13 +1,28 @@
 # AGENTS.md — Emily's Game
 
 **Product branch:** `experiment/isometric-2.0`  
-**Always-on Copilot context:** this file + [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Path rules auto-attach from [`.github/instructions/`](.github/instructions/). Named personas live in [`.github/agents/`](.github/agents/).
+**Always-on:** this file + [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Path rules: [`.github/instructions/`](.github/instructions/). Personas: [`.github/agents/`](.github/agents/).
+
+---
+
+## Autonomy (default)
+
+**Keep working until the user's request is done.** Multi-turn tool use is expected. Do **not** stop after one edit or one search to "report status," ask permission for the next obvious step, or narrate a plan instead of executing it.
+
+| Do | Don't |
+|----|--------|
+| Implement → verify → fix → continue | Pause every turn for human approval |
+| Batch related edits in one run | One-file-then-stop "updates" |
+| Only ask when blocked on a real product choice | Ask before every `tsc` / test / commit path the user already authorized |
+| Short final summary when **finished** | Mid-task essays and checklists |
+
+**"Do not auto-continue closed campaigns"** means: do not re-run finished scene-first / paint-architecture PR plans from old docs. It does **not** mean stop mid-task or refuse to drive a clear user request to completion.
 
 ---
 
 ## Product goal
 
-A child can play a **satisfying 5–15 min session**: spawn in a place → move reliably → hit a real quiz gate → fail gently → open → leave → see another intentional place. Expand via **scene recipes**, **content packs**, **NPC personas** — not new world ontology.
+A child can play a **satisfying 5–15 min session**: spawn in a place → move reliably → real quiz gate → fail gently → open → leave → another intentional place. Expand via **scene recipes**, **content packs**, **NPC personas** — not new world ontology.
 
 ## Standing laws
 
@@ -17,41 +32,39 @@ A child can play a **satisfying 5–15 min session**: spawn in a place → move 
 4. **Flat sim owns walkability/progression** — presentation never decides gate open (`docs/02`).
 5. **Iso2 is paint only** — no new nano systems, FOV thrash, or material-factory campaigns.
 6. **FOV locked** — on-screen diamonds **128×64**, `entityDisplayScale` ~1.0 unless written RFC.
-7. **No speculative reorgs** for line-count aesthetics (`memories/repo/code-organization-philosophy.md`).
-8. **Proof = playtest** — live session feel beats green tests alone (tests stay a regression net).
+7. **No speculative reorgs** for line-count aesthetics.
+8. **Proof = playtest** when the task is feel/UX; keep tests as a regression net.
 
-## Campaign status (keep short)
+## Campaign status
 
 | Campaign | Status |
 |----------|--------|
-| Scene-first productization (PR1–7) | ✅ Done — do **not** re-run that plan |
-| Playable-session recovery (boot/coins/water/density/homestead) | ✅ Landed on tip — re-open only if playtest still fails |
-| Next default | Content + recipes + residual **feel** fixes only |
+| Scene-first productization (PR1–7) | Done — do **not** re-run that plan |
+| Playable-session recovery | Landed — reopen only if playtest still fails |
+| Next default | Content + recipes + residual feel fixes |
 
-Canonical designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `memories/repo/design-playable-session-recovery.md`, `memories/repo/expandability-rails.md`.  
-Vision/arch: `docs/01`, `docs/02`.
+Designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `design-playable-session-recovery.md`, `expandability-rails.md`. Vision: `docs/01`, `docs/02`.
 
 ## Where code goes
 
 | Kind | Put it in |
 |------|-----------|
-| Pure logic (walkability, gen, quiz rules, math) | `src/engine/` |
-| Canvas / iso projection / nano paint | `src/rendering/` |
-| Sprites / materials pipeline | `src/asset-pipeline/` |
-| Loop orchestration, save, input, audio systems | `src/game/` |
-| DOM HUD / menus | `src/ui/` |
-| Tunables / content tables | `src/config/*.config.ts` (`as const`) |
-| Shared types used by 2+ layers | `src/types/` |
+| Pure logic | `src/engine/` |
+| Canvas / iso paint | `src/rendering/` |
+| Sprites / materials | `src/asset-pipeline/` |
+| Loop, save, input, audio | `src/game/` |
+| DOM HUD | `src/ui/` |
+| Content knobs | `src/config/*.config.ts` (`as const`) |
+| Shared types (2+ layers) | `src/types/` |
 
-Prefer surgical edits. Do not invent parallel ontologies under `experiment/` for product features already on tip.
+App entry is **`src/`**. Nested `experiment/isometric-2.0/` is MCP/legacy iso sources, not the product entrypoint.
 
-## Agent workflow (all tools)
+## Verify without thrashing
 
-- Ground claims in **repo files** and **playtest**; do not invent paths or “done” without verification.
-- Prefer small PR slices with player **Done-when** + a short test command.
-- Do **not** auto-continue closed PR plans. Only run `/execute-plan` / multi-PR stacks when the user points at a **current** design doc.
-- Visual asset loops: use isoSvgRenderer MCP when available; do not dump full-page Playwright screenshots into chat (413 risk). Live game feel → Vite + manual or targeted Playwright specs.
+- `npx tsc --noEmit` and **targeted** Playwright when relevant; full suite only when the change warrants it.
+- Visual assets: isoSvgRenderer MCP when available; avoid dumping huge Playwright screenshots into chat.
+- Multi-PR `/execute-plan` stacks only when the user points at a **current** design doc.
 
 ## Out of scope by default
 
-New nano kinds, EDGE_COMPAT rewrites, V4 scale thrash, dual-trunk main rewrites, greenfield repos “for cleanliness.”
+New nano kinds, EDGE_COMPAT rewrites, V4 scale thrash, dual-trunk main rewrites, greenfield “for cleanliness.”

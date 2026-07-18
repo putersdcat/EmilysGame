@@ -14,6 +14,8 @@ Docs: [VS Code custom agents](https://code.visualstudio.com/docs/agent-customiza
 
 **Rule:** Laws live once in `AGENTS.md`. Agents **link** to them; they must not paste competing campaigns.
 
+**Autonomy:** Default agents (especially GameMan) run **multi-turn until the user task is done**. Token-lean docs must not be read as “one tool call then report.” “No auto-continue closed campaigns” ≠ anti-autonomy.
+
 ## Agents
 
 | File | Human picker | Role |

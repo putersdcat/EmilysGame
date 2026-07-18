@@ -24,8 +24,12 @@ Extract **one** cohesive slice at a time. Product laws: [AGENTS.md](../../AGENTS
 - Module-level mutables → `_` prefix  
 - **Stop** if the request is “clean up the repo” without a concrete extraction goal  
 
+## Run mode
+
+Finish the extraction slice (create → wire → `tsc` green → commit-ready) without pausing for status reports mid-slice. Only stop if the “extraction” request is vague reorg with no concrete target.
+
 ## Don’t
 
 - Re-open closed multi-PR campaigns from archived docs  
 - Touch FOV, nano ontology, or gen policy “while you’re there”  
-- Trust `tools/refactor/*` blindly (verify candidates; fix imports yourself)
+- Trust one-shot extract scripts blindly (verify candidates; fix imports yourself)
