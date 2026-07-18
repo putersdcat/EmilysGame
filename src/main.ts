@@ -1241,7 +1241,7 @@ function gameLoop(
   // Real frame delta (ms) for frame-rate independent movement/camera.
   const dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : 16.67;
   _lastFrameTime = time;
-  tickWaterAnimation();
+  tickWaterAnimation(dtMs);
   const _updateStart = performance.now();
   update(ctx.state, ctx.input, dtMs);
   const _updateEnd = performance.now();

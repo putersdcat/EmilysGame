@@ -388,12 +388,14 @@ function drawWaterOverlays(
 }
 
 /**
- * Advance the water animation frame. Call from game loop (throttled).
+ * Advance the water animation frame. Call from game loop each frame with the
+ * real frame delta (dtMs). Time-based so wave cadence is frame-rate independent
+ * (was every 15 frames, assumed 60fps → waves raced at high FPS).
  */
-export function tickWaterAnimation(): void {
-  waterFrameTimer++;
-  // Advance every 15 frames (~4fps wave animation at 60fps game)
-  if (waterFrameTimer >= 15) {
+export function tickWaterAnimation(dtMs: number = 16.67): void {
+  waterFrameTimer += dtMs;
+  // Advance every ~250ms of real time (~4fps wave animation)
+  if (waterFrameTimer >= 250) {
     waterFrameTimer = 0;
     waterAnimFrame = (waterAnimFrame + 1) % WATER_FRAME_COUNT;
   }
