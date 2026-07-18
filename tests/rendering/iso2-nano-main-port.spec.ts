@@ -144,8 +144,10 @@ test.describe('Iso 2.0 nano main-game port', () => {
 
   test('main Iso2 structural port uses 144px source geometry and canonical tee variants', async () => {
     expect(ISO_MICRO_TILE_SIZE).toBe(144);
-    expect(ISO_DIAMOND_WIDTH).toBe(256);
-    expect(ISO_DIAMOND_HEIGHT).toBe(128);
+    // Product FOV contract is 128×64 on-screen diamonds (AGENTS.md law #6).
+    // The 256×128 experiment source scale is supersampled down to 128×64.
+    expect(ISO_DIAMOND_WIDTH).toBe(128);
+    expect(ISO_DIAMOND_HEIGHT).toBe(64);
 
     expect(wallBounds('tee-t').rects.some(rect => rect.y === 96 && rect.h === 48)).toBe(true);
     expect(wallBounds('tee-t').rects.some(rect => rect.y === 0 && rect.h === 48)).toBe(false);
