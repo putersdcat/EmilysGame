@@ -15,27 +15,30 @@ import { PLAYER_CONFIG } from '../config/game.config';
 import { loadCharacterSprite } from '../asset-pipeline/sprites';
 
 /**
- * Frame-throttle constant for sprite animation (#66 perf).
- * Only advance animFrame every 6th game frame to avoid wasting CPU on
- * sprite reloads when the player is moving continuously.
+ * Walk-anim cadence in real time (frame-rate independent).
+ * Was "every 6th game frame" (assumed 60fps) → animates frantically at high FPS.
+ * ~10 anim frames/sec matches 6f @60fps.
  */
-const ANIM_FRAME_THROTTLE = 6;
+const ANIM_FRAME_INTERVAL_MS = 100;
+let _animAccumMs = 0;
 
 /**
  * Update the player visual state after a movement tick.
  *
- * Reads `state.player.x/y`, `state.frameCount`, and the movement vector
+ * Reads `state.player.x/y`, the real frame delta (dtMs), and the movement vector
  * components (dx/dy/screenDx/screenDy) to update direction, facing pose,
  * isMoving, and the sprite frame. Mutates state in place.
  *
  * @param state  — the GameState (mutated)
  * @param mv     — the movement vector from input.getMovementVector()
  * @param isMoving — whether the player is currently moving (callers already check)
+ * @param dtMs   — real frame delta in ms (drives anim cadence, frame-rate independent)
  */
 export function updatePlayerVisuals(
   state: GameState,
   mv: { dx: number; dy: number; screenDx: number; screenDy: number },
   isMoving: boolean,
+  dtMs: number = 16.67,
 ): void {
   if (!isMoving) {
     state.player.isMoving = false;
@@ -73,8 +76,10 @@ export function updatePlayerVisuals(
   // Equal diagonal (asx === asy && both > 0) → keep current facingPose
 
   state.player.isMoving = true;
-  // Throttle animation: only advance sprite frame every 6th game frame
-  if (state.frameCount % ANIM_FRAME_THROTTLE === 0) {
+  // Advance sprite frame on a real-time cadence (frame-rate independent)
+  _animAccumMs += dtMs;
+  if (_animAccumMs >= ANIM_FRAME_INTERVAL_MS) {
+    _animAccumMs = 0;
     state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
   }
 

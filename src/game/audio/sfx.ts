@@ -479,27 +479,29 @@ const SURFACE_FOOTSTEP: Record<string, string> = {
   water: 'footstep_grass',  // Shouldn't walk on water, but fallback
 };
 
-/** Footstep frame counter — we don't want footsteps every frame */
-let _footstepCounter = 0;
-const FOOTSTEP_INTERVAL = 12; // Play footstep every N frames while moving
+/** Footstep timing — rate-limit by real time so cadence is frame-rate
+ * independent (was every 12 frames, assumed 60fps → machine-gunned at high FPS). */
+let _footstepAccumMs = 0;
+const FOOTSTEP_INTERVAL_MS = 200; // ~5 steps/sec while moving (matches 12f @60fps)
 
 /**
  * Play a terrain-appropriate footstep SFX.
- * Call each frame while player is moving; internally rate-limits.
+ * Call each frame while player is moving; internally rate-limits by real time.
  * @param surface - the SurfaceType under the player (from MICRO_TILE_DEFS)
+ * @param dtMs - real frame delta in ms
  */
-export function playFootstep(state: SfxState, surface: string): void {
-  _footstepCounter++;
-  if (_footstepCounter < FOOTSTEP_INTERVAL) return;
-  _footstepCounter = 0;
+export function playFootstep(state: SfxState, surface: string, dtMs: number = 16.67): void {
+  _footstepAccumMs += dtMs;
+  if (_footstepAccumMs < FOOTSTEP_INTERVAL_MS) return;
+  _footstepAccumMs = 0;
 
   const sfxId = SURFACE_FOOTSTEP[surface] ?? 'footstep_grass';
   playSfx(state, sfxId);
 }
 
-/** Reset footstep counter (call when player stops moving) */
+/** Reset footstep timer (call when player stops moving) */
 export function resetFootstepCounter(): void {
-  _footstepCounter = 0;
+  _footstepAccumMs = 0;
 }
 
 // ─── Sampled Ambience Layers ────────────────────────────────

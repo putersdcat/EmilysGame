@@ -858,7 +858,7 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
   const dt = Math.min(Math.max(dtMs, 0), 100) / 16.6667;
 
   if (!wantsMove) {
-    updatePlayerVisuals(state, mv, false);
+    updatePlayerVisuals(state, mv, false, dtMs);
     resetFootstepCounter();
     // Idle path used to return here and skip autoCollect — standing on a coin
     // never picked up. Collect is independent of held movement keys (P0 feel).
@@ -908,7 +908,7 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
       const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
       const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
       const surface = footTileDef?.surface ?? 'grass';
-      playFootstep(state.sfx, surface);
+      playFootstep(state.sfx, surface, dtMs);
 
       const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
       if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
@@ -963,7 +963,7 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
     }
 
     // Always update facing from held direction so Space aims at what you're pushing into
-    updatePlayerVisuals(state, mv, true);
+    updatePlayerVisuals(state, mv, true, dtMs);
 
     // Frame-rate independent smoothing: 0.15/frame @60fps ≈ time-constant.
     const camLerp = 1 - Math.pow(1 - 0.15, dt);
