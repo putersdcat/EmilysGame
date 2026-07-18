@@ -67,13 +67,22 @@ often.** Audit + convert to dtMs/time-based:
 
 | System | File | Mechanism | Status |
 |--------|------|-----------|--------|
-| Status drain | `game/status.ts` | was 300 frames → now time-based | ✅ FIXED |
+| Status drain | `game/status.ts` | was 300 frames → time-based | ✅ FIXED (commit 957142d) |
+| Footsteps | `game/audio/sfx.ts` | was 12 frames → ~5/sec time-based | ✅ FIXED (commit 387de3a) |
+| Player walk anim | `game/player-visuals.ts` | was 6 frames → ~10fps time-based | ✅ FIXED (commit 387de3a) |
 | Water anim | `rendering/terrain-cache.ts` `tickWaterAnimation` | every 15 frames (~4fps@60) | ⬜ faster now — cosmetic, low pri |
-| Player walk anim | `game/player-visuals.ts` `ANIM_FRAME_THROTTLE` | every N frames | ⬜ cosmetic, check |
-| Footsteps | `game/audio/sfx.ts` `_footstepCounter` | counter | ⬜ check cadence |
 | Fire anim | `render.ts` `getFireAnimation(frameCount)` | `_renderFrameCount` | ⬜ cosmetic |
 | Wildlife/ambient ticks | `game/wildlife.ts`, thought-bubbles | various | ⬜ audit |
 | Minimap | `rendering/minimap.ts` every 10th frame | throttle | ⬜ fine (just cheaper) |
+
+## Test-verification notes (2026-07-18)
+- **Rendering batch (23 tests): PASS** with all changes (terrain-blend, visual,
+  weathering, pipeline, wall/fence).
+- **Pre-existing flaky (NOT regressions, verified via stash on clean HEAD):**
+  `injury-system.spec.ts` (~8 fail on HEAD too), `debuff-visuals.spec.ts`
+  (6 fail on HEAD, only 3 with my fix — my status fix made it *more* stable),
+  `quiz-gate-retry-loop.spec.ts:158` (fails on HEAD too). These are test-isolation
+  issues; fix as a separate hygiene task.
 
 **Rule going forward:** anything that must happen "every T seconds of real time"
 must accumulate `dtMs`, never count frames. Cosmetic-only frame ties (anim frame
