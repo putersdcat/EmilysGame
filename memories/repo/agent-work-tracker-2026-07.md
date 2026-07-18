@@ -103,11 +103,20 @@ dehydration health overlay (fixed), not missing assets. Remaining asset work is
 ## Test-verification notes (2026-07-18)
 - **Rendering batch (23 tests): PASS** with all changes (terrain-blend, visual,
   weathering, pipeline, wall/fence).
-- **Pre-existing flaky (NOT regressions, verified via stash on clean HEAD):**
+- **Fire primitives (6): PASS.**
+- **Full render suite (176 tests): 171 pass, 4 fail — ALL 4 pre-existing on clean
+  HEAD** (verified via stash baseline):
+  - `iso2-nano-main-port` — `ISO_DIAMOND_WIDTH` expects 256, config is 128
+    (config drift; nothing to do with perf/timer changes).
+  - `iso2-v3-water-basin-r2` — `centerRatio` 0.274 vs 0.28 threshold (pre-existing
+    threshold drift; my basin tweak kept bright-only flecks to not worsen it).
+  - `perf-benchmark` fps floor + `svg-asset-sprites` frame-count — env flakes under
+    the 56-min full-suite load (game runs ~345fps solo).
+- **Pre-existing flaky gameplay (NOT regressions, verified via stash):**
   `injury-system.spec.ts` (~8 fail on HEAD too), `debuff-visuals.spec.ts`
   (6 fail on HEAD, only 3 with my fix — my status fix made it *more* stable),
-  `quiz-gate-retry-loop.spec.ts:158` (fails on HEAD too). These are test-isolation
-  issues; fix as a separate hygiene task.
+  `quiz-gate-retry-loop.spec.ts:158` (fails on HEAD too). Test-isolation hygiene
+  task — separate from playability work.
 
 **Rule going forward:** anything that must happen "every T seconds of real time"
 must accumulate `dtMs`, never count frames. Cosmetic-only frame ties (anim frame
