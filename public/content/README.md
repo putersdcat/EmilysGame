@@ -6,16 +6,18 @@ Emily's Game now has a scalable educational content system with externalized con
 
 ## Content Delivered (Issue #8)
 
-### Quiz Questions: **436** (default-v1, 2026-07 nature/explore slice)
+### Quiz Questions: see **`manifest.json`** (default-v1)
 - **Categories:** Math, Science, History, Language, Logic, Geography, Technology, Art
 - **Age Bands:** 5–7, 8–10, 11–12+
-- **Shards:** `quizzes-001` … `quizzes-005` (newest shard = nature/explore expansion)
-- See `manifest.json` for live counts
+- **Shards:** `quizzes-001` … `quizzes-006`
+  - `005` nature/explore · `006` **spaceflight history → today**
+- Live totals always in `manifest.json` stats
 
-### Knowledge Articles: **50** (baseline + 2026-07 Book expansion)
+### Knowledge Articles: see **`manifest.json`**
 - **Subjects:** Math, Science, History, Language, Technology, Geography, Art
-- **Shards:** `articles-001.json`, `articles-002.json` (meadow, bees, water cycle, castles, maps, …)
-- Target remains ~120 long-term; 50 is a solid Book baseline for play
+- **Shards:** `articles-001` … `articles-003`
+  - `002` nature/meadow Book · `003` **spaceflight history Book**
+- Long-term target still ~120+ articles
 
 ## Architecture
 
@@ -63,14 +65,16 @@ Scans all shards and creates `manifest.json` with statistics.
 content/packs/default-v1/
 ├── manifest.json
 ├── quizzes/
-│   ├── quizzes-001.json … quizzes-004.json
-│   └── quizzes-005.json   # nature / explore expansion (2026-07)
+│   ├── quizzes-001.json … quizzes-005.json
+│   └── quizzes-006.json   # spaceflight history → today (2026-07)
 └── articles/
-    ├── articles-001.json
-    └── articles-002.json  # Book expansion (2026-07)
+    ├── articles-001.json … articles-002.json
+    └── articles-003.json  # spaceflight Book (2026-07)
 ```
 
-Regenerate nature slice (optional): `python scripts/content-pipeline/author_nature_pack_slice.py`
+Optional regenerators:
+- `python scripts/content-pipeline/author_nature_pack_slice.py`
+- `python scripts/content-pipeline/author_spaceflight_history_slice.py`
 
 ## Usage Example
 
