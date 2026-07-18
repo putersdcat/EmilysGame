@@ -15,7 +15,6 @@ import type { ChunkData, CellData } from '../types/game.types';
 import { countWalkableNeighbors } from './world/GridUtils';
 import {
   ASSEMBLY_RECIPES,
-  registerSceneRecipe,
   type AssemblyPlacement,
   type AssemblyRecipe,
 } from './iso2-assemblies/catalog';
@@ -90,7 +89,8 @@ const LEGACY_RECIPES: Record<'homestead-small' | 'ruined-cathedral', AssemblyRec
 };
 
 function recipeFor(id: Iso2AssemblyId): AssemblyRecipe {
-  if (id === 'homestead-small' || id === 'ruined-cathedral') return LEGACY_RECIPES[id];
+  if (id === 'homestead-small') return LEGACY_RECIPES['homestead-small'];
+  if (id === 'ruined-cathedral') return LEGACY_RECIPES['ruined-cathedral'];
   const r = ASSEMBLY_RECIPES[id];
   if (!r) throw new Error(`Unknown Iso2 assembly id: ${id}`);
   return r;
