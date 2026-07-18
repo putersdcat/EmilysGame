@@ -377,8 +377,17 @@ function drawProceduralFenceNano(
   const top = projectFencePoint(screenX, screenY, centerCoord, 0);
   const bottom = projectFencePoint(screenX, screenY, centerCoord, MICRO_TILE_SIZE);
 
-  if (gate && ((arms.left && arms.right) || (arms.top && arms.bottom))) {
-    const horizontal = arms.left && arms.right;
+  // A gate should always read as a gate spanning a path, never a bare stick.
+  // When fully connected (fence on both sides of an axis) draw through-gate.
+  // When isolated or a fence endpoint (a standalone gate on an open path),
+  // still draw the gate leaf across the horizontal axis so it reads as a
+  // deliberate barrier, not a random post in the ground.
+  if (gate) {
+    const throughH = arms.left && arms.right;
+    const throughV = arms.top && arms.bottom;
+    // Choose orientation: prefer a real through-connection; else default to
+    // horizontal (reads as a gate across an east-west path) when isolated.
+    const horizontal = throughH || !throughV;
     const start = horizontal ? left : top;
     const end = horizontal ? right : bottom;
     const split = center;
