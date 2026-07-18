@@ -15,12 +15,12 @@
 
 // ─── Safe image URLs (Book illustrations) ───────────────────
 
-/** Hosts / path prefixes allowed for embedded Book images. */
+/**
+ * Offline-first: Book images must live under the game origin content tree.
+ * No remote http(s) hosts — packs ship files in public/content/… so the game
+ * stays playable with no network.
+ */
 export const BOOK_IMAGE_ALLOWLIST: readonly string[] = [
-  'https://upload.wikimedia.org/',
-  'http://upload.wikimedia.org/',
-  'https://images-assets.nasa.gov/',
-  'http://images-assets.nasa.gov/',
   '/content/',
   'content/',
 ];
@@ -31,8 +31,9 @@ export const BOOK_IMAGE_ALLOWLIST: readonly string[] = [
 export function isAllowedBookImageUrl(url: string): boolean {
   const u = (url || '').trim();
   if (!u) return false;
-  // Block obvious script / data abuse
+  // Block remote / script / data abuse — offline-only pack assets
   if (/^\s*javascript:/i.test(u) || /^\s*data:/i.test(u)) return false;
+  if (/^\s*https?:\/\//i.test(u)) return false;
   return BOOK_IMAGE_ALLOWLIST.some((prefix) => u.startsWith(prefix));
 }
 

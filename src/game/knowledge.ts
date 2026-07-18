@@ -221,39 +221,100 @@ export function deserializeKnowledge(data: KnowledgeSaveData): Partial<Knowledge
 
 // ─── DOM Rendering ───────────────────────────────────────────
 
-// Throttle counter for DOM sync
-let syncCounter = 0;
+/** Last paint signature — avoid wiping focus/scroll every frame */
+let _bookPaintKey = '';
+let _bookWasOpen = false;
+
+function bookPaintKey(state: KnowledgeState): string {
+  const words = state.wordBag.map((w) => `${w.term}:${w.lookedUp ? 1 : 0}`).join(',');
+  const reads = [...state.readArticles].sort().join(',');
+  return [
+    state.bookOpen ? 1 : 0,
+    state.activeTab,
+    state.currentArticleId || '',
+    state.searchQuery,
+    state.discoveryPoints,
+    state.selectedSubjects.join(','),
+    words,
+    reads,
+  ].join('|');
+}
+
+function articleCardHtml(a: KnowledgeArticle, isRead: boolean, showSubjectIcon = false): string {
+  const subject = SUBJECTS.find((s) => s.id === a.subject);
+  const thumb = a.image?.url
+    ? `<img class="book-card-thumb" src="${escapeHtml(a.image.url)}" alt="" loading="lazy" decoding="async" />`
+    : `<div class="book-card-thumb-ph" aria-hidden="true">${subject?.icon || '📖'}</div>`;
+  const icon = showSubjectIcon
+    ? `<span style="color:${subject?.color || '#fff'}">${subject?.icon || ''}</span> `
+    : '';
+  return `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${escapeHtml(a.id)}" role="button" tabindex="0">
+    ${thumb}
+    <div class="book-card-body">
+      <div class="book-article-title">${icon}${escapeHtml(a.title)}${isRead ? ' ✓' : ''}</div>
+      <div class="book-article-summary">${escapeHtml(a.summary)}</div>
+      <span class="book-card-badge">${subject?.name || a.subject}${a.image ? ' · illustrated' : ''}</span>
+    </div>
+  </div>`;
+}
+
+function wireArticleCards(container: HTMLElement, state: KnowledgeState): void {
+  container.querySelectorAll('.book-article-card').forEach((card) => {
+    const open = () => {
+      const id = (card as HTMLElement).dataset.articleId;
+      if (id) openArticle(state, id);
+    };
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', (e) => {
+      const ke = e as KeyboardEvent;
+      if (ke.key === 'Enter' || ke.key === ' ') {
+        ke.preventDefault();
+        open();
+      }
+    });
+  });
+}
 
 /**
  * Sync Book overlay DOM.
- * Called from renderUI — only updates when book is open.
+ * Called from renderUI — only repaints when book state actually changes
+ * (so search focus and scroll position survive).
  */
 export function syncBookUI(state: KnowledgeState): void {
-  syncCounter++;
-  if (syncCounter % 5 !== 0) return; // Throttle to every 5th frame
-
   const overlay = document.getElementById('bookOverlay');
   if (!overlay) return;
 
   if (!state.bookOpen) {
-    overlay.style.display = 'none';
+    if (_bookWasOpen) {
+      overlay.style.display = 'none';
+      _bookWasOpen = false;
+      _bookPaintKey = '';
+    }
     return;
   }
+
   overlay.style.display = 'flex';
+  _bookWasOpen = true;
+
+  const key = bookPaintKey(state);
+  if (key === _bookPaintKey) {
+    updateTabHighlights(state);
+    return;
+  }
+  _bookPaintKey = key;
 
   const content = document.getElementById('bookContent');
   if (!content) return;
 
-  // If reading a specific article
   if (state.currentArticleId) {
     const article = getBookArticleById(state.currentArticleId);
     if (article) {
       renderArticleView(content, article, state);
+      updateTabHighlights(state);
       return;
     }
   }
 
-  // Render based on active tab
   switch (state.activeTab) {
     case 'browse':
       renderBrowseView(content, state);
@@ -266,7 +327,6 @@ export function syncBookUI(state: KnowledgeState): void {
       break;
   }
 
-  // Update tab highlights
   updateTabHighlights(state);
 }
 
@@ -280,72 +340,79 @@ function renderBrowseView(container: HTMLElement, state: KnowledgeState): void {
     subjectGroups.set(a.subject, group);
   }
 
-  let html = '';
+  let html = `<div class="book-toolbar">
+    <span style="font:11px monospace;color:#9a8ab8">${articles.length} articles · offline images</span>
+    <div class="book-points">✦ ${state.discoveryPoints} discovery</div>
+  </div>`;
+
+  let body = '';
   for (const subject of SUBJECTS) {
     const group = subjectGroups.get(subject.id);
     if (!group || group.length === 0) continue;
 
-    html += `<div class="book-subject-group">
-      <div class="book-subject-header" style="color:${subject.color}">${subject.icon} ${subject.name}</div>`;
+    body += `<div class="book-subject-group">
+      <div class="book-subject-header" style="color:${subject.color}">${subject.icon} ${subject.name}
+        <span style="opacity:0.55;font-weight:normal"> · ${group.length}</span>
+      </div>
+      <div class="book-card-grid">`;
 
     for (const a of group) {
-      const isRead = state.readArticles.has(a.id);
-      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${escapeHtml(a.id)}">
-        <div class="book-article-title">${escapeHtml(a.title)} ${isRead ? '✓' : ''}</div>
-        <div class="book-article-summary">${escapeHtml(a.summary)}</div>
-      </div>`;
+      body += articleCardHtml(a, state.readArticles.has(a.id));
     }
-    html += '</div>';
+    body += '</div></div>';
   }
 
-  if (!html) html = '<div class="book-empty">Select subjects to see articles here.</div>';
+  if (!body) {
+    body = `<div class="book-empty">
+      <div style="font-size:28px;margin-bottom:8px">📚</div>
+      <div>No articles for your subjects yet.</div>
+      <div style="margin-top:8px;font-size:11px;color:#7a7090">Pick subjects at the start, or switch tabs to search the whole codex.</div>
+    </div>`;
+  }
 
-  // Add discovery points display
-  html = `<div class="book-points">📖 Discovery Points: ${state.discoveryPoints}</div>` + html;
-  container.innerHTML = html;
-
-  // Add click handlers
-  container.querySelectorAll('.book-article-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = (card as HTMLElement).dataset.articleId;
-      if (id) openArticle(state, id);
-    });
-  });
+  container.innerHTML = html + body;
+  wireArticleCards(container, state);
 }
 
 function renderArticleView(container: HTMLElement, article: KnowledgeArticle, state: KnowledgeState): void {
-  const subject = SUBJECTS.find(s => s.id === article.subject);
-  // Render markdown content to structured HTML (lists, headings, bold, images, etc.)
+  const subject = SUBJECTS.find((s) => s.id === article.subject);
   const formattedContent = renderMarkdown(article.content);
   const heroImageHtml = article.image ? renderBookImageFigure(article.image) : '';
 
   let keyTermsHtml = '';
   if (article.keyTerms.length > 0) {
     keyTermsHtml = `<div class="book-key-terms">
-      <span class="book-terms-label">Key Terms:</span>
-      ${article.keyTerms.map(t => {
-        const inBag = state.wordBag.some(w => w.term.toLowerCase() === t.toLowerCase());
-        return `<span class="book-term ${inBag ? 'saved' : ''}" data-term="${t}">${t} ${inBag ? '✓' : '+'}</span>`;
-      }).join('')}
+      <span class="book-terms-label">Key terms · tap + to save</span>
+      ${article.keyTerms
+        .map((t) => {
+          const inBag = state.wordBag.some((w) => w.term.toLowerCase() === t.toLowerCase());
+          return `<span class="book-term ${inBag ? 'saved' : ''}" data-term="${escapeHtml(t)}">${escapeHtml(t)} ${inBag ? '✓' : '+'}</span>`;
+        })
+        .join('')}
     </div>`;
   }
 
   let relatedHtml = '';
   if (article.related && article.related.length > 0) {
-    const relatedArticles = article.related.map(id => getBookArticleById(id)).filter(Boolean);
+    const relatedArticles = article.related.map((id) => getBookArticleById(id)).filter(Boolean);
     if (relatedArticles.length > 0) {
       relatedHtml = `<div class="book-related">
-        <span class="book-related-label">Related:</span>
-        ${relatedArticles.map(a => `<span class="book-related-link" data-article-id="${a!.id}">${a!.title}</span>`).join('')}
+        <span class="book-related-label">Keep reading</span>
+        ${relatedArticles
+          .map(
+            (a) =>
+              `<span class="book-related-link" data-article-id="${escapeHtml(a!.id)}">${escapeHtml(a!.title)}</span>`,
+          )
+          .join('')}
       </div>`;
     }
   }
 
   container.innerHTML = `
     <div class="book-article-view">
-      <div class="book-back" id="bookBack">← Back</div>
+      <div class="book-back" id="bookBack" role="button" tabindex="0">← Back to shelves</div>
       <div class="book-article-header">
-        <span style="color:${subject?.color || '#fff'}">${subject?.icon || '📖'}</span>
+        <span style="color:${subject?.color || '#fff'};font-size:22px">${subject?.icon || '📖'}</span>
         <span class="book-article-full-title">${escapeHtml(article.title)}</span>
       </div>
       ${heroImageHtml}
@@ -355,73 +422,80 @@ function renderArticleView(container: HTMLElement, article: KnowledgeArticle, st
     </div>
   `;
 
-  // Wire back button
-  document.getElementById('bookBack')?.addEventListener('click', () => closeArticle(state));
+  const back = document.getElementById('bookBack');
+  back?.addEventListener('click', () => closeArticle(state));
+  back?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      closeArticle(state);
+    }
+  });
 
-  // Wire key term save buttons
-  container.querySelectorAll('.book-term:not(.saved)').forEach(el => {
+  container.querySelectorAll('.book-term:not(.saved)').forEach((el) => {
     el.addEventListener('click', () => {
       const term = (el as HTMLElement).dataset.term;
       if (term && saveWord(state, term, article.id)) {
         el.classList.add('saved');
         el.textContent = term + ' ✓';
+        _bookPaintKey = ''; // allow next sync to pick up word bag if open later
       }
     });
   });
 
-  // Wire related article links
-  container.querySelectorAll('.book-related-link').forEach(el => {
+  container.querySelectorAll('.book-related-link').forEach((el) => {
     el.addEventListener('click', () => {
       const id = (el as HTMLElement).dataset.articleId;
       if (id) openArticle(state, id);
     });
   });
+
+  // Fresh page: scroll to top of article
+  container.scrollTop = 0;
 }
 
 function renderWordBagView(container: HTMLElement, state: KnowledgeState): void {
   if (state.wordBag.length === 0) {
     container.innerHTML = `
-      <div class="book-points">📖 Discovery Points: ${state.discoveryPoints}</div>
+      <div class="book-toolbar"><div class="book-points">✦ ${state.discoveryPoints} discovery</div></div>
       <div class="book-empty">
-        <div>🎒 Your Word Bag is empty!</div>
-        <div style="margin-top:8px;font-size:12px;color:#888">
-          Save unfamiliar terms from articles by clicking the + button next to key terms.
+        <div style="font-size:28px;margin-bottom:8px">🎒</div>
+        <div>Your Word Bag is empty</div>
+        <div style="margin-top:8px;font-size:11px;color:#7a7090">
+          Open an article and tap <strong style="color:#c8b8e8">+</strong> on a key term to save it.
         </div>
       </div>
     `;
     return;
   }
 
-  let html = `<div class="book-points">📖 Discovery Points: ${state.discoveryPoints}</div>`;
-  html += `<div class="wordbag-count">${state.wordBag.length} word${state.wordBag.length !== 1 ? 's' : ''} saved</div>`;
+  let html = `<div class="book-toolbar">
+    <span class="wordbag-count">${state.wordBag.length} word${state.wordBag.length !== 1 ? 's' : ''} saved</span>
+    <div class="book-points">✦ ${state.discoveryPoints} discovery</div>
+  </div>`;
 
   for (const word of state.wordBag) {
     html += `<div class="wordbag-entry">
-      <span class="wordbag-term">${word.term}</span>
+      <span class="wordbag-term">${escapeHtml(word.term)}</span>
       <span class="wordbag-actions">
-        <span class="wordbag-lookup ${word.lookedUp ? 'looked-up' : ''}" data-term="${word.term}" title="Look up in Book">🔍</span>
-        <span class="wordbag-remove" data-term="${word.term}" title="Remove from bag">✕</span>
+        <span class="wordbag-lookup ${word.lookedUp ? 'looked-up' : ''}" data-term="${escapeHtml(word.term)}" title="Look up in Book">🔍</span>
+        <span class="wordbag-remove" data-term="${escapeHtml(word.term)}" title="Remove from bag">✕</span>
       </span>
     </div>`;
   }
 
   container.innerHTML = html;
 
-  // Wire lookup buttons
-  container.querySelectorAll('.wordbag-lookup').forEach(el => {
+  container.querySelectorAll('.wordbag-lookup').forEach((el) => {
     el.addEventListener('click', () => {
       const term = (el as HTMLElement).dataset.term;
       if (term) {
         const results = lookupWord(state, term);
-        if (results.length > 0) {
-          openArticle(state, results[0].id);
-        }
+        if (results.length > 0) openArticle(state, results[0].id);
       }
     });
   });
 
-  // Wire remove buttons
-  container.querySelectorAll('.wordbag-remove').forEach(el => {
+  container.querySelectorAll('.wordbag-remove').forEach((el) => {
     el.addEventListener('click', () => {
       const term = (el as HTMLElement).dataset.term;
       if (term) removeWord(state, term);
@@ -430,44 +504,55 @@ function renderWordBagView(container: HTMLElement, state: KnowledgeState): void 
 }
 
 function renderSearchView(container: HTMLElement, state: KnowledgeState): void {
-  const results = state.searchQuery ? searchBook(state, state.searchQuery) : [];
+  const results = state.searchQuery ? searchBookArticles(
+    state.searchQuery,
+    state.selectedSubjects.length > 0 ? state.selectedSubjects : undefined,
+  ) : [];
 
   let html = `<div class="book-search-box">
-    <input type="text" id="bookSearchInput" class="book-search-input" placeholder="Search articles..." value="${state.searchQuery}" />
+    <input type="text" id="bookSearchInput" class="book-search-input"
+      placeholder="Search titles, summaries, key terms…"
+      value="${escapeHtml(state.searchQuery)}"
+      autocomplete="off" spellcheck="false" />
+    <div class="book-search-hint">Tip: try “moon”, “ocean”, “fraction”, or “rocket”</div>
   </div>`;
 
-  if (state.searchQuery && results.length === 0) {
-    html += '<div class="book-empty">No articles found. Try different keywords!</div>';
+  if (!state.searchQuery.trim()) {
+    html += `<div class="book-empty">
+      <div style="font-size:28px;margin-bottom:8px">🔍</div>
+      <div>Search the whole codex</div>
+      <div style="margin-top:8px;font-size:11px;color:#7a7090">Type a word above — results update as you type.</div>
+    </div>`;
+  } else if (results.length === 0) {
+    html += '<div class="book-empty">No articles match. Try a shorter keyword!</div>';
   } else {
+    html += `<div class="book-toolbar"><span style="font:11px monospace;color:#9a8ab8">${results.length} result${results.length !== 1 ? 's' : ''}</span></div>`;
+    html += '<div class="book-card-grid">';
     for (const a of results) {
-      const subject = SUBJECTS.find(s => s.id === a.subject);
-      const isRead = state.readArticles.has(a.id);
-      html += `<div class="book-article-card ${isRead ? 'read' : ''}" data-article-id="${escapeHtml(a.id)}">
-        <div class="book-article-title"><span style="color:${subject?.color || '#fff'}">${subject?.icon}</span> ${escapeHtml(a.title)} ${isRead ? '✓' : ''}</div>
-        <div class="book-article-summary">${escapeHtml(a.summary)}</div>
-      </div>`;
+      html += articleCardHtml(a, state.readArticles.has(a.id), true);
     }
+    html += '</div>';
   }
 
   container.innerHTML = html;
 
-  // Wire search input
-  const searchInput = document.getElementById('bookSearchInput') as HTMLInputElement;
+  const searchInput = document.getElementById('bookSearchInput') as HTMLInputElement | null;
   if (searchInput) {
+    const caret = searchInput.value.length;
+    searchInput.focus();
+    try {
+      searchInput.setSelectionRange(caret, caret);
+    } catch {
+      /* ignore */
+    }
     searchInput.addEventListener('input', () => {
       state.searchQuery = searchInput.value;
+      // Force repaint on next sync
+      _bookPaintKey = '';
     });
-    // Focus the input
-    searchInput.focus();
   }
 
-  // Wire article clicks
-  container.querySelectorAll('.book-article-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const id = (card as HTMLElement).dataset.articleId;
-      if (id) openArticle(state, id);
-    });
-  });
+  wireArticleCards(container, state);
 }
 
 function updateTabHighlights(state: KnowledgeState): void {
