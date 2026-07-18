@@ -32,10 +32,10 @@
         "article_nature_photosynthesis_003"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-nature-meadow-001.png",
+        "alt": "What Is a Meadow?",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -67,10 +67,10 @@
         "article_nature_photosynthesis_003"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/bee.jpg",
+        "alt": "Honey bee",
+        "credit": "Wikimedia Commons",
+        "license": "CC BY-SA"
       }
     },
     {
@@ -102,10 +102,10 @@
         "article_nature_water_cycle_004"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-nature-photosynthesis-003.png",
+        "alt": "How Plants Make Food",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -137,10 +137,10 @@
         "article_nature_photosynthesis_003"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-nature-water-cycle-004.png",
+        "alt": "The Water Cycle",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -172,9 +172,9 @@
         "article_hist_towns_rivers_008"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
-        "alt": "Earth photographed from space",
-        "credit": "NASA / Apollo program",
+        "url": "/content/packs/default-v1/images/river-delta.jpg",
+        "alt": "River landscape",
+        "credit": "NASA",
         "license": "Public domain (NASA)"
       }
     },
@@ -206,10 +206,10 @@
         "article_geo_rivers_005"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
-        "alt": "Earth photographed from space",
-        "credit": "NASA / Apollo program",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-geo-maps-006.png",
+        "alt": "Reading a Simple Map",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -241,10 +241,10 @@
         "article_tech_simple_machines_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/sputnik.jpg",
-        "alt": "Sputnik 1 satellite replica",
-        "credit": "NASA / NSSDC (via Wikimedia)",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-hist-castles-007.png",
+        "alt": "Why Castles Were Built",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -276,10 +276,10 @@
         "article_hist_castles_007"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
-        "alt": "Earth photographed from space",
-        "credit": "NASA / Apollo program",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-hist-towns-rivers-008.png",
+        "alt": "Rivers and Early Towns",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -309,10 +309,10 @@
         "article_lang_story_010"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-lang-nouns-009.png",
+        "alt": "Nouns: Naming Words",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -343,10 +343,10 @@
         "article_lang_nouns_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-lang-story-010.png",
+        "alt": "Beginning, Middle, End",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -377,10 +377,10 @@
         "article_tech_simple_machines_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-tech-algorithms-011.png",
+        "alt": "Algorithms Are Recipes for Problems",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -412,10 +412,10 @@
         "article_hist_castles_007"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-tech-simple-machines-012.png",
+        "alt": "Simple Machines Help Us Work",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -445,10 +445,10 @@
         "article_art_landscape_014"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/nebula.jpg",
-        "alt": "Colorful nebula in space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-art-color-013.png",
+        "alt": "Primary Colors",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -480,10 +480,10 @@
         "article_nature_meadow_001"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/nebula.jpg",
-        "alt": "Colorful nebula in space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-art-landscape-014.png",
+        "alt": "Landscape Pictures",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -513,10 +513,10 @@
         "article_math_area_016"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-math-garden-015.png",
+        "alt": "Counting in the Garden",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -547,10 +547,10 @@
         "article_math_garden_015"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-math-area-016.png",
+        "alt": "Area of a Rectangle",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -583,10 +583,10 @@
         "article_nature_deciduous_018"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-science-seasons-017.png",
+        "alt": "Four Seasons",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -618,10 +618,10 @@
         "article_nature_photosynthesis_003"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-nature-deciduous-018.png",
+        "alt": "Deciduous and Evergreen Trees",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -651,10 +651,10 @@
         "article_tech_algorithms_011"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-night.jpg",
-        "alt": "Earth and ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-logic-patterns-019.png",
+        "alt": "Patterns Help Us Predict",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -686,10 +686,10 @@
         "article_geo_maps_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
-        "alt": "Earth photographed from space",
-        "credit": "NASA / Apollo program",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-geo-compass-020.png",
+        "alt": "North, South, East, West",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     }
   ]

@@ -1,5 +1,7 @@
-# Book illustrations
+# Book illustrations (offline)
 
-Free-to-use educational images (primarily **NASA public domain** media).
-Referenced by article `image.url` as `/content/packs/default-v1/images/<file>`.
-Credits appear under each image in the Book UI.
+All files are free-to-use for educational offline play:
+- **NASA** media: public domain
+- **Wikimedia Commons**: public domain / free cultural works (see credit on each article)
+
+Referenced only as `/content/packs/default-v1/images/<file>` — no remote URLs in the game.

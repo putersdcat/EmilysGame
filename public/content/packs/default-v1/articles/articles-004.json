@@ -32,10 +32,10 @@
         "article_ocean_salty_003"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-blue-planet-001.png",
+        "alt": "Earth: The Blue Planet",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -67,10 +67,10 @@
         "article_ocean_currents_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-water-cycle-link-002.png",
+        "alt": "Oceans and the Water Cycle",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -102,10 +102,10 @@
         "article_ocean_tides_004"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-salty-003.png",
+        "alt": "Why Is the Ocean Salty?",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -137,8 +137,8 @@
         "article_ocean_habitats_007"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
+        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
+        "alt": "The Moon",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -172,10 +172,10 @@
         "article_ocean_currents_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-waves-005.png",
+        "alt": "How Waves Form",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -207,10 +207,10 @@
         "article_ocean_climate_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-currents-006.png",
+        "alt": "Ocean Currents: Highways of Water",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -242,10 +242,10 @@
         "article_ocean_food_web_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-habitats-007.png",
+        "alt": "Homes in the Sea",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -277,10 +277,10 @@
         "article_ocean_conservation_014"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/coral.jpg",
-        "alt": "Underwater / reef-related NASA science imagery",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-coral-008.png",
+        "alt": "Coral Reefs: Living Walls",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -312,10 +312,10 @@
         "article_ocean_mammals_010"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-food-web-009.png",
+        "alt": "Who Eats Whom in the Ocean?",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -347,10 +347,10 @@
         "article_ocean_blue_planet_001"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-mammals-010.png",
+        "alt": "Ocean Mammals",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -382,10 +382,10 @@
         "article_ocean_food_web_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-deep-011.png",
+        "alt": "The Deep Sea",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -417,10 +417,10 @@
         "article_ocean_conservation_014"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-climate-012.png",
+        "alt": "Oceans and Climate",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -452,8 +452,8 @@
         "article_ocean_history_015"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
+        "url": "/content/packs/default-v1/images/satellite.jpg",
+        "alt": "Earth-observing satellite",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -487,10 +487,10 @@
         "article_ocean_climate_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-conservation-014.png",
+        "alt": "Protecting the Ocean",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -522,10 +522,10 @@
         "article_ocean_blue_planet_001"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-history-015.png",
+        "alt": "Ocean Science History Highlights",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -557,10 +557,10 @@
         "article_ocean_tides_004"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-coasts-016.png",
+        "alt": "Coasts and Beaches",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -592,10 +592,10 @@
         "article_ocean_habitats_007"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-fish-017.png",
+        "alt": "Fishy Facts",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -627,10 +627,10 @@
         "article_ocean_conservation_014"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/ocean.jpg",
-        "alt": "Ocean from space",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-ocean-careers-018.png",
+        "alt": "Ocean Careers",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     }
   ]

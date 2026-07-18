@@ -34,8 +34,8 @@
       ],
       "image": {
         "url": "/content/packs/default-v1/images/sputnik.jpg",
-        "alt": "Sputnik 1 satellite replica",
-        "credit": "NASA / NSSDC (via Wikimedia)",
+        "alt": "Sputnik satellite",
+        "credit": "NASA",
         "license": "Public domain (NASA)"
       }
     },
@@ -69,10 +69,10 @@
         "article_space_apollo11_004"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-space-gagarin-002.png",
+        "alt": "Yuri Gagarin: First Human in Orbit",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -105,10 +105,10 @@
         "article_space_iss_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-space-women-pioneers-003.png",
+        "alt": "Women Pioneers in Space",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -141,9 +141,9 @@
         "article_space_artemis_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
-        "alt": "The Moon from Apollo",
-        "credit": "NASA / Apollo",
+        "url": "/content/packs/default-v1/images/moon-surface.jpg",
+        "alt": "Apollo on the Moon",
+        "credit": "NASA",
         "license": "Public domain (NASA)"
       }
     },
@@ -177,9 +177,9 @@
         "article_space_shuttle_007"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
-        "alt": "The Moon from Apollo",
-        "credit": "NASA / Apollo",
+        "url": "/content/packs/default-v1/images/earth-rise.jpg",
+        "alt": "Earthrise from the Moon",
+        "credit": "NASA",
         "license": "Public domain (NASA)"
       }
     },
@@ -213,8 +213,8 @@
         "article_space_commercial_008"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/iss-crew.jpg",
+        "alt": "Crew on the station",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -250,7 +250,7 @@
       ],
       "image": {
         "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "alt": "Shuttle and Hubble",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -285,8 +285,8 @@
         "article_space_artemis_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/launch-pad.jpg",
+        "alt": "Launch pad and rocket",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -321,9 +321,9 @@
         "article_space_mars_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/moon-apollo.jpg",
-        "alt": "The Moon from Apollo",
-        "credit": "NASA / Apollo",
+        "url": "/content/packs/default-v1/images/earth-rise.jpg",
+        "alt": "Earthrise from the Moon",
+        "credit": "NASA",
         "license": "Public domain (NASA)"
       }
     },
@@ -357,8 +357,8 @@
         "article_space_iss_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/satellite.jpg",
+        "alt": "Earth-observing satellite",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -393,8 +393,8 @@
         "article_space_mars_012"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/hubble-galaxy.jpg",
-        "alt": "Galaxy image from space telescope",
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Shuttle and Hubble",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -431,7 +431,7 @@
       "image": {
         "url": "/content/packs/default-v1/images/mars-rover.jpg",
         "alt": "Mars rover",
-        "credit": "NASA / JPL",
+        "credit": "NASA/JPL",
         "license": "Public domain (NASA)"
       }
     },
@@ -465,8 +465,8 @@
         "article_space_orbit_basics_010"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/solar-system.jpg",
+        "alt": "Solar system",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -501,8 +501,8 @@
         "article_space_commercial_008"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/launch-pad.jpg",
+        "alt": "Launch pad and rocket",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
@@ -539,10 +539,10 @@
         "article_space_artemis_009"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-space-timeline-015.png",
+        "alt": "Spaceflight Timeline: 1957 to Today",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -575,10 +575,10 @@
         "article_space_rockets_014"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-space-careers-016.png",
+        "alt": "Jobs That Build Spaceflight",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -611,10 +611,10 @@
         "article_space_iss_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
-        "credit": "NASA",
-        "license": "Public domain (NASA)"
+        "url": "/content/packs/default-v1/images/gen-article-space-china-india-017.png",
+        "alt": "More Nations Reach Space",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -647,8 +647,8 @@
         "article_space_iss_006"
       ],
       "image": {
-        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
-        "alt": "Space Shuttle and Hubble Space Telescope",
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth from space",
         "credit": "NASA",
         "license": "Public domain (NASA)"
       }
