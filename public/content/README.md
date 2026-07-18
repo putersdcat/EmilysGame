@@ -71,7 +71,6 @@ content/packs/default-v1/
 ```
 
 Regenerate nature slice (optional): `python scripts/content-pipeline/author_nature_pack_slice.py`
-```
 
 ## Usage Example
 
