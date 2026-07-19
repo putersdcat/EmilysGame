@@ -183,8 +183,11 @@ npx playwright test \
   tests/world-gen/place-coherence-homestead.spec.ts \
   tests/world-gen/place-coherence-audit.spec.ts \
   tests/world-gen/gen-determinism.spec.ts \
+  tests/gameplay/playability-m1-core-loop.spec.ts \
   --reporter=line
 ```
+
+Session / leave-via-gate regression stays in the expand suite (`playability-m1-core-loop`) alongside place-coherence locks.
 
 Visual bar (scene-first campaign):  
 `tests/screenshots/proof-scene-law-spawn.png` (+ explore) — intentional gated places, **not** free towers / gate-less pens.  

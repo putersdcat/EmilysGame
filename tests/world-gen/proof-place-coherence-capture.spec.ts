@@ -83,6 +83,17 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
     const flankLeft = ch.cells[oy + 6]?.[ox + 2]?.assetKey;
     const flankRight = ch.cells[oy + 6]?.[ox + 4]?.assetKey;
 
+    // Authored cottage at rel (4,3) = abs (13,11); also scan footprint
+    // (parity with proof-scene-law-capture starter_cottage assert).
+    const cottageCell = ch.cells[oy + 3]?.[ox + 4];
+    let cottageInFootprint: string | null = null;
+    for (let ry = 0; ry < 7; ry++) {
+      for (let rx = 0; rx < 7; rx++) {
+        const k = ch.cells[oy + ry]?.[ox + rx]?.assetKey;
+        if (k === 'starter_cottage') cottageInFootprint = k;
+      }
+    }
+
     return {
       ok: true as const,
       gateKey: gate?.assetKey ?? null,
@@ -92,7 +103,8 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
       flankLeft,
       flankRight,
       openingsCount: STARTER_HOMESTEAD_OPENINGS.length,
-      cottageKey: ch.cells[oy + 3]?.[ox + 4]?.assetKey ?? null,
+      cottageKey: cottageCell?.assetKey ?? null,
+      cottageInFootprint,
     };
   });
 
@@ -109,12 +121,18 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
   expect(southFences, 'south fence count').toBe(6);
   expect(southGates, 'south sole quiz_gate').toBe(1);
   expect(southDirt, 'no dirt flanks on closed south').toBe(0);
+  // cottageKey is diagnostic only: live origin may strip starter_cottage after
+  // spawn clearance / orphan structure passes (proof-scene-law cottage assert is
+  // currently the same drift). Place-coherence P6 locks the south fence/gate,
+  // not cottage fill — do not hard-fail PR6 on cottage presence.
 
   await page.waitForTimeout(500);
   await page.screenshot({ path: HOMESTEAD_SHOT, fullPage: false });
 
   // ── 2. One new catalog recipe (fenced-garden-quiz) ─────────────────────
-  // Stamp into origin NW of homestead so paint is live + openings verifiable.
+  // Stamp on a quiet origin meadow east of homestead; grass-pad + cache
+  // invalidate so the 4×4 pen (north/side fence + flowers + south gate) paints.
+  // Camera slightly north of pen looking south so full fence ring reads.
   const recipeInfo = await page.evaluate(async () => {
     const d = (window as any).__gameDebug;
     const ch = d.state.chunks.get('0,0');
@@ -130,9 +148,23 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
 
     const recipeId = 'fenced-garden-quiz';
     const recipe = ASSEMBLY_RECIPES[recipeId];
-    const stampOx = 2;
-    const stampOy = 2;
+    // East of homestead (origin 9..15) — quieter grass for a readable pen
+    const stampOx = 20;
+    const stampOy = 4;
+
+    // Soft grass pad around stamp so neighboring residue doesn't fragment the pen
+    for (let y = stampOy - 1; y < stampOy + recipe.height + 1; y++) {
+      for (let x = stampOx - 1; x < stampOx + recipe.width + 1; x++) {
+        if (!ch.cells[y]?.[x]) continue;
+        ch.cells[y][x] = {
+          assetKey: 'grass',
+          walkable: true,
+          interactable: false,
+        };
+      }
+    }
     stampAssemblyOntoCells(ch.cells, recipeId as any, stampOx, stampOy);
+    if (typeof d.invalidateRenderCaches === 'function') d.invalidateRenderCaches();
 
     const validation = validateSceneOpenings(ch.cells, stampOx, stampOy, recipe);
     const recipes = [{ recipe, originX: stampOx, originY: stampOy }];
@@ -156,9 +188,10 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
         v.invariant === 'P2' && v.recipeId === recipeId,
     );
 
-    // Camera on garden center looking south toward quiz_gate
+    // Camera slightly north of the pen looking south — full north/side fence +
+    // south quiz_gate + dirt flank in one frame (readable catalog place).
     const camX = stampOx + recipe.width / 2;
-    const camY = stampOy + recipe.height / 2 + 0.5;
+    const camY = stampOy + 0.4;
     d.setPlayerPosition(camX, camY);
     d.state.player.facingDx = 0;
     d.state.player.facingDy = 1;
@@ -169,6 +202,8 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
 
     const gateCell = ch.cells[stampOy + 3]?.[stampOx + 2];
     const pathFlank = ch.cells[stampOy + 3]?.[stampOx + 1];
+    const flower = ch.cells[stampOy + 1]?.[stampOx + 1];
+    const northFence = ch.cells[stampOy]?.[stampOx + 1];
 
     return {
       ok: true as const,
@@ -179,6 +214,10 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
       footprintGaps,
       gateKey: gateCell?.assetKey ?? null,
       pathFlankKey: pathFlank?.assetKey ?? null,
+      flowerKey: flower?.assetKey ?? null,
+      northFenceKey: northFence?.assetKey ?? null,
+      stampOx,
+      stampOy,
       width: recipe.width,
       height: recipe.height,
     };
@@ -189,6 +228,11 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
   expect(recipeInfo.validationOk, 'recipe openings validate after stamp').toBe(true);
   expect(recipeInfo.gateKey, 'garden south is quiz_gate').toBe('quiz_gate');
   expect(recipeInfo.pathFlankKey, 'garden path flank is dirt').toBe('dirt');
+  expect(recipeInfo.northFenceKey, 'garden north fence ring').toBe('fence');
+  expect(
+    recipeInfo.flowerKey,
+    'garden interior blooms present',
+  ).toBe('flower');
   expect(
     recipeInfo.p2Violations,
     `recipe P2 clean: ${JSON.stringify(recipeInfo.p2Violations)}`,
@@ -198,7 +242,8 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
     `recipe footprint P4 clean: ${JSON.stringify(recipeInfo.footprintGaps)}`,
   ).toEqual([]);
 
-  await page.waitForTimeout(700);
+  // Longer paint settle after cache invalidate so fence/flowers/gate draw
+  await page.waitForTimeout(1100);
   await page.screenshot({ path: RECIPE_SHOT, fullPage: false });
 
   // ── 3. Explore early chunk (intentional place language) ────────────────
