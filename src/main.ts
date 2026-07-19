@@ -194,6 +194,10 @@ import {
   MOVE_STEP_MS,
   MOVE_MAX_CATCHUP_MS,
   integrateMovementFrame,
+  takeInjectedDtMs,
+  noteDtClamped,
+  noteSimDtRaw,
+  finalizeInjectFrameIfActive,
 } from './game/player-motor';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
@@ -1234,16 +1238,17 @@ function gameLoop(
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
   const _frameStart = performance.now();
-  // Real frame delta (ms) for frame-rate independent movement/camera.
-  // Guard against negative/zero (tab clock quirks) and use a sane first frame.
-  let dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
-  if (!Number.isFinite(dtMs) || dtMs < 0) dtMs = MOVE_STEP_MS;
+  // Wall-clock rAF interval (ms). Guard against negative (tab clock quirks)
+  // and use a sane first frame. Display FPS uses this *unclamped*; sim may
+  // inject / clamp separately (L0 time contract).
+  let wallDtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
+  if (!Number.isFinite(wallDtMs) || wallDtMs < 0) wallDtMs = MOVE_STEP_MS;
   _lastFrameTime = time;
 
-  // Accurate FPS: count rAF ticks over a ~1s wall window (not "logic frames"
-  // that can be confused with long update work). Display as whole number.
+  // Display FPS: rolling window of unclamped wall intervals (T3) so hitches
+  // are visible instead of under-counted via MOVE_MAX_CATCHUP_MS clamp-on-accumulate.
   _fpsWindowFrames++;
-  _fpsWindowMs += Math.min(dtMs, MOVE_MAX_CATCHUP_MS);
+  _fpsWindowMs += wallDtMs;
   if (_fpsWindowMs >= 1000) {
     ctx.state.fps = Math.round((_fpsWindowFrames * 1000) / _fpsWindowMs);
     ctx.state.fpsCounter = _fpsWindowFrames;
@@ -1252,10 +1257,22 @@ function gameLoop(
     _fpsWindowMs = 0;
   }
 
-  tickWaterAnimation(dtMs);
-  setRenderFrameDelta(dtMs);
+  // Sim dt: optional one-shot inject (tests), else wall. Clamp happens in motor;
+  // count when raw sim dt exceeds catch-up so F3 / inject tests can assert T2.
+  const injected = takeInjectedDtMs();
+  let simDtMs = injected !== null ? injected : wallDtMs;
+  if (!Number.isFinite(simDtMs) || simDtMs < 0) simDtMs = MOVE_STEP_MS;
+  noteSimDtRaw(simDtMs);
+  if (simDtMs > MOVE_MAX_CATCHUP_MS) {
+    noteDtClamped();
+  }
+
+  // Presentation clocks stay on wall time (not artificial hitch inject).
+  tickWaterAnimation(wallDtMs);
+  setRenderFrameDelta(wallDtMs);
   const _updateStart = performance.now();
-  update(ctx.state, ctx.input, dtMs);
+  update(ctx.state, ctx.input, simDtMs);
+  finalizeInjectFrameIfActive();
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state, perfStats);

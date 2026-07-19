@@ -80,7 +80,7 @@ export const WORLD_CONFIG = {
 export const PLAYER_CONFIG = {
   // 0.05 (~3 cells/s @60fps) felt leisurely/grindy for short sessions;
   // 0.08 (~4.8 cells/s) keeps control while making explore→gate loops viable.
-  speed: 0.08,          // Grid units per frame
+  speed: 0.08,          // grid units per MOVE_STEP_MS (1/60 s)
   startPosition: { x: 12.5, y: 12.5 }, // Center of cell at chunk midpoint (avoids footprint overlap with adjacent walls)
   height: 3,
   /** Extra multiplier on top of entityDisplayScale() (tile DPI restore). */

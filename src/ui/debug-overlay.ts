@@ -50,6 +50,16 @@ export function syncDebug(show: boolean, pos: { x: number; y: number }, fps: num
     tpsLabel,
     entropyLabel,
     `Perf: R:${perfStats.render.toFixed(1)} P:${perfStats.particles.toFixed(1)} Wi:${perfStats.wildlife.toFixed(1)} L:${perfStats.lighting.toFixed(1)} Wx:${perfStats.weather.toFixed(1)} U:${perfStats.update.toFixed(1)} T:${perfStats.total.toFixed(1)}ms`,
+    // L0 time contract — show clamp events when any hitch/inject has fired
+    (() => {
+      const dbg = (window as any).__gameDebug;
+      if (!dbg?.getDtClampedCount) return '';
+      const n = dbg.getDtClampedCount() as number;
+      if (n <= 0) return '';
+      const tc = dbg.getTimeContract?.();
+      const cap = tc?.moveMaxCatchupMs ?? 100;
+      return `dtClamp: ${n} (sim > ${cap}ms)`;
+    })(),
     getShadowDebugInfo(),
     `Blend: intensity=${getBlendIntensity().toFixed(2)}`,
     (() => { const ps = getParticleStats(); return `Particles: ${ps.total} (\u{1F98B}${ps.butterfly} \u{2728}${ps.sparkle} \u{1F343}${ps.leaf} \u{1F426}${ps.bird})`; })(),

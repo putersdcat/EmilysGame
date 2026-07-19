@@ -100,6 +100,11 @@ import { generateBarterQuiz, syncBarterQuizDOM } from './trading';
 import { hasAssetSprite } from '../asset-pipeline/asset-sprites';
 import { sampleBiomeTransition } from '../rendering/biome-transition-overlays';
 import { getBootMarks, type BootMark } from './boot-marks';
+import {
+  injectDtMs,
+  getDtClampedCount,
+  getTimeContractSnapshot,
+} from './player-motor';
 
 // ─── Dependencies ────────────────────────────────────────────
 
@@ -135,6 +140,13 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
   return {
     // Boot budget marks (playable-session P0) — copy snapshot for playtests
     bootMarks: (): readonly BootMark[] => getBootMarks(),
+    // L0 time contract (play-stack PR1): hitch inject + clamp instrumentation
+    injectDtMs,
+    getDtClampedCount,
+    getTimeContract: () => ({
+      ...getTimeContractSnapshot(),
+      playerSpeed: state.player.speed,
+    }),
     // Time of day
     setTimeOfDay,
     getCycleProgress,
