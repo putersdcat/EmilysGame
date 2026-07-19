@@ -1,8 +1,10 @@
 # Expandability rails — scene-first product base
 
-**Status:** Campaign PR7 (2026-07-16)  
+**Status:** Place Coherence landed (2026-07-19); scene-first PR7 base (2026-07-16)  
 **Audience:** agents + humans adding content to `experiment/isometric-2.0`  
-**Authority:** `definitive-path-forward-2026-07-16.md`, `design-scene-first-productization.md`, `AGENTS.md`
+**Authority:** `definitive-path-forward-2026-07-16.md`, `design-scene-first-productization.md`, `design-place-coherence-epic-2026-07-19.md`, `AGENTS.md`
+
+**Place coherence pass is law.** After full chunk gen, `runPlaceCoherencePass` (`src/engine/world/PlaceCoherence.ts`) re-asserts recipe openings, seals illegal fence/wall dirt holes, and keeps homestead south closed. Walk stays `cell.walkable` SSOT; paint never decides progression. New places still expand only via **catalog recipe + openings + biome weight** — not WorldUnitSolver / nano thrash.
 
 This document is the **how-to** for growing the game **without** reopening world-engine ontology. After scene-first P0–P1, the cheap surfaces are:
 
@@ -178,18 +180,26 @@ npx playwright test \
   tests/world-gen/scene-invariants.spec.ts \
   tests/world-gen/ban-free-structure-atoms.spec.ts \
   tests/world-gen/path-skeleton.spec.ts \
-  tests/gameplay/playability-m1-core-loop.spec.ts \
+  tests/world-gen/place-coherence-homestead.spec.ts \
+  tests/world-gen/place-coherence-audit.spec.ts \
   tests/world-gen/gen-determinism.spec.ts \
   --reporter=line
 ```
 
-Visual bar (campaign):  
-`tests/screenshots/proof-scene-law-spawn.png` (+ explore) — intentional gated places, **not** free towers / gate-less pens.
-
+Visual bar (scene-first campaign):  
+`tests/screenshots/proof-scene-law-spawn.png` (+ explore) — intentional gated places, **not** free towers / gate-less pens.  
 Capture helper: `tests/world-gen/proof-scene-law-capture.spec.ts`.
+
+Visual bar (place-coherence campaign):  
+`tests/screenshots/proof-place-coherence-homestead.png` (closed south fence),  
+`proof-place-coherence-recipe.png` (catalog recipe e.g. `fenced-garden-quiz`),  
+`proof-place-coherence-explore.png` (early fixed-seed intentional places).  
+Capture helper: `tests/world-gen/proof-place-coherence-capture.spec.ts`.
+
+Homestead closed south fence remains **regression-locked** (P6).
 
 ---
 
 ## 5. One-line summary
 
-> **New place = catalog recipe + openings + biome weight. New learning = content pack. Do not open WorldUnitSolver or invent nano kinds to grow the game.**
+> **New place = catalog recipe + openings + biome weight. Place coherence pass keeps stamp/walk/draw agreed. New learning = content pack. Do not open WorldUnitSolver or invent nano kinds to grow the game.**

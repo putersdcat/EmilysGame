@@ -4,7 +4,7 @@
 |-------|--------|
 | **Author** | (agent planning pass) |
 | **Date** | 2026-07-19 |
-| **Status** | Ready for `/execute-plan` (concurrency 1–2) |
+| **Status** | **Landed** (PR1–PR6, 2026-07-19) — do not re-run this plan |
 | **Branch** | `experiment/isometric-2.0` only |
 | **Epic theme** | **World solving + stamping + paint agreement** (not play-kernel / not movement) |
 | **Baseline tip** | `eb9f09d` (closed homestead south fence) + play-kernel stack |

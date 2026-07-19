@@ -41,9 +41,12 @@ A child can play a **satisfying 5–15 min session**: spawn in a place → move 
 |----------|--------|
 | Scene-first productization (PR1–7) | Done — do **not** re-run that plan |
 | Playable-session recovery | Landed — reopen only if playtest still fails |
+| Place Coherence (gen stamp ↔ walk SSOT ↔ draw) | **Landed** — do **not** re-run that plan |
 | Next default | Content + recipes + residual feel fixes |
 
-Designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `design-playable-session-recovery.md`, `expandability-rails.md`. Vision: `docs/01`, `docs/02`.
+**Place coherence pass is law:** post-pipeline `runPlaceCoherencePass` seals illegal fence/wall gaps; walk is `cell.walkable` SSOT; draw prefers functional gates under budget. Homestead closed south is regression-locked. Proof bar: `tests/screenshots/proof-place-coherence-*.png` (`tests/world-gen/proof-place-coherence-capture.spec.ts`).
+
+Designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `design-playable-session-recovery.md`, `design-place-coherence-epic-2026-07-19.md`, `expandability-rails.md`. Vision: `docs/01`, `docs/02`.
 
 ## Where code goes
 
