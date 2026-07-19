@@ -194,6 +194,10 @@ import {
   MOVE_MAX_CATCHUP_MS,
   integrateMovementFrame,
   resolveEmbedIfNeeded,
+  takeInjectedDtMs,
+  noteDtClamped,
+  noteSimDtRaw,
+  finalizeInjectFrameIfActive,
 } from './game/player-motor';
 import {
   locomotionAllowed,
@@ -1209,16 +1213,15 @@ function gameLoop(
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
   const _frameStart = performance.now();
-  // Real frame delta (ms) for frame-rate independent movement/camera.
-  // Guard against negative/zero (tab clock quirks) and use a sane first frame.
-  let dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
-  if (!Number.isFinite(dtMs) || dtMs < 0) dtMs = MOVE_STEP_MS;
+  // Wall-clock frame delta (presentation + FPS). Guard quirks / first frame.
+  let wallDtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
+  if (!Number.isFinite(wallDtMs) || wallDtMs < 0) wallDtMs = MOVE_STEP_MS;
   _lastFrameTime = time;
 
-  // Accurate FPS: count rAF ticks over a ~1s wall window (not "logic frames"
-  // that can be confused with long update work). Display as whole number.
+  // FPS uses unclamped wall dt (L0: do not clamp the display accumulator).
+  // Injected sim dt does NOT feed this window (presentation stays honest).
   _fpsWindowFrames++;
-  _fpsWindowMs += Math.min(dtMs, MOVE_MAX_CATCHUP_MS);
+  _fpsWindowMs += wallDtMs;
   if (_fpsWindowMs >= 1000) {
     ctx.state.fps = Math.round((_fpsWindowFrames * 1000) / _fpsWindowMs);
     ctx.state.fpsCounter = _fpsWindowFrames;
@@ -1227,10 +1230,21 @@ function gameLoop(
     _fpsWindowMs = 0;
   }
 
-  tickWaterAnimation(dtMs);
-  setRenderFrameDelta(dtMs);
+  // Sim dt: optional one-shot inject (tests), else wall. Motor clamps integrate.
+  const injected = takeInjectedDtMs();
+  let simDtMs = injected !== null ? injected : wallDtMs;
+  if (!Number.isFinite(simDtMs) || simDtMs < 0) simDtMs = MOVE_STEP_MS;
+  noteSimDtRaw(simDtMs);
+  if (simDtMs > MOVE_MAX_CATCHUP_MS) {
+    noteDtClamped();
+  }
+
+  // Presentation clocks stay on wall time (not artificial hitch inject).
+  tickWaterAnimation(wallDtMs);
+  setRenderFrameDelta(wallDtMs);
   const _updateStart = performance.now();
-  update(ctx.state, ctx.input, dtMs);
+  update(ctx.state, ctx.input, simDtMs);
+  finalizeInjectFrameIfActive();
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state, perfStats);
