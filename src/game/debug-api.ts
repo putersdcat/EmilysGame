@@ -374,8 +374,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     getInsectQuestions: () => getInsectQuestions(),
     startInsectQuiz: () => startInsectQuiz(state),
     getStreamDrinkCount: () => state.diarrhea.streamDrinkCount,
-    getDiarrheaActive: () => state.diarrhea.diarrheaUntil > state.frameCount,
-    getDiarrheaLocked: () => state.diarrhea.diarrheaLocked,
+    getDiarrheaActive: () => state.diarrhea.diarrheaUntil > performance.now(),
+    getDiarrheaLocked: () => state.diarrhea.diarrheaLocked && performance.now() < state.diarrhea.diarrheaLockUntil,
     getDiarrheaState: () => ({
       streamDrinkCount: state.diarrhea.streamDrinkCount,
       diarrheaUntil: state.diarrhea.diarrheaUntil,
@@ -383,15 +383,16 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
       diarrheaLockUntil: state.diarrhea.diarrheaLockUntil,
       diarrheaLastTrigger: state.diarrhea.diarrheaLastTrigger,
       poopMarkerCount: state.diarrhea.poopMarkers.length,
-      frameCount: state.frameCount,
+      now: performance.now(),
     }),
-    // Force-trigger diarrhea event for testing (#133)
+    // Force-trigger diarrhea event for testing (#133) — real-time deadlines
     triggerDiarrhea: () => {
+      const now = performance.now();
       state.diarrhea.diarrheaLocked = true;
-      state.diarrhea.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-      state.diarrhea.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-      state.diarrhea.diarrheaLastTrigger = state.frameCount;
-      state.diarrhea.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: state.frameCount });
+      state.diarrhea.diarrheaLockUntil = now + DIARRHEA_CONFIG.LOCK_DURATION_MS;
+      state.diarrhea.diarrheaUntil = now + DIARRHEA_CONFIG.LOCK_DURATION_MS + DIARRHEA_CONFIG.DEBUFF_DURATION_MS;
+      state.diarrhea.diarrheaLastTrigger = now;
+      state.diarrhea.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: now });
       setPendingPoopBurst(true);
       setDiarrheaOverlay(true);
       playSfx(state.sfx, 'diarrhea_gurgle');

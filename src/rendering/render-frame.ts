@@ -105,8 +105,8 @@ export function renderFrame(
   renderPoopMarkers(
     renderer.getCtx(),
     state.diarrhea.poopMarkers,
-    state.frameCount,
-    DIARRHEA_CONFIG.MARKER_DURATION_FRAMES,
+    performance.now(),
+    DIARRHEA_CONFIG.MARKER_DURATION_MS,
     (gx: number, gy: number) => renderer.gridToScreen(gx, gy, cam),
   );
 

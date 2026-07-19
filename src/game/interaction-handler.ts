@@ -53,7 +53,7 @@ import { applyStatusEffect } from './status';
 import { setTransientExpression } from './expression';
 import { triggerHint } from '../ui/thought-bubbles';
 import { setDiarrheaOverlay } from '../rendering/debuff-visuals';
-import { DIARRHEA_CONFIG } from './illness';
+import { DIARRHEA_CONFIG, triggerDiarrheaEvent, isDiarrheaOffCooldown } from './illness';
 import { getQuizBias } from './knowledge';
 import { blendDifficulty, getDifficultyForPosition, modulateDifficulty, pickQuizQuestion } from './quiz';
 import { prefetchQuizRephrase } from '../engine/llm';
@@ -300,25 +300,16 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       const drinkCount = state.diarrhea.streamDrinkCount;
 
       // Diarrhea roll: 20% after threshold, guaranteed at 6+ drinks, with cooldown
+      // (real-time ms — not frame counts; see illness.ts)
       const pastThreshold = drinkCount >= DIARRHEA_CONFIG.DRINK_THRESHOLD;
-      const offCooldown = (state.frameCount - state.diarrhea.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
+      const offCooldown = isDiarrheaOffCooldown(state.diarrhea);
       const chance = drinkCount >= DIARRHEA_CONFIG.GUARANTEED_AT
         ? 1.0
         : DIARRHEA_CONFIG.BASE_CHANCE;
 
       if (pastThreshold && offCooldown && Math.random() < chance) {
         // --- Trigger diarrhea illness event (#133) ---
-        state.diarrhea.diarrheaLocked = true;
-        state.diarrhea.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-        state.diarrhea.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-        state.diarrhea.diarrheaLastTrigger = state.frameCount;
-
-        // Spawn poop marker at current position
-        state.diarrhea.poopMarkers.push({
-          x: Math.round(state.player.x),
-          y: Math.round(state.player.y),
-          placedAt: state.frameCount,
-        });
+        triggerDiarrheaEvent(state.diarrhea, state.player.x, state.player.y);
 
         // Poop particle burst VFX (uses screen coords — resolved in render)
         _pendingPoopBurst = true;

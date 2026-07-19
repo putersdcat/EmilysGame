@@ -301,29 +301,32 @@ export function updateAndRenderPoopParticles(ctx: CanvasRenderingContext2D): voi
 
 /**
  * Render poop markers (💩) in world space. Call during the render pass.
- * Markers fade out over their last 300 frames (~5s).
+ * `placedAt` and `markerDurationMs` are real-time (performance.now() ms).
+ * Markers fade over the last 5s of their life.
  */
 export function renderPoopMarkers(
   ctx: CanvasRenderingContext2D,
   markers: { x: number; y: number; placedAt: number }[],
-  frameCount: number,
-  markerDuration: number,
+  _nowOrFrameCount: number,
+  markerDurationMs: number,
   gridToScreen: (gx: number, gy: number) => { x: number; y: number },
 ): void {
   if (markers.length === 0) return;
+  const now = performance.now();
+  const fadeMs = 5_000;
   ctx.save();
   ctx.font = '22px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   for (let i = markers.length - 1; i >= 0; i--) {
     const m = markers[i];
-    const age = frameCount - m.placedAt;
-    if (age >= markerDuration) {
+    const age = now - m.placedAt;
+    if (age >= markerDurationMs) {
       markers.splice(i, 1);
       continue;
     }
-    const fadeStart = markerDuration - 300; // Start fading 5s before expiry
-    const alpha = age > fadeStart ? 1 - (age - fadeStart) / 300 : 1;
+    const fadeStart = markerDurationMs - fadeMs;
+    const alpha = age > fadeStart ? 1 - (age - fadeStart) / fadeMs : 1;
     const { x: sx, y: sy } = gridToScreen(m.x, m.y);
     ctx.globalAlpha = alpha * 0.85;
     ctx.fillText('\u{1F4A9}', sx, sy);

@@ -327,6 +327,14 @@ export function pickQuizQuestion(
 /**
  * Start a quiz for the given difficulty.
  * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
+ *
+ * **Critical contract:** the quiz becomes `active` *synchronously* before any
+ * `await`. Callers set `state.paused = true` when opening a quiz; if we only
+ * flipped `active` after LLM rephrase, a slow/hung rephrase left the player
+ * paused with **no quiz UI and no movement** (hard softlock). Rephrase is
+ * now a best-effort upgrade of `displayText` after the UI is already live.
+ *
+ * @returns false if no question was available (caller must unpause / recover)
  * @param categoryBias - optional Record<category, weight> for weighted random selection
  * @param preSelectedQuestion - question already picked by pickQuizQuestion()
  *   at pendingQuiz-set time (2026-07-10). Callers that pre-pick should
@@ -341,12 +349,12 @@ export async function startQuiz(
   npcId: string | null,
   categoryBias?: Record<string, number>,
   preSelectedQuestion?: QuizQuestion | null,
-): Promise<void> {
+): Promise<boolean> {
   const question = preSelectedQuestion ?? pickQuizQuestion(difficulty, categoryBias);
 
   if (!question) {
     state.active = false;
-    return;
+    return false;
   }
 
   // Shuffle the answers array (correct answer is always at index 0 in source)
@@ -358,23 +366,33 @@ export async function startQuiz(
   // Add "I don't know" as the last option
   shuffledAnswers.push("I don't know 📖");
 
-  // Use an already-ready background prefetch instantly if one exists
-  // (2026-07-10 -- see prefetchQuizRephrase()); otherwise fall through to
-  // the direct, TPS-gated, timeout-bound call exactly as before.
+  // ── SYNC activate (before any await) ──────────────────────────
+  // Prefer a finished background prefetch; otherwise show the original
+  // wording immediately so the player is never input-locked without UI.
   const prefetched = getPrefetchedResult<string>(question.question);
-  const displayText = prefetched !== undefined
-    ? prefetched
-    : await rephraseQuizQuestion(question.question);
-
   state.active = true;
   state.question = question;
-  state.displayText = displayText;
+  state.displayText = prefetched !== undefined ? prefetched : question.question;
   state.choices = shuffledAnswers;
   state.correctIndex = correctIdx;
   state.selectedIndex = 0;
   state.result = 'pending';
   state.npcId = npcId;
   state.difficulty = difficulty;
+
+  // ── ASYNC flavor (optional) ───────────────────────────────────
+  if (prefetched === undefined) {
+    try {
+      const displayText = await rephraseQuizQuestion(question.question);
+      // Only apply if the player is still on this same quiz instance
+      if (state.active && state.question === question && displayText) {
+        state.displayText = displayText;
+      }
+    } catch {
+      // Keep the original question text already shown
+    }
+  }
+  return true;
 }
 
 /**

@@ -38,6 +38,7 @@ import { createTradeState } from './trading';
 import { createPlayerStatus, resetTickCounter } from './status';
 import { createInjuryState } from './injury';
 import { createInitialDiarrheaState } from './illness';
+import { resetPlayerMotor } from './player-motor';
 import { stop as musicStop } from './audio/music';
 import { stopAmbience } from './audio/sfx';
 import { cancelSpeech } from './audio/npc-voice';
@@ -96,6 +97,8 @@ export async function resetGameState(state: GameState): Promise<void> {
   // Reset diarrhea illness chain (#133)
   state.diarrhea = createInitialDiarrheaState();
   setDiarrheaOverlay(false);
+  // Reset locomotion stuck timers
+  resetPlayerMotor();
   // Reset quiz type flags (#109, #110)
   state._woundCareQuiz = false;
   state._hygieneQuiz = false;

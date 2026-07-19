@@ -11,7 +11,7 @@ import { IsometricRenderer, setDialogNpc, setRenderFrameDelta } from './renderin
 import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { feedEntropy } from './engine/gen';
-import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
+import { interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty, pickQuizQuestion } from './game/quiz';
 import { prefetchQuizRephrase } from './engine/llm';
 import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
@@ -185,7 +185,16 @@ import {
 } from './game/input-extra-keys';
 // B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
 // extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
-import { DIARRHEA_CONFIG } from './game/illness';
+import {
+  DIARRHEA_CONFIG,
+  isDiarrheaDebuffActive,
+  isDiarrheaLockActive,
+} from './game/illness';
+import {
+  MOVE_STEP_MS,
+  MOVE_MAX_CATCHUP_MS,
+  integrateMovementFrame,
+} from './game/player-motor';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
 import {
@@ -492,7 +501,14 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           return wasActive;
         }
         prefetchQuizRephrase(nextQ.question);
-        void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ);
+        // startQuiz activates synchronously before any LLM await — never leave
+        // paused=true with quiz.active=false (input softlock).
+        void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ).then((ok) => {
+          if (!ok) {
+            state.pendingGateQuiz = null;
+            state.paused = false;
+          }
+        });
         state.paused = true;
         return wasActive;
       } else if (state.quiz.result === 'wrong') {
@@ -604,11 +620,17 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
         // pq.question (2026-07-10): pre-picked when pendingQuiz was set,
         // so startQuiz() uses the SAME question its background rephrase
         // prefetch was keyed on, instead of re-rolling a different one.
-        startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias, pq.question);
+        // Activate is synchronous inside startQuiz; recover pause if no question.
+        void startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias, pq.question).then((ok) => {
+          if (!ok) {
+            state.paused = false;
+            addToast(state.ui, '📖 No quiz available right now.', '#ff9800', 2500);
+          }
+        });
         playSfx(state.sfx, 'quiz_start');
         // Auto-read question for young age bands (#94)
         _autoReadQuizQuestion(state);
-        // state.paused stays true for quiz
+        // state.paused stays true for quiz (active is already true after sync start)
       } else if (state._pendingInsectQuiz) {
         // Insect safety quiz after eating worms (#110 Phase 3)
         state._pendingInsectQuiz = false;
@@ -820,12 +842,12 @@ function tickSubsystems(state: GameState, justKeys: any, dtMs: number = 16.67): 
 
 /**
  * Check the diarrhea control lock (#133): when locked, the player
- * cannot move or interact until the lock expires. B5 micro-slice 11.32 (#268).
+ * cannot move or interact until the lock expires (real-time ms).
  * Returns true if input should be absorbed (caller must endFrame + return).
  */
 function handleDiarrheaControlLock(state: GameState): boolean {
   if (!state.diarrhea.diarrheaLocked) return false;
-  if (state.frameCount >= state.diarrhea.diarrheaLockUntil) {
+  if (!isDiarrheaLockActive(state.diarrhea)) {
     // Lock expired — recover
     state.diarrhea.diarrheaLocked = false;
     setDiarrheaOverlay(false);
@@ -838,114 +860,32 @@ function handleDiarrheaControlLock(state: GameState): boolean {
 }
 
 /**
- * Nominal sim step (ms). Player.speed is authored as grid-units per this
- * interval (~60fps). Movement is integrated in substeps of at most this size
- * so hitch frames never teleport half a cell in one go.
- */
-const MOVE_STEP_MS = 1000 / 60;
-/** Drop wall-clock backlog beyond this so a long stall does not spiral. */
-const MOVE_MAX_CATCHUP_MS = 100;
-
-/**
- * Integrate one small movement step (collision + slide).
- * Returns whether any axis moved, and the attempted new cell for bump FX.
- */
-function integrateMoveStep(
-  state: GameState,
-  mv: { dx: number; dy: number },
-  stepScale: number,
-  speedMult: number,
-): { moved: boolean; attemptX: number; attemptY: number } {
-  const stepSpeed = state.player.speed * speedMult * stepScale;
-  const dx = mv.dx * stepSpeed;
-  const dy = mv.dy * stepSpeed;
-  const newX = state.player.x + dx;
-  const newY = state.player.y + dy;
-
-  let movedX = false;
-  let movedY = false;
-  if (state.player.spawnEscape) {
-    // Escape hatch: bypass collision until on walkable ground (state-init writeup).
-    state.player.x = newX;
-    state.player.y = newY;
-    movedX = true;
-    movedY = true;
-    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
-      state.player.spawnEscape = false;
-    }
-  } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
-    state.player.x = newX;
-    state.player.y = newY;
-    movedX = true;
-    movedY = true;
-  } else {
-    // Axis-independent collision (#151, #180); slide on one axis when blocked.
-    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
-      state.player.x = newX;
-      movedX = true;
-    }
-    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
-      state.player.y = newY;
-      movedY = true;
-    }
-  }
-  return { moved: movedX || movedY, attemptX: newX, attemptY: newY };
-}
-
-/**
  * Handle player movement (or idle state) for the current frame.
- * B5 micro-slice 11.33 (#268): extracted from update() in main.ts.
- * Manages: speed debuffs, footprint collision, footstep SFX,
- * sinkDepth (water/river), hazard injury on wall bump,
- * direction tracking, facing pose, sprite animation, auto-collect,
- * camera follow, chunk loading.
- * Sets state.player.isMoving = true/false as a side effect; callers
- * can read it via state.player.isMoving.
- *
- * Movement is frame-rate independent via real dtMs, but **sub-stepped**
- * at ~60Hz so a slow frame (or hitch) never applies a multi-cell dash
- * that feels like bursty/uncontrollable running.
+ * Locomotion owned by `player-motor.ts` (substeps + stuck recovery).
+ * This wrapper owns presentation side-effects: footsteps, sink, wall bump,
+ * facing sprites, camera, chunk load, auto-collect.
  */
 function handleMovement(state: GameState, input: InputManager, dtMs: number = 16.67): void {
   const mv = input.getMovementVector();
   const wantsMove = mv.dx !== 0 || mv.dy !== 0;
 
-  // Real elapsed time for this frame, capped so a tab-refocus stall does
-  // not dump a huge backlog into one integrate pass.
   const frameMs = Math.min(Math.max(dtMs, 0), MOVE_MAX_CATCHUP_MS);
-  // Full-frame scale for camera (and for anim/sfx which accumulate their own timers).
   const frameDt = frameMs / MOVE_STEP_MS;
 
   if (!wantsMove) {
     updatePlayerVisuals(state, mv, false, frameMs);
     resetFootstepCounter();
-    // Idle path used to return here and skip autoCollect — standing on a coin
-    // never picked up. Collect is independent of held movement keys (P0 feel).
   } else {
-    // First accepted movement input = post-menu Done-when signal
     markFirstMovableIfNeeded();
 
-    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
+    const diarrheaMult = isDiarrheaDebuffActive(state.diarrhea) ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
     const speedMult = debuffs.speedMult * injuryMult * diarrheaMult;
 
-    // Sub-step integration: each step is at most one nominal 60fps tick so
-    // collision stays reliable and position never jumps half a cell at once.
-    let remaining = frameMs;
-    let anyMoved = false;
-    let lastAttemptX = state.player.x;
-    let lastAttemptY = state.player.y;
-    while (remaining > 1e-6) {
-      const stepMs = Math.min(remaining, MOVE_STEP_MS);
-      const stepScale = stepMs / MOVE_STEP_MS;
-      const result = integrateMoveStep(state, mv, stepScale, speedMult);
-      if (result.moved) anyMoved = true;
-      lastAttemptX = result.attemptX;
-      lastAttemptY = result.attemptY;
-      remaining -= stepMs;
-    }
+    const { anyMoved, lastAttemptX, lastAttemptY } = integrateMovementFrame(
+      state, mv, frameMs, speedMult,
+    );
 
     if (anyMoved) {
       const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
@@ -1005,10 +945,8 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
       }
     }
 
-    // Always update facing from held direction so Space aims at what you're pushing into
     updatePlayerVisuals(state, mv, true, frameMs);
 
-    // Frame-rate independent smoothing: 0.15/frame @60fps ≈ time-constant.
     const camLerp = 1 - Math.pow(1 - 0.15, frameDt);
     state.camera.x += (state.player.x - state.camera.x) * camLerp;
     state.camera.y += (state.player.y - state.camera.y) * camLerp;
@@ -1016,7 +954,6 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
     maybeLoadChunks(state);
   }
 
-  // Idle + moving: auto-collect under footprint (full-bag → rate-limited toast)
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
   if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
     handleInteraction(collected, state);
@@ -1132,7 +1069,10 @@ function update(state: GameState, input: InputManager, dtMs: number = 16.67): vo
   // Edge-detected keys for single-fire actions
   const justKeys = input.justPressed();
 
-  // --- Book of Knowledge open: absorb input, skip game logic ---
+  // ── Modal / play-mode gate ────────────────────────────────────
+  // Single place that decides whether locomotion may run. Orphan
+  // `paused=true` with no owning modal used to freeze keyboard forever
+  // (classic startQuiz-await softlock). Recover to play automatically.
   if (state.knowledge.bookOpen) {
     input.endFrame();
     return;
@@ -1159,11 +1099,24 @@ function update(state: GameState, input: InputManager, dtMs: number = 16.67): vo
     return;
   }
 
-  // Hard pause (pause menu / overlays that set paused without early-return)
+  // Hard pause only when a real owner holds it (pause menu / open quiz UI).
+  // If paused but nothing modal is active, clear the orphan and continue play.
   if (state.paused) {
-    input.endFrame();
-    _clearExtraKeys();
-    return;
+    const pauseMenuOpen = document.getElementById('pauseMenu')?.style.display === 'flex';
+    const modalOwner =
+      state.quiz.active ||
+      state.ui.dialog.active ||
+      state.trade.active ||
+      state.knowledge.bookOpen ||
+      pauseMenuOpen;
+    if (!modalOwner) {
+      // Orphan pause (e.g. quiz failed to start, async race) — free the player
+      state.paused = false;
+    } else {
+      input.endFrame();
+      _clearExtraKeys();
+      return;
+    }
   }
 
   handleMovement(state, input, dtMs);
