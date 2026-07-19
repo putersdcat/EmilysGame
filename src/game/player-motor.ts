@@ -17,6 +17,7 @@ import type { ChunkData } from '../types/game.types';
 import { isFootprintWalkable } from '../engine/walkability-query';
 import { SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
 import { PLAYER_CONFIG, WORLD_CONFIG } from '../config/game.config';
+import { addToast } from '../ui/ui';
 
 /** Nominal sim step — `player.speed` is grid-units per this interval. */
 export const MOVE_STEP_MS = 1000 / 60;
@@ -257,7 +258,8 @@ export function resolveEmbedIfNeeded(state: GameState): EmbedResolveResult {
   // New embed event or first attempt
   _embedEventActive = true;
   const dest = resolveEmbedDestination(state.player.x, state.player.y, state.chunks);
-  if (dest) {
+  // Belt-and-suspenders: never write a dest that fails walkability
+  if (dest && isFootprintWalkable(dest.x, dest.y, state.chunks)) {
     state.player.x = dest.x;
     state.player.y = dest.y;
     state.player.spawnEscape = false;
@@ -274,8 +276,16 @@ export function resolveEmbedIfNeeded(state: GameState): EmbedResolveResult {
   state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
   if (!_embedToastShown) {
     _embedToastShown = true;
+    console.assert(
+      false,
+      '[player-motor] embed recovery ladder exhausted; staying put (no noclip)',
+    );
     if (typeof console !== 'undefined' && console.warn) {
       console.warn('[player-motor] embed recovery ladder exhausted; staying put (no noclip)');
+    }
+    // Player-visible once (vanishingly rare in product gen)
+    if (state.ui) {
+      addToast(state.ui, 'Finding solid ground…', '#ffd27a', 2500);
     }
   }
   return 'stuck';
@@ -292,45 +302,57 @@ export function ensureNotEmbedded(state: GameState): void {
 // ─── Stuck legal nudges ───────────────────────────────────────
 
 /**
- * Ordered legal nudge candidates from movement intent.
+ * Ordered legal nudge candidates from movement intent (design a–d).
  * a) along input * ε
  * b) along input * 2ε
  * c) perpendicular ±
- * d) axis unit favoring input sign
+ * d) axis unit (±ε,0)/(0,±ε) favoring input sign
+ * Deduped so pure-axis intent does not waste NUDGE_MAX_ATTEMPTS on duplicates.
  */
 export function buildStuckNudgeCandidates(
   mv: { dx: number; dy: number },
 ): Array<{ dx: number; dy: number }> {
   const eps = NUDGE_EPS;
-  const out: Array<{ dx: number; dy: number }> = [];
   const len = Math.hypot(mv.dx, mv.dy);
   const ndx = len > 1e-8 ? mv.dx / len : 0;
   const ndy = len > 1e-8 ? mv.dy / len : 0;
-
-  // a) along input
-  out.push({ dx: ndx * eps, dy: ndy * eps });
-  // b) along input * 2ε
-  out.push({ dx: ndx * 2 * eps, dy: ndy * 2 * eps });
-  // c) perpendicular ±
-  out.push({ dx: -ndy * eps, dy: ndx * eps });
-  out.push({ dx: ndy * eps, dy: -ndx * eps });
-  // d) axis unit favoring input sign
   const sx = ndx === 0 ? 0 : Math.sign(ndx);
   const sy = ndy === 0 ? 0 : Math.sign(ndy);
-  if (sx !== 0) out.push({ dx: sx * eps, dy: 0 });
-  if (sy !== 0) out.push({ dx: 0, dy: sy * eps });
-  // remaining axis opposites as last resorts
-  if (sx === 0) {
-    out.push({ dx: eps, dy: 0 });
-    out.push({ dx: -eps, dy: 0 });
+
+  const raw: Array<{ dx: number; dy: number }> = [
+    // a) along input
+    { dx: ndx * eps, dy: ndy * eps },
+    // b) along input * 2ε
+    { dx: ndx * 2 * eps, dy: ndy * 2 * eps },
+    // c) perpendicular ±
+    { dx: -ndy * eps, dy: ndx * eps },
+    { dx: ndy * eps, dy: -ndx * eps },
+  ];
+
+  // d) axis unit favoring input sign, then remaining cardinals
+  if (sx !== 0) {
+    raw.push({ dx: sx * eps, dy: 0 });
+    raw.push({ dx: -sx * eps, dy: 0 });
   } else {
-    out.push({ dx: -sx * eps, dy: 0 });
+    raw.push({ dx: eps, dy: 0 });
+    raw.push({ dx: -eps, dy: 0 });
   }
-  if (sy === 0) {
-    out.push({ dx: 0, dy: eps });
-    out.push({ dx: 0, dy: -eps });
+  if (sy !== 0) {
+    raw.push({ dx: 0, dy: sy * eps });
+    raw.push({ dx: 0, dy: -sy * eps });
   } else {
-    out.push({ dx: 0, dy: -sy * eps });
+    raw.push({ dx: 0, dy: eps });
+    raw.push({ dx: 0, dy: -eps });
+  }
+
+  const out: Array<{ dx: number; dy: number }> = [];
+  const seen = new Set<string>();
+  for (const c of raw) {
+    if (Math.abs(c.dx) < 1e-12 && Math.abs(c.dy) < 1e-12) continue;
+    const key = `${c.dx.toFixed(5)},${c.dy.toFixed(5)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(c);
   }
   return out;
 }

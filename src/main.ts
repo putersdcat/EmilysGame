@@ -194,10 +194,7 @@ import {
   MOVE_STEP_MS,
   MOVE_MAX_CATCHUP_MS,
   integrateMovementFrame,
-  takeInjectedDtMs,
-  noteDtClamped,
-  noteSimDtRaw,
-  finalizeInjectFrameIfActive,
+  resolveEmbedIfNeeded,
 } from './game/player-motor';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
@@ -876,6 +873,8 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
   const frameDt = frameMs / MOVE_STEP_MS;
 
   if (!wantsMove) {
+    // PR4: idle frames still heal embeds (load/gen drift without requiring WASD)
+    resolveEmbedIfNeeded(state);
     updatePlayerVisuals(state, mv, false, frameMs);
     resetFootstepCounter();
   } else {
@@ -1237,19 +1236,16 @@ function gameLoop(
   ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
 ): void {
   const _frameStart = performance.now();
-  // Wall-clock rAF interval (ms). Guard against negative (tab clock quirks)
-  // and use a sane first frame. Display FPS uses this *unclamped*; sim may
-  // inject / clamp separately (L0 time contract).
-  let wallDtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
-  if (!Number.isFinite(wallDtMs) || wallDtMs < 0) wallDtMs = MOVE_STEP_MS;
+  // Real frame delta (ms) for frame-rate independent movement/camera.
+  // Guard against negative/zero (tab clock quirks) and use a sane first frame.
+  let dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
+  if (!Number.isFinite(dtMs) || dtMs < 0) dtMs = MOVE_STEP_MS;
   _lastFrameTime = time;
 
-  // Display FPS: rolling window of unclamped wall intervals (L0 T3) so hitches
-  // are visible instead of under-counted via MOVE_MAX_CATCHUP_MS clamp-on-accumulate.
-  // Injected sim dt intentionally does NOT feed this window (wall/presentation stay honest).
-  // Automated T3 proof deferred to manual matrix / PR7; regression would reintroduce clamp-on-accumulate.
+  // Accurate FPS: count rAF ticks over a ~1s wall window (not "logic frames"
+  // that can be confused with long update work). Display as whole number.
   _fpsWindowFrames++;
-  _fpsWindowMs += wallDtMs;
+  _fpsWindowMs += Math.min(dtMs, MOVE_MAX_CATCHUP_MS);
   if (_fpsWindowMs >= 1000) {
     ctx.state.fps = Math.round((_fpsWindowFrames * 1000) / _fpsWindowMs);
     ctx.state.fpsCounter = _fpsWindowFrames;
@@ -1258,22 +1254,10 @@ function gameLoop(
     _fpsWindowMs = 0;
   }
 
-  // Sim dt: optional one-shot inject (tests), else wall. Clamp happens in motor;
-  // count when raw sim dt exceeds catch-up so F3 / inject tests can assert T2.
-  const injected = takeInjectedDtMs();
-  let simDtMs = injected !== null ? injected : wallDtMs;
-  if (!Number.isFinite(simDtMs) || simDtMs < 0) simDtMs = MOVE_STEP_MS;
-  noteSimDtRaw(simDtMs);
-  if (simDtMs > MOVE_MAX_CATCHUP_MS) {
-    noteDtClamped();
-  }
-
-  // Presentation clocks stay on wall time (not artificial hitch inject).
-  tickWaterAnimation(wallDtMs);
-  setRenderFrameDelta(wallDtMs);
+  tickWaterAnimation(dtMs);
+  setRenderFrameDelta(dtMs);
   const _updateStart = performance.now();
-  update(ctx.state, ctx.input, simDtMs);
-  finalizeInjectFrameIfActive();
+  update(ctx.state, ctx.input, dtMs);
   const _updateEnd = performance.now();
   perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
   renderFrame(ctx.renderer, ctx.state, perfStats);

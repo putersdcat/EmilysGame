@@ -58,6 +58,8 @@ import { clearWeather } from '../rendering/weather';
 import { type GameState } from './game-state';
 import { type SaveData } from './save';
 import { type AgeBand } from '../types/content-pack.types';
+import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
+import { resetPlayerMotor, resolveEmbedIfNeeded } from './player-motor';
 
 // ─── Public API ──────────────────────────────────────────────
 
@@ -150,4 +152,14 @@ export async function applySaveData(state: GameState, data: SaveData): Promise<v
   state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
   await ensureChunksAroundYielding(state);
+
+  // PR4: mid-session slot load parity with state-init — raw restore + gen
+  // drift can leave footprint illegal. Run constrained embed ladder once
+  // (never multi-frame noclip). Visual elevate only if still illegal (step 4).
+  resetPlayerMotor();
+  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
+    state.player.spawnEscape = true;
+    state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+    resolveEmbedIfNeeded(state);
+  }
 }
