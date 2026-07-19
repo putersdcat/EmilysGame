@@ -92,6 +92,8 @@ export function getTimeContractSnapshot(): {
   lastSimDtClampedMs: number;
   lastMoveDisplacement: number;
   lastInject: { rawMs: number; clampedMs: number; displacement: number } | null;
+  /** True only while injectDtMs is queued and not yet consumed by gameLoop. */
+  pendingInject: boolean;
 } {
   return {
     moveStepMs: MOVE_STEP_MS,
@@ -101,13 +103,23 @@ export function getTimeContractSnapshot(): {
     lastSimDtClampedMs: _lastSimDtClampedMs,
     lastMoveDisplacement: _lastMoveDisplacement,
     lastInject: _lastInjectLatch ? { ..._lastInjectLatch } : null,
+    pendingInject: _pendingInjectDtMs !== null,
   };
 }
 
-/** Reset motor timers (new game / load). */
+/** Reset motor timers + L0 time-contract module state (new game / load). */
 export function resetPlayerMotor(): void {
   _blockedWhileMovingMs = 0;
   _escapeBurstMs = 0;
+  // Clear one-shot inject / F3 counters so a pending hitch inject or stale
+  // dtClamp count cannot leak across reset/new-game (play-stack L0).
+  _pendingInjectDtMs = null;
+  _injectFrameActive = false;
+  _lastInjectLatch = null;
+  _dtClampedCount = 0;
+  _lastSimDtRawMs = 0;
+  _lastSimDtClampedMs = 0;
+  _lastMoveDisplacement = 0;
 }
 
 export interface MoveStepResult {
@@ -275,13 +287,16 @@ export function integrateMovementFrame(
 /**
  * If this frame consumed injectDtMs but never integrated movement (idle /
  * modal), still latch raw/clamped with zero displacement so tests can assert.
- * Call once per frame after update.
+ * Keeps live last-frame fields in sync with the latch. Call once after update.
  */
 export function finalizeInjectFrameIfActive(): void {
   if (!_injectFrameActive) return;
+  const clamped = Math.min(Math.max(_lastSimDtRawMs, 0), MOVE_MAX_CATCHUP_MS);
+  _lastSimDtClampedMs = clamped;
+  _lastMoveDisplacement = 0;
   _lastInjectLatch = {
     rawMs: _lastSimDtRawMs,
-    clampedMs: Math.min(Math.max(_lastSimDtRawMs, 0), MOVE_MAX_CATCHUP_MS),
+    clampedMs: clamped,
     displacement: 0,
   };
   _injectFrameActive = false;

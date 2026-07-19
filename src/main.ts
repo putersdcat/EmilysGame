@@ -1245,8 +1245,10 @@ function gameLoop(
   if (!Number.isFinite(wallDtMs) || wallDtMs < 0) wallDtMs = MOVE_STEP_MS;
   _lastFrameTime = time;
 
-  // Display FPS: rolling window of unclamped wall intervals (T3) so hitches
+  // Display FPS: rolling window of unclamped wall intervals (L0 T3) so hitches
   // are visible instead of under-counted via MOVE_MAX_CATCHUP_MS clamp-on-accumulate.
+  // Injected sim dt intentionally does NOT feed this window (wall/presentation stay honest).
+  // Automated T3 proof deferred to manual matrix / PR7; regression would reintroduce clamp-on-accumulate.
   _fpsWindowFrames++;
   _fpsWindowMs += wallDtMs;
   if (_fpsWindowMs >= 1000) {

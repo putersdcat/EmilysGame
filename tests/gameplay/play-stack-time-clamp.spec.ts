@@ -95,15 +95,18 @@ test('injectDtMs large hitch: clamp metrics + no multi-cell teleport', async ({ 
   const latch = await page.evaluate(() => {
     const d = (window as any).__gameDebug;
     const tc = d.getTimeContract();
+    const s = d.state;
     return {
       clamped: d.getDtClampedCount() as number,
       inject: tc.lastInject as { rawMs: number; clampedMs: number; displacement: number },
+      pendingInject: tc.pendingInject as boolean,
       moveMaxCatchupMs: tc.moveMaxCatchupMs as number,
       speed: d.state.player.speed as number,
+      x: s.player.x as number,
+      y: s.player.y as number,
+      frame: s.frameCount as number,
     };
   });
-
-  await page.keyboard.up('d');
 
   expect(latch.clamped, 'raw sim dt 500ms must increment dtClampedCount').toBeGreaterThan(
     clampedBefore,
@@ -114,6 +117,7 @@ test('injectDtMs large hitch: clamp metrics + no multi-cell teleport', async ({ 
     latch.inject.clampedMs,
     'motor must clamp integrate dt to MOVE_MAX_CATCHUP_MS',
   ).toBeLessThanOrEqual(setup.moveMaxCatchupMs + 1e-6);
+  expect(latch.pendingInject, 'inject is one-shot — pending cleared after consume').toBe(false);
 
   // Escape recovery can add one free step (≤ speed * 1); allow that margin.
   const maxWithEscapeStep = maxClampedCells + setup.speed + 1e-3;
@@ -126,4 +130,51 @@ test('injectDtMs large hitch: clamp metrics + no multi-cell teleport', async ({ 
 
   // Hard fail: multi-cell teleport as if hitch were fully integrated.
   expect(latch.inject.displacement).toBeLessThan(unclamped500Cells * 0.5);
+
+  // L0 Done #2: no multi-second catch-up dash on subsequent frames (drop, not queue).
+  // Hold move ~150ms; displacement must stay within nominal budget, not residual hitch.
+  await page.waitForTimeout(150);
+
+  const post = await page.evaluate(() => {
+    const d = (window as any).__gameDebug;
+    const tc = d.getTimeContract();
+    const s = d.state;
+    return {
+      x: s.player.x as number,
+      y: s.player.y as number,
+      frame: s.frameCount as number,
+      clamped: d.getDtClampedCount() as number,
+      pendingInject: tc.pendingInject as boolean,
+      lastInjectRaw: tc.lastInject?.rawMs as number | undefined,
+      lastSimDtRawMs: tc.lastSimDtRawMs as number,
+    };
+  });
+
+  await page.keyboard.up('d');
+
+  expect(post.pendingInject, 'inject must not re-queue after consume').toBe(false);
+  // Latch stays on the original hitch frame (not re-applied as a second 500ms inject).
+  expect(post.lastInjectRaw).toBe(latch.inject.rawMs);
+  // No second hitch clamp from sticky inject (wall-clock hitches during CI are rare;
+  // allow at most +1 for flaky machine stalls).
+  expect(post.clamped - latch.clamped).toBeLessThanOrEqual(1);
+
+  const postDist = Math.hypot(post.x - latch.x, post.y - latch.y);
+  const framesAfter = Math.max(1, post.frame - latch.frame);
+  // Each post-inject frame integrates ≤ MOVE_MAX_CATCHUP_MS; real frames are ~16ms.
+  // Bound: frames × clamp-budget + small slack (escape step / scheduling).
+  const maxPostDist =
+    framesAfter * maxClampedCells + setup.speed * 2;
+  expect(
+    postDist,
+    `post-inject Δpos ${postDist.toFixed(3)} over ${framesAfter} frames must stay ≤ ` +
+      `${maxPostDist.toFixed(3)} (no hitch backlog dash; unclamped residual 400ms alone ~${(
+        setup.speed *
+        (400 / setup.moveStepMs)
+      ).toFixed(2)})`,
+  ).toBeLessThanOrEqual(maxPostDist);
+
+  // Residual hitch queue would dump ~400ms+ of leftover on the next frames → multi-cell.
+  const residualHitchCells = setup.speed * (400 / setup.moveStepMs);
+  expect(postDist).toBeLessThan(residualHitchCells);
 });
