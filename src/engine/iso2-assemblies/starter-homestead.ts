@@ -116,12 +116,15 @@ export function stampStarterHomestead(cells: CellData[][]): void {
 
 /**
  * Guarantee the player's exact spawn cell (and its 4 cardinal neighbors) is
- * walkable, no matter what any OTHER generation phase placed there.
+ * walkable, no matter what any earlier generation phase placed there.
  *
- * The homestead stamp now fills every cell of its 7×7 footprint (yard +
+ * The homestead stamp fills every cell of its 7×7 footprint (yard +
  * structures), so unstamped residue gaps are no longer the primary risk.
- * This still runs LAST on chunk (0,0) after every phase that could re-block
- * the spawn cell (entropy overrides, obstacle balancing, etc.).
+ * Runs late on chunk (0,0) after entropy / obstacle balancing / playability
+ * carves. Place-coherence (`runPlaceCoherencePass`) may still rewrite barrier
+ * stamps afterward — under the current homestead layout that only touches
+ * the south perimeter (y = origin+6), not the spawn plus-shape, so it does
+ * not re-block spawn. If spawn softlocks reappear, re-call this after the pass.
  *
  * PLAYER_CONFIG.startPosition (12.5, 12.5) → grid (12,12) = offset (3,4).
  * Plus shape only (not full 3×3): diagonal neighbors include the cottage at

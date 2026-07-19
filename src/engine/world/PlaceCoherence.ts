@@ -578,9 +578,11 @@ export function runPlaceCoherencePass(
 ): { repairs: number; violations: SceneOpeningViolation[] } {
   const size = cells.length;
   const recipes = collectRecipeFootprints(meta);
+  const declared = buildDeclaredOpeningCells(recipes);
   let repairs = 0;
 
-  // 1–2. Re-assert declared openings for every registered footprint.
+  // 1–2. Re-assert declared openings for every registered footprint
+  //    (modular stamps from scene registry + origin homestead).
   for (const { recipe, originX, originY } of recipes) {
     repairs += repairSceneOpenings(cells, originX, originY, recipe);
   }
@@ -600,25 +602,22 @@ export function runPlaceCoherencePass(
   }
 
   // 4. Seal illegal single-cell dirt/grass gaps in barrier runs with quiz_gate.
-  //    Runs on **all** chunks including origin (extra gates only where a bare
-  //    punch-through remains; functional-nearby + singleton guards apply).
-  repairs += scanAndRepairFenceGaps(cells, size);
+  //    Runs on **all** chunks including origin. Declared openings (incl.
+  //    modular path openings) are skipped so seal does not convert them.
+  repairs += scanAndRepairFenceGaps(cells, size, declared);
 
-  // Re-assert recipe openings after seal so a declared path/gate cell that
-  // somehow still mismatches is restored (functional supersedes path).
+  // Re-assert recipe openings after seal for any residual mismatch.
   for (const { recipe, originX, originY } of recipes) {
     repairs += repairSceneOpenings(cells, originX, originY, recipe);
   }
 
-  // Origin south once more after global seal (seal never overwrites quiz_gate
-  // or fence, but keep P6 hard-green if any later step is added).
+  // Origin south once more after global seal (keep P6 hard-green).
   if (meta.chunkX === 0 && meta.chunkY === 0) {
     repairs += reassertHomesteadSouthPerimeter(cells);
   }
 
   // 5. Residual violations (should be empty for openings on registered recipes).
   const opening = auditRecipeOpenings(cells, recipes);
-  const declared = buildDeclaredOpeningCells(recipes);
   const residualGaps = findIllegalFenceGaps(cells, size, declared);
 
   coherenceRepairs = repairs;

@@ -321,7 +321,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     // Placeholder: when PR4 lands, assert on-screen quiz_gate/door produces a draw cmd.
   });
 
-  test('P7 + matrix: fixed-seed chunk samples report illegal fence gaps (may be >0)', async ({
+  test('P7 + matrix: fixed-seed illegal fence gaps are 0 after place-coherence pass', async ({
     page,
   }) => {
     await waitForGame(page);

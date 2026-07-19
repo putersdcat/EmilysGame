@@ -19,8 +19,9 @@
  *   Phase 6: balanceObstacles, rewardDeadEnds (ObstacleSolver)
  *   Phase 7: enforcePassability (re-enforce after population)
  *   Phase 8: validatePlayability (Validation) — playability report
+ *   Phase 9: ensureSpawnClearance (starter-homestead) — origin spawn walkable
  *   Phase 9.5: runPlaceCoherencePass (PlaceCoherence) — LAST: seal illegal fence
- *              gaps + re-assert homestead after playability carves
+ *              gaps + re-assert recipe openings / homestead after playability carves
  *
  * gen.ts is now a pure re-export facade — consumers (main.ts, tests) can
  * import from either 'engine/gen' or 'engine/world/ChunkGenerator'.
@@ -90,6 +91,8 @@ import {
   maybePlaceCastleLandmark,
   maybePlaceModularScenes,
   scanAndRepairFenceGaps,
+  clearSceneStampRegistry,
+  getSceneStampRegistry,
 } from '../iso2-assemblies';
 import { layPathSkeleton } from './PathSkeleton';
 import { runPlaceCoherencePass } from './PlaceCoherence';
@@ -235,6 +238,10 @@ function generateGridChunk(
   const chunkDist = Math.abs(chunkX) + Math.abs(chunkY); // Manhattan distance from origin
   const difficulty = getDifficulty(chunkDist);
 
+  // Fresh stamp registry for this chunk (modular/landmark stamps record here;
+  // place-coherence pass reads them at the end for P2 re-assert + seal allow-list).
+  clearSceneStampRegistry();
+
   // Phase 1: Perlin noise base terrain
   const cells = buildPerlinBase(size, noiseSeed, biome, chunkX, chunkY);
 
@@ -374,9 +381,16 @@ function generateGridChunk(
   // Phase 9.5 (place-coherence PR2): LAST stamp repair — after passability,
   // orphan strip, playability carves, and spawn clearance. Origin is NOT
   // exempt: re-assert homestead south (PR1 finding: late phases clobber
-  // gate/flanks to grass). Seal illegal fence-run dirt gaps with quiz_gate
-  // via scene-invariants helpers only. Nothing after this may rewrite cells.
-  runPlaceCoherencePass(cells, { chunkX, chunkY });
+  // gate/flanks to grass). Modular stamps from the scene registry are
+  // re-asserted too. Seal illegal fence-run dirt gaps with quiz_gate via
+  // scene-invariants helpers (declared openings skipped). Nothing after
+  // this may rewrite cells.
+  const modularRecipes = getSceneStampRegistry().map((s) => ({
+    recipe: s.recipe,
+    originX: s.originX,
+    originY: s.originY,
+  }));
+  runPlaceCoherencePass(cells, { chunkX, chunkY, recipes: modularRecipes });
 
   return { cells, borderEdges };
 }

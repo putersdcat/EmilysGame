@@ -217,7 +217,10 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
       'fence',
     ]);
     expect(result.auditCounts.openingMismatches).toBe(0);
-    // Pass should have performed at least one repair on the known-clobbered tip.
-    expect(result.coherenceRepairs).toBeGreaterThanOrEqual(1);
+    // Residual P4 on origin after pass should be clear (structural lock).
+    expect(result.coherenceViolations, 'post-pass residual violations').toBe(0);
+    // repairs count is diagnostic only (may be 0 if upstream stops clobbering).
+    // eslint-disable-next-line no-console
+    console.log(`[place-coherence full-gen] coherenceRepairs=${result.coherenceRepairs}`);
   });
 });

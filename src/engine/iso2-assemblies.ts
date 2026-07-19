@@ -113,6 +113,38 @@ function makeCell(placement: AssemblyPlacement): CellData {
   };
 }
 
+// ─── Scene stamp registry (place-coherence post-pipeline pass) ───────────
+//
+// Records modular / landmark stamps during a single generateGridChunk so
+// `runPlaceCoherencePass` can re-assert declared openings and skip sealing
+// path openings. ChunkGenerator clears at pipeline start and reads at end.
+
+export interface SceneStampRef {
+  readonly recipe: AssemblyRecipe;
+  readonly originX: number;
+  readonly originY: number;
+}
+
+let _sceneStampRegistry: SceneStampRef[] = [];
+
+/** Clear stamp registry (call at start of each generateGridChunk). */
+export function clearSceneStampRegistry(): void {
+  _sceneStampRegistry = [];
+}
+
+/** Readonly view of stamps recorded since last clear. */
+export function getSceneStampRegistry(): readonly SceneStampRef[] {
+  return _sceneStampRegistry;
+}
+
+function recordSceneStamp(
+  recipe: AssemblyRecipe,
+  originX: number,
+  originY: number,
+): void {
+  _sceneStampRegistry.push({ recipe, originX, originY });
+}
+
 /** Shared stamp loop — out-of-bounds placements skipped; openings repaired after stamp. */
 export function stampAssemblyOntoCells(
   cells: CellData[][],
@@ -129,6 +161,7 @@ export function stampAssemblyOntoCells(
   }
   // Scene law: declared openings must be functional gates or explicit paths.
   repairSceneOpenings(cells, originX, originY, recipe);
+  recordSceneStamp(recipe, originX, originY);
 }
 
 /** Stamp an assembly into one already-loaded main-game chunk. */

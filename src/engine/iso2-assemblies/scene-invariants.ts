@@ -388,9 +388,17 @@ export function isIllegalFenceGapCandidate(
  *
  * Detection SSOT: {@link isIllegalFenceGapCandidate}. Mutation only here.
  *
+ * Optional `declaredOpeningCells` (`"x,y"` keys): skip those cells so declared
+ * path openings are not converted to quiz_gate. Callers that know recipe
+ * footprints should pass this set (place-coherence pass does).
+ *
  * Returns the number of gates placed.
  */
-export function scanAndRepairFenceGaps(cells: CellData[][], size: number): number {
+export function scanAndRepairFenceGaps(
+  cells: CellData[][],
+  size: number,
+  declaredOpeningCells?: ReadonlySet<string>,
+): number {
   let placed = 0;
   const h = Math.min(size, cells.length);
 
@@ -398,6 +406,7 @@ export function scanAndRepairFenceGaps(cells: CellData[][], size: number): numbe
     const rowLen = cells[y]?.length ?? 0;
     const w = Math.min(size, rowLen);
     for (let x = 0; x < w; x++) {
+      if (declaredOpeningCells?.has(`${x},${y}`)) continue;
       if (!isIllegalFenceGapCandidate(cells, x, y)) continue;
       cells[y][x] = makeFunctionalCell('quiz_gate');
       placed++;
