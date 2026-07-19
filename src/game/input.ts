@@ -25,6 +25,28 @@ export type InputDevice = 'keyboard' | 'touch' | 'gamepad';
 // Gamepad axis deadzone
 const GP_DEADZONE = 0.3;
 
+/**
+ * Map screen-space movement intent → isometric grid-space (unnormalized).
+ *
+ * Screen axes (DOM/canvas convention): +sdx = right, +sdy = down.
+ * Grid axes: same cell axes the motor integrates (`player.x/y`).
+ *
+ * Current intentional law (iso 45° alignment, one place to change if wrong):
+ *   dx = sdx + sdy
+ *   dy = -sdx + sdy
+ *
+ * Callers that need constant speed must normalize the result themselves
+ * (see `InputManager.getMovementVector`).
+ *
+ * @see memories/repo/design-play-stack-first-principles-2026-07-19.md L1
+ */
+export function screenIntentToGrid(sdx: number, sdy: number): { dx: number; dy: number } {
+  return {
+    dx: sdx + sdy,
+    dy: -sdx + sdy,
+  };
+}
+
 export class InputManager {
   private keyState: InputState = {
     up: false,
@@ -569,8 +591,7 @@ export class InputManager {
     }
 
     // Rotate 45° to convert screen-space intent → isometric grid-space
-    let dx = sdx + sdy;
-    let dy = -sdx + sdy;
+    let { dx, dy } = screenIntentToGrid(sdx, sdy);
 
     // Normalize to constant speed regardless of direction
     const magnitude = Math.sqrt(dx * dx + dy * dy);
