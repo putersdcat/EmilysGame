@@ -6,6 +6,16 @@
  * never sets walkability. FOV unchanged.
  *
  * Keys align with scene-invariants FUNCTIONAL_OPENING_KEYS (reused).
+ *
+ * ## Budget units (pure helper vs live render)
+ *
+ * - **Live path** (`iterateVisibleChunks`): budget is **draw commands**
+ *   (`jsPoolIdx` vs `RENDER_CONFIG.maxDrawCmds`). One object cell can emit
+ *   1–2 cmds (elevated sprite + optional item overlay).
+ * - **Pure helpers** below (`selectWithinDrawBudget` / prioritize): budget is
+ *   **candidate slots (cells)** for membership order only — gates before decor.
+ *   They document the priority contract for unit tests; they do **not** model
+ *   exact cmd accounting. The hot-path two-pass enforces real cmd budget.
  */
 
 import { FUNCTIONAL_OPENING_KEYS } from '../engine/iso2-assemblies/scene-invariants';
@@ -42,17 +52,19 @@ export function prioritizeObjectCellsForDrawBudget<T extends { assetKey: string 
 }
 
 /**
- * Select candidates that fit in `maxCmds`, preferring functional gates.
- * Returns emit order: all gates that fit, then decor until budget is full.
+ * Select candidates that fit in `maxSlots` **cells**, preferring functional gates.
+ * Returns emit order: all gates that fit, then decor until slots are full.
+ *
+ * @param maxSlots - Cell/slot cap (not live jsPool cmd count — see file header).
  */
 export function selectWithinDrawBudget<T extends { assetKey: string }>(
   candidates: readonly T[],
-  maxCmds: number,
+  maxSlots: number,
 ): T[] {
-  if (maxCmds <= 0) return [];
+  if (maxSlots <= 0) return [];
   const ordered = prioritizeObjectCellsForDrawBudget(candidates);
-  if (ordered.length <= maxCmds) return ordered;
-  return ordered.slice(0, maxCmds);
+  if (ordered.length <= maxSlots) return ordered;
+  return ordered.slice(0, maxSlots);
 }
 
 /** Last-frame counters for tests / F3 (reset each object emit cycle). */

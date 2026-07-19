@@ -343,6 +343,10 @@ export class IsometricRenderer {
    * Under maxDrawCmds pressure, decor yields so on-screen gates still paint.
    * FOV / tile size unchanged. Paint never sets walkability.
    *
+   * Perf note: walks object-cell lists twice per frame (gates filter, then
+   * decor). Gates are sparse so pass 1 is cheap; ~2× scan is intentional for
+   * correct cross-chunk priority without allocating a sorted candidate list.
+   *
    * Extracted from `render()` in B6.3 (#272).
    */
   private iterateVisibleChunks(

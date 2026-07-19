@@ -2,6 +2,12 @@
  * draw-gate-priority.spec.ts — Place coherence P5: functional gates beat decor
  * under maxDrawCmds pressure. FOV remains 128×64 (no change).
  *
+ * Covers:
+ *   - Pure slot-priority contract (selectWithinDrawBudget)
+ *   - Homestead stamp + pure budget selection (sim membership, not paint)
+ *   - Live two-pass wiring: tiny maxDrawCmds still emits gates (getDrawPriorityStats)
+ *   - FOV lock
+ *
  * Run: npx playwright test tests/rendering/draw-gate-priority --reporter=line
  */
 import { test, expect, Page } from '@playwright/test';
@@ -11,6 +17,21 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 async function waitForGame(page: Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(400);
+}
+
+/** Full boot: need live renderer + origin chunk for two-pass stats. */
+async function waitForLiveGame(page: Page) {
+  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(
+    () => {
+      const d = (window as any).__gameDebug;
+      const chunks = d?.state?.chunks;
+      return !!(chunks && typeof chunks.get === 'function' && chunks.get('0,0'));
+    },
+    { timeout: 20000 },
+  );
+  // Let a few frames settle after state init
+  await page.waitForTimeout(600);
 }
 
 test.describe('P5 Draw integrity — functional gate budget priority', () => {
@@ -46,15 +67,16 @@ test.describe('P5 Draw integrity — functional gate budget priority', () => {
       candidates.push({ assetKey: 'toll_gate', id: 102 });
       candidates.push({ assetKey: 'bush', id: 103 });
 
-      const maxCmds = 5; // far below candidate count
-      const selected = selectWithinDrawBudget(candidates, maxCmds);
+      // Pure helper: maxSlots = cell slots (not live jsPool cmds — see draw-priority.ts)
+      const maxSlots = 5;
+      const selected = selectWithinDrawBudget(candidates, maxSlots);
       const selectedKeys = selected.map((c) => c.assetKey);
 
       const ordered = prioritizeObjectCellsForDrawBudget(candidates);
       const firstThree = ordered.slice(0, 3).map((c) => c.assetKey);
 
       // Without priority, naive slice would take first 5 trees/fences and drop gates
-      const naive = candidates.slice(0, maxCmds).map((c) => c.assetKey);
+      const naive = candidates.slice(0, maxSlots).map((c) => c.assetKey);
       const naiveHasGate = naive.some((k) => isFunctionalGateDrawPriority(k));
       const selectedGates = selectedKeys.filter((k) => isFunctionalGateDrawPriority(k));
 
@@ -82,7 +104,7 @@ test.describe('P5 Draw integrity — functional gate budget priority', () => {
     expect(result.isDoorOpen).toBe(true);
     expect(result.isDoorGate).toBe(true);
 
-    // Budget of 5: all three gates fit first, then 2 decor
+    // Slot budget of 5: all three gates fit first, then 2 decor
     expect(result.selectedLen).toBe(5);
     expect(result.selectedGates.sort()).toEqual(['door_locked', 'quiz_gate', 'toll_gate'].sort());
     expect(result.firstThree.sort()).toEqual(['door_locked', 'quiz_gate', 'toll_gate'].sort());
@@ -92,7 +114,7 @@ test.describe('P5 Draw integrity — functional gate budget priority', () => {
     )).toBe(true);
   });
 
-  test('on-screen homestead quiz_gate is present after stamp (sim still has gate cell)', async ({
+  test('homestead stamp: south quiz_gate survives pure slot budget under flooded decor', async ({
     page,
   }) => {
     await waitForGame(page);
@@ -161,8 +183,115 @@ test.describe('P5 Draw integrity — functional gate budget priority', () => {
     expect(result.gateAsset).toBe('quiz_gate');
     expect(result.gateLayer, 'gate is elevated object paint').not.toBe('base');
     expect(result.gateHasNanoOrTile, 'homestead gate has draw material').toBe(true);
-    expect(result.hasGateInBudget, 'budget prefers gate over flooded decor').toBe(true);
-    expect(result.gateInSelected, 'south quiz_gate survives maxDrawCmds=8').toBe(true);
+    expect(result.hasGateInBudget, 'slot budget prefers gate over flooded decor').toBe(true);
+    expect(result.gateInSelected, 'south quiz_gate survives maxSlots=8').toBe(true);
+  });
+
+  test('live two-pass: tiny maxDrawCmds still emits gates near homestead', async ({ page }) => {
+    /**
+     * Regression lock for render.ts wiring: pure helpers alone cannot catch a
+     * revert that drops the gates-first two-pass. Drive the live renderer with
+     * a temporary maxDrawCmds cap and assert getDrawPriorityStats.
+     */
+    await waitForLiveGame(page);
+
+    const result = await page.evaluate(async () => {
+      const { RENDER_CONFIG, WORLD_CONFIG } = await import('/config/game.config.ts');
+      const { getDrawPriorityStats } = await import('/rendering/draw-priority.ts');
+      const { HOMESTEAD_SOUTH_GATE_ABS } = await import('/engine/world/PlaceCoherence.ts');
+      const d = (window as any).__gameDebug;
+      if (!d?.state) return { ok: false as const, reason: 'no __gameDebug.state' };
+
+      // Snap player + camera next to south quiz_gate so it is on-screen
+      const gx = HOMESTEAD_SOUTH_GATE_ABS.x + 0.5;
+      const gy = HOMESTEAD_SOUTH_GATE_ABS.y - 1.0;
+      d.setPlayerPosition(gx, gy);
+      d.state.camera.x = gx;
+      d.state.camera.y = gy;
+
+      // Confirm sim still has the gate cell (P6 stamp)
+      const size = WORLD_CONFIG.chunkSize;
+      const cx = Math.floor(HOMESTEAD_SOUTH_GATE_ABS.x / size);
+      const cy = Math.floor(HOMESTEAD_SOUTH_GATE_ABS.y / size);
+      const chunk = d.state.chunks.get(`${cx},${cy}`);
+      const lx = HOMESTEAD_SOUTH_GATE_ABS.x - cx * size;
+      const ly = HOMESTEAD_SOUTH_GATE_ABS.y - cy * size;
+      const gateKey = chunk?.cells?.[ly]?.[lx]?.assetKey ?? null;
+
+      const prevBudget = RENDER_CONFIG.maxDrawCmds;
+
+      function waitFrames(n: number): Promise<void> {
+        return new Promise((resolve) => {
+          let left = n;
+          const step = () => {
+            left--;
+            if (left <= 0) resolve();
+            else requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        });
+      }
+
+      try {
+        // Extreme cmd pressure: only 1 object cmd — two-pass must pick a gate
+        RENDER_CONFIG.maxDrawCmds = 1;
+        await waitFrames(8);
+        const tight = {
+          gatesEmitted: getDrawPriorityStats().gatesEmitted,
+          decorEmitted: getDrawPriorityStats().decorEmitted,
+          budgetCapped: getDrawPriorityStats().budgetCapped,
+        };
+
+        // Mild pressure: a few cmds — gates still first, may include some decor
+        RENDER_CONFIG.maxDrawCmds = 12;
+        await waitFrames(6);
+        const mild = {
+          gatesEmitted: getDrawPriorityStats().gatesEmitted,
+          decorEmitted: getDrawPriorityStats().decorEmitted,
+          budgetCapped: getDrawPriorityStats().budgetCapped,
+        };
+
+        // Restore and sample normal frame (gates still counted when on-screen)
+        RENDER_CONFIG.maxDrawCmds = prevBudget;
+        await waitFrames(4);
+        const normal = {
+          gatesEmitted: getDrawPriorityStats().gatesEmitted,
+          decorEmitted: getDrawPriorityStats().decorEmitted,
+          budgetCapped: getDrawPriorityStats().budgetCapped,
+        };
+
+        return {
+          ok: true as const,
+          gateKey,
+          prevBudget,
+          fov: { tileWidth: RENDER_CONFIG.tileWidth, tileHeight: RENDER_CONFIG.tileHeight },
+          tight,
+          mild,
+          normal,
+        };
+      } finally {
+        RENDER_CONFIG.maxDrawCmds = prevBudget;
+      }
+    });
+
+    expect(result.ok, result.ok ? '' : (result as { reason?: string }).reason).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.gateKey, 'homestead south still quiz_gate in live world').toBe('quiz_gate');
+    expect(result.fov.tileWidth).toBe(128);
+    expect(result.fov.tileHeight).toBe(64);
+    expect(result.prevBudget, 'default maxDrawCmds restored after probe').toBe(400);
+
+    // maxDrawCmds=1: two-pass must still emit ≥1 gate; decor yields entirely
+    expect(result.tight.gatesEmitted, 'live path emits gate under maxDrawCmds=1').toBeGreaterThanOrEqual(1);
+    expect(result.tight.decorEmitted, 'decor yields when only 1 cmd slot').toBe(0);
+    expect(result.tight.budgetCapped, 'tiny budget marks capped').toBe(true);
+
+    // Mild budget still paints gates
+    expect(result.mild.gatesEmitted, 'gates still emitted at maxDrawCmds=12').toBeGreaterThanOrEqual(1);
+
+    // Normal budget: gate still on-screen near player
+    expect(result.normal.gatesEmitted, 'normal frame still counts on-screen gates').toBeGreaterThanOrEqual(1);
   });
 
   test('FOV still 128×64 (no thrash)', async ({ page }) => {

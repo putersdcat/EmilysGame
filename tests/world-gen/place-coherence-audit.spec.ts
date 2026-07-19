@@ -316,8 +316,11 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     expect(result.withGateCount, 'ring with quiz_gate is not P1').toBe(0);
   });
 
-  // P5 — functional gates beat decor under maxDrawCmds (draw integrity PR4)
-  test('P5: overcrowded synthetic list still selects quiz_gate / door_*', async ({ page }) => {
+  // P5 — pure slot priority + live two-pass wiring (draw integrity PR4)
+  // Full live maxDrawCmds proof lives in tests/rendering/draw-gate-priority.spec.ts
+  test('P5: overcrowded synthetic list still selects quiz_gate / door_* (slot priority)', async ({
+    page,
+  }) => {
     await waitForGame(page);
 
     const result = await page.evaluate(async () => {
@@ -332,8 +335,9 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
       candidates.push({ assetKey: 'door_locked' });
       for (let i = 0; i < 20; i++) candidates.push({ assetKey: 'fence' });
 
-      const budget = 4;
-      const selected = selectWithinDrawBudget(candidates, budget);
+      // maxSlots = cell slots (pure helper); live cmd budget is separate
+      const maxSlots = 4;
+      const selected = selectWithinDrawBudget(candidates, maxSlots);
       const gates = selected.filter((c) => isFunctionalGateDrawPriority(c.assetKey));
 
       return {
