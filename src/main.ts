@@ -833,6 +833,17 @@ function tickSubsystems(state: GameState, justKeys: any, dtMs: number = 16.67): 
 // Diarrhea control lock is owned by play-mode controlLock (PR5).
 // tickDiarrheaControlLock + setControlLock on trigger; locomotionAllowed gates move.
 
+/** Min wall time between wall_bump SFX while held into solid geometry. */
+const WALL_BUMP_COOLDOWN_MS = 280;
+let _lastWallBumpMs = 0;
+
+function shouldPlayWallBump(): boolean {
+  const now = performance.now();
+  if (now - _lastWallBumpMs < WALL_BUMP_COOLDOWN_MS) return false;
+  _lastWallBumpMs = now;
+  return true;
+}
+
 /**
  * Handle player movement (or idle state) for the current frame.
  * Locomotion owned by `player-motor.ts` (substeps + stuck recovery).
@@ -878,8 +889,12 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
         state.player.sinkDepth = 0;
       }
     } else {
-      // Fully blocked this frame (once — not per substep)
-      playSfx(state.sfx, 'wall_bump');
+      // Fully blocked this frame. Rate-limit bump SFX — firing every rAF at
+      // 60fps while held into a fence is an audio/feel "controls are broken"
+      // experience (not a collision correctness issue).
+      if (shouldPlayWallBump()) {
+        playSfx(state.sfx, 'wall_bump');
+      }
       const hitCell = getCellAt(Math.floor(lastAttemptX), Math.floor(lastAttemptY), state.chunks);
       const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
       const hitKey = hitCell?.cell.assetKey;

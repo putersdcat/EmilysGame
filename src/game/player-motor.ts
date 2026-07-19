@@ -24,8 +24,10 @@ export const MOVE_STEP_MS = 1000 / 60;
 /** Max wall-clock catch-up per frame (tab refocus / hitch). */
 export const MOVE_MAX_CATCHUP_MS = 100;
 
-/** Hold-move with zero displacement before stuck recovery. */
-export const STUCK_MS = 450;
+/** Hold-move with zero displacement before stuck recovery.
+ *  450ms felt like "keys stopped working" against dense fences; 180ms
+ *  starts legal slide/nudge while still avoiding micro-jitter on light taps. */
+export const STUCK_MS = 180;
 /** Grid units per nudge attempt. */
 export const NUDGE_EPS = 0.08;
 /** Max legal nudge trials per stuck grant. */

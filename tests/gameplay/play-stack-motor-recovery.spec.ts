@@ -227,7 +227,7 @@ test.describe('Play-stack motor recovery (PR4 L3)', () => {
   test('motor constants match design Appendix C', async ({ page }) => {
     await waitForGame(page);
     const c = await page.evaluate(() => (window as any).__gameDebug.motorConstants);
-    expect(c.STUCK_MS).toBe(450);
+    expect(c.STUCK_MS).toBe(180);
     expect(c.NUDGE_EPS).toBe(0.08);
     expect(c.NUDGE_MAX_ATTEMPTS).toBe(8);
     expect(c.EMBED_R_LADDER).toEqual([2, 4, 8]);
