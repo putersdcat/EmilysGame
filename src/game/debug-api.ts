@@ -185,7 +185,8 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     iso2WaterMaterials: WaterFamily,
     getNanoStackForTests: getNanoStack,
     // #223 live gameplay test helpers (per AUTONOMOUS_LOOP.md)
-    isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks, state.activeConditions),
+    // Cell SSOT only — no activeConditions on gameplay footprint path (PR3 L4)
+    isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },
     setActiveCondition: (id: string, val: 'locked' | 'unlocked') => { state.activeConditions.set(id, val); },
     resolveQuizGateSim: () => { state.activeConditions.set('quiz-gate', 'unlocked'); },

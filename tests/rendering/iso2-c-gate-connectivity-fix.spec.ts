@@ -1,22 +1,11 @@
 /**
- * iso2-c-gate-connectivity-fix.spec.ts — Slice C live-engine proof.
+ * iso2-c-gate-connectivity-fix.spec.ts — locked gate full-tile cell SSOT.
  *
- * Found while auditing fence/gate production readiness: door_gate/quiz_gate
- * cells embedded in a real generated wall or fence run (placeGatesInFenceRuns,
- * the door_gate<->quiz_gate conversion in placeQuizGates) resolved to the
- * 'isolated' FeatureVariant for BOTH rendering (tile-variants.ts's
- * nanoConnectionFamily hardcoded quiz_gate/door_gate to 'wall' only, never
- * matching a 'fence' neighbor) and collision (mechanics.ts used a strict
- * same-assetKey-only neighbor check, which a gate's assetKey never satisfies
- * against its wall/fence neighbors' different assetKey). 'isolated' collapses
- * a gate's blocking footprint from a full wall/fence-run-width band down to a
- * tiny ~18-48px center post, leaving the rest of the tile's width freely
- * walkable around a supposedly-locked gate -- a real progression-integrity
- * bug, not just a visual one.
- *
- * This spec proves the fix on the live main engine for both contexts a gate
- * actually appears in per ObstacleSolver.ts: a quiz_gate embedded in a
- * wooden_fence run, and a door_gate embedded in a stone_wall run.
+ * PR3: gameplay walkability is `cell.walkable` only. Locked quiz_gate /
+ * door_locked cells stamped walkable:false block the full tile (product law).
+ * Unlock is cell rewrite (resolveQuizGate → door_open), never global
+ * activeConditions. Paint connectivity (fence/wall run variants) remains a
+ * rendering concern; this file asserts progression integrity via cell stamps.
  */
 import { test, expect, Page } from '@playwright/test';
 
@@ -53,12 +42,7 @@ test('Slice C: quiz_gate embedded in a wooden_fence run blocks across the full r
     state.activeConditions.set('quiz-gate', 'locked');
     debug.invalidateRenderCaches();
 
-    // Y fraction 0.8 within the gate's own tile lands one corner (of the
-    // player's 0.3-half-width collision box) squarely inside the fence's
-    // rail band [0.4375, 0.5625] with a comfortable ~9px margin, regardless
-    // of X -- a 'straight-h' gate blocks the FULL tile width at that Y band,
-    // but the old buggy 'isolated' variant only blocked an ~18px center
-    // square that this X position falls well outside of.
+    // Full-tile cell.walkable block — off-center sample still fails.
     const lockedBlocksOffCenter = debug.isFootprintWalkable(11.5, 12.8) as boolean;
     const controlFarGrass = debug.isFootprintWalkable(5.5, 5.5) as boolean;
 
@@ -73,8 +57,8 @@ test('Slice C: quiz_gate embedded in a wooden_fence run blocks across the full r
   });
 
   expect(result.controlFarGrass, 'control: plain grass far away must be walkable').toBe(true);
-  expect(result.lockedBlocksOffCenter, 'locked quiz_gate embedded in a fence run must block across the full run width, not just a small center post (this was the bug: it resolved to isolated variant)').toBe(false);
-  expect(result.unlockedPasses, 'unlocked quiz_gate must be walkable').toBe(true);
+  expect(result.lockedBlocksOffCenter, 'locked quiz_gate must full-tile block via cell.walkable SSOT').toBe(false);
+  expect(result.unlockedPasses, 'unlocked quiz_gate (cell rewrite) must be walkable').toBe(true);
 });
 
 test('Slice C: quiz_gate embedded in a wall run blocks across the full run width when locked', async ({ page }) => {
@@ -94,33 +78,19 @@ test('Slice C: quiz_gate embedded in a wall run blocks across the full run width
     for (let y = 0; y < 25; y++) {
       for (let x = 0; x < 25; x++) setCell(x, y, 'grass');
     }
-    // 5-cell horizontal wall run with a quiz_gate in the middle -- mirrors
-    // the wall_gate WU template shape PLUS placeQuizGates's "convert an
-    // existing gate-type obstacle to quiz_gate in place" strategy. Real
-    // generation uses assetKey 'wall' (ASSET_DEFS.wall.tileType ===
-    // 'stone_wall'); door_gate/door_locked never reach the nano path at all
-    // via mechanics.ts today (same class as barricade/toll_gate, always
-    // full-tile-blocked via the cell.walkable fallback -- unaffected by this
-    // fix, and deliberately left alone per the Slice B.5 writeup), but
-    // quiz_gate DOES reach getNanoStack successfully, so this is the real
-    // reachable wall-run gate scenario this fix needed to cover.
+    // Wall run with quiz_gate — full-tile cell SSOT (no nano collision path).
     for (let x = 9; x <= 13; x++) setCell(x, 12, 'wall');
     setCell(11, 12, 'quiz_gate');
     state.activeConditions.set('quiz-gate', 'locked');
     debug.invalidateRenderCaches();
 
-    // Gates always use pointHitsFenceFootprint (FENCE_THICKNESS=18) regardless
-    // of whether they're embedded in a wall or fence run (nanoBlocksPoint
-    // dispatches purely on nano.kind === 'gate') -- so the fence band
-    // [0.4375, 0.5625] applies here too, not the wider wall band. Y=0.8 lands
-    // the bottom corner at fraction 0.5 (centered in the band, ~9px margin).
     const blocksOffCenter = debug.isFootprintWalkable(11.5, 12.8) as boolean;
     const controlFarGrass = debug.isFootprintWalkable(5.5, 5.5) as boolean;
     return { blocksOffCenter, controlFarGrass };
   });
 
   expect(result.controlFarGrass, 'control: plain grass far away must be walkable').toBe(true);
-  expect(result.blocksOffCenter, 'quiz_gate embedded in a wall run must block across the full run width, not just a small center post').toBe(false);
+  expect(result.blocksOffCenter, 'quiz_gate in wall run must full-tile block via cell.walkable').toBe(false);
 });
 
 test('Slice C: quiz_gate embedded in a fence run renders as a proper gate leaf, not a floating post', async ({ page }) => {

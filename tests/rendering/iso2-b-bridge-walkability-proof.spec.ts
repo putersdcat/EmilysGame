@@ -1,23 +1,15 @@
 /**
- * iso2-b-bridge-walkability-proof.spec.ts — Slice B live-engine proof.
+ * iso2-b-bridge-walkability-proof.spec.ts — bridge + water cell SSOT proof.
  *
- * `inferBridgeVariant`/`bridgeSpansVertical` were verified by hand-tracing
- * against the real authored WU templates (`bridge_ns`/`bridge_ew` in
- * tiles.config.ts), but that was a read-only proof. This test exercises the
- * ACTUAL main-engine collision path (`src/engine/mechanics.ts`'s
- * `isPositionWalkable` -> `isPointWalkableInTile`, exposed via
- * `window.__gameDebug.isFootprintWalkable`) against a live chunk, for BOTH
- * river orientations:
+ * PR3: runtime walkability is stamped `cell.walkable` only
+ * (`walkability-query.ts`). This test stamps bridge/water from ASSET_DEFS
+ * and asserts the gameplay footprint path (debug.isFootprintWalkable):
  *
- *   - horizontal river run (bridge_ew shape): deck must resolve 'straight-v'
- *     (north-south) so the player can cross north<->south.
- *   - vertical river run (bridge_ns shape): deck must resolve 'straight-h'
- *     (east-west) so the player can cross east<->west.
+ *   - bridge cell walkable; flanking water cells not
+ *   - both E-W and N-S river orientations
  *
- * In both cases: the bridge cell itself must be walkable, and a neighboring
- * pure-water cell must NOT be walkable. This is the thing that
- * `iso2-gate-bridge-walkability.spec.ts` (which tests the EXPERIMENT's
- * solver, not main's) does not actually prove for the main engine.
+ * Paint orientation (nano bridge variant) is separate; product walk flags
+ * must not depend on getNanoStack / isPointWalkableInTile.
  */
 import { test, expect, Page } from '@playwright/test';
 

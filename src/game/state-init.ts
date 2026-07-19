@@ -242,7 +242,7 @@ export async function createInitialState(): Promise<InitialStateResult> {
   // bypass collision until they take a step onto genuinely walkable
   // ground, at which point normal collision resumes immediately. See
   // `handleMovement` in main.ts for the resolution side of this.
-  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
     state.player.spawnEscape = true;
     state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
   }

@@ -13,9 +13,13 @@ import { WORLD_CONFIG, PLAYER_CONFIG } from '../config/game.config';
 import type { Inventory } from '../game/inventory';
 import { invalidateObjectCache } from '../rendering/render';
 import { invalidateChunkTerrain } from '../rendering/terrain-cache';
-import { isPointWalkableInTile } from '../rendering/nano-tile-svgs';
-import { getNanoStack } from '../rendering/nano-tile-defs';
-import { sameFeatureNeighbor, variantFromConnections } from '../rendering/tile-variants';
+// Walkability SSOT lives in walkability-query.ts (cell.walkable only; no render imports).
+// Re-export so existing `from '../engine/mechanics'` call sites keep working.
+export {
+  isWalkable,
+  isPositionWalkable,
+  isFootprintWalkable,
+} from './walkability-query';
 
 // ─── Types ───────────────────────────────────────────────────
 
@@ -36,7 +40,9 @@ export type InteractionResult =
   | { type: 'eat_worms'; message: string }
   | { type: 'structure'; assetKey: string; message: string };
 
-// ─── Collision Check ─────────────────────────────────────────
+// ─── Collision (re-exported from walkability-query.ts) ───────
+// Runtime authority = stamped cell.walkable. See walkability-query.ts.
+// SPAWN_ESCAPE visual offset stays here (motor / state-init consumers).
 
 /**
  * Player sprite Y-offset (px, negative = higher on screen) used while
@@ -50,154 +56,6 @@ export type InteractionResult =
  * clipped inside it, until they step onto genuinely walkable ground.
  */
 export const SPAWN_ESCAPE_RISE_PX = -40;
-
-/**
- * Check if a grid position is walkable in the loaded chunks.
- */
-export function isWalkable(
-  gx: number,
-  gy: number,
-  chunks: Map<string, ChunkData>,
-): boolean {
-  const size = WORLD_CONFIG.chunkSize;
-  const cx = Math.floor(gx / size);
-  const cy = Math.floor(gy / size);
-  const key = `${cx},${cy}`;
-  const chunk = chunks.get(key);
-  if (!chunk) return true; // Unloaded chunks are walkable (will gen on entry)
-
-  const lx = Math.floor(gx - cx * size);
-  const ly = Math.floor(gy - cy * size);
-  if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
-
-  return chunk.cells[ly][lx].walkable;
-}
-
-/**
- * Check if the player's collision footprint (axis-aligned rectangle) is fully
- * walkable at position (px, py). Samples all four corners of the footprint
- * to prevent walk-through on any approach direction (#151, #180).
- * Enhanced for Iso 2.0: uses exact point walk for nano features (walls, fences, rivers, gates)
- * to allow sliding along partial footprints and respect conditional/negative Z.
- */
-export function isFootprintWalkable(
-  px: number,
-  py: number,
-  chunks: Map<string, ChunkData>,
-  conditions: Map<string, 'locked' | 'unlocked'> = new Map(),
-): boolean {
-  const hw = PLAYER_CONFIG.collisionHalfW;
-  const hh = PLAYER_CONFIG.collisionHalfH;
-  // Check all four corners of the collision rectangle using enhanced position check
-  return (
-    isPositionWalkable(px - hw, py - hh, chunks, conditions) &&
-    isPositionWalkable(px + hw, py - hh, chunks, conditions) &&
-    isPositionWalkable(px - hw, py + hh, chunks, conditions) &&
-    isPositionWalkable(px + hw, py + hh, chunks, conditions)
-  );
-}
-
-// Maps a v1 assetKey to its Iso2 nano `kind` string, enabling the exact
-// footprint-based walkability check (isPointWalkableInTile) instead of the
-// blunt whole-tile cell.walkable fallback below. Scoped deliberately to
-// CONTINUOUS STRUCTURAL FEATURES (wall/fence/water material variants) that
-// are unconditionally WALKABLE_NEVER with no lock/gate state -- adding them
-// can only improve footprint precision, never change locked/unlocked
-// semantics. Deliberately excludes door_gate/toll_gate/roof/structure kinds:
-// those interact with the OBSTACLE_TEMPLATES direct-cell-mutation unlock
-// system (see the obstacle-resolution block below), and routing them
-// through the nano path here would swap their intentional full-tile block
-// for a narrow structural footprint -- a real gameplay behavior change, not
-// just a completeness fix. See tests/rendering/iso2-b-asset-nano-kind-completeness.spec.ts.
-const assetToNanoKind: Record<string, string> = {
-  // Bare, unresolved assetKeys placed directly by real generation (see
-  // ObstacleSolver.ts's weightedPick(biome.obstacleWeights, ...)) -- 'wall'
-  // and 'fence' were the two remaining gaps in this table: water/bridge
-  // already had their bare forms covered, but wall/fence did not, so every
-  // real biome-obstacle-weighted wall/fence fell through to the blunt
-  // cell.walkable full-tile block instead of the precise nano footprint
-  // (Slice E finding, 2026-07). Requires matching 'wall'/'fence' cases in
-  // nano-tile-defs.ts's getNanoStack() to actually resolve (added alongside).
-  'wall': 'stone-wall',
-  'fence': 'fence',
-  'stone_wall': 'stone-wall',
-  'stone_wall_red_clinker': 'stone-wall',
-  'stone_wall_mud_brick': 'stone-wall',
-  'stone_wall_sandstone': 'stone-wall',
-  'stone_wall_cottage_foundation': 'stone-wall',
-  'homestead_wall': 'homestead-wall',
-  'homestead_wall_plaster': 'homestead-wall',
-  'starter_homestead_wall_plaster': 'homestead-wall',
-  'homestead_wall_planks': 'homestead-wall',
-  'cathedral_wall': 'cathedral-wall',
-  'wooden_fence': 'fence',
-  'wooden_fence_split_rail': 'fence',
-  'wooden_fence_picket': 'fence',
-  'wooden_fence_wattle': 'fence',
-  'barricade': 'fence',
-  'quiz_gate': 'gate',
-  'door_locked': 'gate',
-  'water': 'river',
-  'water_clear_river': 'river',
-  'water_muddy_creek': 'river',
-  'water_deep_pond': 'river',
-  'water_marsh_water': 'river',
-  'bridge': 'bridge',
-  'troll_bridge': 'troll-bridge',
-};
-
-export function getNanoKindForAsset(assetKey: string): string | null {
-  return assetToNanoKind[assetKey] || null;
-}
-
-function isPositionWalkable(
-  px: number,
-  py: number,
-  chunks: Map<string, ChunkData>,
-  conditions: Map<string, 'locked' | 'unlocked'> = new Map(),
-): boolean {
-  const size = WORLD_CONFIG.chunkSize;
-  const cx = Math.floor(px / size);
-  const cy = Math.floor(py / size);
-  const key = `${cx},${cy}`;
-  const chunk = chunks.get(key);
-  if (!chunk) return true;
-
-  const lx = Math.floor(px - cx * size);
-  const ly = Math.floor(py - cy * size);
-  if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
-
-  const cell = chunk.cells[ly][lx];
-  // Unresolved quiz gates always use cell.walkable (false until resolveQuizGate
-  // rewrites the cell). Prevents the shared global 'quiz-gate' condition id
-  // from unlocking every gate after one is solved (see main.ts resolve path).
-  if (cell.assetKey === 'quiz_gate' && !cell.resolved) {
-    return cell.walkable;
-  }
-  const nanoKind = getNanoKindForAsset(cell.assetKey);
-  if (nanoKind) {
-    // Infer variant using the same family-aware, cross-chunk-boundary-safe
-    // neighbor logic the render path uses (tile-variants.ts). A strict
-    // same-assetKey-only check (the old local logic here) always resolved
-    // gates (door_gate/quiz_gate) to 'isolated', since a gate's assetKey never
-    // matches its wall/fence neighbors' assetKey -- collapsing a locked gate's
-    // blocking footprint from a full wall/fence run down to a ~18-48px center
-    // post and leaving the rest of the tile freely walkable around it.
-    const variant = variantFromConnections(
-      sameFeatureNeighbor(chunks, chunk, lx, ly - 1, cell.assetKey),
-      sameFeatureNeighbor(chunks, chunk, lx + 1, ly, cell.assetKey),
-      sameFeatureNeighbor(chunks, chunk, lx, ly + 1, cell.assetKey),
-      sameFeatureNeighbor(chunks, chunk, lx - 1, ly, cell.assetKey),
-    );
-    const stack = getNanoStack(cell.assetKey as any, variant);
-    if (stack && stack.length > 0) {
-      const localColFrac = px - Math.floor(px);
-      const localRowFrac = py - Math.floor(py);
-      return isPointWalkableInTile(stack, conditions, localColFrac, localRowFrac);
-    }
-  }
-  return cell.walkable;
-}
 
 /**
  * Get the cell at a world grid position.

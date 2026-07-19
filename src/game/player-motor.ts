@@ -153,24 +153,24 @@ export function integrateMoveStep(
     state.player.y = newY;
     movedX = true;
     movedY = true;
-    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
       state.player.spawnEscape = false;
       // Keep burst only while still illegal; clear once free
       if (_escapeBurstMs > 0 && !forceEscape) {
         // leave burst timer to decay in tickStuckRecovery
       }
     }
-  } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
+  } else if (isFootprintWalkable(newX, newY, state.chunks)) {
     state.player.x = newX;
     state.player.y = newY;
     movedX = true;
     movedY = true;
   } else {
-    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
+    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks)) {
       state.player.x = newX;
       movedX = true;
     }
-    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
+    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks)) {
       state.player.y = newY;
       movedY = true;
     }
@@ -185,7 +185,7 @@ export function integrateMoveStep(
  */
 export function ensureNotEmbedded(state: GameState): void {
   if (state.player.spawnEscape) return;
-  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
     state.player.spawnEscape = true;
     state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
   }

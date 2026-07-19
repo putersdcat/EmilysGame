@@ -471,8 +471,7 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           const g = state.pendingGateQuiz;
           // Cell rewrite to door_open is the real unlock. Do NOT set the
           // global 'quiz-gate' condition to unlocked — that single id is
-          // shared by every quiz_gate in the world, so one solved gate
-          // would make all others walkable through the nano path.
+          // shared by every quiz_gate; walkability is cell SSOT only (PR3).
           resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
           state.pendingGateQuiz = null;
           addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
