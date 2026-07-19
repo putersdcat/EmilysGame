@@ -167,7 +167,14 @@ test('a wrong answer at a quiz gate leaves it re-triable, and a later correct an
 
   // 2. Advance dialog -> quiz starts.
   await pressSpace(page);
-  await page.waitForTimeout(400); // let the async startQuiz() (LLM rephrase, bypassed in test mode) settle
+  // Poll for the async startQuiz() to settle (rephrase prefetch + async start
+  // can exceed a fixed sleep on a busy machine -> was the source of the flaky
+  // 'quiz must actually become active' failure). Poll instead of fixed 400ms.
+  await page.waitForFunction(
+    () => (window as any).__gameDebug.state.quiz.active === true,
+    undefined,
+    { timeout: 8000 },
+  );
   let quiz = await page.evaluate(() => {
     const q = (window as any).__gameDebug.state.quiz;
     return { active: q.active, correctIndex: q.correctIndex, choicesLen: q.choices.length };
@@ -184,6 +191,9 @@ test('a wrong answer at a quiz gate leaves it re-triable, and a later correct an
   await pressSpace(page); // submit -> result = 'wrong'
   await pressSpace(page); // process result -> toast + immediate new question (no re-walk)
 
+  // Read the toast promptly: addToast lasts 2000ms (+600ms DOM removal), and
+  // the process press is what fires "gate remains shut". Read within that window
+  // (don't add extra waits first, or the toast legitimately expires).
   const toastsAfterWrong = await readToasts(page);
   expect(toastsAfterWrong.some(t => /remains shut/i.test(t)), `expected a "gate remains shut" toast, got: ${JSON.stringify(toastsAfterWrong)}`).toBe(true);
 
@@ -192,7 +202,15 @@ test('a wrong answer at a quiz gate leaves it re-triable, and a later correct an
   expect(gateAfterWrong.walkable).toBe(false);
 
   // 5. RETRY: gate quizzes re-deal immediately (unlimited, no walk-away needed).
-  await page.waitForTimeout(400);
+  // Poll for the re-dealt question to be active + pending (async startQuiz).
+  await page.waitForFunction(
+    () => {
+      const q = (window as any).__gameDebug.state.quiz;
+      return q.active === true && q.result === 'pending' && q.choices.length > 1;
+    },
+    undefined,
+    { timeout: 8000 },
+  );
   quiz = await page.evaluate(() => {
     const q = (window as any).__gameDebug.state.quiz;
     return { active: q.active, correctIndex: q.correctIndex, choicesLen: q.choices.length, result: q.result };
