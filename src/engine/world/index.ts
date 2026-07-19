@@ -91,6 +91,25 @@ export {
 // coordinator. This is the single entry point for generating a chunk.
 export { generateChunk, generateChunkSync } from './ChunkGenerator';
 
+// --- Place Coherence (epic PR1: read-only audit; PR2 wires repairs) ---
+export {
+  auditPlaceCoherence,
+  auditHomesteadSouth,
+  auditWalkablePolicy,
+  auditEnclosuresWithoutOpening,
+  auditRecipeOpenings,
+  findIllegalFenceGaps,
+  expectedHomesteadSouthRow,
+  buildDeclaredOpeningCells,
+  HOMESTEAD_SOUTH_GATE_ABS,
+  type PlaceCoherenceInvariant,
+  type PlaceCoherenceViolation,
+  type PlaceCoherenceAuditMeta,
+  type PlaceCoherenceAuditResult,
+  type PlaceCoherenceCounts,
+  type StampedRecipeRef,
+} from './PlaceCoherence';
+
 // --- Entropy Cell Flags (B5 / #253) ---
 // Phase 5.5: LLM entropy → cell property variation (#4).
 export { applyEntropyCellFlags } from './EntropyCellFlags';
