@@ -838,6 +838,61 @@ function handleDiarrheaControlLock(state: GameState): boolean {
 }
 
 /**
+ * Nominal sim step (ms). Player.speed is authored as grid-units per this
+ * interval (~60fps). Movement is integrated in substeps of at most this size
+ * so hitch frames never teleport half a cell in one go.
+ */
+const MOVE_STEP_MS = 1000 / 60;
+/** Drop wall-clock backlog beyond this so a long stall does not spiral. */
+const MOVE_MAX_CATCHUP_MS = 100;
+
+/**
+ * Integrate one small movement step (collision + slide).
+ * Returns whether any axis moved, and the attempted new cell for bump FX.
+ */
+function integrateMoveStep(
+  state: GameState,
+  mv: { dx: number; dy: number },
+  stepScale: number,
+  speedMult: number,
+): { moved: boolean; attemptX: number; attemptY: number } {
+  const stepSpeed = state.player.speed * speedMult * stepScale;
+  const dx = mv.dx * stepSpeed;
+  const dy = mv.dy * stepSpeed;
+  const newX = state.player.x + dx;
+  const newY = state.player.y + dy;
+
+  let movedX = false;
+  let movedY = false;
+  if (state.player.spawnEscape) {
+    // Escape hatch: bypass collision until on walkable ground (state-init writeup).
+    state.player.x = newX;
+    state.player.y = newY;
+    movedX = true;
+    movedY = true;
+    if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
+      state.player.spawnEscape = false;
+    }
+  } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
+    state.player.x = newX;
+    state.player.y = newY;
+    movedX = true;
+    movedY = true;
+  } else {
+    // Axis-independent collision (#151, #180); slide on one axis when blocked.
+    if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
+      state.player.x = newX;
+      movedX = true;
+    }
+    if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
+      state.player.y = newY;
+      movedY = true;
+    }
+  }
+  return { moved: movedX || movedY, attemptX: newX, attemptY: newY };
+}
+
+/**
  * Handle player movement (or idle state) for the current frame.
  * B5 micro-slice 11.33 (#268): extracted from update() in main.ts.
  * Manages: speed debuffs, footprint collision, footstep SFX,
@@ -846,19 +901,23 @@ function handleDiarrheaControlLock(state: GameState): boolean {
  * camera follow, chunk loading.
  * Sets state.player.isMoving = true/false as a side effect; callers
  * can read it via state.player.isMoving.
+ *
+ * Movement is frame-rate independent via real dtMs, but **sub-stepped**
+ * at ~60Hz so a slow frame (or hitch) never applies a multi-cell dash
+ * that feels like bursty/uncontrollable running.
  */
 function handleMovement(state: GameState, input: InputManager, dtMs: number = 16.67): void {
   const mv = input.getMovementVector();
   const wantsMove = mv.dx !== 0 || mv.dy !== 0;
 
-  // Frame-rate independent scaling: `player.speed` is tuned for 60fps
-  // (grid-units per 16.67ms frame). Scale by real dt so 120Hz displays,
-  // low-fps hitches, and background tabs all move at the same world speed.
-  // Clamp dt to avoid huge teleports after a long stall (tab refocus).
-  const dt = Math.min(Math.max(dtMs, 0), 100) / 16.6667;
+  // Real elapsed time for this frame, capped so a tab-refocus stall does
+  // not dump a huge backlog into one integrate pass.
+  const frameMs = Math.min(Math.max(dtMs, 0), MOVE_MAX_CATCHUP_MS);
+  // Full-frame scale for camera (and for anim/sfx which accumulate their own timers).
+  const frameDt = frameMs / MOVE_STEP_MS;
 
   if (!wantsMove) {
-    updatePlayerVisuals(state, mv, false, dtMs);
+    updatePlayerVisuals(state, mv, false, frameMs);
     resetFootstepCounter();
     // Idle path used to return here and skip autoCollect — standing on a coin
     // never picked up. Collect is independent of held movement keys (P0 feel).
@@ -870,45 +929,29 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
     const debuffs = getDebuffs(state.status);
     const injuryMult = getInjurySpeedMult(state.injury);
     const diarrheaMult = state.diarrhea.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult * dt;
-    const dx = mv.dx * effectiveSpeed;
-    const dy = mv.dy * effectiveSpeed;
-    const newX = state.player.x + dx;
-    const newY = state.player.y + dy;
+    const speedMult = debuffs.speedMult * injuryMult * diarrheaMult;
 
-    // Axis-independent collision with footprint (#151, #180); slide on one axis when blocked.
-    let movedX = false;
-    let movedY = false;
-    if (state.player.spawnEscape) {
-      // Escape hatch: bypass collision until on walkable ground (state-init writeup).
-      state.player.x = newX;
-      state.player.y = newY;
-      movedX = true;
-      movedY = true;
-      if (isFootprintWalkable(state.player.x, state.player.y, state.chunks, state.activeConditions)) {
-        state.player.spawnEscape = false;
-      }
-    } else if (isFootprintWalkable(newX, newY, state.chunks, state.activeConditions)) {
-      state.player.x = newX;
-      state.player.y = newY;
-      movedX = true;
-      movedY = true;
-    } else {
-      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks, state.activeConditions)) {
-        state.player.x = newX;
-        movedX = true;
-      }
-      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks, state.activeConditions)) {
-        state.player.y = newY;
-        movedY = true;
-      }
+    // Sub-step integration: each step is at most one nominal 60fps tick so
+    // collision stays reliable and position never jumps half a cell at once.
+    let remaining = frameMs;
+    let anyMoved = false;
+    let lastAttemptX = state.player.x;
+    let lastAttemptY = state.player.y;
+    while (remaining > 1e-6) {
+      const stepMs = Math.min(remaining, MOVE_STEP_MS);
+      const stepScale = stepMs / MOVE_STEP_MS;
+      const result = integrateMoveStep(state, mv, stepScale, speedMult);
+      if (result.moved) anyMoved = true;
+      lastAttemptX = result.attemptX;
+      lastAttemptY = result.attemptY;
+      remaining -= stepMs;
     }
 
-    if (movedX || movedY) {
+    if (anyMoved) {
       const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
       const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
       const surface = footTileDef?.surface ?? 'grass';
-      playFootstep(state.sfx, surface, dtMs);
+      playFootstep(state.sfx, surface, frameMs);
 
       const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
       if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
@@ -919,9 +962,9 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
         state.player.sinkDepth = 0;
       }
     } else {
-      // Fully blocked this frame
+      // Fully blocked this frame (once — not per substep)
       playSfx(state.sfx, 'wall_bump');
-      const hitCell = getCellAt(Math.floor(newX), Math.floor(newY), state.chunks);
+      const hitCell = getCellAt(Math.floor(lastAttemptX), Math.floor(lastAttemptY), state.chunks);
       const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
       const hitKey = hitCell?.cell.assetKey;
       if (
@@ -933,8 +976,8 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
       ) {
         if (hitKey === 'barricade') triggerHint('need_crowbar');
         else triggerHint('near_gate');
-        const tcx = Math.floor(newX);
-        const tcy = Math.floor(newY);
+        const tcx = Math.floor(lastAttemptX);
+        const tcy = Math.floor(lastAttemptY);
         const pcx = Math.floor(state.player.x);
         const pcy = Math.floor(state.player.y);
         const fdx = Math.sign(tcx - pcx);
@@ -963,10 +1006,10 @@ function handleMovement(state: GameState, input: InputManager, dtMs: number = 16
     }
 
     // Always update facing from held direction so Space aims at what you're pushing into
-    updatePlayerVisuals(state, mv, true, dtMs);
+    updatePlayerVisuals(state, mv, true, frameMs);
 
     // Frame-rate independent smoothing: 0.15/frame @60fps ≈ time-constant.
-    const camLerp = 1 - Math.pow(1 - 0.15, dt);
+    const camLerp = 1 - Math.pow(1 - 0.15, frameDt);
     state.camera.x += (state.player.x - state.camera.x) * camLerp;
     state.camera.y += (state.player.y - state.camera.y) * camLerp;
 
@@ -1080,14 +1123,9 @@ function update(state: GameState, input: InputManager, dtMs: number = 16.67): vo
   // Poll gamepad state each frame (#124)
   input.pollGamepad();
 
-  // FPS tracking
-  state.fpsCounter++;
-  const now = performance.now();
-  if (now - state.lastFpsTime >= 1000) {
-    state.fps = state.fpsCounter;
-    state.fpsCounter = 0;
-    state.lastFpsTime = now;
-  }
+  // FPS is tracked in gameLoop from real rAF intervals (not here) so a
+  // hitchy second reports the true display rate instead of a misleading
+  // counter that can desync from what the player sees.
 
   state.frameCount++;
 
@@ -1232,6 +1270,11 @@ function renderFrame(
 // ─── Game Loop ───────────────────────────────────────────────
 
 let _lastFrameTime = 0;
+/** Guard: only one rAF chain may own the loop (HMR / double main() protection). */
+let _gameLoopRaf = 0;
+/** Rolling FPS from real rAF intervals (matches what the screen is doing). */
+let _fpsWindowFrames = 0;
+let _fpsWindowMs = 0;
 
 function gameLoop(
   time: number,
@@ -1239,8 +1282,23 @@ function gameLoop(
 ): void {
   const _frameStart = performance.now();
   // Real frame delta (ms) for frame-rate independent movement/camera.
-  const dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : 16.67;
+  // Guard against negative/zero (tab clock quirks) and use a sane first frame.
+  let dtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
+  if (!Number.isFinite(dtMs) || dtMs < 0) dtMs = MOVE_STEP_MS;
   _lastFrameTime = time;
+
+  // Accurate FPS: count rAF ticks over a ~1s wall window (not "logic frames"
+  // that can be confused with long update work). Display as whole number.
+  _fpsWindowFrames++;
+  _fpsWindowMs += Math.min(dtMs, MOVE_MAX_CATCHUP_MS);
+  if (_fpsWindowMs >= 1000) {
+    ctx.state.fps = Math.round((_fpsWindowFrames * 1000) / _fpsWindowMs);
+    ctx.state.fpsCounter = _fpsWindowFrames;
+    ctx.state.lastFpsTime = _frameStart;
+    _fpsWindowFrames = 0;
+    _fpsWindowMs = 0;
+  }
+
   tickWaterAnimation(dtMs);
   setRenderFrameDelta(dtMs);
   const _updateStart = performance.now();
@@ -1254,7 +1312,7 @@ function gameLoop(
   const totalMs = _frameEnd - _frameStart;
   perfStats.total = perfSmooth(perfStats.total, totalMs);
   recordFrameTime(totalMs);
-  requestAnimationFrame((t) => gameLoop(t, ctx));
+  _gameLoopRaf = requestAnimationFrame((t) => gameLoop(t, ctx));
 }
 
 // ─── Extended Input (F3 debug, I inventory, Esc) ─────────────
@@ -1281,7 +1339,13 @@ async function main(): Promise<void> {
   // Audio bootstrap (background; oscillator fallbacks cover loading window)
   bootstrapAudio(state);
 
-  requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
+  // Single rAF chain only — cancel any prior loop (HMR / accidental re-entry
+  // would otherwise double-integrate movement → bursty overspeed).
+  if (_gameLoopRaf) cancelAnimationFrame(_gameLoopRaf);
+  _lastFrameTime = 0;
+  _fpsWindowFrames = 0;
+  _fpsWindowMs = 0;
+  _gameLoopRaf = requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
 
 if (document.readyState === 'loading') {
