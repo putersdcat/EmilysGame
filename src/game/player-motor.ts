@@ -126,6 +126,8 @@ let _embedEventActive = false;
 /** True after step-4 ladder exhaustion for current embed event (no re-BFS spam). */
 let _embedLadderExhausted = false;
 let _embedToastShown = false;
+/** performance.now() of last embed ladder re-try while exhausted. */
+let _lastEmbedRetryMs = 0;
 
 /** Reset motor timers + L0 inject/clamp state (new game / load). */
 export function resetPlayerMotor(): void {
@@ -133,6 +135,7 @@ export function resetPlayerMotor(): void {
   _embedEventActive = false;
   _embedLadderExhausted = false;
   _embedToastShown = false;
+  _lastEmbedRetryMs = 0;
   _pendingInjectDtMs = null;
   _injectFrameActive = false;
   _lastInjectLatch = null;
@@ -338,13 +341,21 @@ export function resolveEmbedIfNeeded(state: GameState): EmbedResolveResult {
     return 'legal';
   }
 
-  // Already exhausted ladder this embed event — stay put (step 4)
+  // Ladder already tried this embed event: keep visual flag, but do NOT
+  // permanently freeze the motor (caller still integrates legal steps).
+  // Retry the ladder every ~1s of wall time so gen/load edges can recover.
   if (_embedEventActive && _embedLadderExhausted) {
     if (!state.player.spawnEscape) {
       state.player.spawnEscape = true;
       state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
     }
-    return 'stuck';
+    // Soft re-open ladder periodically
+    if (performance.now() - (_lastEmbedRetryMs || 0) > 1000) {
+      _embedLadderExhausted = false;
+      _lastEmbedRetryMs = performance.now();
+    } else {
+      return 'stuck'; // still illegal; integrate may still walk free
+    }
   }
 
   // New embed event or first attempt
@@ -498,6 +509,7 @@ export function integrateMoveStep(
     movedX = true;
     movedY = true;
   } else {
+    // Axis slide: keep as much progress as the wall allows
     if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks)) {
       state.player.x = newX;
       movedX = true;
@@ -505,6 +517,19 @@ export function integrateMoveStep(
     if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks)) {
       state.player.y = newY;
       movedY = true;
+    }
+    // Half-step slide when full-step both axes blocked (corner glue)
+    if (!movedX && !movedY) {
+      const hx = state.player.x + dx * 0.5;
+      const hy = state.player.y + dy * 0.5;
+      if (dx !== 0 && isFootprintWalkable(hx, state.player.y, state.chunks)) {
+        state.player.x = hx;
+        movedX = true;
+      }
+      if (dy !== 0 && isFootprintWalkable(state.player.x, hy, state.chunks)) {
+        state.player.y = hy;
+        movedY = true;
+      }
     }
   }
 
@@ -516,7 +541,11 @@ export function integrateMoveStep(
  *
  * PRE: constrained embed recovery (legal teleports only).
  * SUBSTEP: axis-slide with walk checks on every write.
- * POST: stuck-legal nudges after STUCK_MS blocked while holding move.
+ * POST: stuck-legal nudges when blocked while holding move.
+ *
+ * Critical: embed step-4 "stuck" must NOT freeze the motor forever — if the
+ * player is on illegal ground we still try to walk into legal cells; only
+ * multi-frame noclip is forbidden.
  */
 export function integrateMovementFrame(
   state: GameState,
@@ -524,31 +553,25 @@ export function integrateMovementFrame(
   frameMs: number,
   speedMult: number,
 ): { anyMoved: boolean; lastAttemptX: number; lastAttemptY: number } {
-  // 1. PRE embed recovery — skip substeps after teleport-or-fail (design)
-  const embedResult = resolveEmbedIfNeeded(state);
-  if (embedResult === 'stuck') {
-    return {
-      anyMoved: false,
-      lastAttemptX: state.player.x,
-      lastAttemptY: state.player.y,
-    };
-  }
-  if (embedResult === 'teleported') {
-    return {
-      anyMoved: true,
-      lastAttemptX: state.player.x,
-      lastAttemptY: state.player.y,
-    };
-  }
-
-  // 2. SUBSTEP integrate — every write requires isFootprintWalkable
   const x0 = state.player.x;
   const y0 = state.player.y;
-  let remaining = Math.min(Math.max(frameMs, 0), MOVE_MAX_CATCHUP_MS);
-  _lastSimDtClampedMs = remaining;
   let anyMoved = false;
   let lastAttemptX = state.player.x;
   let lastAttemptY = state.player.y;
+
+  // 1. PRE embed recovery (legal teleport only)
+  const embedResult = resolveEmbedIfNeeded(state);
+  if (embedResult === 'teleported') {
+    anyMoved = true;
+    lastAttemptX = state.player.x;
+    lastAttemptY = state.player.y;
+    // Continue integrating this frame so held keys still feel responsive
+  }
+  // 'stuck' / 'legal': fall through to normal integrate
+
+  // 2. SUBSTEP integrate — every write requires isFootprintWalkable
+  let remaining = Math.min(Math.max(frameMs, 0), MOVE_MAX_CATCHUP_MS);
+  _lastSimDtClampedMs = remaining;
 
   while (remaining > 1e-6) {
     const stepMs = Math.min(remaining, MOVE_STEP_MS);
@@ -560,7 +583,7 @@ export function integrateMovementFrame(
     remaining -= stepMs;
   }
 
-  // 3. POST stuck-legal recovery
+  // 3. POST stuck-legal recovery — nudge immediately after a short stick
   const wantsMove = Math.abs(mv.dx) > 1e-8 || Math.abs(mv.dy) > 1e-8;
   if (wantsMove && !anyMoved) {
     _blockedWhileMovingMs += frameMs;
@@ -568,8 +591,10 @@ export function integrateMovementFrame(
       _blockedWhileMovingMs = 0;
       if (tryStuckNudges(state, mv)) {
         anyMoved = true;
+        // Successful slide — allow embed ladder to retry next time
+        _embedLadderExhausted = false;
+        _embedEventActive = false;
       }
-      // else stay put — wall_bump SFX from handleMovement
     }
   } else {
     _blockedWhileMovingMs = 0;

@@ -88,9 +88,10 @@ export const PLAYER_CONFIG = {
   defaultVariation: 'blonde_pink',
   animationFrames: 6,   // Walking animation frame count
   /** Collision footprint half-extents in grid units (centered on player position).
-   *  Tight rectangle prevents walk-through on all approach directions (#151, #180). */
-  collisionHalfW: 0.3,  // X half-width (grid units)
-  collisionHalfH: 0.3,  // Y half-height (grid units)
+   *  Slightly under half-cell so axis-slide along fence/wall edges feels playable
+   *  without allowing center-of-tile walk-through of full solids (#151, #180). */
+  collisionHalfW: 0.22,  // X half-width (grid units)
+  collisionHalfH: 0.22,  // Y half-height (grid units)
 } as const;
 
 // ─── LLM / Entropy ──────────────────────────────────────────

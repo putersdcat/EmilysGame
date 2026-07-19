@@ -28,15 +28,21 @@ const GP_DEADZONE = 0.3;
 /**
  * Map screen-space movement intent → isometric grid-space (unnormalized).
  *
- * Screen axes (DOM/canvas convention): +sdx = right, +sdy = down.
- * Grid axes: same cell axes the motor integrates (`player.x/y`).
+ * **Player-facing contract (WASD = arrow keys):**
+ *   W / ↑  → move **up the screen**
+ *   S / ↓  → move **down the screen**
+ *   A / ←  → move **left on the screen**
+ *   D / →  → move **right on the screen**
  *
- * Current intentional law (iso 45° alignment, one place to change if wrong):
- *   dx = sdx + sdy
- *   dy = -sdx + sdy
+ * Screen axes: +sdx = right, +sdy = down (DOM/canvas).
+ * Grid axes: `player.x/y` integrated by the motor.
  *
- * Callers that need constant speed must normalize the result themselves
- * (see `InputManager.getMovementVector`).
+ * Projection (`projection.ts`): screenX ∝ (x−y), screenY ∝ (x+y).
+ * Inverse (direction only; normalize after):
+ *   dx =  sdx + sdy
+ *   dy = −sdx + sdy
+ *
+ * Same law for WASD and arrows — both feed the same up/down/left/right bits.
  *
  * @see memories/repo/design-play-stack-first-principles-2026-07-19.md L1
  */
@@ -151,35 +157,65 @@ export class InputManager {
   // ═══════════════════════════════════════════════════════════════
 
   private setupListeners(): void {
-    window.addEventListener('keydown', (e) => this.handleKeyDown(e));
-    window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+    // Capture phase so game movement wins over focused buttons/canvas quirks.
+    // (Text fields still ignored in the handlers.)
+    window.addEventListener('keydown', (e) => this.handleKeyDown(e), true);
+    window.addEventListener('keyup', (e) => this.handleKeyUp(e), true);
+    // If the tab loses focus mid-key, clear stuck WASD/arrows
+    window.addEventListener('blur', () => this.resetInput(this.keyState));
+  }
+
+  /** True when the event target is a real text field (don't steal typing). */
+  private isTypingTarget(event: KeyboardEvent): boolean {
+    const t = event.target as HTMLElement | null;
+    if (!t) return false;
+    const tag = (t.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return true;
+    if (t.isContentEditable) return true;
+    return false;
   }
 
   private handleKeyDown(event: KeyboardEvent): void {
+    if (this.isTypingTarget(event)) return;
+    // Ignore browser key-repeat — state stays held; repeats only spam preventDefault
+    if (event.repeat) {
+      const k = event.key.toLowerCase();
+      if (k === 'w' || k === 'a' || k === 's' || k === 'd'
+        || k === 'arrowup' || k === 'arrowdown' || k === 'arrowleft' || k === 'arrowright'
+        || k === ' ' || k === 'enter') {
+        event.preventDefault();
+      }
+      return;
+    }
+
     this._activeDevice = 'keyboard';
     const key = event.key.toLowerCase();
 
     switch (key) {
       case 'w':
       case 'arrowup':
+        // W ≡ ↑  screen up
         this.keyState.up = true;
         this.pressQueue.up = true;
         event.preventDefault();
         break;
       case 's':
       case 'arrowdown':
+        // S ≡ ↓  screen down
         this.keyState.down = true;
         this.pressQueue.down = true;
         event.preventDefault();
         break;
       case 'a':
       case 'arrowleft':
+        // A ≡ ←  screen left
         this.keyState.left = true;
         this.pressQueue.left = true;
         event.preventDefault();
         break;
       case 'd':
       case 'arrowright':
+        // D ≡ →  screen right
         this.keyState.right = true;
         this.pressQueue.right = true;
         event.preventDefault();
@@ -194,6 +230,7 @@ export class InputManager {
   }
 
   private handleKeyUp(event: KeyboardEvent): void {
+    // Always clear movement keys even if focus moved into a text field mid-hold
     const key = event.key.toLowerCase();
 
     switch (key) {
