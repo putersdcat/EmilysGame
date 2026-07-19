@@ -1,28 +1,30 @@
 /**
- * play-stack-golden.spec.ts — PR7 golden play-loop proof.
+ * play-stack-golden.spec.ts — golden play-loop proof (play-kernel PR1–PR4).
  *
- * Stitches play-stack foundations into one regression net so a broken layer
+ * Stitches play-kernel foundations into one regression net so a broken layer
  * cannot land alone while the others stay green:
  *
- *   PR1 L0  injectDtMs hitch clamp (no multi-cell teleport)
- *   PR2 L1  screenIntentToGrid movement directions (+ live key hold)
- *   PR4 L3  embed recovery legal (never water, leaves solid)
- *   PR5 L2  post-modal locomotion after gate/dialog/quiz close
- *   M1      starter homestead quiz_gate fail → retry → open → walkable
+ *   PR1  runPlayFrame non-abort + entryTop Space guard
+ *   PR2  loop inventory, mode shell, screenIntentToGrid
+ *   PR3  motor walk / embed recovery legal
+ *   PR4  grep audit, orphan heal demoted, human bar notes
  *
- * ── Manual matrix (what a human playtester checks in ~5 min) ─────────────
+ * ── Human play checklist (PR4 binding — design-play-kernel) ──────────────
  *
- * | # | Action                                      | Pass criterion                          |
- * |---|---------------------------------------------|-----------------------------------------|
- * | 1 | Boot spawn in courtyard                     | On walkable grass; not inside cottage   |
- * | 2 | Hold W / A / S / D for ~1s each             | Moves along iso map (see intent table)  |
- * | 3 | Force hitch (tab away 500ms) while holding D | No multi-cell dash; smooth resume       |
- * | 4 | Face south gate, Space → dialog → quiz      | Modal blocks move; stack owns pause     |
- * | 5 | Wrong answer                                | Re-deal quiz; still at gate; no walk-in |
- * | 6 | Correct answer                              | Gate → door_open; cell walkable         |
- * | 7 | Walk through opened gate                    | Footprint legal mid-gate; leave yard    |
- * | 8 | (Debug) place inside cottage wall           | ≤1 recovery → legal grass; never water  |
- * | 9 | Close any modal (Esc / finish)              | locomotionAllowed; WASD works again     |
+ * | #  | Action                                      | Pass criterion                          |
+ * |----|---------------------------------------------|-----------------------------------------|
+ * | 1  | W and ↑                                     | Screen up both                          |
+ * | 2  | A/S/D and arrows                            | Match; screen axes                      |
+ * | 3  | W+D                                         | Up-right diagonal                       |
+ * | 4  | River 8-way                                 | Clear stop; never on water              |
+ * | 5  | Hold wall 3s                                | Slide or clear stop; keys feel alive    |
+ * | 6  | Quiz gate fail/retry/open/walk              | Soft fail; open; pass                   |
+ * | 7  | NPC dialog → quiz/trade → close             | Move within one frame                   |
+ * | 8  | Book open/close; pause resume               | Move immediately                        |
+ * | 8b | Quiz **I don't know** → Book → close Book   | WASD within one frame                   |
+ * | 9  | Tab unfocus 5s holding D                    | No map dash                             |
+ * | 10 | Dense embed / reload                        | Legal recover; no river slash           |
+ * | 11 | Free walk 1–2 min + leave via opened gate   | No intermittent dead keys               |
  *
  * Intent table (screen → grid, law: dx=sdx+sdy, dy=-sdx+sdy):
  *   W/Up (0,-1) → NW  (−,−)    S/Down (0,+1) → SE (+,+)
@@ -33,9 +35,9 @@
  *   tests/gameplay/play-stack-time-clamp.spec.ts
  *   tests/gameplay/play-stack-motor-recovery.spec.ts
  *   tests/gameplay/play-stack-mode-ownership.spec.ts
- *   tests/gameplay/playability-m1-core-loop.spec.ts
+ *   tests/gameplay/quiz-gate-retry-loop.spec.ts
  *
- * @see memories/repo/design-play-stack-first-principles-2026-07-19.md (PR7)
+ * @see memories/repo/design-play-kernel-2026-07-19.md (PR4 human checklist)
  */
 import { test, expect, Page } from '@playwright/test';
 

@@ -163,8 +163,12 @@ export function getWoundCareQuestion(): WoundCareQuestion {
  * Sets `state._woundCareQuiz = true` so the bonus-logic branch in
  * `update()` (main.ts L861) can grant `WOUND_QUIZ_BONUS_HEAL` energy.
  */
+/**
+ * Sync-activate wound-care quiz content. Caller **must** `enterQuizModal(state, 'wound_care')`
+ * same turn (handshake). PR4: product reconcile will not rehydrate orphan quiz.active.
+ */
 export function startWoundCareQuiz(state: import('./game-state').GameState, wq: WoundCareQuestion): void {
-  // Populate quiz state directly (bypass normal startQuiz which loads from content packs)
+  // Content half of handshake — populate quiz directly (bypass content-pack startQuiz)
   state.quiz.active = true;
   state.quiz.displayText = `🩹 Wound Care: ${wq.question}`;
   state.quiz.choices = [...wq.answers, "I don't know 📖"];

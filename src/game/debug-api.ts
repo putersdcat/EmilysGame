@@ -114,6 +114,8 @@ import {
   queueAfterClose,
   enterDialogModal,
   recoverOrphanPause,
+  getOrphanHealCount,
+  resetOrphanHealCount,
   syncDerivedPaused,
   setControlLock,
 } from './play-mode';
@@ -428,6 +430,9 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     enterDialogModal: (owner: string) => enterDialogModal(state, owner),
     enterQuizModal: (owner: string) => enterQuizModal(state, owner),
     recoverOrphanPause: () => recoverOrphanPause(state),
+    /** PR4: product golden must keep this at 0; DEV heals still increment. */
+    getOrphanHealCount: () => getOrphanHealCount(),
+    resetOrphanHealCount: () => resetOrphanHealCount(),
     syncDerivedPaused: () => syncDerivedPaused(state),
     setControlLock: (lock: Parameters<typeof setControlLock>[1]) => setControlLock(state, lock),
     /** Test helper: open dialog + enterModal handshake */

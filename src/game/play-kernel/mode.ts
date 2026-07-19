@@ -140,10 +140,50 @@ export function resetPlayMode(state: GameState): void {
   syncDerivedPaused(state);
 }
 
+// ─── Orphan heal observability (PR4: product path must not need heal) ─
+
+/** Times product would have needed content/orphan rehydrate (DEV heals only). */
+let _orphanHealCount = 0;
+
+/** Cumulative orphan-heal attempts since boot / last reset (DEV + tests). */
+export function getOrphanHealCount(): number {
+  return _orphanHealCount;
+}
+
+/** Test helper — reset counter between cases. */
+export function resetOrphanHealCount(): void {
+  _orphanHealCount = 0;
+}
+
+function isDevBuild(): boolean {
+  return (
+    typeof import.meta !== 'undefined' &&
+    !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV
+  );
+}
+
 /**
- * Safety net (one release): if paused is true but stack empty and no lock,
- * clear paused. Prefer calling after modal handlers each frame.
- * Returns true if an orphan was cleared.
+ * Detect content flags / pause DOM active without a matching stack frame.
+ * Product path must not rely on healing these — handshake owns entry.
+ */
+function hasContentWithoutStack(state: GameState): boolean {
+  if (state.playMode.stack.length > 0) return false;
+  return (
+    state.quiz.active ||
+    state.ui.dialog.active ||
+    state.trade.active ||
+    state.knowledge.bookOpen ||
+    document.getElementById('pauseMenu')?.style.display === 'flex'
+  );
+}
+
+/**
+ * Explicit orphan rehydrate (DEV belt / tests / debug-api only after PR4).
+ * Product golden must not need this — handshakes own enterModal.
+ * Returns true if an orphan pause was cleared (no content owner).
+ *
+ * @see recoverOrphanPause is only invoked from reconcileIfNeeded (DEV) or
+ *      debug/test surfaces — never as product strategy.
  */
 export function recoverOrphanPause(state: GameState): boolean {
   if (
@@ -151,18 +191,14 @@ export function recoverOrphanPause(state: GameState): boolean {
     state.playMode.stack.length === 0 &&
     state.playMode.controlLock == null
   ) {
-    // Also clear if content flags claim ownership without stack (legacy drift)
-    const contentOwner =
-      state.quiz.active ||
-      state.ui.dialog.active ||
-      state.trade.active ||
-      state.knowledge.bookOpen ||
-      document.getElementById('pauseMenu')?.style.display === 'flex';
+    const contentOwner = hasContentWithoutStack(state);
     if (!contentOwner) {
+      // Redundant with syncDerivedPaused when called after it; kept for
+      // direct debug/test callers that set paused without stack.
       state.paused = false;
       return true;
     }
-    // Content active but stack missing — re-sync stack from content (belt)
+    // Content active but stack missing — re-sync stack from content (DEV belt)
     if (state.quiz.active) {
       enterModal(state, { kind: 'quiz', owner: 'orphan_recover' });
     } else if (state.ui.dialog.active) {
@@ -353,51 +389,62 @@ export function tickDiarrheaControlLock(state: GameState, nowMs: number = perfor
 }
 
 /**
- * Every frame reconcile (PR2): sync derived paused, book/stack DEV asserts,
- * content-without-stack heal, orphan pause clear.
- * Returns whether an orphan heal ran.
+ * Every frame reconcile (PR2 + PR4 demote).
+ *
+ * Product always:
+ *   1) syncDerivedPaused (stack|lock → paused)
+ *   2) stack authority → bookOpen slave (frame present ⇒ flag true)
+ *
+ * PR4: product no longer rehydrates content-without-stack or orphan pause
+ * as a strategy. DEV builds assert + count + optional belt heal so drift
+ * is visible; golden paths must keep heal count at 0.
+ *
+ * Returns whether a DEV orphan heal ran (always false in production builds).
+ *
+ * @see memories/repo/design-play-kernel-2026-07-19.md § reconcileIfNeeded / PR4
  */
 export function reconcileIfNeeded(state: GameState): boolean {
-  // 1) Derived paused must match stack | lock
+  // 1) Derived paused must match stack | lock (product — not a "heal")
   syncDerivedPaused(state);
 
-  // 2) Book slave: bookOpen without frame → enter book
-  if (state.knowledge.bookOpen && !hasModalKind(state, 'book')) {
-    enterModal(state, { kind: 'book' });
+  // 2) Stack authority → content slave (bookOpen follows book frame)
+  if (hasModalKind(state, 'book') && !state.knowledge.bookOpen) {
+    state.knowledge.bookOpen = true;
   }
 
-  // DEV asserts: bookOpen iff has book frame; quiz.active implies quiz on stack
-  if (
-    typeof import.meta !== 'undefined' &&
-    (import.meta as { env?: { DEV?: boolean } }).env?.DEV
-  ) {
-    const hasBook = hasModalKind(state, 'book');
-    if (state.knowledge.bookOpen !== hasBook) {
-      console.assert(
-        false,
-        `[play-mode] bookOpen (${state.knowledge.bookOpen}) !== has book frame (${hasBook})`,
-      );
-    }
-    if (state.quiz.active && !hasModalKind(state, 'quiz')) {
-      console.assert(
-        false,
-        '[play-mode] quiz.active without quiz frame on stack',
-      );
-    }
+  const contentOrphan = hasContentWithoutStack(state);
+  // After syncDerivedPaused, pure orphan pause (no content) is already clear.
+  // Content-without-stack is the only remaining drift class.
+  if (!contentOrphan) {
+    return false;
   }
 
-  // 3–4) Content active without stack → re-hydrate (or clear orphan pause)
-  if (state.playMode.stack.length === 0 && state.playMode.controlLock == null) {
-    if (state.quiz.active) {
-      enterModal(state, { kind: 'quiz', owner: 'orphan_recover' });
-    } else if (state.ui.dialog.active) {
-      enterModal(state, { kind: 'dialog', owner: 'orphan_recover' });
-    } else if (state.trade.active) {
-      enterModal(state, { kind: 'trade', owner: 'orphan_recover' });
-    } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
-      enterModal(state, { kind: 'pause_menu' });
-    }
+  _orphanHealCount++;
+
+  if (!isDevBuild()) {
+    // Production: do not heal. Handshakes must keep stack and content aligned.
+    return false;
   }
 
-  return recoverOrphanPause(state);
+  // DEV: assert + belt heal so local play continues while drift is visible
+  console.assert(
+    false,
+    '[play-mode] content active without stack frame — handshake drift (PR4 demoted product heal)',
+  );
+  const hasBook = hasModalKind(state, 'book');
+  if (state.knowledge.bookOpen !== hasBook) {
+    console.assert(
+      false,
+      `[play-mode] bookOpen (${state.knowledge.bookOpen}) !== has book frame (${hasBook})`,
+    );
+  }
+  if (state.quiz.active && !hasModalKind(state, 'quiz')) {
+    console.assert(
+      false,
+      '[play-mode] quiz.active without quiz frame on stack',
+    );
+  }
+
+  recoverOrphanPause(state);
+  return true;
 }

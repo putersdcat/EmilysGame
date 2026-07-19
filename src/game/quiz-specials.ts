@@ -140,12 +140,17 @@ export function getInsectQuestions(): readonly MiniQuizQuestion[] {
  * Sets `state._hygieneQuiz = true` so the bonus-logic branch in
  * `update()` (main.ts L868) can grant the appropriate reward.
  */
+/**
+ * Sync-activate hygiene quiz content. Caller **must** `enterQuizModal(state, 'hygiene')`
+ * same turn (handshake). Do not leave quiz.active without a stack frame.
+ */
 export function startHygieneQuiz(state: GameState): void {
   const hq = getHygieneQuestion();
   const correctAnswer = hq.answers[0];
   // Find the new index of the (originally first) correct answer after shuffle
   const correctIdx = hq.answers.indexOf(correctAnswer);
 
+  // Content half of handshake — enterQuizModal owns stack same turn
   state.quiz.active = true;
   state.quiz.displayText = `🚽 Hygiene Quiz: ${hq.question}`;
   state.quiz.choices = [...hq.answers, "I don't know 📖"];
@@ -174,11 +179,16 @@ export function startHygieneQuiz(state: GameState): void {
  * Sets `state._insectQuiz = true` so the bonus-logic branch in
  * `update()` (main.ts L876) can grant the bonus.
  */
+/**
+ * Sync-activate insect quiz content. Caller **must** `enterQuizModal` / drain
+ * enterModal same turn (handshake). PR4: product reconcile will not rehydrate.
+ */
 export function startInsectQuiz(state: GameState): void {
   const iq = getInsectQuestion();
   const correctAnswer = iq.answers[0];
   const correctIdx = iq.answers.indexOf(correctAnswer);
 
+  // Content half of handshake — enterQuizModal owns stack same turn
   state.quiz.active = true;
   state.quiz.displayText = `🐛 Insect Safety: ${iq.question}`;
   state.quiz.choices = [...iq.answers, "I don't know 📖"];

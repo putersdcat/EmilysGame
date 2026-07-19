@@ -1,5 +1,5 @@
 /**
- * runPlayFrame — non-aborting play frame pipeline (PR1–PR3).
+ * runPlayFrame — non-aborting play frame pipeline (PR1–PR4).
  *
  * Normative phases from design-play-kernel-2026-07-19.md:
  *   poll → frameCount → justKeys → control locks → reconcile →
@@ -7,6 +7,24 @@
  *   tickPlayWorld (stack empty) → finally endFrame once.
  *
  * Mode shell: mode.ts (PR2). Motor: motor.ts (PR3). Presentation stays in hooks.
+ * Single `input.endFrame()` owner: the `finally` below (+ pure unit tests).
+ * Product never aborts the frame; locomotion only when entryTop === 'play'.
+ *
+ * ── Human play checklist (PR4 binding — feel over green tests) ──────────
+ *  1 W and ↑          → screen up both
+ *  2 A/S/D + arrows   → match; screen axes
+ *  3 W+D              → up-right diagonal
+ *  4 River 8-way      → clear stop; never on water
+ *  5 Hold wall 3s     → slide or clear stop; keys feel alive
+ *  6 Quiz gate        → fail/retry/open/walk soft
+ *  7 NPC dialog chain → quiz/trade close → move within one frame
+ *  8 Book / pause     → open-close; move immediately
+ *  8b Quiz "I don't know" → Book opens → close → WASD one frame
+ *  9 Tab unfocus 5s holding D → no map dash
+ * 10 Dense embed      → legal recover; no river slash
+ * 11 Free walk 1–2 min + leave via opened gate → no dead keys
+ *
+ * @see memories/repo/design-play-kernel-2026-07-19.md § Human play checklist
  */
 
 import type { GameState } from '../game-state';

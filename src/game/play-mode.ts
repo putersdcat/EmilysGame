@@ -39,6 +39,8 @@ export {
   setControlLock,
   resetPlayMode,
   recoverOrphanPause,
+  getOrphanHealCount,
+  resetOrphanHealCount,
   enterQuizModal,
   enterDialogModal,
   setBookOpen,

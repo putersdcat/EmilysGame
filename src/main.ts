@@ -557,17 +557,17 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         // Categories with no Book subject counterpart (e.g. 'logic', which
         // is intentionally book-less -- riddles are self-contained) fall
         // through to the text search below.
+        // Intent only — do NOT write bookOpen here (PR4 handshake: setBookOpen
+        // / enterModal own the flag + stack together after quiz exits).
         const bySubject = getBookArticlesBySubject([category as SubjectId]);
         const related = bySubject.length > 0
           ? bySubject
           : (searchBookArticles(category) || searchBookArticles(questionText));
         if (related.length > 0) {
           openArticle(state.knowledge, related[0].id);
-          state.knowledge.bookOpen = true;
           state.knowledge.activeTab = 'browse';
           addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
         } else {
-          state.knowledge.bookOpen = true;
           state.knowledge.activeTab = 'browse';
           addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
         }
@@ -578,7 +578,8 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
       if (state.quiz.result !== 'idk') {
         state.quizStats.answered++;
       }
-      const openBookAfter = state.quiz.result === 'idk' && state.knowledge.bookOpen;
+      // idk always opens Book (checklist 8b) — local intent, not content flag
+      const openBookAfter = state.quiz.result === 'idk';
       // Drop pending trade if opening book (product rule: idk → book, not trade)
       if (openBookAfter) {
         state.pendingTrade = null;
@@ -587,7 +588,7 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
       }
       quizClose(state.quiz);
       exitModal(state, 'quiz'); // drain pendingNext (trade) if any
-      // If idk opened book content but stack didn't get book (not queued), enter now
+      // Handshake: setBookOpen owns bookOpen + stack (never raw bookOpen=true)
       if (openBookAfter && !state.playMode.stack.some((f) => f.kind === 'book')) {
         setBookOpen(state, true);
       } else if (!openBookAfter && state.pendingTrade) {

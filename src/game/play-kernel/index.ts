@@ -1,6 +1,7 @@
 /**
- * play-kernel public surface (PR1–PR3: frame + loop + mode + input-map + motor + walk).
+ * play-kernel public surface (PR1–PR4: frame + loop + mode + input-map + motor + walk).
  *
+ * PR4: orphan product heal demoted; greps enforce single writers.
  * @see memories/repo/design-play-kernel-2026-07-19.md
  */
 
@@ -60,6 +61,8 @@ export {
   reconcileIfNeeded,
   registerDrainActivator,
   recoverOrphanPause,
+  getOrphanHealCount,
+  resetOrphanHealCount,
   drainPendingNext,
 } from './mode';
 
