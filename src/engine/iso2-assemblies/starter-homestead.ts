@@ -20,20 +20,19 @@ const ORIGIN = STARTER_HOMESTEAD_ORIGIN;
 const HOMESTEAD_SIZE = 7;
 
 /**
- * South fence openings: dirt flanks + quiz_gate at center exit.
- * Mirrors scene-law openings used by modular fenced recipes.
+ * South fence opening: single functional quiz_gate only.
+ * Dirt flanks were removed so the yard perimeter reads closed — leave only
+ * through the teaching gate (scene law: no barrier without function).
  */
 export const STARTER_HOMESTEAD_OPENINGS: readonly AssemblyOpening[] = [
-  { x: 2, y: 6, kind: 'path' },
   { x: 3, y: 6, kind: 'quiz_gate' },
-  { x: 4, y: 6, kind: 'path' },
 ];
 
 /**
  * Authored structure / prop / opening cells. Overlaid on top of the yard
  * fill so every cell in [0..6]×[0..6] is stamped (no WU residue gaps).
- * Roles: fence ring, stone pad, cottage, sign/flowers, campfire, south
- * quiz_gate + dirt flanks, breadcrumb coins toward the exit.
+ * Roles: fence ring, stone pad, cottage, sign/flowers, campfire, closed
+ * south fence with center quiz_gate, breadcrumb coins toward the gate.
  */
 const STARTER_HOMESTEAD_STRUCTURES: readonly StarterPlacement[] = [
   // North fence row
@@ -48,15 +47,15 @@ const STARTER_HOMESTEAD_STRUCTURES: readonly StarterPlacement[] = [
   { x: 6, y: 2, assetKey: 'fence' },
   // Cottage row
   { x: 0, y: 3, assetKey: 'fence' }, { x: 4, y: 3, assetKey: 'starter_cottage' }, { x: 6, y: 3, assetKey: 'fence' },
-  // Mid yard props + dirt path toward gate
+  // Mid yard props + dirt path toward gate (inside yard only)
   { x: 0, y: 4, assetKey: 'fence' }, { x: 1, y: 4, assetKey: 'flower_pink' },
   { x: 3, y: 4, assetKey: 'dirt', itemId: 'coin' }, { x: 6, y: 4, assetKey: 'fence' },
   { x: 0, y: 5, assetKey: 'fence' }, { x: 2, y: 5, assetKey: 'campfire' },
   { x: 3, y: 5, assetKey: 'dirt', itemId: 'coin' }, { x: 4, y: 5, assetKey: 'dirt' },
   { x: 5, y: 5, assetKey: 'grass', itemId: 'coin' }, { x: 6, y: 5, assetKey: 'fence' },
-  // South fence + openings (quiz_gate teacher + path flanks)
+  // South fence CLOSED except center quiz_gate (no dirt walk-around)
   { x: 0, y: 6, assetKey: 'fence' }, { x: 1, y: 6, assetKey: 'fence' },
-  { x: 2, y: 6, assetKey: 'dirt' }, { x: 3, y: 6, assetKey: 'quiz_gate' }, { x: 4, y: 6, assetKey: 'dirt' },
+  { x: 2, y: 6, assetKey: 'fence' }, { x: 3, y: 6, assetKey: 'quiz_gate' }, { x: 4, y: 6, assetKey: 'fence' },
   { x: 5, y: 6, assetKey: 'fence' }, { x: 6, y: 6, assetKey: 'fence' },
 ];
 
@@ -111,7 +110,7 @@ export function stampStarterHomestead(cells: CellData[][]): void {
     if (y < 0 || y >= cells.length || x < 0 || x >= cells[y].length) continue;
     cells[y][x] = makeCell(p);
   }
-  // Scene law: south openings stay functional (quiz_gate + path flanks).
+  // Scene law: south quiz_gate stays functional (sole yard exit).
   repairSceneOpenings(cells, ORIGIN.x, ORIGIN.y, STARTER_HOMESTEAD_RECIPE);
 }
 
