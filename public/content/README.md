@@ -31,9 +31,14 @@ Emily's Game now has a scalable educational content system with externalized con
 ### Book images (offline-only)
 - Structured field `article.image` (preferred) and/or markdown `![alt](/content/…)` in body
 - **Allow-listed paths only:** `/content/…` (no remote `http(s)://` — game stays playable offline)
-- Free NASA public-domain files ship in-repo: `packs/default-v1/images/*.jpg`
+- Free media ship in-repo under `packs/default-v1/images/`
+- **Source guide + licenses:** [`packs/default-v1/images/SOURCES.md`](packs/default-v1/images/SOURCES.md)
+- **Per-file registry:** [`packs/default-v1/images/sources-registry.json`](packs/default-v1/images/sources-registry.json)
 - Renderer: `src/ui/markdown.ts` + Book UI in `src/game/knowledge.ts` + styles in `src/index.html`
-- Backfill helper: `python scripts/content-pipeline/backfill_article_images.py`
+- Scripts:
+  - `python scripts/content-pipeline/fetch_nasa_book_images.py` — NASA PD fetch + registry rebuild
+  - `python scripts/content-pipeline/assign_unique_book_images.py` — unique on-topic assignment
+  - `python scripts/content-pipeline/download_unique_book_images.py` — broader catalog attempts
 
 ### Metadata Features
 - **Age Banding:** 5-7, 8-10, 11-12+ with min/max age filtering
