@@ -141,6 +141,45 @@ test.describe('Place coherence walk SSOT matrix (PR3)', () => {
     }
   });
 
+  test('PLACE_WALK_FAMILY_KEYS all covered by audit isPolicyContractKey (no drift)', async ({
+    page,
+  }) => {
+    await waitForGame(page);
+
+    const result = await page.evaluate(async () => {
+      const { PLACE_WALK_FAMILY_KEYS } = await import('/engine/walkability-policy.ts');
+      const { isPolicyContractKey } = await import('/engine/world/PlaceCoherence.ts');
+
+      const uncovered: string[] = [];
+      for (const k of PLACE_WALK_FAMILY_KEYS) {
+        if (!isPolicyContractKey(k)) uncovered.push(k);
+      }
+
+      // Material prefixes used by the matrix must also hit the audit filter
+      const materialSamples = [
+        'water_clear_river',
+        'bridge_wood',
+        'wooden_fence_post',
+        'stone_wall_red_clinker',
+        'homestead_wall_plaster',
+      ];
+      const materialUncovered = materialSamples.filter((k) => !isPolicyContractKey(k));
+
+      // Non-contract keys must stay out (audit should not thrash grass)
+      const falsePositives = ['grass', 'dirt', 'water_flask', 'coin'].filter((k) =>
+        isPolicyContractKey(k),
+      );
+
+      return { uncovered, materialUncovered, falsePositives };
+    });
+
+    expect(result.uncovered, 'every PLACE_WALK_FAMILY_KEYS entry must be audit-contract').toEqual(
+      [],
+    );
+    expect(result.materialUncovered, 'material family samples must be audit-contract').toEqual([]);
+    expect(result.falsePositives, 'non-place keys must not be audit-contract').toEqual([]);
+  });
+
   test('manual stamp: cell.walkable === expectedWalkableDefault; runtime cell-only', async ({
     page,
   }) => {
@@ -372,6 +411,20 @@ test.describe('Place coherence walk SSOT matrix (PR3)', () => {
     expect(
       result.reports.find((r) => r.id === 'pond-clearing')?.counts.water ?? 0,
     ).toBeGreaterThanOrEqual(8);
+    // gatehouse / church-graveyard: prove walls + locked doors were stamped
+    // (mismatches===0 alone would pass on an empty/no-op grid of grass).
+    expect(
+      result.reports.find((r) => r.id === 'gatehouse')?.counts.door_locked ?? 0,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      result.reports.find((r) => r.id === 'gatehouse')?.counts.wall ?? 0,
+    ).toBeGreaterThanOrEqual(4);
+    expect(
+      result.reports.find((r) => r.id === 'church-graveyard')?.counts.door_locked ?? 0,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      result.reports.find((r) => r.id === 'church-graveyard')?.counts.wall ?? 0,
+    ).toBeGreaterThanOrEqual(4);
     expect(result.homeMismatches, JSON.stringify(result.homeSample)).toBe(0);
   });
 

@@ -30,28 +30,30 @@ import {
   STARTER_HOMESTEAD_ORIGIN,
   STARTER_HOMESTEAD_RECIPE,
 } from '../iso2-assemblies/starter-homestead';
-import { expectedWalkableDefault } from '../walkability-policy';
+import {
+  expectedWalkableDefault,
+  PLACE_WALK_FAMILY_KEYS,
+} from '../walkability-policy';
 
 // ─── Contract families for walkable-policy audit (P3) ─────────────────────
 
-const POLICY_CONTRACT_KEYS = new Set([
-  'water',
-  'bridge',
-  'quiz_gate',
-  'door_locked',
-  'door_open',
-  'door_gate',
-  'toll_gate',
-  'fence',
-  'wall',
-  'wooden_fence',
-  'stone_wall',
-  'cathedral_wall',
-  'barricade',
-]);
+/**
+ * Exact keys beyond {@link PLACE_WALK_FAMILY_KEYS} that still get P3 audit
+ * (structures not in the core place-family matrix but stamped in places).
+ */
+const POLICY_CONTRACT_EXTRAS = new Set(['cathedral_wall', 'barricade']);
 
-function isPolicyContractKey(assetKey: string): boolean {
-  if (POLICY_CONTRACT_KEYS.has(assetKey)) return true;
+const PLACE_WALK_FAMILY_KEY_SET = new Set<string>(PLACE_WALK_FAMILY_KEYS);
+
+/**
+ * Whether an assetKey is in the P3 walk-policy audit surface.
+ * Derived from `PLACE_WALK_FAMILY_KEYS` (+ documented extras + material prefixes)
+ * so the walk matrix and audit cannot silently drift.
+ */
+export function isPolicyContractKey(assetKey: string): boolean {
+  if (PLACE_WALK_FAMILY_KEY_SET.has(assetKey)) return true;
+  if (POLICY_CONTRACT_EXTRAS.has(assetKey)) return true;
+  // Material variants of place-family keys
   if (assetKey.startsWith('water_') && assetKey !== 'water_flask') return true;
   if (assetKey.startsWith('bridge_')) return true;
   if (assetKey.startsWith('wooden_fence')) return true;

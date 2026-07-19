@@ -104,6 +104,7 @@ export {
   reassertHomesteadSouthPerimeter,
   runPlaceCoherencePass,
   getPlaceCoherenceStats,
+  isPolicyContractKey,
   HOMESTEAD_SOUTH_GATE_ABS,
   type PlaceCoherenceInvariant,
   type PlaceCoherenceViolation,
