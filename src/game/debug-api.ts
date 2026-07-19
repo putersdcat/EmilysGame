@@ -23,6 +23,17 @@ import { type AgeBand } from '../types/content-pack.types';
 import { type Iso2AssemblyId } from '../engine/iso2-assemblies';
 import { isFootprintWalkable, resolveQuizGate } from '../engine/mechanics';
 import { WORLD_CONFIG } from '../config/game.config';
+import {
+  integrateMovementFrame,
+  resolveEmbedIfNeeded,
+  resetPlayerMotor,
+  STUCK_MS,
+  NUDGE_EPS,
+  NUDGE_MAX_ATTEMPTS,
+  EMBED_R_LADDER,
+  MOVE_STEP_MS,
+  MOVE_MAX_CATCHUP_MS,
+} from './player-motor';
 import { InputManager } from './input';
 import { type GameState } from './game-state';
 import { DIARRHEA_CONFIG } from './illness';
@@ -189,6 +200,23 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Cell SSOT only — no activeConditions on gameplay footprint path (PR3 L4)
     isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },
+    /** PR4 motor: constrained embed recovery (legal teleports only). */
+    resolveEmbedIfNeeded: () => resolveEmbedIfNeeded(state),
+    /** PR4 motor: substep integrate (no noclip). */
+    integrateMovementFrame: (
+      mv: { dx: number; dy: number },
+      frameMs: number,
+      speedMult = 1,
+    ) => integrateMovementFrame(state, mv, frameMs, speedMult),
+    resetPlayerMotor,
+    motorConstants: {
+      STUCK_MS,
+      NUDGE_EPS,
+      NUDGE_MAX_ATTEMPTS,
+      EMBED_R_LADDER: [...EMBED_R_LADDER],
+      MOVE_STEP_MS,
+      MOVE_MAX_CATCHUP_MS,
+    },
     /**
      * Paint/debug residual only — does **not** affect gameplay walkability
      * (cell SSOT). Prefer `resolveQuizGate` for progression unlock tests.

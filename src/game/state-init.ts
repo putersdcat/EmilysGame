@@ -40,6 +40,7 @@ import { createAgeProfile } from './age-profile';
 import { createInitialDiarrheaState } from './illness';
 import { setPendingResolvedCells, ensureChunksAroundYielding } from './chunk-lifecycle';
 import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
+import { resolveEmbedIfNeeded, resetPlayerMotor } from './player-motor';
 import type { AgeBand } from '../types/content-pack.types';
 import { bootMarkDuration } from './boot-marks';
 import { releaseBootWordlistGate } from './wordlist-bootstrap';
@@ -225,26 +226,17 @@ export async function createInitialState(): Promise<InitialStateResult> {
   // mid-yield setWordlist cannot split entropy mid-batch (boot budget M2).
   releaseBootWordlistGate();
 
-  // Guarantee the player's resolved spawn/resume position is never a
-  // softlock (2026-07-09, user-reported live bug with real LLM entropy
-  // enabled): unlike a brand-new game (fixed PLAYER_CONFIG.startPosition,
-  // safe-zone-cleared for chunk (0,0) by ensureSpawnClearance), a RESUMED
-  // save can land anywhere, in any chunk, and chunks are regenerated (not
-  // persisted) from the save's seed/entropy state on every load. Real LLM
-  // entropy expansion is not perfectly reproducible run-to-run (sampling
-  // variance), so the freshly-regenerated chunk around the saved position
-  // can differ from what was there when the game was saved -- occasionally
-  // dropping an obstacle exactly where the player was standing.
-  //
-  // Rather than mutating world content (which cell would even be "safe" to
-  // force-clear is unknowable here, unlike the fixed chunk-(0,0) case), we
-  // let the player stand -- visibly elevated above the obstruction -- and
-  // bypass collision until they take a step onto genuinely walkable
-  // ground, at which point normal collision resumes immediately. See
-  // `handleMovement` in main.ts for the resolution side of this.
+  // Guarantee the player's resolved spawn/resume position is never a softlock
+  // (PR4 constrained recovery): a RESUMED save can land on a non-walkable cell
+  // after gen drift. Run the embed escalate ladder once (R∈{2,4,8} → BFS →
+  // safe spawn). Never multi-frame noclip. `spawnEscape` + sinkDepth are
+  // visual-only if ladder exhausts (step 4 — vanishingly rare).
+  resetPlayerMotor();
   if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
+    // Visual elevate until recovery writes a legal destination
     state.player.spawnEscape = true;
     state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+    resolveEmbedIfNeeded(state);
   }
 
   bootMarkDuration('boot.stateInit', t0, { hasSaveData: !!save });

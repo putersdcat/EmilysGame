@@ -46,14 +46,11 @@ export type InteractionResult =
 
 /**
  * Player sprite Y-offset (px, negative = higher on screen) used while
- * `state.player.spawnEscape` is true (2026-07-09 fix for a live-reported
- * bug: with real LLM entropy enabled, a resumed save can regenerate its
- * chunk slightly differently than when it was saved, occasionally
- * dropping an obstacle exactly on the player's last position). Comfortably
- * clears a typical extruded wall's rendered height
- * (`NANO_Z_SCALE=12 * zOffset`, `MIN_NANO_HEIGHT=16` in nano-tile.ts) so
- * the player reads as standing ON TOP of the obstruction rather than
- * clipped inside it, until they step onto genuinely walkable ground.
+ * `state.player.spawnEscape` is true (visual only after PR4). Embed recovery
+ * teleports to a legal footprint; this rise is shown during the brief
+ * illegal window or rare step-4 ladder exhaustion — never a collision bypass.
+ * Comfortably clears a typical extruded wall's rendered height
+ * (`NANO_Z_SCALE=12 * zOffset`, `MIN_NANO_HEIGHT=16` in nano-tile.ts).
  */
 export const SPAWN_ESCAPE_RISE_PX = -40;
 

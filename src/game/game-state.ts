@@ -64,14 +64,11 @@ export interface GameState {
     animFrame: number;
     sinkDepth?: number; // iso2: neg-Z sink (rivers/gates per #223 walk + AUTONOMOUS_LOOP.md)
     /**
-     * True when the player's resolved spawn/resume position landed on a
-     * non-walkable cell (e.g. LLM-entropy variance regenerated the chunk
-     * differently than when a save was made, dropping a wall where the
-     * player last stood). While true: collision is bypassed entirely (the
-     * player can always walk free) and `sinkDepth` is driven negative so
-     * they render visually ON TOP of the obstruction instead of clipped
-     * inside it. Cleared automatically the instant they reach a genuinely
-     * walkable cell -- see `handleMovement` in main.ts.
+     * Visual / recovery-request only (PR4). Set when footprint is illegal
+     * after load/embed so the sprite elevates (`sinkDepth`) above obstruction.
+     * **Never** a multi-frame collision bypass — motor only commits legal
+     * positions via constrained recovery (ladder / BFS / safe spawn).
+     * Cleared when footprint is legal after ladder teleport.
      */
     spawnEscape?: boolean;
   };
