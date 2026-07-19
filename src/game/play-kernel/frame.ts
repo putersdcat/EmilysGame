@@ -1,12 +1,12 @@
 /**
- * runPlayFrame — non-aborting play frame pipeline (PR1+PR2).
+ * runPlayFrame — non-aborting play frame pipeline (PR1–PR3).
  *
  * Normative phases from design-play-kernel-2026-07-19.md:
  *   poll → frameCount → justKeys → control locks → reconcile →
  *   entryTop snapshot → modal handlers → locomotion/Space (entryTop play only) →
  *   tickPlayWorld (stack empty) → finally endFrame once.
  *
- * Mode shell: play-kernel/mode.ts (PR2). Motor remains tip module until PR3.
+ * Mode shell: mode.ts (PR2). Motor: motor.ts (PR3). Presentation stays in hooks.
  */
 
 import type { GameState } from '../game-state';
@@ -18,7 +18,7 @@ import {
   tickDiarrheaControlLock,
   reconcileIfNeeded,
 } from './mode';
-import { integrateMovementFrame, resolveEmbedIfNeeded } from '../player-motor';
+import { integrateMovementFrame, resolveEmbedIfNeeded } from './motor';
 import { getDebuffs } from '../status';
 import { getInjurySpeedMult } from '../injury';
 import { isDiarrheaDebuffActive, DIARRHEA_CONFIG } from '../illness';

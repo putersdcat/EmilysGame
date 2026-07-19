@@ -99,25 +99,25 @@ test.describe('Walkability SSOT (PR3 L4)', () => {
       for (let y = 0; y < 25; y++) {
         for (let x = 0; x < 25; x++) setCell(x, y, 'grass');
       }
-      // Water cell at (12,12). Player center on grass at (11.5, 12.5) but
-      // collision half-extent 0.3 reaches into water at x=11.8 corner samples
-      // when standing near the edge.
+      // Water cell at (12,12). Footprint uses PLAYER_CONFIG.collisionHalfW/H (0.22).
       setCell(12, 12, 'water');
+      const halfW = 0.22;
 
       // Center of water tile — all four corners on water
       const centerWater = debug.isFootprintWalkable(12.5, 12.5) as boolean;
 
       // Standing just west of water so +x corners clip into water (W1 hard)
-      // player at x=11.75, halfW=0.3 → right corners at 12.05 → floor 12 water
-      const edgeClip = debug.isFootprintWalkable(11.75, 12.5) as boolean;
+      // player at x = 12 - halfW + 0.05 → right corners past 12.0 → floor 12 water
+      const edgeX = 12 - halfW + 0.05;
+      const edgeClip = debug.isFootprintWalkable(edgeX, 12.5) as boolean;
 
       // Safe grass well away
       const safeGrass = debug.isFootprintWalkable(5.5, 5.5) as boolean;
 
-      // Center of grass adjacent, half-extent stays inside grass (x=11.2, +0.3=11.5)
-      const adjacentSafe = debug.isFootprintWalkable(11.2, 12.5) as boolean;
+      // Adjacent grass: right corner stays in cell 11 (x + halfW < 12)
+      const adjacentSafe = debug.isFootprintWalkable(12 - halfW - 0.05, 12.5) as boolean;
 
-      return { centerWater, edgeClip, safeGrass, adjacentSafe };
+      return { centerWater, edgeClip, safeGrass, adjacentSafe, edgeX };
     });
 
     expect(result.safeGrass).toBe(true);

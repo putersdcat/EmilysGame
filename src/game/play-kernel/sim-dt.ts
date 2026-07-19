@@ -1,17 +1,16 @@
 /**
- * sim-dt.ts — L0 inject / clamp / time-contract state (PR2).
+ * sim-dt.ts — L0 inject / clamp / time-contract state (PR2+).
  *
  * Owned by the play-kernel loop (re-exported from loop.ts). Split from loop.ts
- * so player-motor can report inject-frame integrate metrics without a cycle
- * (loop → frame → motor → loop).
+ * so motor can report inject-frame integrate metrics without a cycle
+ * (loop → frame → motor → sim-dt; sim-dt must not import motor).
  *
- * MOVE_STEP_MS / MOVE_MAX_CATCHUP_MS numeric values mirror player-motor until PR3
- * moves the motor into the kernel (single owner).
+ * Numeric MOVE_* values must match motor.ts (loop clamps; motor does not re-clamp).
  */
 
-/** Mirror of player-motor MOVE_STEP_MS (must stay in sync until PR3). */
+/** Must match motor.ts MOVE_STEP_MS (cycle-safe local copy). */
 const MOVE_STEP_MS = 1000 / 60;
-/** Mirror of player-motor MOVE_MAX_CATCHUP_MS (must stay in sync until PR3). */
+/** Must match motor.ts MOVE_MAX_CATCHUP_MS (cycle-safe local copy). */
 const MOVE_MAX_CATCHUP_MS = 100;
 
 let _pendingInjectDtMs: number | null = null;

@@ -1,7 +1,6 @@
 /**
- * play-kernel public surface (PR2: frame + loop + mode + input-map).
+ * play-kernel public surface (PR1–PR3: frame + loop + mode + input-map + motor + walk).
  *
- * Motor / walk land in PR3.
  * @see memories/repo/design-play-kernel-2026-07-19.md
  */
 
@@ -64,5 +63,18 @@ export {
   drainPendingNext,
 } from './mode';
 
+// Motor (PR3+)
+export {
+  integrateMovementFrame,
+  resolveEmbedIfNeeded,
+  resetPlayerMotor,
+  MOVE_STEP_MS,
+  MOVE_MAX_CATCHUP_MS,
+  STUCK_MS,
+} from './motor';
+
 // Pure map (PR2+)
 export { screenIntentToGrid } from './input-map';
+
+// Walk re-export (PR3+)
+export { isWalkable, isPositionWalkable, isFootprintWalkable } from './walk';

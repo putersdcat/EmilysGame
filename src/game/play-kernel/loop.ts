@@ -94,7 +94,7 @@ export function playLoopTick(
   if (simRaw > SIM_MOVE_MAX_CATCHUP_MS) {
     noteDtClamped();
   }
-  // Publish capped sim dt only — motor must not re-clamp long-term (PR3).
+  // Publish capped sim dt only — motor must not re-clamp (PR3).
   const simDtMs = clampSimDtMs(simRaw);
 
   // Presentation clocks stay on wall time (not artificial hitch inject).
