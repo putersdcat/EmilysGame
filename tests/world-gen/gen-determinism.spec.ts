@@ -61,6 +61,12 @@
  * a stale Vite root that lacked PathSkeleton; this is the intentional
  * product-tip hash for the campaign lock.
  *
+ * Re-captured 2026-07-19 (7ab005e8 -> 312ea635) after place-coherence PR2:
+ * `runPlaceCoherencePass` runs last in generateGridChunk — re-asserts origin
+ * homestead south perimeter (closed fence + sole quiz_gate) and seals illegal
+ * single-cell fence/wall dirt gaps with quiz_gate via scene-invariants helpers.
+ * Intentional content change on the golden-hash coordinate set.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -70,8 +76,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-16 after scene-first PR6 campaign lock (integrated PR1–5 tip)
-const GOLDEN_HASH = '7ab005e8';
+// Re-captured 2026-07-19 after place-coherence PR2 (post-pipeline fence-gap seal)
+const GOLDEN_HASH = '312ea635';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

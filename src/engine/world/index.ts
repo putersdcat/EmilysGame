@@ -91,7 +91,7 @@ export {
 // coordinator. This is the single entry point for generating a chunk.
 export { generateChunk, generateChunkSync } from './ChunkGenerator';
 
-// --- Place Coherence (epic PR1: read-only audit; PR2 wires repairs) ---
+// --- Place Coherence (epic PR1 audit + PR2 post-pipeline repair pass) ---
 export {
   auditPlaceCoherence,
   auditHomesteadSouth,
@@ -101,6 +101,9 @@ export {
   findIllegalFenceGaps,
   expectedHomesteadSouthRow,
   buildDeclaredOpeningCells,
+  reassertHomesteadSouthPerimeter,
+  runPlaceCoherencePass,
+  getPlaceCoherenceStats,
   HOMESTEAD_SOUTH_GATE_ABS,
   type PlaceCoherenceInvariant,
   type PlaceCoherenceViolation,

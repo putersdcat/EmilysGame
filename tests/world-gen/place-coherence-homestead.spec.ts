@@ -119,15 +119,11 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
     }
   });
 
-  test('full origin chunk gen: audit reports P6 if late phases clobber homestead', async ({
-    page,
-  }) => {
+  test('full origin chunk gen: P6 hard green after PlaceCoherencePass', async ({ page }) => {
     /**
-     * PR1 audit only: stampStarterHomestead is hard-locked above.
-     * Full `generateChunkSync(0,0)` runs many phases AFTER the homestead stamp
-     * (path skeleton, population, entropy, cohere, orphan strip, passability).
-     * Those may clobber south fence/gate — document as P6 violations for PR2
-     * PlaceCoherencePass (re-stamp / re-validate after final phases).
+     * PR2: `runPlaceCoherencePass` re-asserts homestead south after late phases
+     * that previously clobbered the stamp (path skeleton / cohere / orphan strip).
+     * Full `generateChunkSync(0,0)` must leave closed south + sole quiz_gate.
      */
     await waitForGame(page);
 
@@ -141,6 +137,7 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
       const {
         auditHomesteadSouth,
         auditPlaceCoherence,
+        getPlaceCoherenceStats,
         HOMESTEAD_SOUTH_GATE_ABS,
       } = await import('/engine/world/PlaceCoherence.ts');
 
@@ -171,6 +168,7 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
         recipes: [{ recipe: STARTER_HOMESTEAD_RECIPE, originX: ox, originY: oy }],
       });
       const gate = cells[HOMESTEAD_SOUTH_GATE_ABS.y][HOMESTEAD_SOUTH_GATE_ABS.x];
+      const stats = getPlaceCoherenceStats();
 
       const southKeys: string[] = [];
       for (let rx = 0; rx < 7; rx++) {
@@ -184,62 +182,42 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
         p6Count: p6.length,
         p6Violations: p6,
         gateAsset: gate.assetKey,
+        gateWalkable: gate.walkable,
         southKeys,
         auditCounts: audit.counts,
+        coherenceRepairs: stats.coherenceRepairs,
+        coherenceViolations: stats.coherenceViolations,
       };
     });
 
-    // Audit harness runs and returns structured results (no throw / no mutate contract).
-    expect(Array.isArray(result.p6Violations)).toBe(true);
-    expect(result.southKeys).toHaveLength(7);
-    expect(typeof result.gateAsset).toBe('string');
-    expect(result.auditCounts.total).toBeGreaterThanOrEqual(0);
-
-    // Soft document full-pipeline P6 state for implementer summary / PR2.
     // eslint-disable-next-line no-console
     console.log(
       `[place-coherence full-gen origin] validationOk=${result.validationOk} ` +
         `p6Count=${result.p6Count} gate=${result.gateAsset} ` +
-        `south=${result.southKeys.join(',')} counts=${JSON.stringify(result.auditCounts)}`,
+        `south=${result.southKeys.join(',')} repairs=${result.coherenceRepairs} ` +
+        `counts=${JSON.stringify(result.auditCounts)}`,
     );
 
-    // Soft-pin known broken tip under fixed seed 42 / α–π wordlist:
-    // late phases clobber south fence (p6Count≈5, gate≠quiz_gate).
-    // When pipeline preserves homestead (p6Count===0), hard-lock closed south.
-    // Soft baseline: still require measurable clobber while broken so CI notices
-    // if clobber disappears *or* if the south footprint shrinks unexpectedly.
-    if (result.p6Count === 0) {
-      expect(result.validationOk).toBe(true);
-      expect(result.gateAsset).toBe('quiz_gate');
-      expect(result.southKeys).toEqual([
-        'fence',
-        'fence',
-        'fence',
-        'quiz_gate',
-        'fence',
-        'fence',
-        'fence',
-      ]);
-    } else {
-      // Known-broken baseline (PR1 tip): full gen still violates P6.
-      expect(result.p6Count, 'full-gen still clobbers homestead south until PR2').toBeGreaterThan(0);
-      expect(result.gateAsset, 'gate cell not quiz_gate while clobber active').not.toBe('quiz_gate');
-      // Soft golden for known tip shape (update when gen intentionally changes):
-      // south=grass,fence,fence,grass,grass,grass,flower · gate=grass · p6Count=5
-      expect(
-        result.p6Count,
-        `soft-pin p6Count baseline (was 5); south=${result.southKeys.join(',')}`,
-      ).toBe(5);
-      expect(result.gateAsset).toBe('grass');
-      expect(result.southKeys).toEqual([
-        'grass',
-        'fence',
-        'fence',
-        'grass',
-        'grass',
-        'grass',
-        'flower',
-      ]);
-    }
+    // Hard P6: closed south fence, sole quiz_gate (regression-locked).
+    expect(
+      result.p6Violations,
+      `P6 violations after full gen: ${JSON.stringify(result.p6Violations)}`,
+    ).toEqual([]);
+    expect(result.p6Count).toBe(0);
+    expect(result.validationOk, JSON.stringify(result.validationViolations)).toBe(true);
+    expect(result.gateAsset).toBe('quiz_gate');
+    expect(result.gateWalkable, 'quiz_gate non-walkable until opened').toBe(false);
+    expect(result.southKeys).toEqual([
+      'fence',
+      'fence',
+      'fence',
+      'quiz_gate',
+      'fence',
+      'fence',
+      'fence',
+    ]);
+    expect(result.auditCounts.openingMismatches).toBe(0);
+    // Pass should have performed at least one repair on the known-clobbered tip.
+    expect(result.coherenceRepairs).toBeGreaterThanOrEqual(1);
   });
 });

@@ -19,6 +19,8 @@
  *   Phase 6: balanceObstacles, rewardDeadEnds (ObstacleSolver)
  *   Phase 7: enforcePassability (re-enforce after population)
  *   Phase 8: validatePlayability (Validation) — playability report
+ *   Phase 9.5: runPlaceCoherencePass (PlaceCoherence) — LAST: seal illegal fence
+ *              gaps + re-assert homestead after playability carves
  *
  * gen.ts is now a pure re-export facade — consumers (main.ts, tests) can
  * import from either 'engine/gen' or 'engine/world/ChunkGenerator'.
@@ -90,6 +92,7 @@ import {
   scanAndRepairFenceGaps,
 } from '../iso2-assemblies';
 import { layPathSkeleton } from './PathSkeleton';
+import { runPlaceCoherencePass } from './PlaceCoherence';
 import type {
   BorderConstraints,
   ChunkData,
@@ -358,15 +361,22 @@ function generateGridChunk(
   }
 
   // Phase 8: playability validation (Solver F) (#46)
+  // May carve grass shortcuts through diagonal obstacles when dead-end ratio
+  // is high — that can punch holes in fence runs / homestead south. Place
+  // coherence must run AFTER this phase.
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));
 
   // Phase 9: guarantee the player's fixed spawn point is walkable (2026-07-09
-  // fix). Runs LAST, after every earlier phase that could plausibly place
-  // blocking content near spawn (WU-template stamping, entropy-flag
-  // overrides, bonfire placement, obstacle balancing, etc.) has already had
-  // its chance -- see ensureSpawnClearance's own doc comment for the full
-  // root-cause writeup (a user-reported "player spawns inside a wall" bug).
+  // fix). Runs after every earlier phase that could place blocking content
+  // near spawn — see ensureSpawnClearance's doc comment.
   if (chunkX === 0 && chunkY === 0) ensureSpawnClearance(cells);
+
+  // Phase 9.5 (place-coherence PR2): LAST stamp repair — after passability,
+  // orphan strip, playability carves, and spawn clearance. Origin is NOT
+  // exempt: re-assert homestead south (PR1 finding: late phases clobber
+  // gate/flanks to grass). Seal illegal fence-run dirt gaps with quiz_gate
+  // via scene-invariants helpers only. Nothing after this may rewrite cells.
+  runPlaceCoherencePass(cells, { chunkX, chunkY });
 
   return { cells, borderEdges };
 }

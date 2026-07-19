@@ -1,8 +1,9 @@
 /**
- * place-coherence-audit.spec.ts — P1–P7 audit harness (Place Coherence PR1).
+ * place-coherence-audit.spec.ts — P1–P7 audit harness + PR2 pass checks.
  *
- * Codifies place-coherence invariants as tests. PR1 is **read-only audit**:
- * report / soft-assert violation counts; no PlaceCoherencePass repairs yet.
+ * Codifies place-coherence invariants as tests. Audit helpers remain
+ * read-only; full-gen samples run through `runPlaceCoherencePass` (wired
+ * in ChunkGenerator) so illegal fence gaps drop toward 0.
  *
  * | ID | Invariant |
  * |----|-----------|
@@ -10,7 +11,7 @@
  * | P2 | Declared recipe openings[] match stamped cells |
  * | P3 | cell.walkable === expectedWalkableDefault(assetKey) for place families |
  * | P4 | No walkable hole in continuous fence/wall run unless declared opening |
- * | P5 | Draw gate soft/deferred (skip hard fail in PR1) |
+ * | P5 | Draw gate soft/deferred (skip hard fail until PR4) |
  * | P6 | Homestead south — covered in place-coherence-homestead.spec.ts |
  * | P7 | Fixed seed: gen determinism + coherence matrix stable |
  *
@@ -52,11 +53,13 @@ async function waitForGame(page: Page) {
 }
 
 test.describe('Place coherence audit harness (P1–P4, P7)', () => {
-  test('P4: bare fence ring dirt gap is reported as illegal (no repair)', async ({ page }) => {
+  test('P4: bare fence ring dirt gap is reported as illegal (audit read-only)', async ({
+    page,
+  }) => {
     await waitForGame(page);
 
     const result = await page.evaluate(async () => {
-      const { findIllegalFenceGaps, auditPlaceCoherence } = await import(
+      const { findIllegalFenceGaps, auditPlaceCoherence, runPlaceCoherencePass } = await import(
         '/engine/world/PlaceCoherence.ts'
       );
 
@@ -89,22 +92,34 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
       const audit = auditPlaceCoherence(cells);
       const afterSnap = JSON.parse(JSON.stringify(cells));
 
+      // PR2 pass seals the same gap with quiz_gate (scene-invariants helper).
+      const pass = runPlaceCoherencePass(cells, { chunkX: 1, chunkY: 0 });
+      const afterPassGaps = findIllegalFenceGaps(cells, size);
+
       return {
         gapCount: gaps.length,
         gaps,
         p4Count: audit.counts.illegalFenceGaps,
         total: audit.counts.total,
-        gapCell: cells[oy + 4][ox + 2].assetKey,
+        gapCell: afterSnap[oy + 4][ox + 2].assetKey,
         beforeSnap,
         afterSnap,
+        passRepairs: pass.repairs,
+        sealedCell: cells[oy + 4][ox + 2].assetKey,
+        afterPassGapCount: afterPassGaps.length,
       };
     });
 
     expect(result.afterSnap, 'audit is read-only (deep cell equality)').toEqual(result.beforeSnap);
-    expect(result.gapCell, 'dirt gap left in place (no repair)').toBe('dirt');
+    expect(result.gapCell, 'dirt gap left in place by audit').toBe('dirt');
     expect(result.gapCount, 'illegal fence gap detected').toBeGreaterThanOrEqual(1);
     expect(result.p4Count).toBeGreaterThanOrEqual(1);
     expect(result.gaps.some((g) => g.x === 3 && g.y === 5 && g.invariant === 'P4')).toBe(true);
+
+    // Pass seals with quiz_gate (not a new gate kind).
+    expect(result.passRepairs).toBeGreaterThanOrEqual(1);
+    expect(result.sealedCell).toBe('quiz_gate');
+    expect(result.afterPassGapCount, 'P4 gaps cleared after pass').toBe(0);
   });
 
   test('P4: declared path opening in barrier run is not illegal', async ({ page }) => {
@@ -382,7 +397,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
             });
           }
 
-          // Origin homestead P6 under full gen (may be >0 until PR2).
+          // Origin homestead P6 under full gen (PR2: expect 0).
           gen.setWordlist(wordlist);
           gen.setBiomeNoiseSeed(biomeSeed);
           gen.restoreEntropyBuffer('');
@@ -418,19 +433,21 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
       [FIXED_WORDLIST, BIOME_SEED, MATRIX_COORDS] as [string[], number, Array<[number, number]>],
     );
 
-    // P6 under full gen: may be >0 until PR2 re-asserts homestead after late phases.
-    // Still require deterministic reporting (same count both runs).
+    // P6 under full gen: PlaceCoherencePass re-asserts south → hard green.
     expect(result.a.p6Violations).toBe(result.b.p6Violations);
-    expect(result.a.p6Violations).toBeGreaterThanOrEqual(0);
+    expect(result.a.p6Violations, 'P6 full-gen after pass').toBe(0);
 
     // P7: matrix signature stable across two full runs (declared-aware P4 SSOT)
     expect(result.a.matrixSignature, 'P7 matrix determinism').toBe(result.b.matrixSignature);
     expect(result.a.totalIllegalGaps).toBe(result.b.totalIllegalGaps);
     expect(result.a.totalViolations).toBe(result.b.totalViolations);
 
-    // Document current baseline (may be >0 until PR2 seals gaps)
     expect(result.a.chunksSampled).toBe(MATRIX_COORDS.length);
-    expect(result.a.totalIllegalGaps).toBeGreaterThanOrEqual(0);
+    // PR1 baseline was 2 declared-aware P4 gaps on this matrix; PR2 seals toward 0.
+    expect(
+      result.a.totalIllegalGaps,
+      `P4 matrix illegal gaps (PR1 baseline 2): ${JSON.stringify(result.a.perChunk)}`,
+    ).toBe(0);
 
     // eslint-disable-next-line no-console
     console.log(

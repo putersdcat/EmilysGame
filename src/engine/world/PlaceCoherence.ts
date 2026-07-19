@@ -1,28 +1,34 @@
 /**
- * PlaceCoherence.ts — Read-only audit for place-coherence invariants (P1–P7).
+ * PlaceCoherence.ts — Place-coherence audit (P1–P7) + post-pipeline repair pass.
  *
- * Epic PR1: report violations only. Do **not** mutate cells here.
- * Repairs wire into ChunkGenerator in PR2 (`runPlaceCoherencePass`).
+ * Epic PR1: read-only audit (`auditPlaceCoherence`, findIllegalFenceGaps, …).
+ * Epic PR2: `runPlaceCoherencePass` mutates stamps after final gen phases —
+ * re-asserts homestead openings, seals illegal fence/wall dirt gaps via
+ * scene-invariants helpers (`scanAndRepairFenceGaps` / `repairSceneOpenings`).
  *
  * Reuses scene-invariants vocabulary and gap detection SSOT
  * (`isIllegalFenceGapCandidate`, `BARRIER_KEYS`, functional/path keys).
- * Does not invent new gate kinds.
+ * Does not invent new gate kinds or touch nano / FOV / WorldUnitSolver.
  *
  * @see memories/repo/design-place-coherence-epic-2026-07-19.md
  */
 
+import { ASSET_DEFS } from '../../config/assets.config';
 import type { CellData } from '../../types/game.types';
 import type { AssemblyOpening, AssemblyRecipe } from '../iso2-assemblies/catalog';
 import {
   FUNCTIONAL_OPENING_KEYS,
   isBarrierAssetKey,
   isIllegalFenceGapCandidate,
+  repairSceneOpenings,
+  scanAndRepairFenceGaps,
   validateSceneOpenings,
   type SceneOpeningViolation,
 } from '../iso2-assemblies/scene-invariants';
 import {
   STARTER_HOMESTEAD_OPENINGS,
   STARTER_HOMESTEAD_ORIGIN,
+  STARTER_HOMESTEAD_RECIPE,
 } from '../iso2-assemblies/starter-homestead';
 import { expectedWalkableDefault } from '../walkability-policy';
 
@@ -428,8 +434,8 @@ export function buildDeclaredOpeningCells(
 /**
  * Read-only place-coherence audit over a cell grid.
  *
- * PR1: no repairs. Callers (tests / future debug) consume violations + counts.
- * PR2 will add `runPlaceCoherencePass` that mutates stamps.
+ * Does not mutate cells. Callers (tests / debug) consume violations + counts.
+ * Mutating repair lives in {@link runPlaceCoherencePass}.
  */
 export function auditPlaceCoherence(
   cells: CellData[][],
@@ -460,5 +466,166 @@ export function auditPlaceCoherence(
     violations,
     counts,
     openingViolations: p2.openingViolations,
+  };
+}
+
+// ─── Post-pipeline repair pass (PR2) ──────────────────────────────────────
+
+/**
+ * Module-level counters for the last {@link runPlaceCoherencePass} call.
+ * Tests / optional debug may read these after `generateChunkSync`.
+ */
+export let coherenceRepairs = 0;
+export let coherenceViolations = 0;
+
+export function getPlaceCoherenceStats(): {
+  coherenceRepairs: number;
+  coherenceViolations: number;
+} {
+  return { coherenceRepairs, coherenceViolations };
+}
+
+function makeAssetCell(assetKey: string): CellData {
+  const def = ASSET_DEFS[assetKey];
+  return {
+    assetKey,
+    walkable: def?.walkable ?? false,
+    interactable: def?.interactable ?? false,
+  };
+}
+
+/**
+ * Re-assert starter homestead south perimeter after late gen phases.
+ *
+ * Critical PR1 finding: full `generateChunkSync(0,0)` clobbered south fence /
+ * gate (gate→grass, flanks→grass/flower). Restores the closed south row
+ * (6× fence + sole quiz_gate) from the recipe contract.
+ *
+ * Returns the number of cells mutated.
+ */
+export function reassertHomesteadSouthPerimeter(cells: CellData[][]): number {
+  const ox = STARTER_HOMESTEAD_ORIGIN.x;
+  const oy = STARTER_HOMESTEAD_ORIGIN.y;
+  const expected = expectedHomesteadSouthRow(ox, oy);
+  let repaired = 0;
+
+  for (const exp of expected) {
+    if (!inBounds(cells, exp.x, exp.y)) continue;
+    const cell = cells[exp.y][exp.x];
+    const def = ASSET_DEFS[exp.assetKey];
+    const wantWalk = def?.walkable ?? false;
+    const wantInteract = def?.interactable ?? false;
+    if (
+      cell.assetKey === exp.assetKey &&
+      cell.walkable === wantWalk &&
+      cell.interactable === wantInteract &&
+      !cell.itemId &&
+      !cell.npcId
+    ) {
+      continue;
+    }
+    cells[exp.y][exp.x] = makeAssetCell(exp.assetKey);
+    repaired++;
+  }
+
+  return repaired;
+}
+
+/**
+ * Collect recipe footprints for this chunk: caller-supplied modular stamps
+ * plus the origin starter homestead when generating chunk (0,0).
+ */
+function collectRecipeFootprints(
+  meta: { chunkX: number; chunkY: number; recipes?: StampedRecipeRef[] },
+): StampedRecipeRef[] {
+  const recipes: StampedRecipeRef[] = [...(meta.recipes ?? [])];
+  if (meta.chunkX === 0 && meta.chunkY === 0) {
+    const hasHomestead = recipes.some(
+      (r) => r.recipe.id === STARTER_HOMESTEAD_RECIPE.id,
+    );
+    if (!hasHomestead) {
+      recipes.push({
+        recipe: STARTER_HOMESTEAD_RECIPE,
+        originX: STARTER_HOMESTEAD_ORIGIN.x,
+        originY: STARTER_HOMESTEAD_ORIGIN.y,
+      });
+    }
+  }
+  return recipes;
+}
+
+/**
+ * Post-pipeline place-coherence pass: repair stamps only (no walkability
+ * rewrite from render, no nano geometry, no new gate kinds).
+ *
+ * Responsibilities:
+ * 1. Collect modular stamps + known origin homestead footprint.
+ * 2. `repairSceneOpenings` for each registered recipe (P2 re-assert).
+ * 3. Origin: re-assert homestead south perimeter (P6) — **not** origin-exempt.
+ * 4. Fence-run scan: seal trivial dirt/grass punch-throughs with `quiz_gate`
+ *    via {@link scanAndRepairFenceGaps} (same SSOT as early gen light pass).
+ *    Policy: **seal with quiz_gate** when gap is in a fence/wall run (existing
+ *    helper). Fence-close is reserved for authored structure cells (homestead
+ *    south flanks), not for open gaps in runs.
+ * 5. Emit `coherenceRepairs` / `coherenceViolations` module counters.
+ *
+ * Wire: absolute end of `generateGridChunk` — after `validatePlayability`
+ * (which can carve grass through fence diagonals) and `ensureSpawnClearance`.
+ */
+export function runPlaceCoherencePass(
+  cells: CellData[][],
+  meta: { chunkX: number; chunkY: number; recipes?: StampedRecipeRef[] },
+): { repairs: number; violations: SceneOpeningViolation[] } {
+  const size = cells.length;
+  const recipes = collectRecipeFootprints(meta);
+  let repairs = 0;
+
+  // 1–2. Re-assert declared openings for every registered footprint.
+  for (const { recipe, originX, originY } of recipes) {
+    repairs += repairSceneOpenings(cells, originX, originY, recipe);
+  }
+
+  // 3. Origin homestead south perimeter (full row, not just the gate cell).
+  //    Must run after late phases that clobber the stamp; must NOT be
+  //    origin-exempt the way early scanAndRepairFenceGaps is.
+  if (meta.chunkX === 0 && meta.chunkY === 0) {
+    repairs += reassertHomesteadSouthPerimeter(cells);
+    // Openings again in case south reassert raced with a prior partial fix.
+    repairs += repairSceneOpenings(
+      cells,
+      STARTER_HOMESTEAD_ORIGIN.x,
+      STARTER_HOMESTEAD_ORIGIN.y,
+      STARTER_HOMESTEAD_RECIPE,
+    );
+  }
+
+  // 4. Seal illegal single-cell dirt/grass gaps in barrier runs with quiz_gate.
+  //    Runs on **all** chunks including origin (extra gates only where a bare
+  //    punch-through remains; functional-nearby + singleton guards apply).
+  repairs += scanAndRepairFenceGaps(cells, size);
+
+  // Re-assert recipe openings after seal so a declared path/gate cell that
+  // somehow still mismatches is restored (functional supersedes path).
+  for (const { recipe, originX, originY } of recipes) {
+    repairs += repairSceneOpenings(cells, originX, originY, recipe);
+  }
+
+  // Origin south once more after global seal (seal never overwrites quiz_gate
+  // or fence, but keep P6 hard-green if any later step is added).
+  if (meta.chunkX === 0 && meta.chunkY === 0) {
+    repairs += reassertHomesteadSouthPerimeter(cells);
+  }
+
+  // 5. Residual violations (should be empty for openings on registered recipes).
+  const opening = auditRecipeOpenings(cells, recipes);
+  const declared = buildDeclaredOpeningCells(recipes);
+  const residualGaps = findIllegalFenceGaps(cells, size, declared);
+
+  coherenceRepairs = repairs;
+  coherenceViolations = opening.openingViolations.length + residualGaps.length;
+
+  return {
+    repairs,
+    violations: opening.openingViolations,
   };
 }
