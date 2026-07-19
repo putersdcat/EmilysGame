@@ -30,8 +30,22 @@ import { drawDebugGrid as drawDebugGridImpl } from './debug-grid';
 export { setDialogNpc } from './mouth-animation';
 // B6.1 (#272): tile variant inference + object-cell cache extracted to tile-variants.ts
 import { inferTileVariant, getObjectCells, clearObjectCache, invalidateObjectCache } from './tile-variants';
+// Place coherence P5: functional gates beat decor when maxDrawCmds truncates
+import {
+  isFunctionalGateDrawPriority,
+  resetDrawPriorityStats,
+  noteDrawPriorityEmit,
+  noteDrawPriorityBudgetCapped,
+} from './draw-priority';
 export { clearObjectCache, invalidateObjectCache };
 export { clearNanoObjectCache };
+export {
+  getDrawPriorityStats,
+  isFunctionalGateDrawPriority,
+  selectWithinDrawBudget,
+  prioritizeObjectCellsForDrawBudget,
+  DRAW_PRIORITY_GATE_KEYS,
+} from './draw-priority';
 
 // ─── Re-exports ──────────────────────────────────────────────
 // Camera type moved to `src/types/game.types.ts` in B6.1 (#269) to dedup
@@ -322,6 +336,13 @@ export class IsometricRenderer {
    * Iterate only visible chunks (viewport culled by buf) and build draw commands
    * for every object cell in those chunks. Uses pre-allocated jsPool (no per-frame
    * alloc). Tracks occluders near the player for the partial-hide pass.
+   *
+   * Two-pass object emit (place coherence P5):
+   *   1. Terrain blit + functional gates (quiz_gate / door_* / toll_gate)
+   *   2. Decor and other non-gate objects
+   * Under maxDrawCmds pressure, decor yields so on-screen gates still paint.
+   * FOV / tile size unchanged. Paint never sets walkability.
+   *
    * Extracted from `render()` in B6.3 (#272).
    */
   private iterateVisibleChunks(
@@ -335,41 +356,53 @@ export class IsometricRenderer {
     const camCY = Math.floor(camera.y / size);
     const buf = WORLD_CONFIG.viewportBuffer; // matches chunk loading radius
 
+    resetDrawPriorityStats();
+
+    // Pass 1: terrain blit + functional gates first (budget priority)
     for (let dcy = -buf; dcy <= buf; dcy++) {
       for (let dcx = -buf; dcx <= buf; dcx++) {
         const key = `${camCX + dcx},${camCY + dcy}`;
         const chunk = chunks.get(key);
         if (!chunk) continue;
 
-        // Blit cached terrain for this chunk
+        // Blit cached terrain for this chunk (always; independent of object budget)
         drawCachedChunkTerrain(this.ctx, key, chunk, camera.x, camera.y, chunks);
 
-        if (jsPoolIdx >= maxCmds) continue; // budget exhausted, skip objects (terrain still drawn)
+        if (jsPoolIdx >= maxCmds) continue;
 
         const biome = getBiome(chunk.biomeId);
-
-        // Per-cell iteration extracted to iterateObjectCells (B6.4, #272)
-        // — owns the 5-branch sprite dispatch + occluder tracking + item overlay.
-        this.iterateObjectCells(chunk, key, chunks, biome, camera, egoPos, maxCmds);
+        this.iterateObjectCells(chunk, key, chunks, biome, camera, egoPos, maxCmds, 'gates');
       }
     }
+
+    // Pass 2: decor / non-gate objects fill remaining budget
+    if (jsPoolIdx < maxCmds) {
+      outerDecor:
+      for (let dcy = -buf; dcy <= buf; dcy++) {
+        for (let dcx = -buf; dcx <= buf; dcx++) {
+          if (jsPoolIdx >= maxCmds) break outerDecor;
+          const key = `${camCX + dcx},${camCY + dcy}`;
+          const chunk = chunks.get(key);
+          if (!chunk) continue;
+          const biome = getBiome(chunk.biomeId);
+          this.iterateObjectCells(chunk, key, chunks, biome, camera, egoPos, maxCmds, 'decor');
+        }
+      }
+    }
+
+    if (jsPoolIdx >= maxCmds) noteDrawPriorityBudgetCapped();
   }
 
   /**
-   * Iterate all object cells in a single chunk, emitting one or two draw
-   * commands per cell into the shared `jsPool`. Extracted from
-   * `iterateVisibleChunks` in B6.4 (#272) so the outer chunk loop stays
-   * a thin orchestrator.
+   * Iterate object cells in a single chunk, emitting draw commands into the
+   * shared `jsPool`. `priorityPass` selects which cells:
+   *   - `'gates'`: functional openings only (quiz_gate / door_* / toll_gate)
+   *   - `'decor'`: everything else (trees, fence runs, NPCs, item-only base cells)
    *
    * Per cell:
    *   1. Compute screen position + sub-cell jitter (#82)
    *   2. Cull via isVisible() (viewport boundary)
    *   3. If non-base: 5-branch sprite dispatch
-   *      - NPC paper-cut sprite (#85)
-   *      - Nano tile renderer
-   *      - SVG asset sprite with fire frames (#115, #81)
-   *      - Nano tile fallback
-   *      - Emoji/shadow-emoji fallback
    *   4. Track occluders within ±2 grid units for partial-hide pass (#181)
    *   5. Emit item overlay command if cell has a collectible
    */
@@ -381,6 +414,7 @@ export class IsometricRenderer {
     camera: Camera,
     egoPos: { x: number; y: number },
     maxCmds: number,
+    priorityPass: 'gates' | 'decor',
   ): void {
     const size = WORLD_CONFIG.chunkSize;
     // Use pre-computed object cell list (~50-100 per chunk vs 1024)
@@ -395,6 +429,11 @@ export class IsometricRenderer {
       // Cell mutations may make stale cache entries (item collected → now base-only)
       if (!def || (isBase && !cell.itemId)) continue;
 
+      // Gate/decor partition for draw budget priority (P5)
+      const isGate = isFunctionalGateDrawPriority(cell.assetKey);
+      if (priorityPass === 'gates' && !isGate) continue;
+      if (priorityPass === 'decor' && isGate) continue;
+
       const gx = chunk.chunkX * size + cx;
       const gy = chunk.chunkY * size + cy;
       gridToScreenInto(gx, gy, camera, _scratchScreen);
@@ -408,6 +447,8 @@ export class IsometricRenderer {
       const jsy = sy + jy;
 
       if (!this.isVisible(jsx, jsy)) continue;
+
+      const poolBefore = jsPoolIdx;
 
       // Draw elevated (non-base) objects
       if (!isBase) {
@@ -437,6 +478,8 @@ export class IsometricRenderer {
 
       // Collectible overlay (B6.6) — items sit ON the ground (no vertical lift)
       this.emitItemOverlay(cell, sx, sy, gx, gy);
+
+      if (jsPoolIdx > poolBefore) noteDrawPriorityEmit(isGate);
     }
   }
 

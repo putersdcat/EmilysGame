@@ -11,7 +11,7 @@
  * | P2 | Declared recipe openings[] match stamped cells |
  * | P3 | cell.walkable === expectedWalkableDefault(assetKey) for place families |
  * | P4 | No walkable hole in continuous fence/wall run unless declared opening |
- * | P5 | Draw gate soft/deferred (skip hard fail until PR4) |
+ * | P5 | On-screen functional gates prefer draw budget over decor (PR4) |
  * | P6 | Homestead south — covered in place-coherence-homestead.spec.ts |
  * | P7 | Fixed seed: gen determinism + coherence matrix stable |
  *
@@ -316,9 +316,39 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     expect(result.withGateCount, 'ring with quiz_gate is not P1').toBe(0);
   });
 
-  // P5 (on-screen functional gates produce draw commands) deferred to PR4 draw integrity.
-  test.skip('P5 soft: deferred to PR4 draw integrity', async () => {
-    // Placeholder: when PR4 lands, assert on-screen quiz_gate/door produces a draw cmd.
+  // P5 — functional gates beat decor under maxDrawCmds (draw integrity PR4)
+  test('P5: overcrowded synthetic list still selects quiz_gate / door_*', async ({ page }) => {
+    await waitForGame(page);
+
+    const result = await page.evaluate(async () => {
+      const { selectWithinDrawBudget, isFunctionalGateDrawPriority } = await import(
+        '/rendering/draw-priority.ts'
+      );
+      const { RENDER_CONFIG } = await import('/config/game.config.ts');
+
+      const candidates: Array<{ assetKey: string }> = [];
+      for (let i = 0; i < 80; i++) candidates.push({ assetKey: 'tree' });
+      candidates.push({ assetKey: 'quiz_gate' });
+      candidates.push({ assetKey: 'door_locked' });
+      for (let i = 0; i < 20; i++) candidates.push({ assetKey: 'fence' });
+
+      const budget = 4;
+      const selected = selectWithinDrawBudget(candidates, budget);
+      const gates = selected.filter((c) => isFunctionalGateDrawPriority(c.assetKey));
+
+      return {
+        selectedKeys: selected.map((c) => c.assetKey),
+        gateCount: gates.length,
+        tileWidth: RENDER_CONFIG.tileWidth,
+        tileHeight: RENDER_CONFIG.tileHeight,
+      };
+    });
+
+    expect(result.tileWidth, 'FOV width unchanged').toBe(128);
+    expect(result.tileHeight, 'FOV height unchanged').toBe(64);
+    expect(result.gateCount, 'both functional gates fit before decor').toBe(2);
+    expect(result.selectedKeys).toContain('quiz_gate');
+    expect(result.selectedKeys).toContain('door_locked');
   });
 
   test('P7 + matrix: fixed-seed illegal fence gaps are 0 after place-coherence pass', async ({
