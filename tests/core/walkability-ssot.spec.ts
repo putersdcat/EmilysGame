@@ -43,9 +43,11 @@ test.describe('Walkability SSOT (PR3 L4)', () => {
       for (let y = 0; y < 25; y++) {
         for (let x = 0; x < 25; x++) setCell(x, y, 'grass');
       }
-      // Cross of water with bridge at center
-      for (let x = 9; x <= 13; x++) setCell(x, 12, 'water');
-      for (let y = 9; y <= 13; y++) setCell(11, y, 'water');
+      // Full 3×3 water pad around bridge so all 8 adjacent samples are water
+      // (not a cross alone — diagonals would land on grass).
+      for (let y = 11; y <= 13; y++) {
+        for (let x = 10; x <= 12; x++) setCell(x, y, 'water');
+      }
       setCell(11, 12, 'bridge');
 
       const neighbors: Record<string, boolean> = {};
@@ -155,22 +157,27 @@ test.describe('Walkability SSOT (PR3 L4)', () => {
       const lockedDoor = debug.isFootprintWalkable(13.5, 12.5) as boolean;
       const offCenterGate = debug.isFootprintWalkable(11.5, 12.8) as boolean;
 
-      // Real unlock: cell rewrite (resolveQuizGate shape)
-      chunk.cells[12][11] = {
-        assetKey: 'door_open',
-        walkable: true,
-        interactable: false,
-        resolved: true,
-      };
+      // Production unlock path (L7→L4): mechanics.resolveQuizGate via debug API
+      debug.resolveQuizGate('0,0', 11, 12);
       const afterRewrite = debug.isFootprintWalkable(11.5, 12.5) as boolean;
+      const rewritten = chunk.cells[12][11];
 
-      return { afterGlobalUnlock, lockedDoor, offCenterGate, afterRewrite };
+      return {
+        afterGlobalUnlock,
+        lockedDoor,
+        offCenterGate,
+        afterRewrite,
+        rewrittenAsset: rewritten.assetKey as string,
+        rewrittenWalkable: rewritten.walkable as boolean,
+      };
     });
 
     expect(result.afterGlobalUnlock, 'activeConditions unlock must not open quiz_gate under cell SSOT').toBe(false);
     expect(result.lockedDoor, 'door_locked must block').toBe(false);
     expect(result.offCenterGate, 'locked gate blocks full tile (not narrow post)').toBe(false);
-    expect(result.afterRewrite, 'cell rewrite to door_open must pass').toBe(true);
+    expect(result.rewrittenAsset, 'resolveQuizGate must stamp door_open').toBe('door_open');
+    expect(result.rewrittenWalkable, 'resolveQuizGate must stamp walkable:true').toBe(true);
+    expect(result.afterRewrite, 'footprint after resolveQuizGate must pass').toBe(true);
   });
 
   test('unloaded chunk samples return walkable (W3)', async ({ page }) => {

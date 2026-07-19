@@ -21,7 +21,8 @@ import { getMerchantPersonaIdForBiome, getNpcPersona } from '../config/npc.confi
 import { npcChatResponse, rephraseQuizQuestion, isLlmAvailable, checkLlmHealth, getLlmTps, getLlmAvgTps, isTpsCutoverActive, isLikelyToFitBudget, estimateEtaMs, isQueueBusy, getPrefetchedResult, isPrefetchPending, prefetchQuizRephrase, _cleanRephraseForTests } from '../engine/llm';
 import { type AgeBand } from '../types/content-pack.types';
 import { type Iso2AssemblyId } from '../engine/iso2-assemblies';
-import { isFootprintWalkable } from '../engine/mechanics';
+import { isFootprintWalkable, resolveQuizGate } from '../engine/mechanics';
+import { WORLD_CONFIG } from '../config/game.config';
 import { InputManager } from './input';
 import { type GameState } from './game-state';
 import { DIARRHEA_CONFIG } from './illness';
@@ -188,8 +189,39 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // Cell SSOT only — no activeConditions on gameplay footprint path (PR3 L4)
     isFootprintWalkable: (px: number, py: number) => isFootprintWalkable(px, py, state.chunks),
     setPlayerPosition: (x: number, y: number) => { state.player.x = x; state.player.y = y; state.player.isMoving = false; },
+    /**
+     * Paint/debug residual only — does **not** affect gameplay walkability
+     * (cell SSOT). Prefer `resolveQuizGate` for progression unlock tests.
+     */
     setActiveCondition: (id: string, val: 'locked' | 'unlocked') => { state.activeConditions.set(id, val); },
-    resolveQuizGateSim: () => { state.activeConditions.set('quiz-gate', 'unlocked'); },
+    /** Production L7→L4 unlock: rewrite cell via mechanics.resolveQuizGate. */
+    resolveQuizGate: (chunkKeyStr: string, lx: number, ly: number) => {
+      resolveQuizGate(chunkKeyStr, lx, ly, state.chunks);
+    },
+    /**
+     * Test helper: open a quiz_gate via **cell rewrite** (same as production).
+     * Optional (chunkKey, lx, ly); default = cell under player if quiz_gate.
+     * Does not use activeConditions for walkability (PR3).
+     */
+    resolveQuizGateSim: (chunkKeyStr?: string, lx?: number, ly?: number) => {
+      if (chunkKeyStr != null && lx != null && ly != null) {
+        resolveQuizGate(chunkKeyStr, lx, ly, state.chunks);
+        return;
+      }
+      const size = WORLD_CONFIG.chunkSize;
+      const gx = Math.floor(state.player.x);
+      const gy = Math.floor(state.player.y);
+      const cx = Math.floor(gx / size);
+      const cy = Math.floor(gy / size);
+      const key = `${cx},${cy}`;
+      const chunk = state.chunks.get(key);
+      if (!chunk) return;
+      const clx = gx - cx * size;
+      const cly = gy - cy * size;
+      if (chunk.cells[cly]?.[clx]?.assetKey === 'quiz_gate') {
+        resolveQuizGate(key, clx, cly, state.chunks);
+      }
+    },
     // Status helpers (#70)
     getDebuffs: () => getDebuffs(state.status),
     getDebuffVisuals: getDebuffVisualsState,

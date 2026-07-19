@@ -46,19 +46,18 @@ test('Slice C: quiz_gate embedded in a wooden_fence run blocks across the full r
     const lockedBlocksOffCenter = debug.isFootprintWalkable(11.5, 12.8) as boolean;
     const controlFarGrass = debug.isFootprintWalkable(5.5, 5.5) as boolean;
 
-    // Real gameplay unlock rewrites the cell (resolveQuizGate → door_open).
-    // Global activeConditions 'quiz-gate' is intentionally NOT used for that —
-    // a shared id would open every quiz_gate at once.
-    chunk.cells[12][11] = { assetKey: 'door_open', walkable: true, interactable: false, resolved: true };
-    debug.invalidateRenderCaches();
+    // Production unlock: resolveQuizGate cell rewrite (not activeConditions).
+    debug.resolveQuizGate('0,0', 11, 12);
     const unlockedPasses = debug.isFootprintWalkable(11.5, 12.5) as boolean;
+    const rewrittenAsset = chunk.cells[12][11].assetKey as string;
 
-    return { lockedBlocksOffCenter, controlFarGrass, unlockedPasses };
+    return { lockedBlocksOffCenter, controlFarGrass, unlockedPasses, rewrittenAsset };
   });
 
   expect(result.controlFarGrass, 'control: plain grass far away must be walkable').toBe(true);
   expect(result.lockedBlocksOffCenter, 'locked quiz_gate must full-tile block via cell.walkable SSOT').toBe(false);
-  expect(result.unlockedPasses, 'unlocked quiz_gate (cell rewrite) must be walkable').toBe(true);
+  expect(result.rewrittenAsset, 'resolveQuizGate must stamp door_open').toBe('door_open');
+  expect(result.unlockedPasses, 'unlocked quiz_gate (resolveQuizGate) must be walkable').toBe(true);
 });
 
 test('Slice C: quiz_gate embedded in a wall run blocks across the full run width when locked', async ({ page }) => {

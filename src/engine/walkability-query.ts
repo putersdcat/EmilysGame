@@ -1,8 +1,10 @@
 /**
  * walkability-query.ts — Runtime walkability SSOT (Layer 4).
  *
- * Authority is stamped `cell.walkable` (+ `resolved` for unresolved quiz_gate).
- * No second recompute from asset keys, nano stacks, or activeConditions.
+ * Authority is stamped `cell.walkable` only. Locked gates / water / walls are
+ * non-walkable because gen stamps `walkable: false`; unlock is a cell rewrite
+ * (`resolveQuizGate` → door_open), not a second runtime recompute.
+ * No asset-key / nano / activeConditions authority on this path.
  *
  * **No imports from `src/rendering/**`.** Presentation never decides walkability.
  *
@@ -39,8 +41,9 @@ export function isWalkable(
  * Fractional world-position walkability from stamped cell flags only.
  * Unloaded chunk / OOB local → true (gen-on-entry).
  *
- * Unresolved quiz_gate: always uses `cell.walkable` (false until
- * `resolveQuizGate` rewrites the cell). No `activeConditions` on this path.
+ * Locked quiz_gate / door_locked stay blocked because they are stamped
+ * `walkable: false` until L7 rewrites the cell (`resolveQuizGate`).
+ * No `activeConditions` on this path.
  */
 export function isPositionWalkable(
   px: number,
@@ -58,12 +61,7 @@ export function isPositionWalkable(
   const ly = Math.floor(py - cy * size);
   if (lx < 0 || lx >= size || ly < 0 || ly >= size) return true;
 
-  const cell = chunk.cells[ly][lx];
-  // Unresolved quiz gates: cell.walkable only (always false until resolve)
-  if (cell.assetKey === 'quiz_gate' && !cell.resolved) {
-    return cell.walkable;
-  }
-  return cell.walkable;
+  return chunk.cells[ly][lx].walkable;
 }
 
 /**
