@@ -177,7 +177,14 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
         '/engine/world/PlaceCoherence.ts'
       );
 
-      const ids = ['fenced-farm', 'gatehouse', 'church-graveyard'] as const;
+      const ids = [
+        'fenced-farm',
+        'gatehouse',
+        'church-graveyard',
+        'fenced-garden-quiz',
+        'meadow-shrine-gate',
+        'market-stall-row',
+      ] as const;
       const reports: Array<{
         id: string;
         validateOk: boolean;

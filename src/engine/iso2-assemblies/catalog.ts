@@ -150,6 +150,99 @@ export const CHURCH_GRAVEYARD: AssemblyRecipe = {
 };
 
 /**
+ * 4×4 fenced flower garden with quiz_gate south entry (expandability rails PR5).
+ * Compact intentional place — fence ring + functional gate, not dirt-only.
+ */
+export const FENCED_GARDEN_QUIZ: AssemblyRecipe = {
+  id: 'fenced-garden-quiz',
+  width: 4,
+  height: 4,
+  placements: [
+    // North fence
+    { x: 0, y: 0, assetKey: 'fence' }, { x: 1, y: 0, assetKey: 'fence' },
+    { x: 2, y: 0, assetKey: 'fence' }, { x: 3, y: 0, assetKey: 'fence' },
+    // Sides + interior blooms
+    { x: 0, y: 1, assetKey: 'fence' }, { x: 1, y: 1, assetKey: 'flower' },
+    { x: 2, y: 1, assetKey: 'tulip' }, { x: 3, y: 1, assetKey: 'fence' },
+    { x: 0, y: 2, assetKey: 'fence' }, { x: 1, y: 2, assetKey: 'sunflower' },
+    { x: 2, y: 2, assetKey: 'flower_pink' }, { x: 3, y: 2, assetKey: 'fence' },
+    // South: dirt flank + quiz_gate + dirt flank (not dirt-only entry)
+    { x: 0, y: 3, assetKey: 'fence' }, { x: 1, y: 3, assetKey: 'dirt' },
+    { x: 2, y: 3, assetKey: 'quiz_gate' }, { x: 3, y: 3, assetKey: 'fence' },
+  ],
+  openings: [
+    { x: 1, y: 3, kind: 'path' },
+    { x: 2, y: 3, kind: 'quiz_gate' },
+  ],
+};
+
+/**
+ * 5×5 meadow shrine: low stone enclosure, rock altar, sign, quiz_gate entry.
+ * Intentional gated place via catalog only (no WorldUnitSolver).
+ */
+export const MEADOW_SHRINE_GATE: AssemblyRecipe = {
+  id: 'meadow-shrine-gate',
+  width: 5,
+  height: 5,
+  placements: [
+    // North wall
+    { x: 0, y: 0, assetKey: 'wall' }, { x: 1, y: 0, assetKey: 'wall' }, { x: 2, y: 0, assetKey: 'wall' },
+    { x: 3, y: 0, assetKey: 'wall' }, { x: 4, y: 0, assetKey: 'wall' },
+    // Sides + stone nave
+    { x: 0, y: 1, assetKey: 'wall' }, { x: 1, y: 1, assetKey: 'stone_floor' },
+    { x: 2, y: 1, assetKey: 'rock' }, { x: 3, y: 1, assetKey: 'stone_floor' }, { x: 4, y: 1, assetKey: 'wall' },
+    { x: 0, y: 2, assetKey: 'wall' }, { x: 1, y: 2, assetKey: 'flower' },
+    { x: 2, y: 2, assetKey: 'sign' }, { x: 3, y: 2, assetKey: 'flower_pink' }, { x: 4, y: 2, assetKey: 'wall' },
+    { x: 0, y: 3, assetKey: 'wall' }, { x: 1, y: 3, assetKey: 'stone_floor' },
+    { x: 2, y: 3, assetKey: 'stone_floor' }, { x: 3, y: 3, assetKey: 'stone_floor' }, { x: 4, y: 3, assetKey: 'wall' },
+    // South: dirt flanks + quiz_gate center (progression gate into shrine)
+    { x: 0, y: 4, assetKey: 'wall' }, { x: 1, y: 4, assetKey: 'dirt' },
+    { x: 2, y: 4, assetKey: 'quiz_gate' }, { x: 3, y: 4, assetKey: 'dirt' }, { x: 4, y: 4, assetKey: 'wall' },
+  ],
+  openings: [
+    { x: 1, y: 4, kind: 'path' },
+    { x: 2, y: 4, kind: 'quiz_gate' },
+    { x: 3, y: 4, kind: 'path' },
+  ],
+};
+
+/**
+ * 7×3 market stall row: shops along an open dirt corridor.
+ * Path openings are explicit at both corridor ends + south approach center
+ * (public market — no fence pen; no functional gate required).
+ */
+export const MARKET_STALL_ROW: AssemblyRecipe = {
+  id: 'market-stall-row',
+  width: 7,
+  height: 3,
+  placements: [
+    // Stall line (existing shop keys only)
+    { x: 0, y: 0, assetKey: 'shop_snack' },
+    { x: 1, y: 0, assetKey: 'dirt' },
+    { x: 2, y: 0, assetKey: 'shop' },
+    { x: 3, y: 0, assetKey: 'sign' },
+    { x: 4, y: 0, assetKey: 'shop_trading' },
+    { x: 5, y: 0, assetKey: 'dirt' },
+    { x: 6, y: 0, assetKey: 'shop_general' },
+    // Dirt corridor (walkable market path)
+    { x: 0, y: 1, assetKey: 'dirt' }, { x: 1, y: 1, assetKey: 'dirt' },
+    { x: 2, y: 1, assetKey: 'dirt' }, { x: 3, y: 1, assetKey: 'dirt' },
+    { x: 4, y: 1, assetKey: 'dirt' }, { x: 5, y: 1, assetKey: 'dirt' },
+    { x: 6, y: 1, assetKey: 'dirt' },
+    // South approach strip
+    { x: 0, y: 2, assetKey: 'grass' }, { x: 1, y: 2, assetKey: 'dirt' },
+    { x: 2, y: 2, assetKey: 'dirt' }, { x: 3, y: 2, assetKey: 'dirt' },
+    { x: 4, y: 2, assetKey: 'dirt' }, { x: 5, y: 2, assetKey: 'dirt' },
+    { x: 6, y: 2, assetKey: 'grass' },
+  ],
+  openings: [
+    { x: 0, y: 1, kind: 'path' },
+    { x: 6, y: 1, kind: 'path' },
+    { x: 3, y: 2, kind: 'path' },
+  ],
+};
+
+/**
  * Scene recipe registry — **this is the primary expand surface**.
  * Add a new place type here (or via {@link registerSceneRecipe}); do not
  * invent nano kinds or open WorldUnitSolver for a new farm/church/market.
@@ -160,6 +253,9 @@ export const ASSEMBLY_RECIPES: Record<string, AssemblyRecipe> = {
   gatehouse: GATEHOUSE,
   'bridge-crossing': BRIDGE_CROSSING,
   'church-graveyard': CHURCH_GRAVEYARD,
+  'fenced-garden-quiz': FENCED_GARDEN_QUIZ,
+  'meadow-shrine-gate': MEADOW_SHRINE_GATE,
+  'market-stall-row': MARKET_STALL_ROW,
 };
 
 /**

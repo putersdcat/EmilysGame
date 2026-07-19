@@ -247,7 +247,13 @@ test('fenced recipes require functional gate openings (no bare dirt-only entry)'
     const { stampAssemblyOntoCells, validateSceneOpenings } = await import('/engine/iso2-assemblies.ts');
     const { ASSEMBLY_RECIPES } = await import('/engine/iso2-assemblies/catalog.ts');
 
-    const FENCED_IDS = ['fenced-farm', 'gatehouse', 'church-graveyard'] as const;
+    const FENCED_IDS = [
+      'fenced-farm',
+      'gatehouse',
+      'church-graveyard',
+      'fenced-garden-quiz',
+      'meadow-shrine-gate',
+    ] as const;
     const FUNCTIONAL = new Set(['quiz_gate', 'door_locked', 'door_open', 'door_gate', 'toll_gate']);
 
     const reports: Array<{
@@ -507,4 +513,282 @@ test('recipe-footprint and grid OOB openings; parallel corridor not mass-gated',
 
   expect(result.singlePlaced).toBeGreaterThanOrEqual(1);
   expect(result.singleGate).toBe('quiz_gate');
+});
+
+test('PR5 expand recipes: openings validate after stamp (garden, shrine, market)', async ({
+  page,
+}) => {
+  await waitForGame(page);
+
+  const result = await page.evaluate(async () => {
+    const { stampAssemblyOntoCells, validateSceneOpenings } = await import(
+      '/engine/iso2-assemblies.ts'
+    );
+    const {
+      ASSEMBLY_RECIPES,
+      FENCED_GARDEN_QUIZ,
+      MEADOW_SHRINE_GATE,
+      MARKET_STALL_ROW,
+    } = await import('/engine/iso2-assemblies/catalog.ts');
+
+    const ids = [
+      'fenced-garden-quiz',
+      'meadow-shrine-gate',
+      'market-stall-row',
+    ] as const;
+
+    const reports: Array<{
+      id: string;
+      openingsDeclared: number;
+      validateOk: boolean;
+      violations: unknown[];
+      openingCells: Array<{ kind: string; assetKey: string }>;
+      signatureOk: boolean;
+    }> = [];
+
+    for (const id of ids) {
+      const recipe = ASSEMBLY_RECIPES[id];
+      if (!recipe) {
+        reports.push({
+          id,
+          openingsDeclared: 0,
+          validateOk: false,
+          violations: [{ reason: 'missing-recipe' }],
+          openingCells: [],
+          signatureOk: false,
+        });
+        continue;
+      }
+
+      const size = 16;
+      const cells = Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => ({
+          assetKey: 'grass',
+          walkable: true,
+          interactable: false,
+        })),
+      );
+      const ox = 2;
+      const oy = 2;
+      stampAssemblyOntoCells(cells, id, ox, oy);
+      const validation = validateSceneOpenings(cells, ox, oy, recipe);
+      const openings = recipe.openings ?? [];
+      const openingCells = openings.map((o) => ({
+        kind: o.kind,
+        assetKey: cells[oy + o.y][ox + o.x].assetKey,
+      }));
+
+      let signatureOk = false;
+      if (id === 'fenced-garden-quiz') {
+        const fence = cells.flat().filter((c) => c.assetKey === 'fence').length;
+        const gate = cells[oy + 3][ox + 2].assetKey;
+        signatureOk = fence >= 8 && gate === 'quiz_gate';
+      } else if (id === 'meadow-shrine-gate') {
+        const wall = cells.flat().filter((c) => c.assetKey === 'wall').length;
+        const gate = cells[oy + 4][ox + 2].assetKey;
+        const altar = cells[oy + 1][ox + 2].assetKey;
+        signatureOk = wall >= 10 && gate === 'quiz_gate' && altar === 'rock';
+      } else if (id === 'market-stall-row') {
+        const shops =
+          cells.flat().filter((c) => c.assetKey === 'shop').length +
+          cells.flat().filter((c) => c.assetKey === 'shop_snack').length +
+          cells.flat().filter((c) => c.assetKey === 'shop_trading').length +
+          cells.flat().filter((c) => c.assetKey === 'shop_general').length;
+        const corridorDirt = [0, 1, 2, 3, 4, 5, 6].every(
+          (dx) => cells[oy + 1][ox + dx].assetKey === 'dirt',
+        );
+        signatureOk = shops >= 4 && corridorDirt;
+      }
+
+      reports.push({
+        id,
+        openingsDeclared: openings.length,
+        validateOk: validation.ok,
+        violations: validation.violations,
+        openingCells,
+        signatureOk,
+      });
+    }
+
+    // Exports exist and match registry ids
+    return {
+      reports,
+      exportIds: [
+        FENCED_GARDEN_QUIZ.id,
+        MEADOW_SHRINE_GATE.id,
+        MARKET_STALL_ROW.id,
+      ],
+    };
+  });
+
+  expect(result.exportIds).toEqual([
+    'fenced-garden-quiz',
+    'meadow-shrine-gate',
+    'market-stall-row',
+  ]);
+
+  for (const r of result.reports) {
+    expect(r.openingsDeclared, `${r.id} declares openings`).toBeGreaterThanOrEqual(1);
+    expect(
+      r.validateOk,
+      `${r.id} openings validate: ${JSON.stringify(r.violations)}`,
+    ).toBe(true);
+    expect(r.signatureOk, `${r.id} signature cells after stamp`).toBe(true);
+
+    for (const cell of r.openingCells) {
+      if (cell.kind === 'quiz_gate') {
+        expect(cell.assetKey, `${r.id} quiz_gate opening`).toBe('quiz_gate');
+      } else if (cell.kind === 'path') {
+        expect(
+          ['dirt', 'grass', 'quiz_gate', 'door_locked'].includes(cell.assetKey),
+          `${r.id} path opening got ${cell.assetKey}`,
+        ).toBe(true);
+      }
+    }
+  }
+});
+
+test('PR5 expand recipes: full-gen sample validates stamped openings via registry', async ({
+  page,
+}) => {
+  /**
+   * Stamp + place-coherence path under real generateChunkSync.
+   * Sample non-origin chunks; when a PR5 recipe lands, openings must still validate.
+   */
+  await waitForGame(page);
+
+  const FIXED_WORDLIST = [
+    'alpha beta',
+    'gamma delta',
+    'epsilon zeta',
+    'eta theta',
+    'iota kappa',
+    'lambda mu',
+    'nu xi',
+    'omicron pi',
+  ];
+
+  const result = await page.evaluate(async ([wordlist]: [string[]]) => {
+    const gen = await import('/engine/gen.ts');
+    const {
+      getSceneStampRegistry,
+      validateSceneOpenings,
+      modularSceneIdsForBiome,
+      stampAssemblyOntoCells,
+      ASSEMBLY_RECIPES,
+    } = await import('/engine/iso2-assemblies.ts');
+
+    const pr5Ids = new Set([
+      'fenced-garden-quiz',
+      'meadow-shrine-gate',
+      'market-stall-row',
+    ]);
+
+    gen.setWordlist(wordlist);
+    gen.setBiomeNoiseSeed(42);
+    gen.restoreEntropyBuffer('');
+
+    const meadowIds = modularSceneIdsForBiome('meadow');
+    const forestIds = modularSceneIdsForBiome('forest');
+    const castleIds = modularSceneIdsForBiome('castle');
+
+    // Direct stamp + validate under grass grid (always) for each PR5 id
+    const directStamp: Array<{ id: string; ok: boolean }> = [];
+    for (const id of pr5Ids) {
+      const recipe = ASSEMBLY_RECIPES[id];
+      const size = 16;
+      const cells = Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => ({
+          assetKey: 'grass',
+          walkable: true,
+          interactable: false,
+        })),
+      );
+      stampAssemblyOntoCells(cells as any, id as any, 2, 2);
+      const v = validateSceneOpenings(cells as any, 2, 2, recipe);
+      directStamp.push({ id, ok: v.ok });
+    }
+
+    // Full-gen ring: collect stamps from registry after each chunk
+    const coords: Array<[number, number]> = [];
+    for (let cy = -3; cy <= 3; cy++) {
+      for (let cx = -3; cx <= 3; cx++) {
+        if (Math.abs(cx) + Math.abs(cy) <= 1) continue;
+        coords.push([cx, cy]);
+      }
+    }
+
+    let pr5StampHits = 0;
+    let pr5ValidateOk = 0;
+    let pr5ValidateFail = 0;
+    const hitIds: string[] = [];
+    const failures: Array<{ id: string; cx: number; cy: number; n: number }> = [];
+
+    for (const [cx, cy] of coords) {
+      const chunk = gen.generateChunkSync(cx, cy);
+      const stamps = getSceneStampRegistry();
+      for (const stamp of stamps) {
+        if (!pr5Ids.has(stamp.recipe.id)) continue;
+        pr5StampHits++;
+        if (!hitIds.includes(stamp.recipe.id)) hitIds.push(stamp.recipe.id);
+        const v = validateSceneOpenings(
+          chunk.cells,
+          stamp.originX,
+          stamp.originY,
+          stamp.recipe,
+        );
+        if (v.ok) pr5ValidateOk++;
+        else {
+          pr5ValidateFail++;
+          failures.push({
+            id: stamp.recipe.id,
+            cx,
+            cy,
+            n: v.violations.length,
+          });
+        }
+      }
+    }
+
+    return {
+      meadowHasGarden: meadowIds.includes('fenced-garden-quiz'),
+      meadowHasShrine: meadowIds.includes('meadow-shrine-gate'),
+      meadowHasMarket: meadowIds.includes('market-stall-row'),
+      forestHasGarden: forestIds.includes('fenced-garden-quiz'),
+      forestHasShrine: forestIds.includes('meadow-shrine-gate'),
+      castleHasMarket: castleIds.includes('market-stall-row'),
+      directStamp,
+      sampled: coords.length,
+      pr5StampHits,
+      pr5ValidateOk,
+      pr5ValidateFail,
+      hitIds,
+      failures,
+    };
+  }, [FIXED_WORDLIST] as [string[]]);
+
+  // Biome weight wiring
+  expect(result.meadowHasGarden).toBe(true);
+  expect(result.meadowHasShrine).toBe(true);
+  expect(result.meadowHasMarket).toBe(true);
+  expect(result.forestHasGarden).toBe(true);
+  expect(result.forestHasShrine).toBe(true);
+  expect(result.castleHasMarket).toBe(true);
+
+  // Direct stamps always green (catalog contract)
+  for (const d of result.directStamp) {
+    expect(d.ok, `direct stamp ${d.id}`).toBe(true);
+  }
+
+  // When full gen lands a PR5 recipe, openings must still validate post pipeline
+  expect(result.pr5ValidateFail, JSON.stringify(result.failures)).toBe(0);
+  if (result.pr5StampHits > 0) {
+    expect(result.pr5ValidateOk).toBe(result.pr5StampHits);
+  }
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `[PR5 full-gen] sampled=${result.sampled} pr5Hits=${result.pr5StampHits} ` +
+      `ok=${result.pr5ValidateOk} ids=${result.hitIds.join(',') || '(none)'}`,
+  );
 });

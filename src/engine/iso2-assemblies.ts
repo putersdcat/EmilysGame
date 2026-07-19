@@ -7,6 +7,7 @@
  *
  * V2 (2026-07-15): modular catalog (farm, pond, gatehouse, bridge, church)
  * + `maybePlaceModularScenes` wired from ChunkGenerator (not debug-only).
+ * PR5 (2026-07-19): garden / shrine / market-stall expand via catalog + weights.
  */
 
 import { ASSET_DEFS } from '../config/assets.config';
@@ -58,6 +59,9 @@ export type Iso2AssemblyId =
   | 'gatehouse'
   | 'bridge-crossing'
   | 'church-graveyard'
+  | 'fenced-garden-quiz'
+  | 'meadow-shrine-gate'
+  | 'market-stall-row'
   | (string & {});
 
 // ─── Legacy / landmark blueprints (Slice A) ───────────────────────────────
@@ -296,20 +300,26 @@ const MODULAR_SCENE_CHANCE = 0.34;
  */
 const BIOME_SCENE_WEIGHTS: Record<string, Partial<Record<Iso2AssemblyId, number>>> = {
   meadow: {
-    'fenced-farm': 0.40,
-    'pond-clearing': 0.25,
-    'bridge-crossing': 0.20,
-    'church-graveyard': 0.15,
+    'fenced-farm': 0.28,
+    'fenced-garden-quiz': 0.16,
+    'meadow-shrine-gate': 0.12,
+    'market-stall-row': 0.10,
+    'pond-clearing': 0.16,
+    'bridge-crossing': 0.10,
+    'church-graveyard': 0.08,
   },
   forest: {
-    'pond-clearing': 0.45,
-    'bridge-crossing': 0.35,
-    'church-graveyard': 0.20,
+    'pond-clearing': 0.32,
+    'bridge-crossing': 0.22,
+    'fenced-garden-quiz': 0.16,
+    'meadow-shrine-gate': 0.14,
+    'church-graveyard': 0.16,
   },
   castle: {
-    gatehouse: 0.55,
-    'church-graveyard': 0.25,
-    'bridge-crossing': 0.20,
+    gatehouse: 0.40,
+    'market-stall-row': 0.22,
+    'church-graveyard': 0.20,
+    'bridge-crossing': 0.18,
   },
 };
 

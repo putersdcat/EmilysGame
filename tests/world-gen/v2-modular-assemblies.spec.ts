@@ -49,6 +49,15 @@ test('V2 recipes stamp signature cells at origin', async ({ page }) => {
     const church = grass();
     stampAssemblyOntoCells(church, 'church-graveyard', 4, 4);
 
+    const garden = grass();
+    stampAssemblyOntoCells(garden, 'fenced-garden-quiz', 4, 4);
+
+    const shrine = grass();
+    stampAssemblyOntoCells(shrine, 'meadow-shrine-gate', 4, 4);
+
+    const market = grass();
+    stampAssemblyOntoCells(market, 'market-stall-row', 4, 4);
+
     return {
       farmFence: count(farm, 'fence'),
       farmHut: count(farm, 'hut'),
@@ -63,6 +72,22 @@ test('V2 recipes stamp signature cells at origin', async ({ page }) => {
       churchSign: count(church, 'sign'),
       churchDoor: count(church, 'door_locked'),
       churchWall: count(church, 'wall'),
+      gardenFence: count(garden, 'fence'),
+      gardenGate: count(garden, 'quiz_gate'),
+      gardenFlowers:
+        count(garden, 'flower') +
+        count(garden, 'tulip') +
+        count(garden, 'sunflower') +
+        count(garden, 'flower_pink'),
+      shrineWall: count(shrine, 'wall'),
+      shrineGate: count(shrine, 'quiz_gate'),
+      shrineRock: count(shrine, 'rock'),
+      marketShops:
+        count(market, 'shop') +
+        count(market, 'shop_snack') +
+        count(market, 'shop_trading') +
+        count(market, 'shop_general'),
+      marketDirt: count(market, 'dirt'),
     };
   });
 
@@ -83,6 +108,17 @@ test('V2 recipes stamp signature cells at origin', async ({ page }) => {
   expect(result.churchSign).toBe(1);
   expect(result.churchDoor).toBe(1);
   expect(result.churchWall).toBeGreaterThanOrEqual(8);
+
+  expect(result.gardenFence, 'garden fence ring').toBeGreaterThanOrEqual(8);
+  expect(result.gardenGate).toBe(1);
+  expect(result.gardenFlowers).toBeGreaterThanOrEqual(3);
+
+  expect(result.shrineWall).toBeGreaterThanOrEqual(10);
+  expect(result.shrineGate).toBe(1);
+  expect(result.shrineRock).toBe(1);
+
+  expect(result.marketShops).toBeGreaterThanOrEqual(4);
+  expect(result.marketDirt, 'market dirt corridor').toBeGreaterThanOrEqual(10);
 });
 
 test('V2 maybePlaceModularScenes: distance + biome gates', async ({ page }) => {
@@ -142,8 +178,13 @@ test('V2 maybePlaceModularScenes: distance + biome gates', async ({ page }) => {
 
   expect(result.meadowIds).toContain('fenced-farm');
   expect(result.meadowIds).toContain('pond-clearing');
+  expect(result.meadowIds).toContain('fenced-garden-quiz');
+  expect(result.meadowIds).toContain('meadow-shrine-gate');
+  expect(result.meadowIds).toContain('market-stall-row');
   expect(result.forestIds).toContain('pond-clearing');
+  expect(result.forestIds).toContain('fenced-garden-quiz');
   expect(result.castleIds).toContain('gatehouse');
+  expect(result.castleIds).toContain('market-stall-row');
 
   // zeroRng always picks first weight entry for meadow = fenced-farm
   expect(result.far).toBe('fenced-farm');
