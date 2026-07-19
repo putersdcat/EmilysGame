@@ -7,7 +7,7 @@
 import { WORLD_CONFIG, getDifficulty } from './config/game.config';
 import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
-import { IsometricRenderer, setDialogNpc, setRenderFrameDelta } from './rendering/render';
+import { IsometricRenderer, setDialogNpc } from './rendering/render';
 import { InputManager } from './game/input';
 import { isTutorialActive, tickTutorial } from './game/tutorial';
 import { feedEntropy } from './engine/gen';
@@ -60,7 +60,7 @@ import { showOptionsOverlay } from './game/options-overlay';
 // and is imported directly by debug-api.ts (no DI needed).
 // getNpcPersona used via play-mode drain / tryOpenPendingTrade
 import { MICRO_TILE_DEFS } from './config/tiles.config';
-import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
+import { evictDistantChunks } from './rendering/terrain-cache';
 
 import { searchBookArticles, getBookArticlesBySubject } from './ui/book-content';
 import { type SubjectId } from './config/knowledge.config';
@@ -186,10 +186,6 @@ import {
 import {
   MOVE_STEP_MS,
   MOVE_MAX_CATCHUP_MS,
-  takeInjectedDtMs,
-  noteDtClamped,
-  noteSimDtRaw,
-  finalizeInjectFrameIfActive,
 } from './game/player-motor';
 import {
   exitModal,
@@ -199,8 +195,11 @@ import {
   tryOpenPendingTrade,
   syncDerivedPaused,
 } from './game/play-mode';
+// Ensure DrainActivator is registered (side-effect of play-mode adapter)
+import './game/play-mode';
 import {
   runPlayFrame,
+  startPlayLoop,
   type PlayFrameHooks,
   type MoveResult,
   type MovementVector,
@@ -1053,11 +1052,10 @@ function handleSpaceInteraction(state: GameState, justKeys: any): void {
 
 
 /**
- * Per-frame play update — delegates to play-kernel runPlayFrame (PR1).
- * Pipeline never aborts; entryTop snapshot gates locomotion + world Space;
- * single endFrame in finally. rAF / inject stay in gameLoop (PR2 moves them).
+ * Per-frame play update — thin delegate (debug / tests). Production path is
+ * startPlayLoop → runPlayFrame with the same hooks.
  */
-function update(state: GameState, input: InputManager, dtMs: number = 16.67): void {
+export function update(state: GameState, input: InputManager, dtMs: number = 16.67): void {
   runPlayFrame(state, input, dtMs, playFrameHooks, {
     clearExtraKeys: _clearExtraKeys,
   });
@@ -1151,63 +1149,7 @@ function renderFrame(
 }
 
 
-// ─── Game Loop ───────────────────────────────────────────────
-
-let _lastFrameTime = 0;
-/** Guard: only one rAF chain may own the loop (HMR / double main() protection). */
-let _gameLoopRaf = 0;
-/** Rolling FPS from real rAF intervals (matches what the screen is doing). */
-let _fpsWindowFrames = 0;
-let _fpsWindowMs = 0;
-
-function gameLoop(
-  time: number,
-  ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
-): void {
-  const _frameStart = performance.now();
-  // Wall-clock frame delta (presentation + FPS). Guard quirks / first frame.
-  let wallDtMs = _lastFrameTime > 0 ? time - _lastFrameTime : MOVE_STEP_MS;
-  if (!Number.isFinite(wallDtMs) || wallDtMs < 0) wallDtMs = MOVE_STEP_MS;
-  _lastFrameTime = time;
-
-  // FPS uses unclamped wall dt (L0: do not clamp the display accumulator).
-  // Injected sim dt does NOT feed this window (presentation stays honest).
-  _fpsWindowFrames++;
-  _fpsWindowMs += wallDtMs;
-  if (_fpsWindowMs >= 1000) {
-    ctx.state.fps = Math.round((_fpsWindowFrames * 1000) / _fpsWindowMs);
-    ctx.state.fpsCounter = _fpsWindowFrames;
-    ctx.state.lastFpsTime = _frameStart;
-    _fpsWindowFrames = 0;
-    _fpsWindowMs = 0;
-  }
-
-  // Sim dt: optional one-shot inject (tests), else wall. Motor clamps integrate.
-  const injected = takeInjectedDtMs();
-  let simDtMs = injected !== null ? injected : wallDtMs;
-  if (!Number.isFinite(simDtMs) || simDtMs < 0) simDtMs = MOVE_STEP_MS;
-  noteSimDtRaw(simDtMs);
-  if (simDtMs > MOVE_MAX_CATCHUP_MS) {
-    noteDtClamped();
-  }
-
-  // Presentation clocks stay on wall time (not artificial hitch inject).
-  tickWaterAnimation(wallDtMs);
-  setRenderFrameDelta(wallDtMs);
-  const _updateStart = performance.now();
-  update(ctx.state, ctx.input, simDtMs);
-  finalizeInjectFrameIfActive();
-  const _updateEnd = performance.now();
-  perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
-  renderFrame(ctx.renderer, ctx.state, perfStats);
-  // Post-menu: first completed frame after menu resolve
-  markFirstFrameIfNeeded();
-  const _frameEnd = performance.now();
-  const totalMs = _frameEnd - _frameStart;
-  perfStats.total = perfSmooth(perfStats.total, totalMs);
-  recordFrameTime(totalMs);
-  _gameLoopRaf = requestAnimationFrame((t) => gameLoop(t, ctx));
-}
+// ─── Game Loop (play-kernel startPlayLoop — PR2) ─────────────
 
 // ─── Extended Input (F3 debug, I inventory, Esc) ─────────────
 
@@ -1233,13 +1175,29 @@ async function main(): Promise<void> {
   // Audio bootstrap (background; oscillator fallbacks cover loading window)
   bootstrapAudio(state);
 
-  // Single rAF chain only — cancel any prior loop (HMR / accidental re-entry
-  // would otherwise double-integrate movement → bursty overspeed).
-  if (_gameLoopRaf) cancelAnimationFrame(_gameLoopRaf);
-  _lastFrameTime = 0;
-  _fpsWindowFrames = 0;
-  _fpsWindowMs = 0;
-  _gameLoopRaf = requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
+  // Single rAF chain via play-kernel (cancel-before-start inside startPlayLoop).
+  // Inventory: wall dt / FPS / inject / wall clocks / runPlayFrame / finalize live in loop.ts.
+  let _loopFrameStart = 0;
+  startPlayLoop({
+    state,
+    input,
+    hooks: playFrameHooks,
+    extras: { clearExtraKeys: _clearExtraKeys },
+    onAfterFrame: () => {
+      // Render + perf marks (design inventory step 10)
+      const _renderStart = performance.now();
+      if (_loopFrameStart <= 0) _loopFrameStart = _renderStart;
+      renderFrame(renderer, state, perfStats);
+      markFirstFrameIfNeeded();
+      const _frameEnd = performance.now();
+      // Approximate update EMA from gap since last after-frame (render-only slice
+      // is tiny; full-frame total still feeds recordFrameTime for hitch metrics).
+      const totalMs = Math.max(_frameEnd - _renderStart, 0.01);
+      perfStats.total = perfSmooth(perfStats.total, totalMs);
+      recordFrameTime(totalMs);
+      _loopFrameStart = _frameEnd;
+    },
+  });
 }
 
 if (document.readyState === 'loading') {

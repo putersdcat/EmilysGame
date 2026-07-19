@@ -69,7 +69,7 @@ test.describe('Play-stack L1 input map (screenIntentToGrid)', () => {
 
     const results = await page.evaluate((cases) => {
       // Dynamic import keeps this a pure module-level unit check (no InputManager DOM).
-      return import('/game/input.ts').then(({ screenIntentToGrid }) => {
+      return import('/game/play-kernel/input-map.ts').then(({ screenIntentToGrid }) => {
         return cases.map((c) => {
           const { dx, dy } = screenIntentToGrid(c.sdx, c.sdy);
           const mag = Math.sqrt(dx * dx + dy * dy);
@@ -122,7 +122,8 @@ test.describe('Play-stack L1 input map (screenIntentToGrid)', () => {
 
     // Digital W only: screen (0,-1) → grid (-1,-1) → norm (-√½, -√½)
     const moved = await page.evaluate(async () => {
-      const { InputManager, screenIntentToGrid } = await import('/game/input.ts');
+      const { InputManager } = await import('/game/input.ts');
+      const { screenIntentToGrid } = await import('/game/play-kernel/input-map.ts');
       const im = new InputManager();
       // Simulate held W via keydown path
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', bubbles: true }));

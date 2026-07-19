@@ -79,7 +79,8 @@ test.describe('PR7 golden: movement directions (PR2 L1)', () => {
     await waitForGame(page);
 
     const result = await page.evaluate(async () => {
-      const { screenIntentToGrid, InputManager } = await import('/game/input.ts');
+      const { InputManager } = await import('/game/input.ts');
+      const { screenIntentToGrid } = await import('/game/play-kernel/input-map.ts');
 
       const cases = [
         { name: 'W', sdx: 0, sdy: -1 },
@@ -518,7 +519,7 @@ test.describe('PR7 golden: single-session stack stitch', () => {
 
     // 1) Input law present
     const intent = await page.evaluate(async () => {
-      const { screenIntentToGrid } = await import('/game/input.ts');
+      const { screenIntentToGrid } = await import('/game/play-kernel/input-map.ts');
       return screenIntentToGrid(1, 0); // D → NE
     });
     expect(intent.dx).toBe(1);

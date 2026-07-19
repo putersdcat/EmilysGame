@@ -7,6 +7,9 @@
  */
 
 import { shouldAutoShowTouchOverlay } from './platform';
+// Pure map lives in play-kernel; re-export for one-PR compat + InputManager use.
+export { screenIntentToGrid } from './play-kernel/input-map';
+import { screenIntentToGrid } from './play-kernel/input-map';
 
 /** Touch control visibility mode (#144) */
 export type TouchControlMode = 'whisper' | 'slide' | 'visible';
@@ -24,34 +27,6 @@ export type InputDevice = 'keyboard' | 'touch' | 'gamepad';
 
 // Gamepad axis deadzone
 const GP_DEADZONE = 0.3;
-
-/**
- * Map screen-space movement intent → isometric grid-space (unnormalized).
- *
- * **Player-facing contract (WASD = arrow keys):**
- *   W / ↑  → move **up the screen**
- *   S / ↓  → move **down the screen**
- *   A / ←  → move **left on the screen**
- *   D / →  → move **right on the screen**
- *
- * Screen axes: +sdx = right, +sdy = down (DOM/canvas).
- * Grid axes: `player.x/y` integrated by the motor.
- *
- * Projection (`projection.ts`): screenX ∝ (x−y), screenY ∝ (x+y).
- * Inverse (direction only; normalize after):
- *   dx =  sdx + sdy
- *   dy = −sdx + sdy
- *
- * Same law for WASD and arrows — both feed the same up/down/left/right bits.
- *
- * @see memories/repo/design-play-stack-first-principles-2026-07-19.md L1
- */
-export function screenIntentToGrid(sdx: number, sdy: number): { dx: number; dy: number } {
-  return {
-    dx: sdx + sdy,
-    dy: -sdx + sdy,
-  };
-}
 
 export class InputManager {
   private keyState: InputState = {

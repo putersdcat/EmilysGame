@@ -1,12 +1,12 @@
 /**
- * runPlayFrame — non-aborting play frame pipeline (PR1).
+ * runPlayFrame — non-aborting play frame pipeline (PR1+PR2).
  *
  * Normative phases from design-play-kernel-2026-07-19.md:
  *   poll → frameCount → justKeys → control locks → reconcile →
  *   entryTop snapshot → modal handlers → locomotion/Space (entryTop play only) →
  *   tickPlayWorld (stack empty) → finally endFrame once.
  *
- * Mode / motor remain tip modules for PR1; this owns orchestration only.
+ * Mode shell: play-kernel/mode.ts (PR2). Motor remains tip module until PR3.
  */
 
 import type { GameState } from '../game-state';
@@ -16,10 +16,8 @@ import {
   locomotionAllowed,
   worldInteractAllowed,
   tickDiarrheaControlLock,
-  recoverOrphanPause,
-  enterModal,
-  hasModalKind,
-} from '../play-mode';
+  reconcileIfNeeded,
+} from './mode';
 import { integrateMovementFrame, resolveEmbedIfNeeded } from '../player-motor';
 import { getDebuffs } from '../status';
 import { getInjurySpeedMult } from '../injury';
@@ -29,32 +27,8 @@ import { playSfx } from '../audio/sfx';
 import { setDiarrheaOverlay } from '../../rendering/debuff-visuals';
 import type { PlayFrameExtras, PlayFrameHooks } from './types';
 
-/**
- * PR1 thin reconcile: book stack heal, content-without-stack heal,
- * then tip recoverOrphanPause. Returns whether an orphan heal ran.
- */
-export function reconcileIfNeeded(state: GameState): boolean {
-  // Prefer stack as authority for book: bookOpen without frame → enter book
-  if (state.knowledge.bookOpen && !hasModalKind(state, 'book')) {
-    enterModal(state, { kind: 'book' });
-  }
-
-  // Content active without stack frame (handshake drift) → re-hydrate stack
-  // so entryTop snapshot routes modal input correctly.
-  if (state.playMode.stack.length === 0 && state.playMode.controlLock == null) {
-    if (state.quiz.active) {
-      enterModal(state, { kind: 'quiz', owner: 'orphan_recover' });
-    } else if (state.ui.dialog.active) {
-      enterModal(state, { kind: 'dialog', owner: 'orphan_recover' });
-    } else if (state.trade.active) {
-      enterModal(state, { kind: 'trade', owner: 'orphan_recover' });
-    } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
-      enterModal(state, { kind: 'pause_menu' });
-    }
-  }
-
-  return recoverOrphanPause(state);
-}
+// Re-export reconcile for callers that imported it from frame in PR1
+export { reconcileIfNeeded } from './mode';
 
 /**
  * One play frame. Never aborts early; endFrame always runs in finally.
@@ -89,7 +63,7 @@ export function runPlayFrame(
       playSfx(state.sfx, 'pickup_item');
     }
 
-    // 5. reconcile (book stack + orphan pause)
+    // 5. reconcile (book stack + orphan pause + DEV asserts)
     reconcileIfNeeded(state);
 
     // 6. SNAPSHOT entry top — freezes phases 8–9 against modal close this frame

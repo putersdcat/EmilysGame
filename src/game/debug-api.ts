@@ -133,7 +133,7 @@ import {
   injectDtMs,
   getDtClampedCount,
   getTimeContractSnapshot,
-} from './player-motor';
+} from './play-kernel';
 
 // ─── Dependencies ────────────────────────────────────────────
 
