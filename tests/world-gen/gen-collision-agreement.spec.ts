@@ -522,14 +522,18 @@ test.describe('PR6 Gen ↔ collision agreement (L5)', () => {
         if (def.walkable !== policy) mismatches.push(k);
       }
 
-      // Material-only fallbacks (not in ASSET_DEFS)
+      // Material-only fallbacks (not in ASSET_DEFS) — place-family matrix surface
       const materialOnly: Record<string, boolean> = {};
       for (const k of [
         'water_clear_river',
         'water_muddy_creek',
         'water_deep_pond',
+        'water_marsh_edge',
         'bridge_wood',
+        'stone_wall',
         'stone_wall_red_clinker',
+        'wooden_fence',
+        'door_gate',
       ]) {
         materialOnly[k] = expectedWalkableDefault(k);
       }
@@ -544,7 +548,11 @@ test.describe('PR6 Gen ↔ collision agreement (L5)', () => {
     expect(result.materialOnly.water_clear_river).toBe(false);
     expect(result.materialOnly.water_muddy_creek).toBe(false);
     expect(result.materialOnly.water_deep_pond).toBe(false);
+    expect(result.materialOnly.water_marsh_edge).toBe(false);
     expect(result.materialOnly.bridge_wood).toBe(true);
+    expect(result.materialOnly.stone_wall).toBe(false);
     expect(result.materialOnly.stone_wall_red_clinker).toBe(false);
+    expect(result.materialOnly.wooden_fence).toBe(false);
+    expect(result.materialOnly.door_gate).toBe(false);
   });
 });
