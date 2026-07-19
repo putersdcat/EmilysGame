@@ -177,8 +177,10 @@ export const FENCED_GARDEN_QUIZ: AssemblyRecipe = {
 };
 
 /**
- * 5×5 meadow shrine: low stone enclosure, rock altar, sign, quiz_gate entry.
+ * 5×5 stone shrine: low wall enclosure, rock altar, sign, quiz_gate entry.
  * Intentional gated place via catalog only (no WorldUnitSolver).
+ * Id keeps "meadow-" flavor; biome weights intentionally include forest
+ * (expand rails: place flavor ≠ single-biome exclusivity).
  */
 export const MEADOW_SHRINE_GATE: AssemblyRecipe = {
   id: 'meadow-shrine-gate',

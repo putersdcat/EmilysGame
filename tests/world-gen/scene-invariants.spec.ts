@@ -653,7 +653,9 @@ test('PR5 expand recipes: full-gen sample validates stamped openings via registr
 }) => {
   /**
    * Stamp + place-coherence path under real generateChunkSync.
-   * Sample non-origin chunks; when a PR5 recipe lands, openings must still validate.
+   * Fixed wordlist + seed 42 over a non-origin ring must land ≥1 PR5 modular
+   * stamp; every landed stamp must still validate openings post-pipeline.
+   * Hard-require hits so weight/chance regressions cannot silently drop coverage.
    */
   await waitForGame(page);
 
@@ -780,10 +782,25 @@ test('PR5 expand recipes: full-gen sample validates stamped openings via registr
     expect(d.ok, `direct stamp ${d.id}`).toBe(true);
   }
 
-  // When full gen lands a PR5 recipe, openings must still validate post pipeline
+  // Hard-require post-pipeline coverage (do not allow zero-hit silent green).
+  // Fixed seed 42 + 44-chunk ring is known to land multiple PR5 stamps.
+  expect(
+    result.pr5StampHits,
+    'fixed-seed ring must stamp at least one PR5 recipe (weights/chance regression)',
+  ).toBeGreaterThan(0);
   expect(result.pr5ValidateFail, JSON.stringify(result.failures)).toBe(0);
-  if (result.pr5StampHits > 0) {
-    expect(result.pr5ValidateOk).toBe(result.pr5StampHits);
+  expect(result.pr5ValidateOk).toBe(result.pr5StampHits);
+
+  // Prefer full catalog coverage over the ring when sample is large enough.
+  for (const id of [
+    'fenced-garden-quiz',
+    'meadow-shrine-gate',
+    'market-stall-row',
+  ] as const) {
+    expect(
+      result.hitIds,
+      `full-gen ring should land ${id} at least once (hitIds=${result.hitIds.join(',')})`,
+    ).toContain(id);
   }
 
   // eslint-disable-next-line no-console
