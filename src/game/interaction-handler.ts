@@ -61,6 +61,12 @@ import { doSave } from './save-build';
 import { getCycleProgress } from '../rendering/lighting';
 import { type GameState } from './game-state';
 import { type InteractionResult } from '../engine/mechanics';
+import {
+  enterDialogModal,
+  enterQuizModal,
+  queueAfterClose,
+  setControlLock,
+} from './play-mode';
 
 // ─── Module-level state ───────────────────────────────────────
 
@@ -194,7 +200,6 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       const persona = getNpcPersona(result.npcId);
       const npcName = persona?.displayName || 'Stranger';
       showDialog(state.ui, npcName, [result.greeting]);
-      state.paused = true;
       playSfx(state.sfx, 'dialog_open');
       // Speak greeting line (#76)
       _lastDialogNpcId = result.npcId;
@@ -222,27 +227,29 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
         const question = pickQuizQuestion(finalDifficulty, bias);
         state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias, question };
         if (question) prefetchQuizRephrase(question.question);
+        queueAfterClose(state, { kind: 'quiz', owner: result.npcId });
       }
 
       // If NPC has trades, queue trade panel to open after dialog + optional quiz
       if (persona && persona.trades.length > 0) {
         state.pendingTrade = result.npcId;
+        queueAfterClose(state, { kind: 'trade', owner: result.npcId });
       }
+      enterDialogModal(state, `npc:${result.npcId}`);
       break;
     }
 
     case 'sign':
       showDialog(state.ui, 'Sign', [result.message]);
-      state.paused = true;
       playSfx(state.sfx, 'dialog_open');
       _lastDialogNpcId = null;
       speakLine(state.voice, result.message, null);
+      enterDialogModal(state, 'sign');
       break;
 
     case 'quiz_gate': {
       // Quiz gate — show dialog then trigger distance-based quiz (Doc 05 §3.5)
       showDialog(state.ui, 'Quiz Gate', [result.message]);
-      state.paused = true;
       playSfx(state.sfx, 'dialog_open');
       _lastDialogNpcId = null;
       speakLine(state.voice, result.message, null);
@@ -254,6 +261,12 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias, question: gateQuestion };
       if (gateQuestion) prefetchQuizRephrase(gateQuestion.question);
       state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
+      queueAfterClose(state, {
+        kind: 'quiz',
+        owner: 'quiz_gate',
+        gate: { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly },
+      });
+      enterDialogModal(state, 'quiz_gate');
       break;
     }
 
@@ -261,12 +274,13 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
     case 'shop': {
       const shopPersona = getShopPersona(result.shopAsset);
       showDialog(state.ui, shopPersona.displayName, [shopPersona.greetings[Math.floor(Math.random() * shopPersona.greetings.length)]]);
-      state.paused = true;
       playSfx(state.sfx, 'dialog_open');
       _lastDialogNpcId = null;
       speakLine(state.voice, result.message, null);
       // Queue trade panel to open after dialog closes
       state.pendingTrade = shopPersona.id;
+      queueAfterClose(state, { kind: 'trade', owner: shopPersona.id });
+      enterDialogModal(state, `shop:${shopPersona.id}`);
       break;
     }
 
@@ -284,8 +298,9 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       if (partialRestore > 0) {
         addToast(state.ui, cleanMsg, '#4caf50', 2000);
       }
-      // Start hygiene quiz for bonus full restore
+      // Start hygiene quiz for bonus full restore (sync activate → enterModal)
       startHygieneQuiz(state);
+      enterQuizModal(state, 'hygiene');
       break;
     }
 
@@ -310,6 +325,11 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       if (pastThreshold && offCooldown && Math.random() < chance) {
         // --- Trigger diarrhea illness event (#133) ---
         triggerDiarrheaEvent(state.diarrhea, state.player.x, state.player.y);
+        // L2 controlLock — blocks locomotion + world interact (PR5)
+        setControlLock(state, {
+          reason: 'diarrhea',
+          untilMs: state.diarrhea.diarrheaLockUntil,
+        });
 
         // Poop particle burst VFX (uses screen coords — resolved in render)
         _pendingPoopBurst = true;
@@ -335,10 +355,11 @@ export function handleInteraction(result: InteractionResult, state: GameState): 
       state.status.energy = Math.min(100, state.status.energy + energyGain);
       addToast(state.ui, '🐛 Gross! But you got a tiny bit of energy... +5', '#8bc34a', 3000);
 
-      // Queue insect safety quiz
+      // Queue insect safety quiz via pendingNext drain on dialog exit (PR5)
       state._pendingInsectQuiz = true;
       showDialog(state.ui, '🐛 Yuck!', ['That was disgusting... but is it actually safe to eat insects?']);
-      state.paused = true;
+      queueAfterClose(state, { kind: 'quiz', owner: 'insect' });
+      enterDialogModal(state, 'eat_worms');
       _lastDialogNpcId = null;
       break;
     }

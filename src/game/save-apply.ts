@@ -58,8 +58,7 @@ import { clearWeather } from '../rendering/weather';
 import { type GameState } from './game-state';
 import { type SaveData } from './save';
 import { type AgeBand } from '../types/content-pack.types';
-import { isFootprintWalkable, SPAWN_ESCAPE_RISE_PX } from '../engine/mechanics';
-import { resetPlayerMotor, resolveEmbedIfNeeded } from './player-motor';
+import { resetPlayMode } from './play-mode';
 
 // ─── Public API ──────────────────────────────────────────────
 
@@ -72,6 +71,17 @@ import { resetPlayerMotor, resolveEmbedIfNeeded } from './player-motor';
  * does not freeze the tab. Callers should show a loading spinner.
  */
 export async function applySaveData(state: GameState, data: SaveData): Promise<void> {
+  // Modes re-default empty on load (no mid-quiz resume) — PR5
+  resetPlayMode(state);
+  state.quiz.active = false;
+  state.ui.dialog.active = false;
+  state.trade.active = false;
+  state.knowledge.bookOpen = false;
+  state.pendingQuiz = null;
+  state.pendingGateQuiz = null;
+  state.pendingTrade = null;
+  state._pendingInsectQuiz = false;
+
   state.player.x = data.player.x;
   state.player.y = data.player.y;
   state.player.direction = data.player.direction;
@@ -152,14 +162,4 @@ export async function applySaveData(state: GameState, data: SaveData): Promise<v
   state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
   state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
   await ensureChunksAroundYielding(state);
-
-  // PR4: mid-session slot load parity with state-init — raw restore + gen
-  // drift can leave footprint illegal. Run constrained embed ladder once
-  // (never multi-frame noclip). Visual elevate only if still illegal (step 4).
-  resetPlayerMotor();
-  if (!isFootprintWalkable(state.player.x, state.player.y, state.chunks)) {
-    state.player.spawnEscape = true;
-    state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
-    resolveEmbedIfNeeded(state);
-  }
 }

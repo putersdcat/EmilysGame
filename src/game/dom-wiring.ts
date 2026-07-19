@@ -28,6 +28,7 @@ import {
   toggleSfxMute, toggleAmbienceMute, setSfxVolume, setAmbienceVolume,
 } from './audio/sfx';
 import { toggleVoice, setVoiceVolume, speakLine } from './audio/npc-voice';
+import { setBookOpen, setControlLock, locomotionAllowed } from './play-mode';
 
 // ─── Dependencies ────────────────────────────────────────────
 
@@ -67,18 +68,18 @@ export function wireHudEvents(deps: WireHudDeps): void {
   document.getElementById('btnBook')?.addEventListener('click', () => {
     if (!state.quiz.active && !state.ui.dialog.active) {
       toggleBook(state.knowledge);
-      state.paused = state.knowledge.bookOpen;
+      setBookOpen(state, state.knowledge.bookOpen);
     }
   });
 
   // ─── Character Customizer ──────────────────────────────
   const openCustomizer = async () => {
-    if (state.paused || state.quiz.active || state.ui.dialog.active) return;
-    state.paused = true;
+    if (!locomotionAllowed(state) || state.quiz.active || state.ui.dialog.active) return;
+    setControlLock(state, { reason: 'overlay' });
     const newVariation = await showCustomizer(state.playerVariation, true);
     if (!newVariation) {
       // Cancelled — resume game
-      state.paused = false;
+      setControlLock(state, null);
       return;
     }
     clearVariationCache('custom');
@@ -87,7 +88,7 @@ export function wireHudEvents(deps: WireHudDeps): void {
     state.expressionOverride = null;
     state.egoImg = loadCharacterSprite(newVariation, 0, false);
     state.lastAnimFrame = -1;
-    state.paused = false;
+    setControlLock(state, null);
     addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
   };
   document.getElementById('btnCustomize')?.addEventListener('click', openCustomizer);

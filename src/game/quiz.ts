@@ -329,12 +329,12 @@ export function pickQuizQuestion(
  * Picks a random question (biased by category weights), shuffles choices, optionally rephrases.
  *
  * **Critical contract:** the quiz becomes `active` *synchronously* before any
- * `await`. Callers set `state.paused = true` when opening a quiz; if we only
- * flipped `active` after LLM rephrase, a slow/hung rephrase left the player
- * paused with **no quiz UI and no movement** (hard softlock). Rephrase is
- * now a best-effort upgrade of `displayText` after the UI is already live.
+ * `await`. Callers then `enterModal({ kind:'quiz', ... })` via play-mode (PR5).
+ * If we only flipped `active` after LLM rephrase, a slow/hung rephrase left
+ * the player frozen with **no quiz UI and no movement** (hard softlock).
+ * Rephrase is now a best-effort upgrade of `displayText` after the UI is live.
  *
- * @returns false if no question was available (caller must unpause / recover)
+ * @returns false if no question was available (caller must not enterModal)
  * @param categoryBias - optional Record<category, weight> for weighted random selection
  * @param preSelectedQuestion - question already picked by pickQuizQuestion()
  *   at pendingQuiz-set time (2026-07-10). Callers that pre-pick should

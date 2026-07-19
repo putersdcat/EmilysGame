@@ -163,7 +163,7 @@ export function startHygieneQuiz(state: GameState): void {
     correctIndex: 0 as const,
     hint: 'Think about hygiene and health!',
   };
-  state.paused = true;
+  // PlayMode: caller (or drain) enters quiz modal after sync activate
   state._hygieneQuiz = true;
 }
 
@@ -196,6 +196,6 @@ export function startInsectQuiz(state: GameState): void {
     correctIndex: 0 as const,
     hint: 'Think about food safety!',
   };
-  state.paused = true;
+  // PlayMode: caller (or drain) enters quiz modal after sync activate
   state._insectQuiz = true;
 }

@@ -25,6 +25,7 @@ import { addToast } from '../ui/ui';
 import { showCustomizer } from '../ui/customizer';
 import { clearVariationCache, loadCharacterSprite } from '../asset-pipeline/sprites';
 import { type InputManager } from './input';
+import { enterModal, exitModal, topMode } from './play-mode';
 
 /**
  * Callbacks the pause menu needs from its host (typically main.ts).
@@ -45,10 +46,8 @@ export interface PauseMenuHandlers {
 /**
  * Show the pause menu overlay.
  *
- * Sets `state.paused = true` and binds all pause-menu buttons. To close,
- * the user clicks "Resume" (which sets `paused = false`). The Customize
- * flow handles cancel gracefully — if the customizer returns null,
- * the pause menu is reopened.
+ * Enters `pause_menu` via play-mode (PR5); DOM is a presentation slave.
+ * Resume / customize complete call exitModal('pause_menu').
  *
  * @param state     - the live GameState
  * @param inputMgr  - optional InputManager (passed through to Options)
@@ -59,13 +58,15 @@ export function showPauseMenu(
   _inputMgr: InputManager | undefined,
   handlers: PauseMenuHandlers,
 ): void {
-  state.paused = true;
+  const top = topMode(state);
+  if (top === 'play' || top.kind !== 'pause_menu') {
+    enterModal(state, { kind: 'pause_menu' });
+  }
   const menu = document.getElementById('pauseMenu')!;
   menu.style.display = 'flex';
 
   document.getElementById('pauseResume')!.onclick = () => {
-    menu.style.display = 'none';
-    state.paused = false;
+    exitModal(state, 'pause_menu');
   };
 
   document.getElementById('pauseSave')!.onclick = () => {
@@ -77,7 +78,7 @@ export function showPauseMenu(
     menu.style.display = 'none';
     const newVariation = await showCustomizer(state.playerVariation, true);
     if (!newVariation) {
-      // Cancelled — reopen pause menu
+      // Cancelled — reopen pause menu (stay on pause_menu frame)
       menu.style.display = 'flex';
       return;
     }
@@ -87,7 +88,7 @@ export function showPauseMenu(
     state.expressionOverride = null;
     state.egoImg = loadCharacterSprite(newVariation, 0, false);
     state.lastAnimFrame = -1;
-    state.paused = false;
+    exitModal(state, 'pause_menu');
     addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
   };
 

@@ -34,6 +34,7 @@ import { isFogEnabled, setFogEnabled } from '../rendering/fog';
 import { isTeslaMode, setTeslaMode, detectTeslaBrowser, shouldAutoShowTouchOverlay } from './platform';
 import { resetTutorial, initTutorial } from './tutorial';
 import { type GameState } from './game-state';
+import { resetPlayMode } from './play-mode';
 
 // ─── Public API ──────────────────────────────────────────────
 
@@ -227,6 +228,9 @@ export function showOptionsOverlay(
     resetTutorial();
     initTutorial();
     overlay.style.display = 'none';
-    if (_state) _state.paused = false;
+    if (_state) {
+      // PlayMode: drop freeze after tutorial replay (PR5)
+      resetPlayMode(_state);
+    }
   });
 }

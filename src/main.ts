@@ -14,7 +14,7 @@ import { feedEntropy } from './engine/gen';
 import { interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
 import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty, pickQuizQuestion } from './game/quiz';
 import { prefetchQuizRephrase } from './engine/llm';
-import { addToast, showDialog, advanceDialog, closeDialog } from './ui/ui';
+import { addToast, showDialog, advanceDialog } from './ui/ui';
 // B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
 // to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
 // used as a wireHudButtons callback.
@@ -58,7 +58,7 @@ import { showOptionsOverlay } from './game/options-overlay';
 // _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
 // ./game/wildlife-render.ts. getRevealedCreatures() lives there too
 // and is imported directly by debug-api.ts (no DI needed).
-import { getNpcPersona } from './config/npc.config';
+// getNpcPersona used via play-mode drain / tryOpenPendingTrade
 import { MICRO_TILE_DEFS } from './config/tiles.config';
 import { tickWaterAnimation, evictDistantChunks } from './rendering/terrain-cache';
 
@@ -84,7 +84,7 @@ import {
   triggerHint, tickBubbles, dismissBubble,
 } from './ui/thought-bubbles';
 import {
-  openTrade, tradeNavigate,
+  tradeNavigate,
   executeTrade, executeSell, getSellPrice, getSellableItems,
   syncTradeDOM,
   generateBarterQuiz, shouldTriggerBarter, barterNavigate, submitBarterAnswer,
@@ -106,7 +106,7 @@ import {
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
 // ./game/quiz-specials.ts. startWoundCareQuiz now lives in ./game/injury.ts
 // next to its WOUND_CARE_QUESTIONS data + getWoundCareQuestion shuffler.
-import { startInsectQuiz } from './game/quiz-specials';
+// startInsectQuiz drained via play-mode pendingNext (PR5)
 // B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + _pendingResolved
 // module-level state extracted from main.ts to ./game/chunk-lifecycle.ts.
 // Maintained as a thin wrapper in main.ts (see maybeLoadChunks) because it
@@ -188,7 +188,6 @@ import {
 import {
   DIARRHEA_CONFIG,
   isDiarrheaDebuffActive,
-  isDiarrheaLockActive,
 } from './game/illness';
 import {
   MOVE_STEP_MS,
@@ -196,6 +195,20 @@ import {
   integrateMovementFrame,
   resolveEmbedIfNeeded,
 } from './game/player-motor';
+import {
+  locomotionAllowed,
+  worldInteractAllowed,
+  exitModal,
+  enterModal,
+  enterDialogModal,
+  queueAfterClose,
+  setBookOpen,
+  tryOpenPendingTrade,
+  recoverOrphanPause,
+  tickDiarrheaControlLock,
+  syncDerivedPaused,
+  topMode,
+} from './game/play-mode';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
 import {
@@ -493,23 +506,23 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
         const gateBias = getQuizBias(state.knowledge);
         const nextQ = pickQuizQuestion(gateDiff, gateBias);
         if (!nextQ) {
-          // No eligible questions — unpause so player is never soft-locked
+          // No eligible questions — exit quiz so player is never soft-locked
           addToast(state.ui, '📖 No more questions right now — try again later!', '#ff9800', 2500);
           state.pendingGateQuiz = null;
           quizClose(state.quiz);
-          state.paused = false;
+          exitModal(state, 'quiz');
           return wasActive;
         }
         prefetchQuizRephrase(nextQ.question);
-        // startQuiz activates synchronously before any LLM await — never leave
-        // paused=true with quiz.active=false (input softlock).
+        // Gate wrong re-deal: stay on quiz frame; sync activate again (S/handshake).
         void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ).then((ok) => {
           if (!ok) {
             state.pendingGateQuiz = null;
-            state.paused = false;
+            exitModal(state, 'quiz');
           }
         });
-        state.paused = true;
+        // Stay on quiz stack frame — do not pop/push
+        syncDerivedPaused(state);
         return wasActive;
       } else if (state.quiz.result === 'wrong') {
         playSfx(state.sfx, 'quiz_wrong');
@@ -565,18 +578,21 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
       if (state.quiz.result !== 'idk') {
         state.quizStats.answered++;
       }
-      quizClose(state.quiz);
-      // After quiz, open trade panel if NPC had trades, otherwise unpause
-      if (state.pendingTrade && !state.knowledge.bookOpen) {
-        const tradePersona = getNpcPersona(state.pendingTrade);
+      const openBookAfter = state.quiz.result === 'idk' && state.knowledge.bookOpen;
+      // Drop pending trade if opening book (product rule: idk → book, not trade)
+      if (openBookAfter) {
         state.pendingTrade = null;
-        if (tradePersona && openTrade(state.trade, tradePersona)) {
-          state.paused = true;
-        } else {
-          state.paused = state.knowledge.bookOpen;
-        }
-      } else {
-        state.paused = state.knowledge.bookOpen;
+        // Remove queued trade frames so drain won't open shop after book
+        state.playMode.pendingNext = state.playMode.pendingNext.filter((f) => f.kind !== 'trade');
+      }
+      quizClose(state.quiz);
+      exitModal(state, 'quiz'); // drain pendingNext (trade) if any
+      // If idk opened book content but stack didn't get book (not queued), enter now
+      if (openBookAfter && !state.playMode.stack.some((f) => f.kind === 'book')) {
+        setBookOpen(state, true);
+      } else if (!openBookAfter && state.pendingTrade) {
+        // Legacy carrier: trade not pre-queued as pendingNext
+        tryOpenPendingTrade(state);
       }
     } else {
       quizSubmit(state.quiz);
@@ -609,46 +625,16 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
   if (state.ui.dialog.active) {
   if (justKeys.interact) {
     if (!advanceDialog(state.ui)) {
-      closeDialog(state.ui);
       cancelSpeech(state.voice); // Stop voice on dialog close (#76)
       setDialogNpc(null); // Stop mouth animation (#113)
       playSfx(state.sfx, 'dialog_close');
-      // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
-      if (state.pendingQuiz) {
-        const pq = state.pendingQuiz;
-        state.pendingQuiz = null;
-        // pq.question (2026-07-10): pre-picked when pendingQuiz was set,
-        // so startQuiz() uses the SAME question its background rephrase
-        // prefetch was keyed on, instead of re-rolling a different one.
-        // Activate is synchronous inside startQuiz; recover pause if no question.
-        void startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias, pq.question).then((ok) => {
-          if (!ok) {
-            state.paused = false;
-            addToast(state.ui, '📖 No quiz available right now.', '#ff9800', 2500);
-          }
-        });
-        playSfx(state.sfx, 'quiz_start');
-        // Auto-read question for young age bands (#94)
-        _autoReadQuizQuestion(state);
-        // state.paused stays true for quiz (active is already true after sync start)
-      } else if (state._pendingInsectQuiz) {
-        // Insect safety quiz after eating worms (#110 Phase 3)
-        state._pendingInsectQuiz = false;
-        startInsectQuiz(state);
+      // exitModal pops dialog + drains pendingNext via content helpers (PR5 handshake)
+      exitModal(state, 'dialog');
+      if (state.quiz.active) {
         playSfx(state.sfx, 'quiz_start');
         _autoReadQuizQuestion(state);
-      } else if (state.pendingTrade) {
-        // Open trade panel directly (no quiz pending)
-        const persona = getNpcPersona(state.pendingTrade);
-        state.pendingTrade = null;
-        if (persona && openTrade(state.trade, persona)) {
-          playSfx(state.sfx, 'shop_open');
-          // state.paused stays true for trade
-        } else {
-          state.paused = false;
-        }
-      } else {
-        state.paused = false;
+      } else if (state.trade.active) {
+        playSfx(state.sfx, 'shop_open');
       }
     } else {
       playSfx(state.sfx, 'dialog_advance');
@@ -840,24 +826,8 @@ function tickSubsystems(state: GameState, justKeys: any, dtMs: number = 16.67): 
 
 }
 
-/**
- * Check the diarrhea control lock (#133): when locked, the player
- * cannot move or interact until the lock expires (real-time ms).
- * Returns true if input should be absorbed (caller must endFrame + return).
- */
-function handleDiarrheaControlLock(state: GameState): boolean {
-  if (!state.diarrhea.diarrheaLocked) return false;
-  if (!isDiarrheaLockActive(state.diarrhea)) {
-    // Lock expired — recover
-    state.diarrhea.diarrheaLocked = false;
-    setDiarrheaOverlay(false);
-    addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
-    playSfx(state.sfx, 'pickup_item'); // relief SFX
-    return false;
-  }
-  // Still locked — caller will skip the rest of the frame
-  return true;
-}
+// Diarrhea control lock is owned by play-mode controlLock (PR5).
+// tickDiarrheaControlLock + setControlLock on trigger; locomotionAllowed gates move.
 
 /**
  * Handle player movement (or idle state) for the current frame.
@@ -987,7 +957,6 @@ function handleSpaceInteraction(state: GameState, justKeys: any): void {
       ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
       : `You spotted a ${species.name}! ${species.emoji}`;
     showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
-    state.paused = true;
     playSfx(state.sfx, 'wildlife_discover');
     setLastDialogNpcId(null);
     speakLine(state.voice, wildlifeLine, null);
@@ -1006,7 +975,9 @@ function handleSpaceInteraction(state: GameState, justKeys: any): void {
         question,
       };
       if (question) prefetchQuizRephrase(question.question);
+      queueAfterClose(state, { kind: 'quiz', owner: `wildlife_${species.id}` });
     }
+    enterDialogModal(state, `wildlife:${species.id}`);
     return;
   }
 
@@ -1071,60 +1042,62 @@ function update(state: GameState, input: InputManager, dtMs: number = 16.67): vo
   // Edge-detected keys for single-fire actions
   const justKeys = input.justPressed();
 
-  // ── Modal / play-mode gate ────────────────────────────────────
-  // Single place that decides whether locomotion may run. Orphan
-  // `paused=true` with no owning modal used to freeze keyboard forever
-  // (classic startQuiz-await softlock). Recover to play automatically.
-  if (state.knowledge.bookOpen) {
+  // ── Layer 2 PlayMode gate (PR5) ───────────────────────────────
+  // Modal handlers run by content active / topMode. Locomotion + world
+  // Space gated by locomotionAllowed / worldInteractAllowed (stack +
+  // controlLock). Diarrhea/chunk_rebuild are controlLock. tickSubsystems
+  // still runs every frame (status/audio/dt).
+
+  // Expire diarrhea controlLock (toast on transition out)
+  const hadDiarrheaLock = state.playMode.controlLock?.reason === 'diarrhea'
+    || state.diarrhea.diarrheaLocked;
+  const diarrheaLocked = tickDiarrheaControlLock(state);
+  if (hadDiarrheaLock && !diarrheaLocked && !state.diarrhea.diarrheaLocked) {
+    setDiarrheaOverlay(false);
+    addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
+    playSfx(state.sfx, 'pickup_item');
+  }
+
+  // Book modal input: early-out locomotion (book UI is DOM)
+  if (state.knowledge.bookOpen || (topMode(state) !== 'play' && (topMode(state) as { kind?: string }).kind === 'book')) {
+    // Keep stack in sync if knowledge flag set without frame
+    if (state.knowledge.bookOpen && !state.playMode.stack.some((f) => f.kind === 'book')) {
+      enterModal(state, { kind: 'book' });
+    }
     input.endFrame();
+    _clearExtraKeys();
     return;
   }
 
   if (handleQuizInput(state, justKeys)) {
     input.endFrame();
+    _clearExtraKeys();
     return;
   }
 
   if (handleDialogInput(state, justKeys)) {
     input.endFrame();
+    _clearExtraKeys();
     return;
   }
 
   if (handleTradeInput(state, justKeys, input)) {
-    input.endFrame();
+    // handleTradeInput already endFrame when active
+    _clearExtraKeys();
     return;
   }
 
-  // --- Diarrhea control lock check (#133) ---
-  if (handleDiarrheaControlLock(state)) {
-    input.endFrame();
-    return;
+  // Safety net (one release): orphan paused with empty stack + no lock
+  recoverOrphanPause(state);
+
+  // Locomotion + world interact only when PlayMode allows
+  if (locomotionAllowed(state)) {
+    handleMovement(state, input, dtMs);
   }
 
-  // Hard pause only when a real owner holds it (pause menu / open quiz UI).
-  // If paused but nothing modal is active, clear the orphan and continue play.
-  if (state.paused) {
-    const pauseMenuOpen = document.getElementById('pauseMenu')?.style.display === 'flex';
-    const modalOwner =
-      state.quiz.active ||
-      state.ui.dialog.active ||
-      state.trade.active ||
-      state.knowledge.bookOpen ||
-      pauseMenuOpen;
-    if (!modalOwner) {
-      // Orphan pause (e.g. quiz failed to start, async race) — free the player
-      state.paused = false;
-    } else {
-      input.endFrame();
-      _clearExtraKeys();
-      return;
-    }
+  if (worldInteractAllowed(state)) {
+    handleSpaceInteraction(state, justKeys);
   }
-
-  handleMovement(state, input, dtMs);
-
-  handleSpaceInteraction(state, justKeys);  // --- Toggle Debug (F3) ---
-  // Handled in extended input listener below
 
   // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
   tickSubsystems(state, justKeys, dtMs);

@@ -53,6 +53,7 @@ import { ensureChunksAroundYielding, clearPendingResolved } from './chunk-lifecy
 import { resetBubbleTriggerState } from './bubble-triggers';
 import { resetInteractionState } from './interaction-handler';
 import { type GameState } from './game-state';
+import { resetPlayMode } from './play-mode';
 
 // ─── Public API ──────────────────────────────────────────────
 
@@ -89,6 +90,7 @@ export async function resetGameState(state: GameState): Promise<void> {
   state.pendingGateQuiz = null;
   state.trade = createTradeState();
   state.pendingTrade = null;
+  resetPlayMode(state);
   state.status = createPlayerStatus();
   state.injury = createInjuryState();
   resetTickCounter();

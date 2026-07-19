@@ -39,6 +39,7 @@ import { type SfxState } from './audio/sfx';
 import { type VoiceState } from './audio/npc-voice';
 import { type AgeProfile } from './age-profile';
 import { type DiarrheaState } from './illness';
+import type { PlayModeState } from './play-mode';
 
 // ─── GameState Interface ────────────────────────────────────
 
@@ -85,7 +86,14 @@ export interface GameState {
   fps: number;
   lastFpsTime: number;
   fpsCounter: number;
-  paused: boolean;          // True when dialog/quiz active
+  /**
+   * Derived play freeze for one-release compat.
+   * SSOT is `playMode` (stack / controlLock). Written only by play-mode.ts
+   * via syncDerivedPaused. Prefer locomotionAllowed() / worldInteractAllowed().
+   */
+  paused: boolean;
+  /** L2 PlayMode ownership — stack + pendingNext + controlLock (PR5). */
+  playMode: PlayModeState;
   initialized: boolean;
   // Perf tracking: avoid redundant work
   lastAnimFrame: number;
@@ -218,6 +226,7 @@ export function createGameState(deps: CreateGameStateDeps): GameState {
     lastFpsTime: performance.now(),
     fpsCounter: 0,
     paused: false,
+    playMode: { stack: [], pendingNext: [], controlLock: null },
     initialized: true,
     lastAnimFrame: -1,
     lastFacingPose: 'front' as FacingPose,

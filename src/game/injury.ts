@@ -182,7 +182,7 @@ export function startWoundCareQuiz(state: import('./game-state').GameState, wq: 
     correctIndex: 0 as const,
     hint: 'Think about first aid!',
   };
-  state.paused = true;
+  // PlayMode: caller enters quiz modal after sync activate (PR5)
   // Mark this as a wound-care quiz for bonus logic
   state._woundCareQuiz = true;
 }

@@ -15,6 +15,7 @@ import { saveToSlot, loadFromSlot, deleteSlot } from './save';
 import { applySaveData } from './save-apply';
 import { withWorldLoading } from './boot-loading';
 import { ensureChunksAround } from './chunk-lifecycle';
+import { setControlLock, resetPlayMode, syncDerivedPaused } from './play-mode';
 
 /** Slot save action: serialize state, persist to slot, mark UI dirty, toast. */
 export function makeSlotSaveHandler(state: GameState) {
@@ -44,8 +45,10 @@ export function makeSlotLoadHandler(state: GameState) {
     if (!data) return;
 
     loadInFlight = true;
-    const wasPaused = state.paused;
-    state.paused = true; // block handleMovement + boundary ensure while chunks rebuild
+    // Snapshot stack so we can restore pause_menu if it was open (S8)
+    const wasStack = state.playMode.stack.slice();
+    const wasPending = state.playMode.pendingNext.slice();
+    setControlLock(state, { reason: 'chunk_rebuild' });
 
     void withWorldLoading(() => applySaveData(state, data), 'Loading world…')
       .then(() => {
@@ -62,9 +65,17 @@ export function makeSlotLoadHandler(state: GameState) {
       })
       .finally(() => {
         loadInFlight = false;
-        // Restore prior pause (e.g. pause menu was open). Otherwise unpause
-        // so play resumes after load.
-        state.paused = wasPaused;
+        // Load does not resume mid-modal content — empty playMode, then
+        // restore stack only if it was pause_menu (DOM may still be open).
+        resetPlayMode(state);
+        const hadPauseMenu = wasStack.some((f) => f.kind === 'pause_menu');
+        if (hadPauseMenu) {
+          state.playMode.stack = wasStack.filter((f) => f.kind === 'pause_menu');
+          state.playMode.pendingNext = wasPending;
+          syncDerivedPaused(state);
+          const menu = document.getElementById('pauseMenu');
+          if (menu) menu.style.display = 'flex';
+        }
       });
   };
 }

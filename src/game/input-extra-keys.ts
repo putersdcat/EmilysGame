@@ -63,6 +63,13 @@ import { applyBandaid, getWoundCareQuestion, startWoundCareQuiz } from './injury
 import { setTransientExpression } from './expression';
 import { revealFogAround } from '../rendering/fog';
 import { ITEM_DEFS } from '../config/items.config';
+import {
+  setBookOpen,
+  exitModal,
+  clearPendingNext,
+  enterQuizModal,
+  topMode,
+} from './play-mode';
 
 /**
  * Handler dependencies that the caller (main.ts) wires in. Keeping
@@ -121,7 +128,7 @@ export function setupExtraKeys(
           setBlendIntensity(steps[nextIdx]);
         } else if (!state.quiz.active && !state.ui.dialog.active) {
           toggleBook(state.knowledge);
-          state.paused = state.knowledge.bookOpen;
+          setBookOpen(state, state.knowledge.bookOpen);
           // Close inventory if book opens
           if (state.knowledge.bookOpen && state.ui.showInventory) {
             state.ui.showInventory = false;
@@ -147,24 +154,27 @@ export function setupExtraKeys(
             closeTrade(state.trade);
             syncTradeDOM(state.trade, state.inventory);
             syncBarterQuizDOM(state.trade);
-            state.paused = false;
+            exitModal(state, 'trade');
           }
         } else if (state.knowledge.bookOpen) {
-          state.knowledge.bookOpen = false;
-          state.knowledge.currentArticleId = null;
-          state.paused = false;
+          setBookOpen(state, false);
         } else if (state.ui.showInventory) {
           state.ui.showInventory = false;
         } else if (state.ui.dialog.active) {
-          closeDialog(state.ui);
-          cancelSpeech(state.voice); // Cancel voice on escape close (#76)
+          // Cancel dialog — clear pending quiz/trade; do not drain queues
+          clearPendingNext(state);
           state.pendingQuiz = null;
           state.pendingGateQuiz = null;
           state.pendingTrade = null;
-          state.paused = false;
+          state._pendingInsectQuiz = false;
+          closeDialog(state.ui);
+          cancelSpeech(state.voice); // Cancel voice on escape close (#76)
+          exitModal(state, 'dialog');
+        } else if (topMode(state) !== 'play' && (topMode(state) as { kind: string }).kind === 'pause_menu') {
+          exitModal(state, 'pause_menu');
         } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
+          exitModal(state, 'pause_menu');
           document.getElementById('pauseMenu')!.style.display = 'none';
-          state.paused = false;
         } else {
           showPauseMenu(state, input, {
             onSave: () => deps.doSave(state),
@@ -221,6 +231,7 @@ export function setupExtraKeys(
               const wq = getWoundCareQuestion();
               // Use quiz system with custom wound-care question
               startWoundCareQuiz(state, wq);
+              enterQuizModal(state, 'wound_care');
             }
             break;
           }

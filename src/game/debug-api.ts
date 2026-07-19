@@ -102,6 +102,23 @@ import { getTimeSlot, getDiscoveredSpeciesArray } from './wildlife';
 import { getRevealedCreatures } from './wildlife-render';
 import { getBookContentStats, isPackContentLoaded, searchBookArticles, getBookArticlesBySubject } from '../ui/book-content';
 import { toggleBook, openArticle } from './knowledge';
+import {
+  setBookOpen,
+  enterQuizModal,
+  resetPlayMode,
+  locomotionAllowed,
+  worldInteractAllowed,
+  topMode,
+  enterModal,
+  exitModal,
+  queueAfterClose,
+  enterDialogModal,
+  recoverOrphanPause,
+  syncDerivedPaused,
+  setControlLock,
+} from './play-mode';
+import { showDialog } from '../ui/ui';
+import { startQuiz } from './quiz';
 import { getAgeProfileDebug, setAgeBand } from './age-profile';
 import { perfStats, getFrameBenchmark, resetFrameHistory } from '../engine/perf';
 import { isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
@@ -390,7 +407,39 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     openBookArticle: (id: string) => openArticle(state.knowledge, id),
     toggleBook: () => {
       toggleBook(state.knowledge);
-      state.paused = state.knowledge.bookOpen;
+      setBookOpen(state, state.knowledge.bookOpen);
+    },
+    resetPlayMode: () => resetPlayMode(state),
+    // PlayMode L2 (PR5)
+    getPlayMode: () => ({
+      stack: state.playMode.stack.map((f) => ({ ...f })),
+      pendingNext: state.playMode.pendingNext.map((f) => ({ ...f })),
+      controlLock: state.playMode.controlLock,
+      top: topMode(state),
+      locomotionAllowed: locomotionAllowed(state),
+      worldInteractAllowed: worldInteractAllowed(state),
+      paused: state.paused,
+    }),
+    locomotionAllowed: () => locomotionAllowed(state),
+    worldInteractAllowed: () => worldInteractAllowed(state),
+    enterModal: (frame: Parameters<typeof enterModal>[1]) => enterModal(state, frame),
+    exitModal: (kind: Parameters<typeof exitModal>[1]) => exitModal(state, kind),
+    queueAfterClose: (frame: Parameters<typeof queueAfterClose>[1]) => queueAfterClose(state, frame),
+    enterDialogModal: (owner: string) => enterDialogModal(state, owner),
+    enterQuizModal: (owner: string) => enterQuizModal(state, owner),
+    recoverOrphanPause: () => recoverOrphanPause(state),
+    syncDerivedPaused: () => syncDerivedPaused(state),
+    setControlLock: (lock: Parameters<typeof setControlLock>[1]) => setControlLock(state, lock),
+    /** Test helper: open dialog + enterModal handshake */
+    openTestDialog: (owner: string, lines: string[] = ['Hello']) => {
+      showDialog(state.ui, owner, lines);
+      enterDialogModal(state, owner);
+    },
+    /** Test helper: sync startQuiz + enterModal */
+    openTestQuiz: async (owner = 'test') => {
+      const ok = await startQuiz(state.quiz, 'easy', owner);
+      if (ok) enterQuizModal(state, owner);
+      return ok;
     },
     getBookContentStats,
     isPackContentLoaded,
@@ -430,6 +479,7 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     isPrefetchPending: (key: string) => isPrefetchPending(key),
     prefetchQuizRephrase: (originalQuestion: string) => prefetchQuizRephrase(originalQuestion),
     pickQuizQuestion: (difficulty: QuizDifficulty, bias?: Record<string, number>) => pickQuizQuestion(difficulty, bias),
+    getNpcPersona: (id: string) => getNpcPersona(id),
     getNpcFallbackResponses: (npcId: string) => getNpcPersona(npcId)?.fallbackResponses ?? null,
     npcChatResponse: (npcId: string, playerInput: string) => {
       const persona = getNpcPersona(npcId);
@@ -441,11 +491,17 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
     // see npc.ts's _cleanRephrase doc comment) -- no LLM call, directly testable.
     cleanRephraseForTests: (raw: string, originalQuestion: string) => _cleanRephraseForTests(raw, originalQuestion),
     // Outhouse/hygiene debug (#110)
-    startHygieneQuiz: () => startHygieneQuiz(state),
+    startHygieneQuiz: () => {
+      startHygieneQuiz(state);
+      enterQuizModal(state, 'hygiene');
+    },
     getHygieneQuizActive: () => state._hygieneQuiz === true,
     // Stream/worm debug (#110 Phase 3, #133 illness chain)
     getInsectQuestions: () => getInsectQuestions(),
-    startInsectQuiz: () => startInsectQuiz(state),
+    startInsectQuiz: () => {
+      startInsectQuiz(state);
+      enterQuizModal(state, 'insect');
+    },
     getStreamDrinkCount: () => state.diarrhea.streamDrinkCount,
     getDiarrheaActive: () => state.diarrhea.diarrheaUntil > performance.now(),
     getDiarrheaLocked: () => state.diarrhea.diarrheaLocked && performance.now() < state.diarrhea.diarrheaLockUntil,

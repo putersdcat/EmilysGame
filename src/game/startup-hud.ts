@@ -26,6 +26,7 @@ import {
 } from './slot-actions';
 import { noteTerrainBake } from './boot-marks';
 import { setTerrainBakeHook } from '../rendering/terrain-cache';
+import { setBookOpen } from './play-mode';
 
 // ─── Localstorage keys ──────────────────────────────────────
 /** localStorage key for the user-saved fog-of-war toggle (#127). */
@@ -92,5 +93,11 @@ export function wireStartupHud(state: GameState, input: InputManager): void {
 
   // B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
   // ./game/dom-wiring.ts. See wireHudEvents() for the full wiring.
-  wireHudEvents({ state, input, onBookClose: () => { state.paused = false; } });
+  wireHudEvents({
+    state,
+    input,
+    onBookClose: () => {
+      setBookOpen(state, false);
+    },
+  });
 }
