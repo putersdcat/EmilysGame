@@ -91,16 +91,14 @@ import {
   syncBarterQuizDOM, getTradeDialog,
 } from './game/trading';
 import {
-  tickStatus, getDebuffs,
+  tickStatus,
   CRITICAL_THRESHOLD,
 } from './game/status';
 import {
   triggerInjuryFlash,
-  setDiarrheaOverlay,
 } from './rendering/debuff-visuals';
 import {
   checkHazardInjury, applyWoundQuizBonus,
-  getInjurySpeedMult,
 } from './game/injury';
 // B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
 // _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
@@ -186,33 +184,27 @@ import {
 // B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
 // extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
 import {
-  DIARRHEA_CONFIG,
-  isDiarrheaDebuffActive,
-} from './game/illness';
-import {
   MOVE_STEP_MS,
   MOVE_MAX_CATCHUP_MS,
-  integrateMovementFrame,
-  resolveEmbedIfNeeded,
   takeInjectedDtMs,
   noteDtClamped,
   noteSimDtRaw,
   finalizeInjectFrameIfActive,
 } from './game/player-motor';
 import {
-  locomotionAllowed,
-  worldInteractAllowed,
   exitModal,
-  enterModal,
   enterDialogModal,
   queueAfterClose,
   setBookOpen,
   tryOpenPendingTrade,
-  recoverOrphanPause,
-  tickDiarrheaControlLock,
   syncDerivedPaused,
-  topMode,
 } from './game/play-mode';
+import {
+  runPlayFrame,
+  type PlayFrameHooks,
+  type MoveResult,
+  type MovementVector,
+} from './game/play-kernel';
 // B5 micro-slice 11.3 (#268): transient expression system extracted to
 // circular dependency with main.ts GameState definition.
 import {
@@ -381,8 +373,9 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
  * B5 micro-slice 11.28 (#268): extracted from update() in main.ts.
  * Manages: numeric/R key shortcuts, quiz result branch (correct/wrong/idk),
  * quiz reward application, post-quiz flow (trade or unpause).
- * Returns true if a quiz is active and handled input (caller should
- * call input.endFrame() and return early).
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a quiz was active at entry (wasActive); return value is
+ * informational only after play-kernel PR1 (pipeline never aborts).
  */
 function handleQuizInput(state: GameState, justKeys: any): boolean {
   // #4 fix (Step 4 gameplay audit, 2026-07-10): capture BEFORE the body
@@ -488,15 +481,19 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
           // shared by every quiz_gate; walkability is cell SSOT only (PR3).
           resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
           state.pendingGateQuiz = null;
-          addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
+          // Keep gate-open toast ≥ celebration duration so a hitchy doSave
+          // cannot expire it before the player (or Playwright) sees it.
+          addToast(state.ui, '🚪 The gate opens!', '#64b5f6', 4000);
           if (state.quizStats.correct === 1) {
             addToast(state.ui, '🌟 First gate conquered! The world is a little bigger now.', '#ce93d8', 3500);
           } else if (state.streak.consecutiveCorrect >= 3) {
             addToast(state.ui, '🔥 Brain streak! The gate practically bowed.', '#ffab40', 2800);
           }
           playSfx(state.sfx, 'gate_open');
-          // Persist progress immediately so a quit mid-chunk doesn't re-lock gates
-          doSave(state);
+          // Persist progress so a quit mid-chunk doesn't re-lock gates.
+          // Defer off the interact frame so toast DOM + setTimeouts aren't
+          // starved by a synchronous localStorage write hitch.
+          setTimeout(() => doSave(state), 0);
         }
       } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
         // Wrong at a gate: keep the gate pending and deal another question
@@ -618,11 +615,9 @@ function handleQuizInput(state: GameState, justKeys: any): boolean {
  * B5 micro-slice 11.29 (#268): extracted from update() in main.ts.
  * Manages: dialog advance/close, post-dialog flow (pending quiz, trade,
  * or unpause).
- * Returns true if a dialog is active and handled input (caller must call
- * input.endFrame() and return early) -- see the fix note in
- * handleQuizInput above for why the returned value must reflect the
- * ACTIVE-AT-ENTRY state, not a hardcoded false (this function's
- * closeDialog() call flips state.ui.dialog.active to false mid-body).
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a dialog was active at entry (wasActive); informational
+ * only after play-kernel PR1 (pipeline never aborts on modal).
  */
 function handleDialogInput(state: GameState, justKeys: any): boolean {
   const wasActive = state.ui.dialog.active;
@@ -656,11 +651,10 @@ function handleDialogInput(state: GameState, justKeys: any): boolean {
  * Handle input while a trade panel is active.
  * B5 micro-slice 11.30 (#268): extracted from update() in main.ts.
  * Manages: barter quiz input, sell/buy navigation, post-trade flow.
- * The 'input' param is needed for the inner barter-quiz early-return.
- * Returns true if a trade is active and handled input (caller must
- * call input.endFrame() and return early).
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a trade is active; informational only after play-kernel PR1.
  */
-function handleTradeInput(state: GameState, justKeys: any, input: InputManager): boolean {
+function handleTradeInput(state: GameState, justKeys: any): boolean {
   if (state.trade.active) {
   // Barter quiz active — handle quiz input first (#112 Phase 3)
   if (state.trade.barterQuiz) {
@@ -679,7 +673,6 @@ function handleTradeInput(state: GameState, justKeys: any, input: InputManager):
     }
     syncBarterQuizDOM(state.trade);
     syncTradeDOM(state.trade, state.inventory);
-    input.endFrame();
     return true;
   }
 
@@ -730,7 +723,6 @@ function handleTradeInput(state: GameState, justKeys: any, input: InputManager):
   }
   // Escape handled in global keydown handler
   syncTradeDOM(state.trade, state.inventory);
-  input.endFrame();
   return true;
   }
   return false;
@@ -845,111 +837,123 @@ function shouldPlayWallBump(): boolean {
 }
 
 /**
- * Handle player movement (or idle state) for the current frame.
- * Locomotion owned by `player-motor.ts` (substeps + stuck recovery).
- * This wrapper owns presentation side-effects: footsteps, sink, wall bump,
- * facing sprites, camera, chunk load, auto-collect.
+ * Movement presentation after motor integrate (runPlayFrame phase 8).
+ * Footsteps, sink, wall bump, facing sprites, camera, chunk load, auto-collect.
+ * Motor integrate is owned by runPlayFrame — do not call integrate here.
  */
-function handleMovement(state: GameState, input: InputManager, dtMs: number = 16.67): void {
-  const mv = input.getMovementVector();
-  const wantsMove = mv.dx !== 0 || mv.dy !== 0;
-
-  const frameMs = Math.min(Math.max(dtMs, 0), MOVE_MAX_CATCHUP_MS);
+function onMovementPresentation(
+  state: GameState,
+  result: MoveResult,
+  simDtMs: number,
+  mv: MovementVector,
+): void {
+  const frameMs = Math.min(Math.max(simDtMs, 0), MOVE_MAX_CATCHUP_MS);
   const frameDt = frameMs / MOVE_STEP_MS;
+  const { anyMoved, lastAttemptX, lastAttemptY } = result;
 
-  if (!wantsMove) {
-    // PR4: idle frames still heal embeds (load/gen drift without requiring WASD)
-    resolveEmbedIfNeeded(state);
-    updatePlayerVisuals(state, mv, false, frameMs);
-    resetFootstepCounter();
-  } else {
-    markFirstMovableIfNeeded();
+  markFirstMovableIfNeeded();
 
-    const debuffs = getDebuffs(state.status);
-    const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = isDiarrheaDebuffActive(state.diarrhea) ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-    const speedMult = debuffs.speedMult * injuryMult * diarrheaMult;
+  if (anyMoved) {
+    const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+    const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
+    const surface = footTileDef?.surface ?? 'grass';
+    playFootstep(state.sfx, surface, frameMs);
 
-    const { anyMoved, lastAttemptX, lastAttemptY } = integrateMovementFrame(
-      state, mv, frameMs, speedMult,
-    );
-
-    if (anyMoved) {
-      const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
-      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
-      const surface = footTileDef?.surface ?? 'grass';
-      playFootstep(state.sfx, surface, frameMs);
-
-      const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
-      if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
-        state.player.sinkDepth = 4;
-      } else if (state.player.spawnEscape) {
-        state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
-      } else {
-        state.player.sinkDepth = 0;
-      }
+    const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+    if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
+      state.player.sinkDepth = 4;
+    } else if (state.player.spawnEscape) {
+      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
     } else {
-      // Fully blocked this frame. Rate-limit bump SFX — firing every rAF at
-      // 60fps while held into a fence is an audio/feel "controls are broken"
-      // experience (not a collision correctness issue).
-      if (shouldPlayWallBump()) {
-        playSfx(state.sfx, 'wall_bump');
-      }
-      const hitCell = getCellAt(Math.floor(lastAttemptX), Math.floor(lastAttemptY), state.chunks);
-      const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
-      const hitKey = hitCell?.cell.assetKey;
-      if (
-        hitKey === 'quiz_gate' ||
-        hitKey === 'door_locked' ||
-        hitKey === 'toll_gate' ||
-        hitKey === 'door_gate' ||
-        hitKey === 'barricade'
-      ) {
-        if (hitKey === 'barricade') triggerHint('need_crowbar');
-        else triggerHint('near_gate');
-        const tcx = Math.floor(lastAttemptX);
-        const tcy = Math.floor(lastAttemptY);
-        const pcx = Math.floor(state.player.x);
-        const pcy = Math.floor(state.player.y);
-        const fdx = Math.sign(tcx - pcx);
-        const fdy = Math.sign(tcy - pcy);
-        if (fdx !== 0 || fdy !== 0) {
-          state.player.facingDx = fdx;
-          state.player.facingDy = fdy;
-        }
-      }
-      const hazardDmg = hitDef?.hazardDamage ?? 0;
-      if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
-        const label = hitDef?.hazardLabel ?? 'something sharp';
-        playSfx(state.sfx, 'ouch');
-        triggerHint('ouch_injury');
-        setTransientExpression(state, 'surprised', 3000);
-        triggerInjuryFlash();
-        addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
-        if (state.injury.injuryCount === 5) {
-          addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 10) {
-          addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 25) {
-          addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
-        }
+      state.player.sinkDepth = 0;
+    }
+  } else {
+    // Fully blocked this frame. Rate-limit bump SFX — firing every rAF at
+    // 60fps while held into a fence is an audio/feel "controls are broken"
+    // experience (not a collision correctness issue).
+    if (shouldPlayWallBump()) {
+      playSfx(state.sfx, 'wall_bump');
+    }
+    const hitCell = getCellAt(Math.floor(lastAttemptX), Math.floor(lastAttemptY), state.chunks);
+    const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+    const hitKey = hitCell?.cell.assetKey;
+    if (
+      hitKey === 'quiz_gate' ||
+      hitKey === 'door_locked' ||
+      hitKey === 'toll_gate' ||
+      hitKey === 'door_gate' ||
+      hitKey === 'barricade'
+    ) {
+      if (hitKey === 'barricade') triggerHint('need_crowbar');
+      else triggerHint('near_gate');
+      const tcx = Math.floor(lastAttemptX);
+      const tcy = Math.floor(lastAttemptY);
+      const pcx = Math.floor(state.player.x);
+      const pcy = Math.floor(state.player.y);
+      const fdx = Math.sign(tcx - pcx);
+      const fdy = Math.sign(tcy - pcy);
+      if (fdx !== 0 || fdy !== 0) {
+        state.player.facingDx = fdx;
+        state.player.facingDy = fdy;
       }
     }
-
-    updatePlayerVisuals(state, mv, true, frameMs);
-
-    const camLerp = 1 - Math.pow(1 - 0.15, frameDt);
-    state.camera.x += (state.player.x - state.camera.x) * camLerp;
-    state.camera.y += (state.player.y - state.camera.y) * camLerp;
-
-    maybeLoadChunks(state);
+    const hazardDmg = hitDef?.hazardDamage ?? 0;
+    if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
+      const label = hitDef?.hazardLabel ?? 'something sharp';
+      playSfx(state.sfx, 'ouch');
+      triggerHint('ouch_injury');
+      setTransientExpression(state, 'surprised', 3000);
+      triggerInjuryFlash();
+      addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
+      if (state.injury.injuryCount === 5) {
+        addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 10) {
+        addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 25) {
+        addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+      }
+    }
   }
+
+  updatePlayerVisuals(state, mv, true, frameMs);
+
+  const camLerp = 1 - Math.pow(1 - 0.15, frameDt);
+  state.camera.x += (state.player.x - state.camera.x) * camLerp;
+  state.camera.y += (state.player.y - state.camera.y) * camLerp;
+
+  maybeLoadChunks(state);
 
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
   if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
     handleInteraction(collected, state);
   }
 }
+
+/** Idle-frame presentation (embed already healed by runPlayFrame). */
+function onIdlePresentation(state: GameState, simDtMs: number): void {
+  const frameMs = Math.min(Math.max(simDtMs, 0), MOVE_MAX_CATCHUP_MS);
+  updatePlayerVisuals(state, { dx: 0, dy: 0, screenDx: 0, screenDy: 0 }, false, frameMs);
+  resetFootstepCounter();
+
+  const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
+  if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
+    handleInteraction(collected, state);
+  }
+}
+
+/** Wired PlayFrameHooks — content handlers never call endFrame. */
+const playFrameHooks: PlayFrameHooks = {
+  onQuizInput: (state, justKeys) => { handleQuizInput(state, justKeys); },
+  onDialogInput: (state, justKeys) => { handleDialogInput(state, justKeys); },
+  onTradeInput: (state, justKeys) => { handleTradeInput(state, justKeys); },
+  // Book UI is DOM-owned; stack/topMode freezes locomotion via entryTop.
+  onBookInput: undefined,
+  onPauseInput: undefined,
+  onMovementPresentation,
+  onIdlePresentation,
+  onWorldInteract: (state, justKeys) => { handleSpaceInteraction(state, justKeys); },
+  tickPlayWorld: (state, justKeys, simDtMs) => { tickSubsystems(state, justKeys, simDtMs); },
+};
 
 function handleSpaceInteraction(state: GameState, justKeys: any): void {
   // Allow Space while still moving — kids hold a key into a gate and press
@@ -1048,82 +1052,15 @@ function handleSpaceInteraction(state: GameState, justKeys: any): void {
 }
 
 
+/**
+ * Per-frame play update — delegates to play-kernel runPlayFrame (PR1).
+ * Pipeline never aborts; entryTop snapshot gates locomotion + world Space;
+ * single endFrame in finally. rAF / inject stay in gameLoop (PR2 moves them).
+ */
 function update(state: GameState, input: InputManager, dtMs: number = 16.67): void {
-  // Poll gamepad state each frame (#124)
-  input.pollGamepad();
-
-  // FPS is tracked in gameLoop from real rAF intervals (not here) so a
-  // hitchy second reports the true display rate instead of a misleading
-  // counter that can desync from what the player sees.
-
-  state.frameCount++;
-
-  // Edge-detected keys for single-fire actions
-  const justKeys = input.justPressed();
-
-  // ── Layer 2 PlayMode gate (PR5) ───────────────────────────────
-  // Modal handlers run by content active / topMode. Locomotion + world
-  // Space gated by locomotionAllowed / worldInteractAllowed (stack +
-  // controlLock). Diarrhea/chunk_rebuild are controlLock. tickSubsystems
-  // still runs every frame (status/audio/dt).
-
-  // Expire diarrhea controlLock (toast on transition out)
-  const hadDiarrheaLock = state.playMode.controlLock?.reason === 'diarrhea'
-    || state.diarrhea.diarrheaLocked;
-  const diarrheaLocked = tickDiarrheaControlLock(state);
-  if (hadDiarrheaLock && !diarrheaLocked && !state.diarrhea.diarrheaLocked) {
-    setDiarrheaOverlay(false);
-    addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
-    playSfx(state.sfx, 'pickup_item');
-  }
-
-  // Book modal input: early-out locomotion (book UI is DOM)
-  if (state.knowledge.bookOpen || (topMode(state) !== 'play' && (topMode(state) as { kind?: string }).kind === 'book')) {
-    // Keep stack in sync if knowledge flag set without frame
-    if (state.knowledge.bookOpen && !state.playMode.stack.some((f) => f.kind === 'book')) {
-      enterModal(state, { kind: 'book' });
-    }
-    input.endFrame();
-    _clearExtraKeys();
-    return;
-  }
-
-  if (handleQuizInput(state, justKeys)) {
-    input.endFrame();
-    _clearExtraKeys();
-    return;
-  }
-
-  if (handleDialogInput(state, justKeys)) {
-    input.endFrame();
-    _clearExtraKeys();
-    return;
-  }
-
-  if (handleTradeInput(state, justKeys, input)) {
-    // handleTradeInput already endFrame when active
-    _clearExtraKeys();
-    return;
-  }
-
-  // Safety net (one release): orphan paused with empty stack + no lock
-  recoverOrphanPause(state);
-
-  // Locomotion + world interact only when PlayMode allows
-  if (locomotionAllowed(state)) {
-    handleMovement(state, input, dtMs);
-  }
-
-  if (worldInteractAllowed(state)) {
-    handleSpaceInteraction(state, justKeys);
-  }
-
-  // Per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles)
-  tickSubsystems(state, justKeys, dtMs);
-
-  // Snapshot input for edge detection next frame
-  input.endFrame();
-  _clearExtraKeys(); // Clear numeric/R key queue (#94)
+  runPlayFrame(state, input, dtMs, playFrameHooks, {
+    clearExtraKeys: _clearExtraKeys,
+  });
 }
 
 // B5 micro-slice 11.19 (#268): handleInteraction (195 lines) + 2
