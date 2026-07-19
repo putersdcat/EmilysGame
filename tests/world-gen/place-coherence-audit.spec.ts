@@ -84,17 +84,10 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
       cells[oy + 2][ox + 2] = { assetKey: 'dirt', walkable: true, interactable: false };
 
       const gaps = findIllegalFenceGaps(cells, size);
-      const beforeKeys = cells.map((row) => row.map((c) => c.assetKey));
+      // Deep snapshot — audit must not mutate any cell field.
+      const beforeSnap = JSON.parse(JSON.stringify(cells));
       const audit = auditPlaceCoherence(cells);
-      const afterKeys = cells.map((row) => row.map((c) => c.assetKey));
-
-      // Audit must not mutate
-      let mutated = false;
-      for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-          if (beforeKeys[y][x] !== afterKeys[y][x]) mutated = true;
-        }
-      }
+      const afterSnap = JSON.parse(JSON.stringify(cells));
 
       return {
         gapCount: gaps.length,
@@ -102,11 +95,12 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
         p4Count: audit.counts.illegalFenceGaps,
         total: audit.counts.total,
         gapCell: cells[oy + 4][ox + 2].assetKey,
-        mutated,
+        beforeSnap,
+        afterSnap,
       };
     });
 
-    expect(result.mutated, 'audit is read-only').toBe(false);
+    expect(result.afterSnap, 'audit is read-only (deep cell equality)').toEqual(result.beforeSnap);
     expect(result.gapCell, 'dirt gap left in place (no repair)').toBe('dirt');
     expect(result.gapCount, 'illegal fence gap detected').toBeGreaterThanOrEqual(1);
     expect(result.p4Count).toBeGreaterThanOrEqual(1);
@@ -116,14 +110,12 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
   test('P4: declared path opening in barrier run is not illegal', async ({ page }) => {
     await waitForGame(page);
 
+    // Synthetic barrier run with a single dirt path cell, no adjacent functional
+    // gate — proves declaredOpeningCells allow-list (not hasFunctionalNearby).
     const result = await page.evaluate(async () => {
-      const { findIllegalFenceGaps, buildDeclaredOpeningCells } = await import(
-        '/engine/world/PlaceCoherence.ts'
-      );
-      const { FENCED_FARM } = await import('/engine/iso2-assemblies/catalog.ts');
-      const { stampAssemblyOntoCells } = await import('/engine/iso2-assemblies.ts');
+      const { findIllegalFenceGaps } = await import('/engine/world/PlaceCoherence.ts');
 
-      const size = 12;
+      const size = 7;
       const cells = Array.from({ length: size }, () =>
         Array.from({ length: size }, () => ({
           assetKey: 'grass',
@@ -131,33 +123,30 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
           interactable: false,
         })),
       );
-      const ox = 3;
-      const oy = 3;
-      stampAssemblyOntoCells(cells as any, 'fenced-farm', ox, oy);
 
-      const recipes = [{ recipe: FENCED_FARM, originX: ox, originY: oy }];
-      const declared = buildDeclaredOpeningCells(recipes);
-      const gapsWithDeclared = findIllegalFenceGaps(cells, size, declared);
+      // Horizontal fence run with one dirt punch-through at (3,3); no quiz_gate nearby.
+      // Continuity: fence at x=1..2 and x=4..5 on y=3.
+      for (const x of [1, 2, 4, 5]) {
+        cells[3][x] = { assetKey: 'fence', walkable: false, interactable: false };
+      }
+      cells[3][3] = { assetKey: 'dirt', walkable: true, interactable: false };
+
+      const declared = new Set(['3,3']);
       const gapsWithout = findIllegalFenceGaps(cells, size);
+      const gapsWithDeclared = findIllegalFenceGaps(cells, size, declared);
 
-      // Path flanks at south (1,4) and (3,4) relative are dirt between fences;
-      // without declared allow-list they may count as illegal gaps if no
-      // functional-nearby skip fires (center is quiz_gate so nearby skip applies).
       return {
-        declaredSize: declared.size,
-        gapsWithDeclared: gapsWithDeclared.length,
         gapsWithout: gapsWithout.length,
-        southCenter: cells[oy + 4][ox + 2].assetKey,
-        southLeft: cells[oy + 4][ox + 1].assetKey,
-        southRight: cells[oy + 4][ox + 3].assetKey,
+        gapsWithDeclared: gapsWithDeclared.length,
+        withoutAt: gapsWithout.map((g) => `${g.x},${g.y}`),
+        dirtKey: cells[3][3].assetKey,
       };
     });
 
-    expect(result.southCenter).toBe('quiz_gate');
-    expect(result.declaredSize).toBeGreaterThanOrEqual(3);
-    // Path flanks sit next to quiz_gate → functional-nearby skip; still zero illegal.
-    expect(result.gapsWithDeclared).toBe(0);
-    expect(result.gapsWithout).toBe(0);
+    expect(result.dirtKey).toBe('dirt');
+    expect(result.gapsWithout, 'raw gap is illegal without allow-list').toBeGreaterThanOrEqual(1);
+    expect(result.withoutAt).toContain('3,3');
+    expect(result.gapsWithDeclared, 'declared path opening is not illegal').toBe(0);
   });
 
   test('P2: modular recipe openings match after stamp (fenced-farm, gatehouse)', async ({
@@ -312,10 +301,9 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     expect(result.withGateCount, 'ring with quiz_gate is not P1').toBe(0);
   });
 
-  test('P5 soft: deferred — audit harness documents draw gate as non-hard in PR1', async () => {
-    // P5 (on-screen functional gates produce draw commands) is intentionally
-    // soft/deferred until PR4 (draw integrity). This test locks the decision.
-    expect(true, 'P5 hard-fail deferred to PR4').toBe(true);
+  // P5 (on-screen functional gates produce draw commands) deferred to PR4 draw integrity.
+  test.skip('P5 soft: deferred to PR4 draw integrity', async () => {
+    // Placeholder: when PR4 lands, assert on-screen quiz_gate/door produces a draw cmd.
   });
 
   test('P7 + matrix: fixed-seed chunk samples report illegal fence gaps (may be >0)', async ({
@@ -328,11 +316,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
         const gen = await import('/engine/gen.ts');
         const pc = await import('/engine/world/PlaceCoherence.ts');
         const sh = await import('/engine/iso2-assemblies.ts');
-        const {
-          auditPlaceCoherence,
-          findIllegalFenceGaps,
-          auditHomesteadSouth,
-        } = pc;
+        const { auditPlaceCoherence, auditHomesteadSouth, findIllegalFenceGaps } = pc;
         const { STARTER_HOMESTEAD_ORIGIN, STARTER_HOMESTEAD_RECIPE } = sh;
 
         function runOnce() {
@@ -341,6 +325,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
           gen.restoreEntropyBuffer('');
 
           let totalIllegalGaps = 0;
+          let totalIllegalGapsRaw = 0;
           let totalP1 = 0;
           let totalP3 = 0;
           let totalViolations = 0;
@@ -348,7 +333,10 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
             cx: number;
             cy: number;
             biomeName: string;
+            /** Declared-aware P4 (audit.counts) — matrix SSOT */
             illegalFenceGaps: number;
+            /** Raw P4 without allow-list (diagnostic only) */
+            illegalFenceGapsRaw: number;
             enclosureWithoutOpening: number;
             walkablePolicyMismatches: number;
             total: number;
@@ -373,9 +361,11 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
               chunkY: cy,
               recipes,
             });
-            const gaps = findIllegalFenceGaps(cells);
+            // Raw (no allow-list) for diagnostic log only — not matrix SSOT.
+            const rawGaps = findIllegalFenceGaps(cells);
 
-            totalIllegalGaps += gaps.length;
+            totalIllegalGaps += audit.counts.illegalFenceGaps;
+            totalIllegalGapsRaw += rawGaps.length;
             totalP1 += audit.counts.enclosureWithoutOpening;
             totalP3 += audit.counts.walkablePolicyMismatches;
             totalViolations += audit.counts.total;
@@ -384,14 +374,15 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
               cx,
               cy,
               biomeName: chunk.biomeName,
-              illegalFenceGaps: gaps.length,
+              illegalFenceGaps: audit.counts.illegalFenceGaps,
+              illegalFenceGapsRaw: rawGaps.length,
               enclosureWithoutOpening: audit.counts.enclosureWithoutOpening,
               walkablePolicyMismatches: audit.counts.walkablePolicyMismatches,
               total: audit.counts.total,
             });
           }
 
-          // Origin homestead P6 hard check inside matrix
+          // Origin homestead P6 under full gen (may be >0 until PR2).
           gen.setWordlist(wordlist);
           gen.setBiomeNoiseSeed(biomeSeed);
           gen.restoreEntropyBuffer('');
@@ -405,6 +396,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
           return {
             chunksSampled: coords.length,
             totalIllegalGaps,
+            totalIllegalGapsRaw,
             totalP1,
             totalP3,
             totalViolations,
@@ -431,7 +423,7 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     expect(result.a.p6Violations).toBe(result.b.p6Violations);
     expect(result.a.p6Violations).toBeGreaterThanOrEqual(0);
 
-    // P7: matrix signature stable across two full runs
+    // P7: matrix signature stable across two full runs (declared-aware P4 SSOT)
     expect(result.a.matrixSignature, 'P7 matrix determinism').toBe(result.b.matrixSignature);
     expect(result.a.totalIllegalGaps).toBe(result.b.totalIllegalGaps);
     expect(result.a.totalViolations).toBe(result.b.totalViolations);
@@ -443,7 +435,8 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     // eslint-disable-next-line no-console
     console.log(
       `[place-coherence matrix] chunks=${result.a.chunksSampled} ` +
-        `illegalFenceGaps=${result.a.totalIllegalGaps} ` +
+        `illegalFenceGaps(declared-aware)=${result.a.totalIllegalGaps} ` +
+        `illegalFenceGapsRaw=${result.a.totalIllegalGapsRaw} ` +
         `P1=${result.a.totalP1} P3=${result.a.totalP3} ` +
         `totalViolations=${result.a.totalViolations} p6FullGen=${result.a.p6Violations}`,
     );

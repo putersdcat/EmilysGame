@@ -47,7 +47,7 @@ const DOOR_FAMILY_KEYS = new Set([
 ]);
 
 /** Barrier materials that form enclosure rings / runs. */
-const BARRIER_KEYS = new Set([
+export const BARRIER_KEYS = new Set([
   'fence',
   'wooden_fence',
   'wall',
@@ -85,8 +85,13 @@ function isPathLikeKey(assetKey: string): boolean {
   return PATH_OPENING_KEYS.has(assetKey);
 }
 
-function isBarrierKey(assetKey: string): boolean {
+/** True when assetKey is a fence/wall barrier material (enclosure runs). */
+export function isBarrierAssetKey(assetKey: string): boolean {
   return BARRIER_KEYS.has(assetKey);
+}
+
+function isBarrierKey(assetKey: string): boolean {
+  return isBarrierAssetKey(assetKey);
 }
 
 function keyAt(cells: CellData[][], x: number, y: number): string {
@@ -299,13 +304,89 @@ function isVertCorridorCell(cells: CellData[][], x: number, y: number): boolean 
 }
 
 /**
+ * True when (x,y) is a single-cell walkable dirt/grass punch-through in a
+ * continuous fence/wall run that `scanAndRepairFenceGaps` would seal.
+ *
+ * Detection only (no mutation). Shared SSOT for repair + place-coherence P4
+ * audit so geometry guards cannot drift.
+ *
+ * Policy (PR1+):
+ * - XOR opposite-barrier axis (horiz XOR vert)
+ * - Singleton punch-through only (corridor guard)
+ * - At least one side of the barrier run continues
+ * - Skip when a functional opening is already nearby (same as repair)
+ * - Does **not** consult declared recipe openings — callers apply that allow-list
+ *
+ * Returns false for OOB, non-path, blocked, item/npc, or non-candidate cells.
+ */
+export function isIllegalFenceGapCandidate(
+  cells: CellData[][],
+  x: number,
+  y: number,
+): boolean {
+  if (!inBounds(cells, x, y)) return false;
+  const cell = cells[y][x];
+  if (!cell) return false;
+  if (isFunctionalOpening(cell.assetKey)) return false;
+  // Only soft walkable corridor cells — not structures/items/NPCs.
+  if (!cell.walkable) return false;
+  if (!PATH_OPENING_KEYS.has(cell.assetKey)) return false;
+  if (cell.itemId || cell.npcId) return false;
+
+  const left = keyAt(cells, x - 1, y);
+  const right = keyAt(cells, x + 1, y);
+  const up = keyAt(cells, x, y - 1);
+  const down = keyAt(cells, x, y + 1);
+
+  const horizGap = isBarrierKey(left) && isBarrierKey(right);
+  const vertGap = isBarrierKey(up) && isBarrierKey(down);
+  // Exactly one opposite-barrier axis (not a cross / corner mash).
+  if (horizGap === vertGap) return false;
+
+  // Singleton punch-through: multi-cell corridors have adjacent path cells
+  // that also sit between the same parallel barrier pair.
+  if (horizGap) {
+    if (isHorizCorridorCell(cells, x, y - 1) || isHorizCorridorCell(cells, x, y + 1)) {
+      return false;
+    }
+    // Continuity: at least one side continues the horizontal barrier run.
+    const leftContinues =
+      isBarrierKey(keyAt(cells, x - 2, y)) ||
+      isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
+      isBarrierKey(keyAt(cells, x - 1, y + 1));
+    const rightContinues =
+      isBarrierKey(keyAt(cells, x + 2, y)) ||
+      isBarrierKey(keyAt(cells, x + 1, y - 1)) ||
+      isBarrierKey(keyAt(cells, x + 1, y + 1));
+    if (!leftContinues && !rightContinues) return false;
+  } else {
+    // vertGap
+    if (isVertCorridorCell(cells, x - 1, y) || isVertCorridorCell(cells, x + 1, y)) {
+      return false;
+    }
+    const upContinues =
+      isBarrierKey(keyAt(cells, x, y - 2)) ||
+      isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
+      isBarrierKey(keyAt(cells, x + 1, y - 1));
+    const downContinues =
+      isBarrierKey(keyAt(cells, x, y + 2)) ||
+      isBarrierKey(keyAt(cells, x - 1, y + 1)) ||
+      isBarrierKey(keyAt(cells, x + 1, y + 1));
+    if (!upContinues && !downContinues) return false;
+  }
+
+  // Adjacent functional gate already serves this run segment — not a bare hole.
+  if (hasFunctionalNearby(cells, x, y, 1)) return false;
+
+  return true;
+}
+
+/**
  * Find single-cell gaps in fence/wall runs (barrier left+right XOR up+down)
  * that are bare walkable dirt/grass and place `quiz_gate` when no functional
  * opening is nearby.
  *
- * Guards against parallel-corridor false positives: only singleton punch-throughs
- * (exactly one opposite-barrier axis; adjacent cells along the free axis must
- * not themselves be opposite-barrier path cells).
+ * Detection SSOT: {@link isIllegalFenceGapCandidate}. Mutation only here.
  *
  * Returns the number of gates placed.
  */
@@ -317,58 +398,7 @@ export function scanAndRepairFenceGaps(cells: CellData[][], size: number): numbe
     const rowLen = cells[y]?.length ?? 0;
     const w = Math.min(size, rowLen);
     for (let x = 0; x < w; x++) {
-      const cell = cells[y][x];
-      if (!cell) continue;
-      if (isFunctionalOpening(cell.assetKey)) continue;
-      // Only soft walkable corridor cells — not structures/items/NPCs.
-      if (!cell.walkable) continue;
-      if (!PATH_OPENING_KEYS.has(cell.assetKey)) continue;
-      if (cell.itemId || cell.npcId) continue;
-
-      const left = keyAt(cells, x - 1, y);
-      const right = keyAt(cells, x + 1, y);
-      const up = keyAt(cells, x, y - 1);
-      const down = keyAt(cells, x, y + 1);
-
-      const horizGap = isBarrierKey(left) && isBarrierKey(right);
-      const vertGap = isBarrierKey(up) && isBarrierKey(down);
-      // Exactly one opposite-barrier axis (not a cross / corner mash).
-      if (horizGap === vertGap) continue;
-
-      // Singleton punch-through: multi-cell corridors have adjacent path cells
-      // that also sit between the same parallel barrier pair.
-      if (horizGap) {
-        if (isHorizCorridorCell(cells, x, y - 1) || isHorizCorridorCell(cells, x, y + 1)) {
-          continue;
-        }
-        // Continuity: at least one side continues the horizontal barrier run.
-        const leftContinues =
-          isBarrierKey(keyAt(cells, x - 2, y)) ||
-          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x - 1, y + 1));
-        const rightContinues =
-          isBarrierKey(keyAt(cells, x + 2, y)) ||
-          isBarrierKey(keyAt(cells, x + 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y + 1));
-        if (!leftContinues && !rightContinues) continue;
-      } else {
-        // vertGap
-        if (isVertCorridorCell(cells, x - 1, y) || isVertCorridorCell(cells, x + 1, y)) {
-          continue;
-        }
-        const upContinues =
-          isBarrierKey(keyAt(cells, x, y - 2)) ||
-          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y - 1));
-        const downContinues =
-          isBarrierKey(keyAt(cells, x, y + 2)) ||
-          isBarrierKey(keyAt(cells, x - 1, y + 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y + 1));
-        if (!upContinues && !downContinues) continue;
-      }
-
-      if (hasFunctionalNearby(cells, x, y, 1)) continue;
-
+      if (!isIllegalFenceGapCandidate(cells, x, y)) continue;
       cells[y][x] = makeFunctionalCell('quiz_gate');
       placed++;
     }

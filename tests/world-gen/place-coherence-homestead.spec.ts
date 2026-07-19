@@ -203,7 +203,11 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
         `south=${result.southKeys.join(',')} counts=${JSON.stringify(result.auditCounts)}`,
     );
 
-    // When pipeline already preserves homestead, hard-lock it (future green tip).
+    // Soft-pin known broken tip under fixed seed 42 / α–π wordlist:
+    // late phases clobber south fence (p6Count≈5, gate≠quiz_gate).
+    // When pipeline preserves homestead (p6Count===0), hard-lock closed south.
+    // Soft baseline: still require measurable clobber while broken so CI notices
+    // if clobber disappears *or* if the south footprint shrinks unexpectedly.
     if (result.p6Count === 0) {
       expect(result.validationOk).toBe(true);
       expect(result.gateAsset).toBe('quiz_gate');
@@ -215,6 +219,26 @@ test.describe('P6 Homestead south perimeter (regression-locked)', () => {
         'fence',
         'fence',
         'fence',
+      ]);
+    } else {
+      // Known-broken baseline (PR1 tip): full gen still violates P6.
+      expect(result.p6Count, 'full-gen still clobbers homestead south until PR2').toBeGreaterThan(0);
+      expect(result.gateAsset, 'gate cell not quiz_gate while clobber active').not.toBe('quiz_gate');
+      // Soft golden for known tip shape (update when gen intentionally changes):
+      // south=grass,fence,fence,grass,grass,grass,flower · gate=grass · p6Count=5
+      expect(
+        result.p6Count,
+        `soft-pin p6Count baseline (was 5); south=${result.southKeys.join(',')}`,
+      ).toBe(5);
+      expect(result.gateAsset).toBe('grass');
+      expect(result.southKeys).toEqual([
+        'grass',
+        'fence',
+        'fence',
+        'grass',
+        'grass',
+        'grass',
+        'flower',
       ]);
     }
   });

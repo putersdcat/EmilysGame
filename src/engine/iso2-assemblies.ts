@@ -35,8 +35,11 @@ export type {
 } from './iso2-assemblies/catalog';
 export { ASSEMBLY_RECIPES, registerSceneRecipe } from './iso2-assemblies/catalog';
 export {
+  BARRIER_KEYS,
   FUNCTIONAL_OPENING_KEYS,
   PATH_OPENING_KEYS,
+  isBarrierAssetKey,
+  isIllegalFenceGapCandidate,
   repairSceneOpenings,
   scanAndRepairFenceGaps,
   validateSceneOpenings,

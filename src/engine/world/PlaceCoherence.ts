@@ -4,8 +4,9 @@
  * Epic PR1: report violations only. Do **not** mutate cells here.
  * Repairs wire into ChunkGenerator in PR2 (`runPlaceCoherencePass`).
  *
- * Reuses scene-invariants vocabulary (functional openings, barrier keys,
- * declared openings). Does not invent new gate kinds.
+ * Reuses scene-invariants vocabulary and gap detection SSOT
+ * (`isIllegalFenceGapCandidate`, `BARRIER_KEYS`, functional/path keys).
+ * Does not invent new gate kinds.
  *
  * @see memories/repo/design-place-coherence-epic-2026-07-19.md
  */
@@ -14,24 +15,19 @@ import type { CellData } from '../../types/game.types';
 import type { AssemblyOpening, AssemblyRecipe } from '../iso2-assemblies/catalog';
 import {
   FUNCTIONAL_OPENING_KEYS,
-  PATH_OPENING_KEYS,
+  isBarrierAssetKey,
+  isIllegalFenceGapCandidate,
   validateSceneOpenings,
   type SceneOpeningViolation,
 } from '../iso2-assemblies/scene-invariants';
+import {
+  STARTER_HOMESTEAD_OPENINGS,
+  STARTER_HOMESTEAD_ORIGIN,
+} from '../iso2-assemblies/starter-homestead';
 import { expectedWalkableDefault } from '../walkability-policy';
 
-// ─── Shared key sets (mirror scene-invariants barrier vocabulary) ─────────
+// ─── Contract families for walkable-policy audit (P3) ─────────────────────
 
-/** Barrier materials that form enclosure rings / runs. */
-const BARRIER_KEYS = new Set([
-  'fence',
-  'wooden_fence',
-  'wall',
-  'stone_wall',
-  'cathedral_wall',
-]);
-
-/** Contract families for walkable-policy audit (P3). */
 const POLICY_CONTRACT_KEYS = new Set([
   'water',
   'bridge',
@@ -123,61 +119,28 @@ function keyAt(cells: CellData[][], x: number, y: number): string {
   return cells[y][x].assetKey;
 }
 
-function isBarrierKey(assetKey: string): boolean {
-  return BARRIER_KEYS.has(assetKey);
-}
-
 function isFunctionalOpening(assetKey: string): boolean {
   return FUNCTIONAL_OPENING_KEYS.has(assetKey);
-}
-
-function isPathLikeKey(assetKey: string): boolean {
-  return PATH_OPENING_KEYS.has(assetKey);
 }
 
 function cellKey(x: number, y: number): string {
   return `${x},${y}`;
 }
 
-function isHorizCorridorCell(cells: CellData[][], x: number, y: number): boolean {
-  if (!inBounds(cells, x, y)) return false;
-  const cell = cells[y][x];
-  if (!cell.walkable || !isPathLikeKey(cell.assetKey)) return false;
-  return isBarrierKey(keyAt(cells, x - 1, y)) && isBarrierKey(keyAt(cells, x + 1, y));
-}
-
-function isVertCorridorCell(cells: CellData[][], x: number, y: number): boolean {
-  if (!inBounds(cells, x, y)) return false;
-  const cell = cells[y][x];
-  if (!cell.walkable || !isPathLikeKey(cell.assetKey)) return false;
-  return isBarrierKey(keyAt(cells, x, y - 1)) && isBarrierKey(keyAt(cells, x, y + 1));
-}
-
-function hasFunctionalNearby(
-  cells: CellData[][],
-  x: number,
-  y: number,
-  radius = 1,
-): boolean {
-  for (let dy = -radius; dy <= radius; dy++) {
-    for (let dx = -radius; dx <= radius; dx++) {
-      const cx = x + dx;
-      const cy = y + dy;
-      if (!inBounds(cells, cx, cy)) continue;
-      if (isFunctionalOpening(cells[cy][cx].assetKey)) return true;
-    }
-  }
-  return false;
-}
-
 // ─── P4: illegal fence / wall gaps (audit-only twin of scanAndRepairFenceGaps)
 
 /**
  * Find single-cell walkable dirt/grass punch-throughs in continuous fence/wall
- * runs that are **not** declared openings and have no nearby functional gate.
+ * runs that are **not** declared openings.
  *
- * Mirrors `scanAndRepairFenceGaps` detection (including corridor guards) but
- * never mutates the grid.
+ * Detection SSOT: {@link isIllegalFenceGapCandidate} from scene-invariants
+ * (same geometry + functional-nearby skip as `scanAndRepairFenceGaps`).
+ * Never mutates the grid.
+ *
+ * Functional-nearby policy (aligned with repair): a dirt cell next to an
+ * existing quiz_gate/door is **not** reported as P4 — the gate already serves
+ * that run segment. Declared path openings without a nearby functional gate
+ * are allow-listed only when present in `declaredOpeningCells`.
  */
 export function findIllegalFenceGaps(
   cells: CellData[][],
@@ -191,61 +154,10 @@ export function findIllegalFenceGaps(
     const rowLen = cells[y]?.length ?? 0;
     const w = Math.min(size ?? rowLen, rowLen);
     for (let x = 0; x < w; x++) {
-      const cell = cells[y][x];
-      if (!cell) continue;
-      if (isFunctionalOpening(cell.assetKey)) continue;
-      if (!cell.walkable) continue;
-      if (!PATH_OPENING_KEYS.has(cell.assetKey)) continue;
-      if (cell.itemId || cell.npcId) continue;
-
+      if (!isIllegalFenceGapCandidate(cells, x, y)) continue;
       if (declaredOpeningCells?.has(cellKey(x, y))) continue;
 
-      const left = keyAt(cells, x - 1, y);
-      const right = keyAt(cells, x + 1, y);
-      const up = keyAt(cells, x, y - 1);
-      const down = keyAt(cells, x, y + 1);
-
-      const horizGap = isBarrierKey(left) && isBarrierKey(right);
-      const vertGap = isBarrierKey(up) && isBarrierKey(down);
-      if (horizGap === vertGap) continue;
-
-      if (horizGap) {
-        if (isHorizCorridorCell(cells, x, y - 1) || isHorizCorridorCell(cells, x, y + 1)) {
-          continue;
-        }
-        const leftContinues =
-          isBarrierKey(keyAt(cells, x - 2, y)) ||
-          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x - 1, y + 1));
-        const rightContinues =
-          isBarrierKey(keyAt(cells, x + 2, y)) ||
-          isBarrierKey(keyAt(cells, x + 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y + 1));
-        if (!leftContinues && !rightContinues) continue;
-      } else {
-        if (isVertCorridorCell(cells, x - 1, y) || isVertCorridorCell(cells, x + 1, y)) {
-          continue;
-        }
-        const upContinues =
-          isBarrierKey(keyAt(cells, x, y - 2)) ||
-          isBarrierKey(keyAt(cells, x - 1, y - 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y - 1));
-        const downContinues =
-          isBarrierKey(keyAt(cells, x, y + 2)) ||
-          isBarrierKey(keyAt(cells, x - 1, y + 1)) ||
-          isBarrierKey(keyAt(cells, x + 1, y + 1));
-        if (!upContinues && !downContinues) continue;
-      }
-
-      // Functional nearby is a soft excuse for repair, but still a P4 hole
-      // unless the cell itself is a declared opening. Report it so PR2 can
-      // decide seal-vs-promote.
-      if (hasFunctionalNearby(cells, x, y, 1)) {
-        // Skip: adjacent gate already provides the functional opening for
-        // this run segment (same as scanAndRepairFenceGaps skip).
-        continue;
-      }
-
+      const cell = cells[y][x];
       violations.push({
         invariant: 'P4',
         x,
@@ -321,12 +233,20 @@ export function auditRecipeOpenings(
 // ─── P1 (scaffold): barrier components lacking any functional opening ─────
 
 /**
- * Light enclosure heuristic (P1 scaffold): for each 4-connected component of
- * barrier cells, if the component has ≥8 cells (plausible ring) and no
- * functional opening touches the component (adjacent or on-component), flag
- * the component centroid as enclosure-without-opening.
+ * Light enclosure heuristic (P1 scaffold) for matrix reporting only.
  *
- * Soft / approximate — PR2 may refine; PR1 uses this for matrix reporting.
+ * For each 4-connected component of barrier cells (`isBarrierAssetKey`):
+ * if size ≥ 8 and no functional opening is adjacent/on-component, flag the
+ * component centroid as enclosure-without-opening.
+ *
+ * **Known false-positive class (do not hard-fail on these in PR1):**
+ * long linear fence runs, wall stubs, and incomplete rings of ≥8 barrier
+ * cells with no gate also match — design allows “or is not an enclosure.”
+ * Example: a straight 10-cell fence row with no opening is reported here
+ * even though it is not a closed yard.
+ *
+ * **PR2:** require a stronger enclosure test (ring/loop heuristic or
+ * interior walkable pocket) before hard-failing P1.
  */
 export function auditEnclosuresWithoutOpening(
   cells: CellData[][],
@@ -344,7 +264,7 @@ export function auditEnclosuresWithoutOpening(
     for (let x = 0; x < w; x++) {
       if (visited[idx(x, y)]) continue;
       const startKey = keyAt(cells, x, y);
-      if (!isBarrierKey(startKey)) {
+      if (!isBarrierAssetKey(startKey)) {
         visited[idx(x, y)] = 1;
         continue;
       }
@@ -390,7 +310,7 @@ export function auditEnclosuresWithoutOpening(
           const ny = cy + dy;
           if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
           if (visited[idx(nx, ny)]) continue;
-          if (!isBarrierKey(keyAt(cells, nx, ny))) continue;
+          if (!isBarrierAssetKey(keyAt(cells, nx, ny))) continue;
           visited[idx(nx, ny)] = 1;
           qx.push(nx);
           qy.push(ny);
@@ -418,8 +338,18 @@ export function auditEnclosuresWithoutOpening(
 
 // ─── P6 helpers (homestead south perimeter facts) ─────────────────────────
 
-/** Absolute south-gate cell for starter homestead (origin 9,8 + rel 3,6). */
-export const HOMESTEAD_SOUTH_GATE_ABS = { x: 12, y: 14 } as const;
+/** Relative south-gate opening from STARTER_HOMESTEAD_OPENINGS (sole quiz_gate). */
+const HOMESTEAD_SOUTH_OPENING = STARTER_HOMESTEAD_OPENINGS[0]!;
+
+/**
+ * Absolute south-gate cell for starter homestead.
+ * Derived from `STARTER_HOMESTEAD_ORIGIN` + sole opening (rel 3,6 → 12,14).
+ * Stamp tests hard-lock the absolute (12,14) as regression.
+ */
+export const HOMESTEAD_SOUTH_GATE_ABS = {
+  x: STARTER_HOMESTEAD_ORIGIN.x + HOMESTEAD_SOUTH_OPENING.x,
+  y: STARTER_HOMESTEAD_ORIGIN.y + HOMESTEAD_SOUTH_OPENING.y,
+} as const;
 
 /**
  * Relative south-row fence cells (y=6): fence at x≠3, quiz_gate at x=3.
@@ -429,13 +359,15 @@ export function expectedHomesteadSouthRow(
   originX: number,
   originY: number,
 ): Array<{ x: number; y: number; assetKey: 'fence' | 'quiz_gate' }> {
-  const y = originY + 6;
+  const gateRelX = HOMESTEAD_SOUTH_OPENING.x;
+  const gateRelY = HOMESTEAD_SOUTH_OPENING.y;
+  const y = originY + gateRelY;
   const row: Array<{ x: number; y: number; assetKey: 'fence' | 'quiz_gate' }> = [];
   for (let rx = 0; rx < 7; rx++) {
     row.push({
       x: originX + rx,
       y,
-      assetKey: rx === 3 ? 'quiz_gate' : 'fence',
+      assetKey: rx === gateRelX ? 'quiz_gate' : 'fence',
     });
   }
   return row;
@@ -493,16 +425,6 @@ export function buildDeclaredOpeningCells(
 
 // ─── Combined audit ───────────────────────────────────────────────────────
 
-function emptyCounts(): PlaceCoherenceCounts {
-  return {
-    illegalFenceGaps: 0,
-    openingMismatches: 0,
-    walkablePolicyMismatches: 0,
-    enclosureWithoutOpening: 0,
-    total: 0,
-  };
-}
-
 /**
  * Read-only place-coherence audit over a cell grid.
  *
@@ -536,7 +458,7 @@ export function auditPlaceCoherence(
 
   return {
     violations,
-    counts: counts.total === 0 && violations.length === 0 ? emptyCounts() : counts,
+    counts,
     openingViolations: p2.openingViolations,
   };
 }
