@@ -58,7 +58,14 @@ import { addToast } from '../ui/ui';
 import { checkHazardInjury, applyBandaid, getWoundCareQuestion } from './injury';
 // B5 micro-slice 11.8 (#268): quiz-specials content moved here.
 import { startHygieneQuiz, startInsectQuiz, getInsectQuestions } from './quiz-specials';
-import { chunkKey } from './chunk-lifecycle';
+import {
+  chunkKey,
+  getChunkQueueDepth,
+  ensureChunksAroundBudgeted,
+  enqueueMissingBufferChunks,
+  loadChunksOnBoundaryCross,
+  clearChunkQueue,
+} from './chunk-lifecycle';
 import { getLastDialogNpcId, setPendingPoopBurst } from './interaction-handler';
 // (getPendingPoopBurst removed — debug-api only sets the flag, doesn't read it)
 import { setUnlockedCosmetics, showCustomizer, deserializeVariation, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS, EYE_SHAPES, BACK_ACCESSORIES, NECK_ACCESSORIES } from '../ui/customizer';
@@ -176,6 +183,17 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
       getBootMarks().filter((m) => m.name === name),
     /** Wall ms since boot-marks module load. */
     bootElapsedMs: (): number => getBootElapsedMs(),
+    /** Deferred buffer-ring chunk queue depth (critical-path PR3). */
+    chunkQueueDepth: (): number => getChunkQueueDepth(),
+    /** PR3: enqueue missing buffer ring (boundary). */
+    enqueueMissingBufferChunks: () => enqueueMissingBufferChunks(state),
+    /** PR3: budgeted drain (player hard force + maxPerTick). */
+    ensureChunksAroundBudgeted: (opts?: { maxPerTick?: number }) =>
+      ensureChunksAroundBudgeted(state, opts),
+    /** PR3: boundary-cross detect + enqueue (no full-ring sync). */
+    loadChunksOnBoundaryCross: () => loadChunksOnBoundaryCross(state),
+    /** PR3: clear deferred queue (tests). */
+    clearChunkQueue: () => clearChunkQueue(),
     // L0 time contract (play-stack PR1): hitch inject + clamp instrumentation
     injectDtMs,
     getDtClampedCount,

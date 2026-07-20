@@ -12,7 +12,9 @@
  *   gen.chunk            — per-chunk solid gen cost {cx, cy, ms}
  *   boot.chunkProgress   — N/M bulk progress after each yielded chunk {n, m, cx, cy}
  *   boot.ensureChunks    — bulk yield path {count, ms, maxChunkMs, p95ChunkMs}
- *   chunk.boundary.syncBurst — sync ensure path {count, totalMs} when count>0
+ *   chunk.boundary.syncBurst — budgeted/sync ensure path {count, totalMs} when count>0
+ *   chunk.queue.depth    — deferred buffer-ring queue depth (PR3)
+ *   chunk.queue.lagMs    — age of oldest queued entry in ms (PR3)
  */
 
 export interface BootMark {

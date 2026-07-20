@@ -111,6 +111,7 @@ import {
 // chains eviction + auto-save on chunk exit.
 import {
   loadChunksOnBoundaryCross,
+  ensureChunksAroundBudgeted,
 } from './game/chunk-lifecycle';
 // B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
 // ./game/save-apply.ts. Pure orchestration — sequences deserializers across
@@ -261,9 +262,16 @@ let _lastAnnouncedDiffTier = -1;
 /** Once: player left the origin chunk for the first time. */
 let _leftHomeAnnounced = false;
 
-/** Thin wrapper: boundary-cross chunk load + terrain eviction + auto-save. */
+/**
+ * Thin wrapper: boundary enqueue + every-frame budgeted drain + eviction.
+ * Critical-path PR3: drain runs even when the player did not cross a
+ * chunk boundary so the deferred queue amortizes across frames.
+ */
 function maybeLoadChunks(state: GameState): void {
-  if (!loadChunksOnBoundaryCross(state)) return;
+  const crossed = loadChunksOnBoundaryCross(state);
+  // Drain every frame while queue non-empty (player hard force + maxPerTick=1).
+  ensureChunksAroundBudgeted(state);
+  if (!crossed) return;
   const size = WORLD_CONFIG.chunkSize;
   const pcx = Math.floor(state.player.x / size);
   const pcy = Math.floor(state.player.y / size);
@@ -934,6 +942,9 @@ function onIdlePresentation(state: GameState, simDtMs: number): void {
   const frameMs = Math.min(Math.max(simDtMs, 0), MOVE_MAX_CATCHUP_MS);
   updatePlayerVisuals(state, { dx: 0, dy: 0, screenDx: 0, screenDy: 0 }, false, frameMs);
   resetFootstepCounter();
+
+  // Drain deferred chunk queue every frame (not only while moving) — PR3.
+  maybeLoadChunks(state);
 
   const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
   if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
