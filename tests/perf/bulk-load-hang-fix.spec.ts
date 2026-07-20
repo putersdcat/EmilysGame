@@ -87,6 +87,23 @@ test.describe('Critical-path bulk-load hang fix', () => {
     expect(ensureDetail.count as number).toBeGreaterThanOrEqual(2);
     expect(typeof ensureDetail.ms).toBe('number');
 
+    // Soft regression budgets (PR7 proof bar) — hang recovery net, not 100ms claim.
+    // PR1 baseline wall ~308ms / maxChunk ~66ms; PR7 stack wall ~220ms / max ~43ms.
+    const wallMs = ensureDetail.ms as number;
+    const maxChunkMs = ensureDetail.maxChunkMs as number | undefined;
+    expect(
+      wallMs,
+      `soft ensureChunks wall (measured ~200–300ms): got ${wallMs}`,
+    ).toBeLessThan(30_000);
+    if (typeof maxChunkMs === 'number') {
+      expect(
+        maxChunkMs,
+        `soft maxChunkMs (measured ~40–65ms): got ${maxChunkMs}`,
+      ).toBeLessThan(5_000);
+    }
+    // Progress marks prove inter-chunk yield (N/M) — primary hang AC.
+    expect(snapshot.progress.length).toBe(snapshot.progress[0].m as number);
+
     // Residual solid per-chunk cost is documented via gen.chunk — not a failure.
     // eslint-disable-next-line no-console
     console.log('[hang-fix] boot.chunkProgress:', snapshot.progress);

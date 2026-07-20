@@ -42,11 +42,14 @@ A child can play a **satisfying 5–15 min session**: spawn in a place → move 
 | Scene-first productization (PR1–7) | Done — do **not** re-run that plan |
 | Playable-session recovery | Landed — reopen only if playtest still fails |
 | Place Coherence (gen stamp ↔ walk SSOT ↔ draw) | **Landed** — do **not** re-run that plan |
+| Critical-Path Recovery (hang/yield, boundary queue, gate policy, walk barriers, homestead 9×9) | **Landed** (PR1–PR7, 2026-07-20) — do **not** re-run that plan; reopen only if human playtest still fails |
 | Next default | Content + recipes + residual feel fixes |
 
-**Place coherence pass is law:** post-pipeline `runPlaceCoherencePass` seals illegal fence/wall gaps; walk is `cell.walkable` SSOT; draw prefers functional gates under budget. Homestead closed south is regression-locked. Proof bar: `tests/screenshots/proof-place-coherence-*.png` (`tests/world-gen/proof-place-coherence-capture.spec.ts`).
+**Place coherence pass is law:** post-pipeline `runPlaceCoherencePass` seals illegal fence/wall gaps with **matching barrier** (not quiz_gate); walk is `cell.walkable` SSOT; draw prefers functional gates under budget. Homestead closed south is regression-locked (9×9 sole gate abs `(13,16)`). Proof bar: `tests/screenshots/proof-place-coherence-*.png` + `proof-critical-path-spawn.png` (`tests/world-gen/proof-place-coherence-capture.spec.ts`).
 
-Designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `design-playable-session-recovery.md`, `design-place-coherence-epic-2026-07-19.md`, `expandability-rails.md`. Vision: `docs/01`, `docs/02`.
+**Critical-path recovery laws (landed):** bulk load spinner N/M + inter-chunk yield (no sync multi-chunk on UI); boundary budgeted queue (`maxPerTick=1`, player hard force); linear fence gaps seal as barrier; passability soft-only carve; homestead 9×9 multi-cell cottage north of spawn. No FOV/nano/WorldUnitSolver thrash.
+
+Designs: `memories/repo/definitive-path-forward-2026-07-16.md`, `design-playable-session-recovery.md`, `design-place-coherence-epic-2026-07-19.md`, `design-critical-path-recovery-2026-07-19.md`, `expandability-rails.md`. Vision: `docs/01`, `docs/02`.
 
 ## Where code goes
 

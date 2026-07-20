@@ -390,21 +390,28 @@ test.describe('Gate policy — barrier seal + no mid-fence spam (critical-path P
       };
     });
 
+    // eslint-disable-next-line no-console
+    console.log('[PR7 gate-policy full-gen]', result);
+
     // Origin teaching gate preserved
     expect(result.southGate).toBe('quiz_gate');
     expect(result.originQuiz).toBeGreaterThanOrEqual(1);
 
-    // Zero-quiz non-origin chunks are allowed
+    // Zero-quiz non-origin chunks are allowed (KD13)
     expect(result.zeroQuizChunks).toBeGreaterThanOrEqual(0);
 
-    // Soft mid-fence bound (review O1): anti-flaky margin for gen variance.
-    // Ranked fence-run alone implies ≤1 mid-fence gate/chunk without other
-    // sources (≤ sampled). Bound is 2× slack until PR7 proof bar hardens after
-    // playtest baseline (e.g. `<= sampled` or `<= sampled + 1`). Unit cases
-    // above already hard-assert barrier seal + ranked ≤1.
+    // PR7 proof bar: mid-fence spam bound hardened from 2× sample to ≤ sample.
+    // Ranked fence-run places ≤1 cut-point gate per chunk; modular openings can
+    // legitimately sit mid-fence (declared). ≤1 average per sampled chunk is the
+    // regression lock — unit cases above already hard-assert barrier seal + ranked ≤1.
     expect(
       result.midFenceQuiz,
       `mid-fence quiz_gates across sample: ${JSON.stringify(result)}`,
-    ).toBeLessThanOrEqual(result.sampled * 2);
+    ).toBeLessThanOrEqual(result.sampled);
+    // Per-chunk density: no single non-origin chunk should be a quiz wall of spam.
+    expect(
+      result.maxQuiz,
+      `max quiz_gates in one non-origin sample chunk: ${JSON.stringify(result)}`,
+    ).toBeLessThanOrEqual(12);
   });
 });

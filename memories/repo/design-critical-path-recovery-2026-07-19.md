@@ -4,12 +4,13 @@
 |-------|--------|
 | **Author** | design-doc-writer (repo-grounded) |
 | **Date** | 2026-07-19 (rev 2026-07-20: review fixes + R1–R3) |
-| **Status** | Ready for `/execute-plan` |
+| **Status** | **Landed** (PR1–PR7, 2026-07-20) — do **not** re-run this plan; reopen only if human playtest still fails |
 | **Branch** | `experiment/isometric-2.0` **only** |
 | **Baseline tip** | `117f627` (Place Coherence PR1–6 landed) — **historical anchor only**; verify current branch tip at execute start (do not hard-reset to this SHA) |
 | **Epic theme** | **Critical-path bug + perf recovery** — not ontology, not FOV, not new nano kinds |
 | **Does not reopen** | Place Coherence campaign plan; scene-first PR1–7; FOV thrash; WorldUnitSolver redesign; dual trunk |
 | **Related** | `design-place-coherence-epic-2026-07-19.md` (landed; **over-sealing called out below**), `design-playable-session-recovery.md`, `design-play-kernel-2026-07-19.md`, `docs/02`, `AGENTS.md` |
+| **Proof bar** | Automated net: `tests/perf/critical-path-boot`, `bulk-load-hang-fix`, `boundary-hitch-amortize`, `gate-policy-no-mid-fence-spam`, `walk-barriers-passability`, place-coherence + homestead + scene-invariants + gen-determinism. Cut-point hard floor **0.35** (measured 0.474; aspirational 0.7 residual). Human checklist in PR7 summary. |
 
 ---
 
@@ -648,14 +649,15 @@ Ordered for dependency. **Seven PRs** (spawn draw folded into PR6; bake thrash o
 | **Description** | Implement §6 sketch: 9×9, sole gate abs **(13,16)**, 2×2 cottage mass **north of spawn** at abs `(12–13,10–11)`, spawn stays **(12,12)** walkable; existing assets only. `ensureSpawnClearance` must not destroy `starter_*`. Fold spawn salt/orphan cleanup. Optional zOffset only. **No FOV.** |
 | **Acceptance** | Human: reads as home. Automated: closed south + sole gate (13,16); spawn (12,12) walkable and **not** cottage mass; plus-shape does not leave player embedded; **proof-critical-path-spawn.png** + homestead proof PNG updated. |
 
-### PR 7: Proof bar + regression lock
+### PR 7: Proof bar + regression lock — **LANDED**
 
 | | |
 |--|--|
 | **Depends** | PR2–PR6 |
-| **Files** | Soften/harden perf + gate-policy tests; cut-point hard if baseline OK; human checklist in PR body |
+| **Files** | Soften/harden perf + gate-policy tests; cut-point hard floor 0.35 (0.7 not supported by baseline); AGENTS + design status Landed; human checklist in PR body |
 | **Description** | End-to-end net; before/after marks vs PR1; one human re-test. Optional bake thrash if still profiled. |
 | **Acceptance** | Targeted suite green; human checklist pass once; epic → Landed. |
+| **Notes** | Cut-point ratio hard floor **0.35** (measured 0.474 on fixed N=10 seeds); aspirational ≥0.7 remains soft-annotate. Mid-fence full-gen bound hardened to `≤ sampled`. Soft perf budgets: maxChunkMs &lt; 5s, ensure wall &lt; 30s (catastrophic hang only). |
 
 ### Concurrency sketch
 

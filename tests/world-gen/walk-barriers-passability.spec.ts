@@ -7,7 +7,7 @@
  * - Validation dead-end carves use the same protect list
  * - Enclosure BFS: interior cannot reach exterior with openings sealed
  * - Mid-chunk fence ring survives both passability passes (not grass-carved)
- * - Soft cut-point ratio N=10 (warn/log; hard gate deferred to PR7)
+ * - Cut-point ratio N=10 (PR7 hard floor from measured baseline; 0.7 aspirational)
  *
  * @see memories/repo/design-critical-path-recovery-2026-07-19.md §5
  */
@@ -680,7 +680,7 @@ test.describe('Walk barriers — passability allowlist + enclosure (critical-pat
     expect(result.gateWalkable).toBe(false);
   });
 
-  test('soft cut-point ratio N=10 fixed non-origin seeds (warn-only)', async ({ page }) => {
+  test('cut-point ratio N=10 fixed non-origin seeds (PR7 regression lock)', async ({ page }) => {
     await waitForGame(page);
 
     const result = await page.evaluate(async () => {
@@ -808,24 +808,39 @@ test.describe('Walk barriers — passability allowlist + enclosure (critical-pat
       return { quizGateCount, cutPoint, ratio, perChunk };
     });
 
-    // Soft only (PR5): log baseline; do not hard-fail if below 0.7 (PR7 may harden).
+    // PR7 proof bar (2026-07-20): measured baseline ratio=0.474 (cut=9 / quiz=19)
+    // on these fixed seeds. Aspirational design target remains ≥0.7 (soft annotate);
+    // hard floor locks anti-regression with ~25% margin under measured baseline.
+    // Zero-quiz chunks are OK (KD13); when gates exist we still require some cut-points.
     // eslint-disable-next-line no-console
     console.log(
-      `[PR5 soft cut-point ratio] cutPoint=${result.cutPoint} quizGateCount=${result.quizGateCount} ratio=${result.ratio.toFixed(3)} (target soft ≥0.7)`,
+      `[PR7 cut-point ratio] cutPoint=${result.cutPoint} quizGateCount=${result.quizGateCount} ratio=${result.ratio.toFixed(3)} (hard floor ≥0.35; aspirational ≥0.7)`,
       result.perChunk,
     );
 
-    // Sanity: measurement ran
     expect(result.quizGateCount).toBeGreaterThanOrEqual(0);
     expect(result.cutPoint).toBeGreaterThanOrEqual(0);
     expect(result.ratio).toBeGreaterThanOrEqual(0);
     expect(result.ratio).toBeLessThanOrEqual(1);
 
-    // Soft warn path — attach annotation when below target so PR7 can decide
+    // Hard regression floor (baseline OK for 0.35; NOT for 0.7).
+    const HARD_FLOOR = 0.35;
+    if (result.quizGateCount > 0) {
+      expect(
+        result.ratio,
+        `cut-point ratio regression: ${result.ratio.toFixed(3)} < ${HARD_FLOOR} (cut=${result.cutPoint}/${result.quizGateCount})`,
+      ).toBeGreaterThanOrEqual(HARD_FLOOR);
+      expect(
+        result.cutPoint,
+        'when non-origin quiz gates exist, at least one must be a local cut-point',
+      ).toBeGreaterThanOrEqual(1);
+    }
+
+    // Aspirational soft target (≥0.7) — annotate only until a later quality pass.
     if (result.quizGateCount > 0 && result.ratio < 0.7) {
       test.info().annotations.push({
-        type: 'soft-cut-point-ratio',
-        description: `ratio=${result.ratio.toFixed(3)} < 0.7 (cut=${result.cutPoint}/${result.quizGateCount}) — soft only until PR7`,
+        type: 'aspirational-cut-point-ratio',
+        description: `ratio=${result.ratio.toFixed(3)} < 0.7 (cut=${result.cutPoint}/${result.quizGateCount}) — hard floor 0.35 locked; residual free-roam field gates are a follow-up`,
       });
     }
   });
