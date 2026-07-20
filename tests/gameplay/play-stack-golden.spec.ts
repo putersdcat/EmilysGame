@@ -43,10 +43,10 @@ import { test, expect, Page } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:5173/?test=1';
 
-/** Homestead ORIGIN (9,8) + gate offset (3,6) = world cell (12,14) */
-const GATE = { x: 12, y: 14 };
+/** Homestead ORIGIN (9,8) + gate offset (4,8) = world cell (13,16) — 9×9 PR6 */
+const GATE = { x: 13, y: 16 };
 
-/** Open courtyard north of cottage — deterministic walkable for hitch / move */
+/** Open yard west of cottage mass — deterministic walkable for hitch / move */
 const COURTYARD = { x: 11.5, y: 10.5 };
 
 async function waitForGame(page: Page) {

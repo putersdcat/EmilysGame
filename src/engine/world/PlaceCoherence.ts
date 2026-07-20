@@ -356,8 +356,8 @@ const HOMESTEAD_SOUTH_OPENING = STARTER_HOMESTEAD_OPENINGS[0]!;
 
 /**
  * Absolute south-gate cell for starter homestead.
- * Derived from `STARTER_HOMESTEAD_ORIGIN` + sole opening (rel 3,6 → 12,14).
- * Stamp tests hard-lock the absolute (12,14) as regression.
+ * Derived from `STARTER_HOMESTEAD_ORIGIN` + sole opening (rel 4,8 → 13,16).
+ * Stamp tests hard-lock the absolute (13,16) as regression (9×9 PR6).
  */
 export const HOMESTEAD_SOUTH_GATE_ABS = {
   x: STARTER_HOMESTEAD_ORIGIN.x + HOMESTEAD_SOUTH_OPENING.x,
@@ -365,7 +365,7 @@ export const HOMESTEAD_SOUTH_GATE_ABS = {
 } as const;
 
 /**
- * Relative south-row fence cells (y=6): fence at x≠3, quiz_gate at x=3.
+ * Relative south-row fence cells (y=8 on 9×9): fence at x≠4, quiz_gate at x=4.
  * Used by tests and auditHomesteadSouth.
  */
 export function expectedHomesteadSouthRow(
@@ -375,8 +375,9 @@ export function expectedHomesteadSouthRow(
   const gateRelX = HOMESTEAD_SOUTH_OPENING.x;
   const gateRelY = HOMESTEAD_SOUTH_OPENING.y;
   const y = originY + gateRelY;
+  const width = STARTER_HOMESTEAD_RECIPE.width;
   const row: Array<{ x: number; y: number; assetKey: 'fence' | 'quiz_gate' }> = [];
-  for (let rx = 0; rx < 7; rx++) {
+  for (let rx = 0; rx < width; rx++) {
     row.push({
       x: originX + rx,
       y,
@@ -506,7 +507,7 @@ function makeAssetCell(assetKey: string): CellData {
  *
  * Critical PR1 finding: full `generateChunkSync(0,0)` clobbered south fence /
  * gate (gate→grass, flanks→grass/flower). Restores the closed south row
- * (6× fence + sole quiz_gate) from the recipe contract.
+ * (8× fence + sole quiz_gate on 9×9) from the recipe contract.
  *
  * Returns the number of cells mutated.
  */

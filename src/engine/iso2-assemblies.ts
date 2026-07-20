@@ -27,6 +27,7 @@ export {
   STARTER_HOMESTEAD_RECIPE,
   STARTER_HOMESTEAD_OPENINGS,
   STARTER_HOMESTEAD_ORIGIN,
+  HOMESTEAD_SIZE,
 } from './iso2-assemblies/starter-homestead';
 export type {
   AssemblyOpening,

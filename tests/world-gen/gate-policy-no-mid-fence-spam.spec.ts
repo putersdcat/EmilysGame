@@ -376,8 +376,8 @@ test.describe('Gate policy — barrier seal + no mid-fence spam (critical-path P
           if (c.assetKey === 'quiz_gate') originQuiz++;
         }
       }
-      // Homestead south sole gate at (12,14)
-      const southGate = origin.cells[14]?.[12]?.assetKey;
+      // Homestead south sole gate at (13,16) — 9×9 PR6
+      const southGate = origin.cells[16]?.[13]?.assetKey;
 
       return {
         totalQuiz,

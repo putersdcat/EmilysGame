@@ -38,16 +38,16 @@ async function waitForGame(page: Page) {
 test('PR6 proof bar: spawn homestead + explore intentional places', async ({ page }) => {
   await waitForGame(page);
 
-  // Spawn: look at starter homestead (origin 9,8, 7×7) with south quiz_gate at (12,14)
+  // Spawn: look at starter homestead (origin 9,8, 9×9) with south quiz_gate at (13,16)
   const spawnInfo = await page.evaluate(() => {
     const d = (window as any).__gameDebug;
     const ch = d.state.chunks.get('0,0');
     if (!ch) return { ok: false as const, reason: 'no origin chunk' };
 
-    // Camera on yard center looking south toward gated exit
-    const yardX = 9 + 3.5;
-    const yardY = 8 + 4.5;
-    d.setPlayerPosition(yardX, yardY);
+    // Camera on spawn looking south toward gated exit; cottage mass north
+    const spawnX = 12.5;
+    const spawnY = 12.5;
+    d.setPlayerPosition(spawnX, spawnY);
     d.state.player.facingDx = 0;
     d.state.player.facingDy = 1;
     d.state.player.isMoving = false;
@@ -55,14 +55,14 @@ test('PR6 proof bar: spawn homestead + explore intentional places', async ({ pag
     d.state.camera.y = d.state.player.y;
     d.state.paused = false;
 
-    const gate = ch.cells[14]?.[12];
-    const cottage = ch.cells[8 + 3]?.[9 + 4];
+    const gate = ch.cells[16]?.[13];
+    const cottage = ch.cells[11]?.[13]; // rel (4,3) starter_cottage
     let freeTowers = 0;
     const towerish = new Set(['outhouse', 'house', 'hut', 'shop']);
     // Scan origin chunk outside homestead footprint for free structure atoms
     for (let y = 0; y < ch.cells.length; y++) {
       for (let x = 0; x < ch.cells[y].length; x++) {
-        const inHomestead = x >= 9 && x < 16 && y >= 8 && y < 15;
+        const inHomestead = x >= 9 && x < 18 && y >= 8 && y < 17;
         if (inHomestead) continue;
         const k = ch.cells[y][x]?.assetKey;
         if (k && towerish.has(k)) freeTowers++;
@@ -90,7 +90,7 @@ test('PR6 proof bar: spawn homestead + explore intentional places', async ({ pag
   const exploreInfo = await page.evaluate(async () => {
     const d = (window as any).__gameDebug;
     // Nudge player south of homestead gate onto early path language
-    d.setPlayerPosition(12.5, 16.5);
+    d.setPlayerPosition(13.5, 18.5);
     d.state.camera.x = d.state.player.x;
     d.state.camera.y = d.state.player.y;
 

@@ -310,8 +310,8 @@ test.describe('PlayMode ownership (PR5 L2)', () => {
   test('live gate interaction: dialog then quiz then free move (stack SSOT)', async ({ page }) => {
     await waitForGame(page);
 
-    // Homestead ORIGIN (9,8) + gate offset (3,6) = world cell (12,14)
-    const GATE = { x: 12, y: 14 };
+    // Homestead ORIGIN (9,8) + gate offset (4,8) = world cell (13,16) — 9×9 PR6
+    const GATE = { x: 13, y: 16 };
     await page.evaluate((g) => {
       const d = (window as any).__gameDebug;
       d.setPlayerPosition(g.x + 0.5, g.y - 0.5);

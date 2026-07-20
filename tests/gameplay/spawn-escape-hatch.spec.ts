@@ -21,7 +21,8 @@ test('resume inside cottage → ≤1 recovery call lands legal footprint (no noc
 
   // Craft a fake save whose player position is INSIDE the starter
   // homestead's deterministic starter_cottage. ORIGIN {x:9,y:8} + relative
-  // (4,3) = absolute (13,11). Courtyard stone_floor at (13,10) is within R=2.
+  // (4,3) = absolute (13,11) (SE of 2×2 cottage mass north of spawn). Yard
+  // grass/dirt within R=2 remains legal recovery ground.
   await page.evaluate(() => {
     const save = {
       version: 1,
@@ -76,7 +77,8 @@ test('a normal resumed save at an already-walkable position never engages the es
     const save = {
       version: 1,
       timestamp: Date.now(),
-      player: { x: 13.5, y: 9.5, direction: 1 }, // absolute (13,9) = courtyard stone_floor
+      // absolute (13,9) = yard grass north of cottage mass (rel 4,1) — walkable
+      player: { x: 13.5, y: 9.5, direction: 1 },
       inventory: [],
       visitedChunks: [],
       resolvedCells: [],

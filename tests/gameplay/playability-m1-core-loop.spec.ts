@@ -44,8 +44,8 @@ async function pressSpace(page: Page) {
 test('M1: starter homestead gate — collision, fail, retry, open', async ({ page }) => {
   await waitForGame(page);
 
-  // Homestead ORIGIN (9,8) + gate offset (3,6) = world cell (12,14)
-  const GATE = { x: 12, y: 14 };
+  // Homestead ORIGIN (9,8) + gate offset (4,8) = world cell (13,16) — 9×9 PR6
+  const GATE = { x: 13, y: 16 };
   const setup = await page.evaluate((g) => {
     const d = (window as any).__gameDebug;
     const ch = d.state.chunks.get('0,0');

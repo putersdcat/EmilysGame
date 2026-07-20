@@ -251,7 +251,8 @@ test('starter-homestead declares openings and validates after stamp', async ({ p
     const oy = STARTER_HOMESTEAD_ORIGIN.y;
     const validation = validateSceneOpenings(cells, ox, oy, recipe);
 
-    const gateCell = cells[oy + 6][ox + 3];
+    // Sole opening rel (4,8) → abs (13,16) on 9×9 homestead
+    const gateCell = cells[oy + 8][ox + 4];
     const openings = (recipe.openings ?? []).map((o) => ({
       kind: o.kind,
       assetKey: cells[oy + o.y][ox + o.x].assetKey,
@@ -264,6 +265,8 @@ test('starter-homestead declares openings and validates after stamp', async ({ p
       violations: validation.violations,
       gateAsset: gateCell.assetKey,
       openings,
+      recipeWidth: recipe.width,
+      recipeHeight: recipe.height,
     };
   });
 
@@ -271,6 +274,8 @@ test('starter-homestead declares openings and validates after stamp', async ({ p
   expect(result.hasQuizGateOpening, 'starter homestead declares quiz_gate opening').toBe(true);
   expect(result.ok, `starter openings should validate: ${JSON.stringify(result.violations)}`).toBe(true);
   expect(result.gateAsset).toBe('quiz_gate');
+  expect(result.recipeWidth, '9×9 homestead').toBe(9);
+  expect(result.recipeHeight).toBe(9);
 });
 
 test('fenced recipes require functional gate openings (no bare dirt-only entry)', async ({ page }) => {

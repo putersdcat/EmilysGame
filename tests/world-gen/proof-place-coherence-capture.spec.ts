@@ -24,6 +24,8 @@ const SHOT_DIR = path.join('tests', 'screenshots');
 const HOMESTEAD_SHOT = path.join(SHOT_DIR, 'proof-place-coherence-homestead.png');
 const RECIPE_SHOT = path.join(SHOT_DIR, 'proof-place-coherence-recipe.png');
 const EXPLORE_SHOT = path.join(SHOT_DIR, 'proof-place-coherence-explore.png');
+/** Critical-path PR6: spawn viewport with multi-cell cottage north of player. */
+const CRITICAL_PATH_SPAWN_SHOT = path.join(SHOT_DIR, 'proof-critical-path-spawn.png');
 
 async function waitForGame(page: Page) {
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
@@ -48,7 +50,7 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
   await waitForGame(page);
 
   // ── 1. Homestead closed south ──────────────────────────────────────────
-  // Yard center looking south toward sole quiz_gate at (12,14)
+  // Yard looking south toward sole quiz_gate at (13,16) on 9×9 footprint
   const homesteadInfo = await page.evaluate(async () => {
     const d = (window as any).__gameDebug;
     const ch = d.state.chunks.get('0,0');
@@ -57,13 +59,16 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
     const { auditHomesteadSouth, HOMESTEAD_SOUTH_GATE_ABS } = await import(
       '/engine/world/PlaceCoherence.ts'
     );
-    const { STARTER_HOMESTEAD_ORIGIN, STARTER_HOMESTEAD_OPENINGS } = await import(
-      '/engine/iso2-assemblies.ts'
-    );
+    const {
+      STARTER_HOMESTEAD_ORIGIN,
+      STARTER_HOMESTEAD_OPENINGS,
+      HOMESTEAD_SIZE,
+    } = await import('/engine/iso2-assemblies.ts');
 
-    const yardX = 9 + 3.5;
-    const yardY = 8 + 4.5;
-    d.setPlayerPosition(yardX, yardY);
+    // Spawn cell center — cottage mass reads north of player
+    const spawnX = 12.5;
+    const spawnY = 12.5;
+    d.setPlayerPosition(spawnX, spawnY);
     d.state.player.facingDx = 0;
     d.state.player.facingDy = 1;
     d.state.player.isMoving = false;
@@ -75,28 +80,36 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
     const gate = ch.cells[HOMESTEAD_SOUTH_GATE_ABS.y]?.[HOMESTEAD_SOUTH_GATE_ABS.x];
     const ox = STARTER_HOMESTEAD_ORIGIN.x;
     const oy = STARTER_HOMESTEAD_ORIGIN.y;
-    // South row relative y=6: fence except center quiz_gate
+    // South row relative y=8: fence except quiz_gate at x=4
     const southRow: string[] = [];
-    for (let rx = 0; rx < 7; rx++) {
-      southRow.push(ch.cells[oy + 6]?.[ox + rx]?.assetKey ?? 'missing');
+    for (let rx = 0; rx < HOMESTEAD_SIZE; rx++) {
+      southRow.push(ch.cells[oy + 8]?.[ox + rx]?.assetKey ?? 'missing');
     }
-    const flankLeft = ch.cells[oy + 6]?.[ox + 2]?.assetKey;
-    const flankRight = ch.cells[oy + 6]?.[ox + 4]?.assetKey;
+    const flankLeft = ch.cells[oy + 8]?.[ox + 3]?.assetKey;
+    const flankRight = ch.cells[oy + 8]?.[ox + 5]?.assetKey;
 
-    // Authored cottage at rel (4,3) = abs (13,11); also scan footprint
-    // (parity with proof-scene-law-capture starter_cottage assert).
-    const cottageCell = ch.cells[oy + 3]?.[ox + 4];
+    // Authored cottage mass abs (12–13,10–11); starter_cottage at (13,11)
+    const cottageCell = ch.cells[11]?.[13];
     let cottageInFootprint: string | null = null;
-    for (let ry = 0; ry < 7; ry++) {
-      for (let rx = 0; rx < 7; rx++) {
+    for (let ry = 0; ry < HOMESTEAD_SIZE; ry++) {
+      for (let rx = 0; rx < HOMESTEAD_SIZE; rx++) {
         const k = ch.cells[oy + ry]?.[ox + rx]?.assetKey;
         if (k === 'starter_cottage') cottageInFootprint = k;
       }
     }
 
+    const spawnCell = ch.cells[12]?.[12];
+    const cottageMass = [
+      ch.cells[10]?.[12]?.assetKey,
+      ch.cells[10]?.[13]?.assetKey,
+      ch.cells[11]?.[12]?.assetKey,
+      ch.cells[11]?.[13]?.assetKey,
+    ];
+
     return {
       ok: true as const,
       gateKey: gate?.assetKey ?? null,
+      gateAbs: { ...HOMESTEAD_SOUTH_GATE_ABS },
       gateWalkable: gate?.walkable ?? null,
       p6Violations: p6,
       southRow,
@@ -105,29 +118,45 @@ test('PR6 place-coherence proof bar: homestead + recipe + explore', async ({ pag
       openingsCount: STARTER_HOMESTEAD_OPENINGS.length,
       cottageKey: cottageCell?.assetKey ?? null,
       cottageInFootprint,
+      spawnKey: spawnCell?.assetKey ?? null,
+      spawnWalkable: spawnCell?.walkable ?? null,
+      cottageMass,
+      footprintWalkable: typeof d.isFootprintWalkable === 'function'
+        ? d.isFootprintWalkable(spawnX, spawnY)
+        : null,
     };
   });
 
   expect(homesteadInfo.ok, 'origin chunk loaded').toBe(true);
   expect(homesteadInfo.gateKey, 'sole south exit is quiz_gate').toBe('quiz_gate');
+  expect(homesteadInfo.gateAbs).toEqual({ x: 13, y: 16 });
   expect(homesteadInfo.flankLeft, 'gate left flank closed (fence)').toBe('fence');
   expect(homesteadInfo.flankRight, 'gate right flank closed (fence)').toBe('fence');
   expect(homesteadInfo.p6Violations, 'P6 homestead audit clean').toEqual([]);
   expect(homesteadInfo.openingsCount, 'one declared homestead opening').toBe(1);
-  // South row: 6 fence + 1 quiz_gate, no dirt holes
+  // South row: 8 fence + 1 quiz_gate, no dirt holes
   const southFences = homesteadInfo.southRow!.filter((k) => k === 'fence').length;
   const southGates = homesteadInfo.southRow!.filter((k) => k === 'quiz_gate').length;
   const southDirt = homesteadInfo.southRow!.filter((k) => k === 'dirt').length;
-  expect(southFences, 'south fence count').toBe(6);
+  expect(southFences, 'south fence count').toBe(8);
   expect(southGates, 'south sole quiz_gate').toBe(1);
   expect(southDirt, 'no dirt flanks on closed south').toBe(0);
-  // cottageKey is diagnostic only: live origin may strip starter_cottage after
-  // spawn clearance / orphan structure passes (proof-scene-law cottage assert is
-  // currently the same drift). Place-coherence P6 locks the south fence/gate,
-  // not cottage fill — do not hard-fail PR6 on cottage presence.
+  expect(homesteadInfo.spawnWalkable, 'spawn (12,12) walkable').toBe(true);
+  expect(homesteadInfo.spawnKey?.startsWith('starter_'), 'spawn not cottage mass').toBe(false);
+  expect(homesteadInfo.cottageInFootprint, 'starter_cottage in 9×9 footprint').toBe('starter_cottage');
+  expect(homesteadInfo.cottageKey).toBe('starter_cottage');
+  expect(
+    homesteadInfo.cottageMass!.every((k) => k?.startsWith('starter_')),
+    '2×2 cottage mass north of spawn',
+  ).toBe(true);
+  if (homesteadInfo.footprintWalkable !== null) {
+    expect(homesteadInfo.footprintWalkable, 'spawn footprint legal (not embedded)').toBe(true);
+  }
 
   await page.waitForTimeout(500);
   await page.screenshot({ path: HOMESTEAD_SHOT, fullPage: false });
+  // Critical-path spawn proof (same viewport: player at spawn, cottage north)
+  await page.screenshot({ path: CRITICAL_PATH_SPAWN_SHOT, fullPage: false });
 
   // ── 2. One new catalog recipe (fenced-garden-quiz) ─────────────────────
   // Stamp on a quiet origin meadow east of homestead; grass-pad + cache
