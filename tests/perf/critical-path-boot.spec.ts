@@ -83,16 +83,30 @@ test.describe('Critical-path instrumentation harness', () => {
   test('bootMarksNamed filters by name', async ({ page }) => {
     await waitForGame(page);
 
-    const ok = await page.evaluate(() => {
+    const result = await page.evaluate(() => {
       const dbg = (window as unknown as {
         __gameDebug: {
           bootMarks: () => BootMark[];
           bootMarksNamed: (n: string) => BootMark[];
         };
       }).__gameDebug;
-      const named = dbg.bootMarksNamed('boot.ensureChunks');
-      return named.every((m) => m.name === 'boot.ensureChunks');
+      const all = dbg.bootMarks();
+      const ensureName = 'boot.ensureChunks';
+      const named = dbg.bootMarksNamed(ensureName);
+      const fromAll = all.filter((m) => m.name === ensureName);
+      const unknown = dbg.bootMarksNamed('__no_such_mark__');
+      return {
+        namedLen: named.length,
+        fromAllLen: fromAll.length,
+        allSameName: named.every((m) => m.name === ensureName),
+        unknownLen: unknown.length,
+      };
     });
-    expect(ok).toBe(true);
+
+    // Cold boot must have emitted ensure marks — empty named would make .every vacuously true.
+    expect(result.namedLen).toBeGreaterThanOrEqual(1);
+    expect(result.fromAllLen).toBe(result.namedLen);
+    expect(result.allSameName).toBe(true);
+    expect(result.unknownLen).toBe(0);
   });
 });
