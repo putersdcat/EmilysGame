@@ -27,7 +27,7 @@
  */
 
 // --- Chunk Generation (pipeline) ---
-export { generateChunk, generateChunkSync } from './world/ChunkGenerator';
+export { generateChunk, generateChunkSync, setChunkGenObserver } from './world/ChunkGenerator';
 
 // --- World Grid Constants ---
 export { WU_SIZE, GRID_DIM } from './world/WorldGrid';

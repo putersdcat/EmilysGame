@@ -39,11 +39,11 @@ import { DIRECTION_WORDS } from '../config/entropy.config';
 import { ASSET_DEFS } from '../config/assets.config';
 import { invalidateChunkTerrain } from '../rendering/terrain-cache';
 import { invalidateObjectCache } from '../rendering/render';
-import { generateChunkSync, feedEntropy } from '../engine/gen';
+import { generateChunkSync, feedEntropy, setChunkGenObserver } from '../engine/gen';
 import { type GameState } from './game-state';
 import { type ChunkData, type BorderConstraints } from '../types/game.types';
 import { type ResolvedCell } from './save';
-import { bootMark } from './boot-marks';
+import { bootMark, percentile, roundMs } from './boot-marks';
 
 // ─── Module-level state ───────────────────────────────────────
 
@@ -53,6 +53,19 @@ import { bootMark } from './boot-marks';
  * by `applyResolvedToChunk` (called from `ensureChunksAround`).
  */
 const _pendingResolved = new Map<string, ResolvedCell[]>();
+
+/**
+ * Most recent solid gen.chunk ms samples within the current ensure batch.
+ * Cleared at the start of each ensureChunksAround / Yielding call so max/p95
+ * and syncBurst reflect only that batch.
+ */
+let _batchChunkMs: number[] = [];
+
+// Wire gen.chunk marks once (critical-path instrumentation harness PR1).
+setChunkGenObserver((cx, cy, ms) => {
+  _batchChunkMs.push(ms);
+  bootMark('gen.chunk', { cx, cy, ms });
+});
 
 // ─── Key helper ──────────────────────────────────────────────
 
@@ -98,6 +111,9 @@ function ensureOneChunk(state: GameState, cx: number, cy: number): boolean {
  *
  * **SYNC — hot path.** Called from `loadChunksOnBoundaryCross` inside
  * the rAF game loop. Must never become async / awaited in gameLoop.
+ *
+ * Instrumentation only: emits `chunk.boundary.syncBurst` when any chunk
+ * was generated in this call (count + total solid ms). No behavior change.
  */
 export function ensureChunksAround(state: GameState): void {
   const size = WORLD_CONFIG.chunkSize;
@@ -105,10 +121,19 @@ export function ensureChunksAround(state: GameState): void {
   const pcy = Math.floor(state.player.y / size);
   const buf = WORLD_CONFIG.viewportBuffer;
 
+  _batchChunkMs = [];
+  const t0 = performance.now();
+  let count = 0;
+
   for (let dy = -buf; dy <= buf; dy++) {
     for (let dx = -buf; dx <= buf; dx++) {
-      ensureOneChunk(state, pcx + dx, pcy + dy);
+      if (ensureOneChunk(state, pcx + dx, pcy + dy)) count++;
     }
+  }
+
+  if (count > 0) {
+    const totalMs = roundMs(performance.now() - t0);
+    bootMark('chunk.boundary.syncBurst', { count, totalMs });
   }
 }
 
@@ -132,6 +157,7 @@ export async function ensureChunksAroundYielding(
   const pcy = Math.floor(state.player.y / size);
   const buf = WORLD_CONFIG.viewportBuffer;
   let count = 0;
+  _batchChunkMs = [];
 
   for (let dy = -buf; dy <= buf; dy++) {
     for (let dx = -buf; dx <= buf; dx++) {
@@ -143,8 +169,12 @@ export async function ensureChunksAroundYielding(
     }
   }
 
-  const ms = Math.round((performance.now() - t0) * 10) / 10;
-  bootMark('boot.ensureChunks', { count, ms });
+  const ms = roundMs(performance.now() - t0);
+  const maxChunkMs = _batchChunkMs.length
+    ? roundMs(Math.max(..._batchChunkMs))
+    : 0;
+  const p95ChunkMs = roundMs(percentile(_batchChunkMs, 0.95));
+  bootMark('boot.ensureChunks', { count, ms, maxChunkMs, p95ChunkMs });
   return { count, ms };
 }
 

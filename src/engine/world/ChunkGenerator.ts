@@ -166,11 +166,26 @@ export async function generateChunk(
  * influenced variation, #4). The entropy buffer is a snapshot of the
  * player's NPC chat history; if empty, a deterministic fallback is used.
  */
+/**
+ * Optional observer for solid per-chunk gen cost (critical-path instrumentation).
+ * Wired by `chunk-lifecycle` → `bootMark('gen.chunk', …)`. No-op when unset
+ * so pure unit tests stay silent. Layer-safe: engine does not import game.
+ */
+type ChunkGenObserver = (chunkX: number, chunkY: number, ms: number) => void;
+let _chunkGenObserver: ChunkGenObserver | null = null;
+
+/** Register (or clear) the gen.chunk timing observer. */
+export function setChunkGenObserver(fn: ChunkGenObserver | null): void {
+  _chunkGenObserver = fn;
+}
+
 export function generateChunkSync(
   chunkX: number,
   chunkY: number,
   borderConstraints?: BorderConstraints,
 ): ChunkData {
+  // Light wrap: measure solid pipeline cost (critical-path PR1 harness).
+  const t0 = performance.now();
   const size = WORLD_CONFIG.chunkSize;
 
   const coordHash = fastHash(`chunk_${chunkX}_${chunkY}_sync`);
@@ -196,6 +211,9 @@ export function generateChunkSync(
   const { cells, borderEdges } = generateGridChunk(
     size, noiseSeed, featureSeed, biome, chunkX, chunkY, borderConstraints, mood, biomeTransitions,
   );
+
+  const ms = Math.round((performance.now() - t0) * 10) / 10;
+  _chunkGenObserver?.(chunkX, chunkY, ms);
 
   return {
     chunkX, chunkY,

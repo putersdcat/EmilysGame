@@ -130,7 +130,7 @@ import {
 import { generateBarterQuiz, syncBarterQuizDOM } from './trading';
 import { hasAssetSprite } from '../asset-pipeline/asset-sprites';
 import { sampleBiomeTransition } from '../rendering/biome-transition-overlays';
-import { getBootMarks, type BootMark } from './boot-marks';
+import { getBootMarks, getBootElapsedMs, type BootMark } from './boot-marks';
 import {
   injectDtMs,
   getDtClampedCount,
@@ -169,8 +169,13 @@ export function createGameDebug(deps: DebugApiDeps): Record<string, unknown> {
   } = deps;
 
   return {
-    // Boot budget marks (playable-session P0) — copy snapshot for playtests
+    // Boot budget marks (playable-session P0 + critical-path PR1) — copy snapshot
     bootMarks: (): readonly BootMark[] => getBootMarks(),
+    /** Marks whose name equals `name` (e.g. 'gen.chunk', 'boot.ensureChunks'). */
+    bootMarksNamed: (name: string): BootMark[] =>
+      getBootMarks().filter((m) => m.name === name),
+    /** Wall ms since boot-marks module load. */
+    bootElapsedMs: (): number => getBootElapsedMs(),
     // L0 time contract (play-stack PR1): hitch inject + clamp instrumentation
     injectDtMs,
     getDtClampedCount,

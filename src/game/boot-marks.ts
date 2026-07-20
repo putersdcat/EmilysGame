@@ -5,10 +5,13 @@
  * post-menu phases. Logs to console and is readable via
  * `window.__gameDebug.bootMarks` (wired in debug-api / startup-hud).
  *
- * Marks (design ladder M0):
+ * Marks (design ladder M0 + critical-path PR1):
  *   boot.llm, boot.assets, boot.stateInit, boot.ensureChunks,
  *   boot.menuInteractive, boot.menuToFirstFrame, boot.terrainBake.batch,
- *   boot.firstMovable
+ *   boot.firstMovable,
+ *   gen.chunk            — per-chunk solid gen cost {cx, cy, ms}
+ *   boot.ensureChunks    — bulk yield path {count, ms, maxChunkMs, p95ChunkMs}
+ *   chunk.boundary.syncBurst — sync ensure path {count, totalMs} when count>0
  */
 
 export interface BootMark {
@@ -48,6 +51,23 @@ export function bootMarkDuration(
 ): void {
   const ms = Math.round((performance.now() - startMs) * 10) / 10;
   bootMark(name, { ...detail, ms });
+}
+
+/**
+ * Percentile of a numeric sample list (linear rank, nearest-rank style).
+ * Returns 0 for empty input. Used for boot.ensureChunks p95ChunkMs.
+ */
+export function percentile(values: readonly number[], p: number): number {
+  if (values.length === 0) return 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const clamped = Math.min(1, Math.max(0, p));
+  const idx = Math.min(sorted.length - 1, Math.ceil(clamped * sorted.length) - 1);
+  return sorted[Math.max(0, idx)];
+}
+
+/** Round ms to 1 decimal (matches bootMarkDuration). */
+export function roundMs(ms: number): number {
+  return Math.round(ms * 10) / 10;
 }
 
 /** Snapshot of all marks (for __gameDebug). Returns a copy — not the live array. */
