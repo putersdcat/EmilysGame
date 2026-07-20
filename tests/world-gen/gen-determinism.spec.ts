@@ -67,6 +67,12 @@
  * single-cell fence/wall dirt gaps with quiz_gate via scene-invariants helpers.
  * Intentional content change on the golden-hash coordinate set.
  *
+ * Re-captured 2026-07-20 (312ea635 -> fc16f175) after critical-path PR4 gate
+ * policy: illegal linear gaps seal with matching barrier (not quiz_gate);
+ * ranked post-modular placeGatesInFenceRuns; sole cut-point-only
+ * ensureMinimumQuizGates (no last-resort field punch / no 7.8 min-gate).
+ * Intentional content change on the golden-hash coordinate set.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -76,8 +82,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-19 after place-coherence PR2 (post-pipeline fence-gap seal)
-const GOLDEN_HASH = '312ea635';
+// Re-captured 2026-07-20 after critical-path PR4 (barrier seal + ranked gates)
+const GOLDEN_HASH = 'fc16f175';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {

@@ -6,11 +6,16 @@
  * re-asserts homestead openings, seals illegal fence/wall dirt gaps via
  * scene-invariants helpers (`scanAndRepairFenceGaps` / `repairSceneOpenings`).
  *
+ * Critical-path PR4: seal policy is **matching barrier** (dominant neighbor),
+ * not `quiz_gate`. Functional openings ≠ structural seal. Pass stays last
+ * cell writer and MUST NOT call ensureMinimumQuizGates.
+ *
  * Reuses scene-invariants vocabulary and gap detection SSOT
  * (`isIllegalFenceGapCandidate`, `BARRIER_KEYS`, functional/path keys).
  * Does not invent new gate kinds or touch nano / FOV / WorldUnitSolver.
  *
  * @see memories/repo/design-place-coherence-epic-2026-07-19.md
+ * @see memories/repo/design-critical-path-recovery-2026-07-19.md §4
  */
 
 import { ASSET_DEFS } from '../../config/assets.config';
@@ -564,12 +569,12 @@ function collectRecipeFootprints(
  * 1. Collect modular stamps + known origin homestead footprint.
  * 2. `repairSceneOpenings` for each registered recipe (P2 re-assert).
  * 3. Origin: re-assert homestead south perimeter (P6) — **not** origin-exempt.
- * 4. Fence-run scan: seal trivial dirt/grass punch-throughs with `quiz_gate`
- *    via {@link scanAndRepairFenceGaps} (same SSOT as early gen light pass).
- *    Policy: **seal with quiz_gate** when gap is in a fence/wall run (existing
- *    helper). Fence-close is reserved for authored structure cells (homestead
- *    south flanks), not for open gaps in runs.
+ * 4. Fence-run scan: seal trivial dirt/grass punch-throughs with a **matching
+ *    barrier** (dominant neighbor; fallback `fence`) via
+ *    {@link scanAndRepairFenceGaps}. Functional openings ≠ structural seal —
+ *    illegal linear gaps never become `quiz_gate`. Declared openings skipped.
  * 5. Emit `coherenceRepairs` / `coherenceViolations` module counters.
+ * 6. MUST NOT call `ensureMinimumQuizGates` (PC is last writer; no quiz spam).
  *
  * Wire: absolute end of `generateGridChunk` — after `validatePlayability`
  * (which can carve grass through fence diagonals) and `ensureSpawnClearance`.
@@ -603,9 +608,9 @@ export function runPlaceCoherencePass(
     );
   }
 
-  // 4. Seal illegal single-cell dirt/grass gaps in barrier runs with quiz_gate.
-  //    Runs on **all** chunks including origin. Declared openings (incl.
-  //    modular path openings) are skipped so seal does not convert them.
+  // 4. Seal illegal single-cell dirt/grass gaps in barrier runs with matching
+  //    barrier (not quiz_gate). Runs on **all** chunks including origin.
+  //    Declared openings (incl. modular path openings) are skipped.
   repairs += scanAndRepairFenceGaps(cells, size, declared);
 
   // Re-assert recipe openings after seal for any residual mismatch.

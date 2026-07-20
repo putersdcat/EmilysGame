@@ -1,10 +1,12 @@
 /**
- * path-skeleton.spec.ts — Scene-first PR4
+ * path-skeleton.spec.ts — Scene-first PR4 + critical-path gate policy
  *
  * Early chunks (chunkDist ≤ 2) get a dirt path corridor from a border entry
  * toward a landmark. Path only overwrites soft terrain; structures/gates/water
- * stay intact. Full generateChunkSync(1,0) must show dirt path cells and ≥1
- * quiz_gate (ensureMinimumQuizGates already wired after stamps).
+ * stay intact. Full generateChunkSync(1,0) must show dirt path cells.
+ *
+ * Zero quiz_gate on some non-origin path chunks is OK (critical-path PR4 /
+ * KD13) — min-gate is cut-point-only with no last-resort field punch.
  */
 import { test, expect, Page } from '@playwright/test';
 
@@ -98,7 +100,7 @@ test.describe('Path skeleton (scene-first PR4)', () => {
     expect(result.gateIntact).toBe(true);
   });
 
-  test('fixed seed chunk (1,0) has dirt path cells and >=1 quiz_gate', async ({ page }) => {
+  test('fixed seed chunk (1,0) has dirt path cells (quiz_gate not required)', async ({ page }) => {
     await waitForGame(page);
 
     const result = await page.evaluate(async () => {
@@ -166,7 +168,8 @@ test.describe('Path skeleton (scene-first PR4)', () => {
 
     expect(result.chunkDist).toBe(1);
     expect(result.dirt, `expected dirt path cells in chunk(1,0); got ${JSON.stringify(result)}`).toBeGreaterThan(0);
-    expect(result.quizGate, 'ensureMinimumQuizGates must leave ≥1 quiz_gate').toBeGreaterThanOrEqual(1);
+    // Critical-path PR4: zero quiz_gate OK on non-origin when no cut-point exists.
+    expect(result.quizGate, 'quiz_gate count is non-negative').toBeGreaterThanOrEqual(0);
     // Deterministic
     expect(result.dirt2).toBe(result.dirt);
     expect(result.quiz2).toBe(result.quizGate);

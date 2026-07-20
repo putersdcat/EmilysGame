@@ -4,6 +4,11 @@
  * Standing law: no barrier without function. Fence/wall openings must be
  * `quiz_gate`, `door_locked` (or open door), or an explicit open path entry.
  *
+ * Functional openings ≠ structural seal (critical-path PR4):
+ * - Declared recipe openings stay functional (`quiz_gate` / door / path).
+ * - Illegal linear dirt gaps in fence/wall runs seal with a **matching barrier**
+ *   (dominant neighbor assetKey), never a random `quiz_gate`.
+ *
  * Contract:
  * - Declared `quiz_gate` openings must be `quiz_gate` on the grid.
  * - Declared `door_locked` openings must be door-family (`door_locked` /
@@ -46,13 +51,18 @@ const DOOR_FAMILY_KEYS = new Set([
   'door_gate',
 ]);
 
-/** Barrier materials that form enclosure rings / runs. */
+/**
+ * Barrier materials that form enclosure rings / runs.
+ * Seal family also includes barricade + homestead_wall* (prefix-matched below).
+ */
 export const BARRIER_KEYS = new Set([
   'fence',
   'wooden_fence',
+  'barricade',
   'wall',
   'stone_wall',
   'cathedral_wall',
+  'homestead_wall',
 ]);
 
 export interface SceneOpeningViolation {
@@ -87,7 +97,12 @@ function isPathLikeKey(assetKey: string): boolean {
 
 /** True when assetKey is a fence/wall barrier material (enclosure runs). */
 export function isBarrierAssetKey(assetKey: string): boolean {
-  return BARRIER_KEYS.has(assetKey);
+  if (BARRIER_KEYS.has(assetKey)) return true;
+  // Material variants used in stamps / place-coherence seal family
+  if (assetKey.startsWith('wooden_fence')) return true;
+  if (assetKey.startsWith('stone_wall')) return true;
+  if (assetKey.startsWith('homestead_wall')) return true;
+  return false;
 }
 
 function isBarrierKey(assetKey: string): boolean {
@@ -128,6 +143,66 @@ function makeDirtCell(): CellData {
     walkable: def?.walkable ?? true,
     interactable: def?.interactable ?? false,
   };
+}
+
+/**
+ * Structural seal cell: non-walkable barrier, never a functional opening.
+ * Always `interactable: false` (design seal asset rule — not a quiz/door).
+ */
+function makeBarrierSealCell(assetKey: string): CellData {
+  return {
+    assetKey,
+    walkable: false,
+    interactable: false,
+  };
+}
+
+/**
+ * Dominant barrier neighbor on the illegal-gap axis (horiz XOR vert).
+ * Copies the majority `assetKey` among barrier neighbors; fallback `fence`.
+ *
+ * Seal asset rule (critical-path PR4): functional openings ≠ structural seal.
+ */
+export function pickDominantBarrierSealAsset(
+  cells: CellData[][],
+  x: number,
+  y: number,
+): string {
+  const left = keyAt(cells, x - 1, y);
+  const right = keyAt(cells, x + 1, y);
+  const up = keyAt(cells, x, y - 1);
+  const down = keyAt(cells, x, y + 1);
+
+  const horizGap = isBarrierKey(left) && isBarrierKey(right);
+  const vertGap = isBarrierKey(up) && isBarrierKey(down);
+
+  const axisKeys: string[] = [];
+  if (horizGap && !vertGap) {
+    axisKeys.push(left, right);
+  } else if (vertGap && !horizGap) {
+    axisKeys.push(up, down);
+  } else {
+    // Fallback: any barrier cardinal neighbor
+    for (const k of [left, right, up, down]) {
+      if (isBarrierKey(k)) axisKeys.push(k);
+    }
+  }
+
+  if (axisKeys.length === 0) return 'fence';
+
+  const counts = new Map<string, number>();
+  for (const k of axisKeys) {
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  let best = 'fence';
+  let bestN = 0;
+  for (const [k, n] of counts) {
+    if (n > bestN) {
+      best = k;
+      bestN = n;
+    }
+  }
+  return best;
 }
 
 function hasFunctionalNearby(
@@ -383,23 +458,28 @@ export function isIllegalFenceGapCandidate(
 
 /**
  * Find single-cell gaps in fence/wall runs (barrier left+right XOR up+down)
- * that are bare walkable dirt/grass and place `quiz_gate` when no functional
- * opening is nearby.
+ * that are bare walkable dirt/grass and **seal with a matching barrier**
+ * (dominant neighbor assetKey; fallback `fence`) when no functional opening
+ * is nearby.
+ *
+ * Functional openings ≠ structural seal (critical-path PR4): illegal linear
+ * gaps must NOT become `quiz_gate`. Declared recipe openings stay functional
+ * via {@link repairSceneOpenings} / declared-opening allow-list.
  *
  * Detection SSOT: {@link isIllegalFenceGapCandidate}. Mutation only here.
  *
  * Optional `declaredOpeningCells` (`"x,y"` keys): skip those cells so declared
- * path openings are not converted to quiz_gate. Callers that know recipe
+ * path openings are not converted to barrier. Callers that know recipe
  * footprints should pass this set (place-coherence pass does).
  *
- * Returns the number of gates placed.
+ * Returns the number of cells sealed.
  */
 export function scanAndRepairFenceGaps(
   cells: CellData[][],
   size: number,
   declaredOpeningCells?: ReadonlySet<string>,
 ): number {
-  let placed = 0;
+  let sealed = 0;
   const h = Math.min(size, cells.length);
 
   for (let y = 0; y < h; y++) {
@@ -408,10 +488,11 @@ export function scanAndRepairFenceGaps(
     for (let x = 0; x < w; x++) {
       if (declaredOpeningCells?.has(`${x},${y}`)) continue;
       if (!isIllegalFenceGapCandidate(cells, x, y)) continue;
-      cells[y][x] = makeFunctionalCell('quiz_gate');
-      placed++;
+      const sealKey = pickDominantBarrierSealAsset(cells, x, y);
+      cells[y][x] = makeBarrierSealCell(sealKey);
+      sealed++;
     }
   }
 
-  return placed;
+  return sealed;
 }

@@ -92,9 +92,10 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
       const audit = auditPlaceCoherence(cells);
       const afterSnap = JSON.parse(JSON.stringify(cells));
 
-      // PR2 pass seals the same gap with quiz_gate (scene-invariants helper).
+      // PR2/PR4 pass seals the same gap with matching barrier (not quiz_gate).
       const pass = runPlaceCoherencePass(cells, { chunkX: 1, chunkY: 0 });
       const afterPassGaps = findIllegalFenceGaps(cells, size);
+      const sealed = cells[oy + 4][ox + 2];
 
       return {
         gapCount: gaps.length,
@@ -105,7 +106,9 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
         beforeSnap,
         afterSnap,
         passRepairs: pass.repairs,
-        sealedCell: cells[oy + 4][ox + 2].assetKey,
+        sealedCell: sealed.assetKey,
+        sealedWalkable: sealed.walkable,
+        sealedInteractable: sealed.interactable,
         afterPassGapCount: afterPassGaps.length,
       };
     });
@@ -116,9 +119,11 @@ test.describe('Place coherence audit harness (P1–P4, P7)', () => {
     expect(result.p4Count).toBeGreaterThanOrEqual(1);
     expect(result.gaps.some((g) => g.x === 3 && g.y === 5 && g.invariant === 'P4')).toBe(true);
 
-    // Pass seals with quiz_gate (not a new gate kind).
+    // Pass seals with matching barrier (dominant neighbor fence), not quiz_gate.
     expect(result.passRepairs).toBeGreaterThanOrEqual(1);
-    expect(result.sealedCell).toBe('quiz_gate');
+    expect(result.sealedCell).toBe('fence');
+    expect(result.sealedWalkable).toBe(false);
+    expect(result.sealedInteractable).toBe(false);
     expect(result.afterPassGapCount, 'P4 gaps cleared after pass').toBe(0);
   });
 

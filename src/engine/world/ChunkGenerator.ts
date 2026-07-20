@@ -13,15 +13,16 @@
  *   Phase 4: enforcePassability (Passability) — ensure walkability
  *   Phase 4.5: layPathSkeleton (PathSkeleton) — early-chunk dirt corridor (scene-first P1)
  *   Phase 5: populateAnchors, clusterDecorations, scatterCollectibles, layCoinTrails,
- *            placeQuizGates, placeGatesInFenceRuns, promoteDoorGates, placeBonfires,
- *            maybePlaceCastleLandmark, applyEntropyCellFlags, addExtraObstacles
- *            (Populator/CollectibleScatterer/ObstacleSolver/EntropyCellFlags/iso2-assemblies)
+ *            placeQuizGates (cut-prefer), promoteDoorGates, placeBonfires,
+ *            maybePlaceCastleLandmark, modular scenes, barrier gap seal,
+ *            ranked placeGatesInFenceRuns, sealTrivialQuizGateBypasses,
+ *            sole ensureMinimumQuizGates (ObstacleSolver/iso2-assemblies)
  *   Phase 6: balanceObstacles, rewardDeadEnds (ObstacleSolver)
  *   Phase 7: enforcePassability (re-enforce after population)
  *   Phase 8: validatePlayability (Validation) — playability report
  *   Phase 9: ensureSpawnClearance (starter-homestead) — origin spawn walkable
- *   Phase 9.5: runPlaceCoherencePass (PlaceCoherence) — LAST: seal illegal fence
- *              gaps + re-assert recipe openings / homestead after playability carves
+ *   Phase 9.5: runPlaceCoherencePass (PlaceCoherence) — LAST: barrier-seal illegal
+ *              fence gaps + re-assert recipe openings / homestead (no min-gates)
  *
  * gen.ts is now a pure re-export facade — consumers (main.ts, tests) can
  * import from either 'engine/gen' or 'engine/world/ChunkGenerator'.
@@ -281,9 +282,9 @@ function generateGridChunk(
   // (the module doesn't read WORLD_CONFIG.worldUnitSize directly).
   stampWorldUnitGrid(cells, grid, GRID_DIM, WU_SIZE);
   if (chunkX === 0 && chunkY === 0) stampStarterHomestead(cells);
-  // Light scene-law pass: single-cell fence/wall dirt gaps → quiz_gate when
-  // no functional opening is nearby. Origin-exempt (same policy as placeQuizGates):
-  // starter homestead authors its own quiz_gate; avoid injecting extra origin gates.
+  // Light scene-law pass: single-cell fence/wall dirt gaps → matching barrier
+  // seal (dominant neighbor; never quiz_gate). Origin-exempt (same policy as
+  // placeQuizGates): starter homestead authors its own quiz_gate.
   if (chunkX !== 0 || chunkY !== 0) {
     scanAndRepairFenceGaps(cells, size);
   }
@@ -298,7 +299,7 @@ function generateGridChunk(
   // Phase 4.5 (scene-first P1): dirt path skeleton for early chunks (dist ≤ 2).
   // AFTER base terrain + passability so borders/center are walkable; BEFORE
   // population / modular scenes so corridors exist when farms/gates land.
-  // ensureMinimumQuizGates (later) still guarantees ≥1 quiz_gate on the chunk.
+  // Zero quiz_gate on some non-origin path chunks is OK (gate policy PR4).
   layPathSkeleton(cells, size, seededRandom(featureSeed + 150), chunkDist);
 
   // Phase 5: content population (anchors, decorations, collectibles)
@@ -306,13 +307,10 @@ function generateGridChunk(
   clusterDecorations(cells, size, biome, seededRandom(featureSeed + 300), chunkDist, difficulty);
   scatterCollectibles(cells, size, biome, seededRandom(featureSeed + 400), chunkDist, difficulty);
 
-  // Phase 5.4–5.44: quiz/gate progression — skip entirely on origin so the
-  // starter homestead stays free to explore; every other chunk teaches the loop.
+  // Phase 5.4: quiz/gate placement (cut-prefer standalone) — origin-exempt so
+  // the starter homestead stays free of random quiz density (teaching gate only).
   if (chunkX !== 0 || chunkY !== 0) {
     placeQuizGates(cells, size, biome, seededRandom(featureSeed + 470), difficulty);
-    placeGatesInFenceRuns(cells, size, seededRandom(featureSeed + 472), biome);
-    sealTrivialQuizGateBypasses(cells, size, biome, seededRandom(featureSeed + 473));
-    ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 474), 1);
   }
 
   // Phase 5.41: convert remaining door_gate → door_locked (#98)
@@ -339,15 +337,26 @@ function generateGridChunk(
   // stampAssemblyOntoCells already repairs declared openings.
   maybePlaceModularScenes(cells, size, biome, chunkDist, seededRandom(featureSeed + 477));
 
-  // Phase 5.475: scene-law fence-gap repair after modular stamps (and any
-  // WU fence rings left with bare dirt punch-throughs). Origin-exempt.
+  // Critical-path PR4 gate policy (§4.3 / Appendix A) — non-origin only:
+  //   5.475 barrier seal (illegal linear gaps → matching barrier, not quiz_gate)
+  //   5.476 ranked placeGatesInFenceRuns (post-modular so rank-1 skip is real)
+  //   5.477 sealTrivialQuizGateBypasses
+  //   5.48  sole ensureMinimumQuizGates (cut-point only; no last-resort punch)
+  // No min-gate after place-coherence; PC stays last cell writer.
   if (chunkX !== 0 || chunkY !== 0) {
     scanAndRepairFenceGaps(cells, size);
-  }
 
-  // Phase 5.48: modular scenes can overwrite soft terrain that previously held
-  // a minimum quiz_gate — re-assert non-origin density after stamps.
-  if (chunkX !== 0 || chunkY !== 0) {
+    const hasDeclaredOpenings = getSceneStampRegistry().some(
+      (s) => (s.recipe.openings?.length ?? 0) > 0,
+    );
+    placeGatesInFenceRuns(
+      cells,
+      size,
+      seededRandom(featureSeed + 472),
+      biome,
+      { hasDeclaredOpenings },
+    );
+    sealTrivialQuizGateBypasses(cells, size, biome, seededRandom(featureSeed + 473));
     ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 478), 1);
   }
 
@@ -379,16 +388,11 @@ function generateGridChunk(
   removeOrphanWater(cells, size);
   stripOrphanRoofShards(cells, size);
 
-  // Phase 7.8: final min quiz_gate pass AFTER every stamp/cleanup that could
-  // have erased earlier gates (modular scenes, balance, cohere, etc.).
-  if (chunkX !== 0 || chunkY !== 0) {
-    ensureMinimumQuizGates(cells, size, biome, seededRandom(featureSeed + 790), 1);
-  }
-
   // Phase 8: playability validation (Solver F) (#46)
   // May carve grass shortcuts through diagonal obstacles when dead-end ratio
   // is high — that can punch holes in fence runs / homestead south. Place
-  // coherence must run AFTER this phase.
+  // coherence must run AFTER this phase. No ensureMinimumQuizGates here (PR4:
+  // sole min-gate is 5.48 post-modular; PC is last writer).
   validatePlayability(cells, size, chunkX, chunkY, seededRandom(featureSeed + 700));
 
   // Phase 9: guarantee the player's fixed spawn point is walkable (2026-07-09
@@ -396,12 +400,12 @@ function generateGridChunk(
   // near spawn — see ensureSpawnClearance's doc comment.
   if (chunkX === 0 && chunkY === 0) ensureSpawnClearance(cells);
 
-  // Phase 9.5 (place-coherence PR2): LAST stamp repair — after passability,
+  // Phase 9.5 (place-coherence): LAST stamp repair — after passability,
   // orphan strip, playability carves, and spawn clearance. Origin is NOT
   // exempt: re-assert homestead south (PR1 finding: late phases clobber
   // gate/flanks to grass). Modular stamps from the scene registry are
-  // re-asserted too. Seal illegal fence-run dirt gaps with quiz_gate via
-  // scene-invariants helpers (declared openings skipped). Nothing after
+  // re-asserted too. Seal illegal fence-run dirt gaps with **matching barrier**
+  // (not quiz_gate). MUST NOT call ensureMinimumQuizGates. Nothing after
   // this may rewrite cells.
   const modularRecipes = getSceneStampRegistry().map((s) => ({
     recipe: s.recipe,

@@ -8,7 +8,7 @@
  * Policy:
  *   - Only overwrites grass / flower soft terrain (and reaffirms dirt).
  *   - Never erases structures, gates, water, hard obstacles, items, or NPCs.
- *   - Quiz density stays with ensureMinimumQuizGates (wired after modular stamps).
+ *   - Quiz density is optional (critical-path PR4); zero quiz_gate on path chunks OK.
  *
  * Pipeline slot: after passability, before population / modular scenes so
  * dirt corridors exist when scenes and gates are placed.

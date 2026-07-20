@@ -1,7 +1,10 @@
 /**
- * scene-invariants.spec.ts — Scene opening contract + repair (PR1/PR3).
+ * scene-invariants.spec.ts — Scene opening contract + repair (PR1/PR3/PR4).
  *
  * Standing law: fence openings must be quiz_gate / door_locked / open path.
+ * Functional openings ≠ structural seal (critical-path PR4):
+ * - Declared openings repair to functional kinds.
+ * - Illegal linear dirt gaps seal with matching barrier (not quiz_gate).
  * - Bare fence ring with dirt gap fails validation until repaired.
  * - fenced-farm stamps quiz_gate at south entry center (not dirt-only).
  * - starter-homestead declares openings and validates after stamp.
@@ -17,7 +20,7 @@ async function waitForGame(page: Page) {
   await page.waitForTimeout(400);
 }
 
-test('bare fence ring with dirt gap: validate fails, repair places quiz_gate', async ({ page }) => {
+test('bare fence ring with dirt gap: validate fails, repair places quiz_gate; scan seals barrier', async ({ page }) => {
   await waitForGame(page);
 
   const result = await page.evaluate(async () => {
@@ -62,13 +65,13 @@ test('bare fence ring with dirt gap: validate fails, repair places quiz_gate', a
     const before = validateSceneOpenings(cells, ox, oy, syntheticRecipe);
     const gateBefore = cells.flat().filter((c) => c.assetKey === 'quiz_gate').length;
 
-    // Recipe-aware repair
+    // Recipe-aware repair — declared openings stay functional quiz_gate
     const repaired = repairSceneOpenings(cells, ox, oy, syntheticRecipe);
     const afterRecipe = validateSceneOpenings(cells, ox, oy, syntheticRecipe);
     const gateAfterRecipe = cells.flat().filter((c) => c.assetKey === 'quiz_gate').length;
     const repairedAgain = repairSceneOpenings(cells, ox, oy, syntheticRecipe);
 
-    // Second ring: only scanAndRepairFenceGaps (no recipe openings applied yet)
+    // Second ring: only scanAndRepairFenceGaps (no recipe openings) → barrier seal
     const cells2 = Array.from({ length: size }, () =>
       Array.from({ length: size }, () => ({
         assetKey: 'grass',
@@ -86,10 +89,25 @@ test('bare fence ring with dirt gap: validate fails, repair places quiz_gate', a
     cells2[oy + 4][ox + 2] = { assetKey: 'dirt', walkable: true, interactable: false };
     cells2[oy + 2][ox + 2] = { assetKey: 'dirt', walkable: true, interactable: false };
 
-    const scanPlaced = scanAndRepairFenceGaps(cells2, size);
+    const scanSealed = scanAndRepairFenceGaps(cells2, size);
     const scanAgain = scanAndRepairFenceGaps(cells2, size);
-    const gapCell = cells2[oy + 4][ox + 2].assetKey;
+    const gapCell = cells2[oy + 4][ox + 2];
     const interiorStillDirt = cells2[oy + 2][ox + 2].assetKey === 'dirt';
+    const quizFromScan = cells2.flat().filter((c) => c.assetKey === 'quiz_gate').length;
+
+    // Wall-run linear gap → seal copies dominant wall neighbor
+    const cells3 = Array.from({ length: size }, () =>
+      Array.from({ length: size }, () => ({
+        assetKey: 'grass',
+        walkable: true,
+        interactable: false,
+      })));
+    for (let x = 1; x <= 5; x++) {
+      cells3[2][x] = { assetKey: 'wall', walkable: false, interactable: false };
+    }
+    cells3[2][3] = { assetKey: 'dirt', walkable: true, interactable: false };
+    const wallSealed = scanAndRepairFenceGaps(cells3, size);
+    const wallGap = cells3[2][3];
 
     return {
       beforeOk: before.ok,
@@ -100,10 +118,16 @@ test('bare fence ring with dirt gap: validate fails, repair places quiz_gate', a
       gateAfterRecipe,
       gapAfterRepair: cells[oy + 4][ox + 2].assetKey,
       repairedAgain,
-      scanPlaced,
+      scanSealed,
       scanAgain,
-      gapCell,
+      gapCell: gapCell.assetKey,
+      gapWalkable: gapCell.walkable,
+      gapInteractable: gapCell.interactable,
+      quizFromScan,
       interiorStillDirt,
+      wallSealed,
+      wallGapKey: wallGap.assetKey,
+      wallGapWalkable: wallGap.walkable,
     };
   });
 
@@ -111,16 +135,25 @@ test('bare fence ring with dirt gap: validate fails, repair places quiz_gate', a
   expect(result.beforeViolations).toBeGreaterThanOrEqual(1);
   expect(result.gateBefore).toBe(0);
 
+  // Declared opening → functional quiz_gate
   expect(result.repaired, 'repairSceneOpenings should place a gate').toBeGreaterThanOrEqual(1);
   expect(result.afterRecipeOk, 'after repair, openings validate').toBe(true);
   expect(result.gateAfterRecipe).toBeGreaterThanOrEqual(1);
   expect(result.gapAfterRepair).toBe('quiz_gate');
   expect(result.repairedAgain, 'repair is idempotent').toBe(0);
 
-  expect(result.scanPlaced, 'scanAndRepairFenceGaps places gate in 1-cell gap').toBeGreaterThanOrEqual(1);
+  // Illegal linear gap → barrier seal, NOT quiz_gate
+  expect(result.scanSealed, 'scanAndRepairFenceGaps seals 1-cell gap with barrier').toBeGreaterThanOrEqual(1);
   expect(result.scanAgain, 'scan is idempotent').toBe(0);
-  expect(result.gapCell).toBe('quiz_gate');
+  expect(result.gapCell, 'fence-run gap seals as fence').toBe('fence');
+  expect(result.gapWalkable).toBe(false);
+  expect(result.gapInteractable).toBe(false);
+  expect(result.quizFromScan, 'barrier seal must not inject quiz_gate').toBe(0);
   expect(result.interiorStillDirt, 'interior dirt without opposite barriers stays dirt').toBe(true);
+
+  expect(result.wallSealed).toBeGreaterThanOrEqual(1);
+  expect(result.wallGapKey, 'wall-run gap seals as wall (dominant neighbor)').toBe('wall');
+  expect(result.wallGapWalkable).toBe(false);
 });
 
 test('fenced-farm recipe openings validated after stamp', async ({ page }) => {
@@ -508,11 +541,12 @@ test('recipe-footprint and grid OOB openings; parallel corridor not mass-gated',
   expect(result.gridOobActual).toBe('<oob>');
   expect(result.repairGrid).toBe(0);
 
-  expect(result.corridorPlaced, 'parallel corridor must not mass-gate').toBe(0);
+  expect(result.corridorPlaced, 'parallel corridor must not mass-seal').toBe(0);
   expect(result.corridorGates).toBe(0);
 
   expect(result.singlePlaced).toBeGreaterThanOrEqual(1);
-  expect(result.singleGate).toBe('quiz_gate');
+  // Structural seal = matching barrier, not quiz_gate
+  expect(result.singleGate).toBe('fence');
 });
 
 test('PR5 expand recipes: openings validate after stamp (garden, shrine, market)', async ({

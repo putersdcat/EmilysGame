@@ -368,10 +368,12 @@ export function placeQuizGates(
     }
   }
 
-  // Sort by score descending, place quiz gates at best spots
-  candidates.sort((a, b) => b.score - a.score);
+  // Critical-path PR4: require local cut-point for standalone placements.
+  // Drop last-resort non-cut field punches (mid-fence / free-roam spam).
+  const cutCandidates = candidates.filter((c) => c.cut);
+  cutCandidates.sort((a, b) => b.score - a.score);
   let placed = 0;
-  for (const c of candidates) {
+  for (const c of cutCandidates) {
     if (placed >= remaining) break;
     // Don't place too close to another quiz gate (min 4 cells apart)
     let tooClose = false;
@@ -547,9 +549,15 @@ export function sealTrivialQuizGateBypasses(
 }
 
 /**
- * Phase 5.44: Guarantee at least one quiz_gate in a chunk that has quiz
- * content enabled, so leaving spawn always surfaces the core loop even
- * when random placement + fence runs produced zero gates.
+ * Phase 5.48 (sole call site after critical-path PR4): try to place up to
+ * `minCount` quiz_gates on **local cut-points only**.
+ *
+ * Zero quiz_gate on some non-origin chunks is OK (origin teaches the loop via
+ * homestead). Last-resort random field punches are **banned** — if no cut-point
+ * candidate exists, leave count as-is (may be 0).
+ *
+ * Called exactly once per non-origin chunk: after modular stamps + barrier gap
+ * seal + ranked placeGatesInFenceRuns, before validation / place-coherence.
  */
 export function ensureMinimumQuizGates(
   cells: CellData[][],
@@ -576,10 +584,11 @@ export function ensureMinimumQuizGates(
       if (!['grass', 'dirt', 'sand', 'stone_floor'].includes(cell.assetKey)) continue;
       const n = countWalkableNeighbors(cells, x, y, size);
       if (n < 2 || n > 3) continue;
-      const cut = wouldBeLocalCutPoint(cells, x, y, size);
+      // Cut-point only — ban non-cut / last-resort field punch (PR4).
+      if (!wouldBeLocalCutPoint(cells, x, y, size)) continue;
       candidates.push({
         x, y,
-        score: (cut ? 50 : 0) + traffic[y * size + x] + (4 - n) + rng() * 0.3,
+        score: 50 + traffic[y * size + x] + (4 - n) + rng() * 0.3,
       });
     }
   }
@@ -589,41 +598,7 @@ export function ensureMinimumQuizGates(
     cells[c.y][c.x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
     count++;
   }
-
-  // Last resort: any walkable cell without content (flowers/animals count —
-  // meadow soft-terrain is full of them after decorations / modular stamps).
-  if (count < minCount) {
-    for (let y = 1; y < size - 1 && count < minCount; y++) {
-      for (let x = 1; x < size - 1 && count < minCount; x++) {
-        const cell = cells[y][x];
-        if (!cell.walkable || cell.itemId || cell.npcId) continue;
-        if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'water' || cell.assetKey === 'bridge') continue;
-        if (countWalkableNeighbors(cells, x, y, size) < 1) continue;
-        cells[y][x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
-        count++;
-      }
-    }
-  }
-
-  // Absolute last resort: force-overwrite the first walkable cell in the
-  // interior (even isolated). Better a weird gate than a gate-less chunk.
-  if (count < minCount) {
-    for (let y = 1; y < size - 1 && count < minCount; y++) {
-      for (let x = 1; x < size - 1 && count < minCount; x++) {
-        const cell = cells[y][x];
-        if (cell.assetKey === 'quiz_gate') continue;
-        if (cell.itemId || cell.npcId) continue;
-        // Prefer walkable; if none exist, punch a solid (tree/rock) instead
-        if (!cell.walkable && cell.assetKey !== 'rock' && cell.assetKey !== 'bush'
-            && cell.assetKey !== 'tree' && cell.assetKey !== 'tree_pine'
-            && cell.assetKey !== 'tree_palm' && cell.assetKey !== 'fence') {
-          continue;
-        }
-        cells[y][x] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
-        count++;
-      }
-    }
-  }
+  // No last-resort punch: zero gates is acceptable when no cut-point exists.
 }
 
 /**
@@ -745,39 +720,73 @@ export function promoteDoorGates(cells: CellData[][], size: number): void {
   }
 }
 
+/** Options for ranked fence-run gate placement (critical-path PR4 §4.2). */
+export interface PlaceGatesInFenceRunsOpts {
+  /**
+   * True when modular/recipe stamps already declared openings on this chunk.
+   * Rank-1 skip when true (must be evaluated post-modular so it is real).
+   */
+  hasDeclaredOpenings?: boolean;
+}
+
+const FENCE_RUN_ASSETS = new Set(['wooden_fence', 'fence', 'barricade']);
+const FUNCTIONAL_GATE_KEYS = new Set([
+  'quiz_gate',
+  'door_locked',
+  'door_open',
+  'door_gate',
+  'toll_gate',
+]);
+
 /**
- * Phase 5.42: Place quiz gates at openings in fence runs (ref #223 + AUTONOMOUS_LOOP.md).
- * Solver-style post-process: detects continuous fence segments (wooden_fence/fence/barricade),
- * replaces an interior cell with quiz_gate (walkable:false default; nano gets conditional 'quiz-gate').
- * Enables exact iso2 walk (isPointWalkableInTile fence footprint + cond unlock) and BFS.
- * Horizontal then vertical to catch perimeters.
+ * Phase 5.476 (post-modular, critical-path PR4): ranked fence-run gate placement.
+ *
+ * Must run **after** modular scenes + barrier gap seal so rank-1 skip on modular
+ * openings is real (pre-modular call was a no-op for that check).
+ *
+ * Ranked default (no enclosure heuristic):
+ * 1. **Skip entire phase** if the chunk already has any functional opening cell
+ *    (`quiz_gate` / `door_*` / `toll_gate`) **or** any declared stamp opening.
+ * 2. Else: consider fence runs ≥ 3; pick the **longest** run; place **at most one**
+ *    `quiz_gate` in the run interior **only if** `wouldBeLocalCutPoint` is true
+ *    after tentative placement; else revert and skip.
+ * 3. Else **skip** (zero gates from this phase).
  */
 export function placeGatesInFenceRuns(
   cells: CellData[][],
   size: number,
   rng: () => number,
   biome: BiomeDef,
+  opts?: PlaceGatesInFenceRunsOpts,
 ): void {
   const w = biome.obstacleWeights ?? {};
   if ((w['quiz_gate'] ?? 0) <= 0 && (w['fence'] ?? 0) <= 0) return;
-  const FENCE_ASSETS = ['wooden_fence', 'fence', 'barricade'];
-  const GATE = 'quiz_gate';
+
+  // Rank 1: skip if functional openings already present or declared openings exist.
+  if (opts?.hasDeclaredOpenings) return;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (FUNCTIONAL_GATE_KEYS.has(cells[y][x].assetKey)) return;
+    }
+  }
+
+  type FenceRun = {
+    axis: 'h' | 'v';
+    fixed: number;
+    start: number;
+    len: number;
+  };
+  const runs: FenceRun[] = [];
+
   // Horizontal runs
   for (let y = 0; y < size; y++) {
     let start = -1;
     for (let x = 0; x <= size; x++) {
-      const isF = x < size && FENCE_ASSETS.includes(cells[y][x]?.assetKey);
+      const isF = x < size && FENCE_RUN_ASSETS.has(cells[y][x]?.assetKey);
       if (isF && start < 0) start = x;
       if ((!isF || x === size) && start >= 0) {
         const len = x - start;
-        if (len >= 3) {
-          const off = Math.floor(rng() * (len - 2)) + 1; // vary gate pos in run interior
-          const p = start + off;
-          const c = cells[y][p];
-          if (c && !c.npcId && !c.itemId) {
-            cells[y][p] = { assetKey: GATE, walkable: false, interactable: true };
-          }
-        }
+        if (len >= 3) runs.push({ axis: 'h', fixed: y, start, len });
         start = -1;
       }
     }
@@ -786,22 +795,62 @@ export function placeGatesInFenceRuns(
   for (let x = 0; x < size; x++) {
     let start = -1;
     for (let y = 0; y <= size; y++) {
-      const isF = y < size && FENCE_ASSETS.includes(cells[y]?.[x]?.assetKey);
+      const isF = y < size && FENCE_RUN_ASSETS.has(cells[y]?.[x]?.assetKey);
       if (isF && start < 0) start = y;
       if ((!isF || y === size) && start >= 0) {
         const len = y - start;
-        if (len >= 3) {
-          const off = Math.floor(rng() * (len - 2)) + 1;
-          const p = start + off;
-          const c = cells[p]?.[x];
-          if (c && !c.npcId && !c.itemId) {
-            cells[p][x] = { assetKey: GATE, walkable: false, interactable: true };
-          }
-        }
+        if (len >= 3) runs.push({ axis: 'v', fixed: x, start, len });
         start = -1;
       }
     }
   }
+
+  if (runs.length === 0) return;
+
+  // Rank 2: longest run only; at most one cut-point gate in interior.
+  runs.sort((a, b) => b.len - a.len || a.start - b.start || a.fixed - b.fixed);
+  const best = runs[0]!;
+
+  // Try mid-run first, then remaining interior offsets in rng order.
+  const midOff = Math.max(1, Math.min(best.len - 2, Math.floor(best.len / 2)));
+  const interiorOffsets: number[] = [midOff];
+  for (let off = 1; off <= best.len - 2; off++) {
+    if (off !== midOff) interiorOffsets.push(off);
+  }
+  // Shuffle non-mid slots for variety (seeded).
+  for (let i = interiorOffsets.length - 1; i > 1; i--) {
+    const j = 1 + Math.floor(rng() * i);
+    [interiorOffsets[i], interiorOffsets[j]] = [interiorOffsets[j], interiorOffsets[i]];
+  }
+
+  for (const off of interiorOffsets) {
+    const px = best.axis === 'h' ? best.start + off : best.fixed;
+    const py = best.axis === 'h' ? best.fixed : best.start + off;
+    const c = cells[py]?.[px];
+    if (!c || c.npcId || c.itemId) continue;
+    if (!FENCE_RUN_ASSETS.has(c.assetKey)) continue;
+
+    const prev = {
+      assetKey: c.assetKey,
+      walkable: c.walkable,
+      interactable: c.interactable,
+      itemId: c.itemId,
+      npcId: c.npcId,
+    };
+    cells[py][px] = { assetKey: 'quiz_gate', walkable: false, interactable: true };
+    if (wouldBeLocalCutPoint(cells, px, py, size)) {
+      return; // placed one cut-point gate
+    }
+    // Revert and try next interior cell
+    cells[py][px] = {
+      assetKey: prev.assetKey,
+      walkable: prev.walkable,
+      interactable: prev.interactable,
+      itemId: prev.itemId,
+      npcId: prev.npcId,
+    };
+  }
+  // Rank 3: no valid cut-point interior — skip (zero gates from this phase).
 }
 
 /**
