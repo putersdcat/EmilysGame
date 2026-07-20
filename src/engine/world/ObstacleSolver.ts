@@ -9,14 +9,17 @@
  *
  * Public API (re-exported from gen.ts):
  *   - placeQuizGates          (Phase 5.4)  — convert some gate assets to
- *     quiz_gate + place standalone quiz gates at chokepoints (#43);
- *     prefers local cut-points on main corridors (Phase A unavoidability)
- *   - sealTrivialQuizGateBypasses (Phase 5.43) — close short walk-arounds
+ *     quiz_gate + place standalone quiz gates at local cut-points only
+ *     (#43; critical-path PR4 cut-require for standalone)
+ *   - sealTrivialQuizGateBypasses (Phase 5.477) — close short walk-arounds
  *     around quiz_gates so they force engagement (Docs/13 §2 #1)
  *   - placeBonfires           (Phase 5.45) — 1-3 bonfires per chunk for
  *     night-time local lighting, biome-weighted fire variants (#67, #81)
- *   - placeGatesInFenceRuns   (Phase 5.42) — punch quiz_gate into fence
- *     runs for #223 conditional walk; skips central starting chunks
+ *   - placeGatesInFenceRuns   (Phase 5.476, **post-modular**) — ranked:
+ *     skip if openings present → else ≤1 cut-point gate on longest fence
+ *     run ≥3 → else skip. Never punch every ≥3 run (critical-path PR4).
+ *   - ensureMinimumQuizGates  (Phase 5.48 sole) — cut-point only; zero OK;
+ *     no last-resort field punch (critical-path PR4 / KD13)
  *   - balanceObstacles        (Phase 6)    — ensure keys exist before
  *     locks; full lock-key DAG with layered reachability expansion;
  *     removes unreachable locks (#98)
@@ -278,12 +281,14 @@ function pickSealAsset(biome: BiomeDef): string {
  * Phase 5.4: Quiz Gate Placement (#43)
  * Templates produce door_gate / door_locked / toll_gate cells, but never quiz_gate.
  * This phase converts some existing gate cells to quiz_gate based on biome weight,
- * AND places standalone quiz gates at chokepoints when biome config warrants it.
- * Runs after anchor population so it can see the full gate picture.
+ * AND places standalone quiz gates at **local cut-points only** when biome config
+ * warrants it. Runs after anchor population so it can see the full gate picture.
  *
- * Phase A (2026-07-15): standalone placement prefers local cut-points on
- * main corridors (entry BFS traffic) so gates force engagement rather than
- * sitting in open terrain with trivial walk-arounds (Docs/13 §2 #1).
+ * Critical-path PR4 §4.4:
+ * - Standalone Strategy 2: **require** cut-point (no last-resort non-cut field punch).
+ * - Strategy 1 (door/toll conversion): still cut-prefer sort, not cut-require —
+ *   residual free-roam quality intentionally deferred to PR5 soft cut-point ratio
+ *   / PR7 harden (design residual; do not re-spam fence-run seals as quiz_gate).
  */
 export function placeQuizGates(
   cells: CellData[][],
@@ -300,6 +305,9 @@ export function placeQuizGates(
   const effectiveWeight = weight * quizFreqMult; // scale weight by difficulty tier
 
   // --- Strategy 1: Convert some existing gate-type obstacles to quiz_gate ---
+  // Design residual (O2 / §4.4): cut-prefer only — not cut-require. Existing
+  // door/toll stamps are already intentional gates; conversion does not invent
+  // mid-fence free-roam quizzes. Harden conversion cut-ratio in PR5/PR7 if needed.
   const CONVERTIBLE_GATES = ['door_gate', 'door_locked', 'toll_gate'];
   const existingGates: Array<{ x: number; y: number; cut: boolean }> = [];
   for (let y = 0; y < size; y++) {

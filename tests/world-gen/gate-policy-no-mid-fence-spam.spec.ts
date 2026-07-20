@@ -397,8 +397,11 @@ test.describe('Gate policy — barrier seal + no mid-fence spam (critical-path P
     // Zero-quiz non-origin chunks are allowed
     expect(result.zeroQuizChunks).toBeGreaterThanOrEqual(0);
 
-    // Mid-fence quiz density must be bounded (ranked fence-run ≤1 + no seal spam).
-    // Old policy punched every ≥3 fence run → often double-digit mid-fence gates.
+    // Soft mid-fence bound (review O1): anti-flaky margin for gen variance.
+    // Ranked fence-run alone implies ≤1 mid-fence gate/chunk without other
+    // sources (≤ sampled). Bound is 2× slack until PR7 proof bar hardens after
+    // playtest baseline (e.g. `<= sampled` or `<= sampled + 1`). Unit cases
+    // above already hard-assert barrier seal + ranked ≤1.
     expect(
       result.midFenceQuiz,
       `mid-fence quiz_gates across sample: ${JSON.stringify(result)}`,
