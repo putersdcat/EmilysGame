@@ -3,6 +3,9 @@
  *
  * Reuses the existing #llmSplash overlay so we do not invent a second full-
  * screen stack. Safe in test mode (DOM may be missing — no-ops).
+ *
+ * Critical-path hang fix (PR2): `updateWorldLoading` drives N/M progress
+ * during multi-chunk bulk gen so the spinner is not a frozen static label.
  */
 
 const SKIP_BTN_ID = 'btnSkipLlm';
@@ -18,6 +21,16 @@ export function showWorldLoading(message = 'Loading world…'): void {
   if (statusEl) statusEl.textContent = message;
   if (skipBtn) skipBtn.style.display = 'none';
   if (splash) splash.style.display = 'flex';
+}
+
+/**
+ * Update the spinner status text without toggling visibility.
+ * Used by bulk chunk gen for N/M progress (`Loading world… 3/9`).
+ * No-op when DOM is missing (test mode).
+ */
+export function updateWorldLoading(message: string): void {
+  const statusEl = document.getElementById('llmStatus');
+  if (statusEl) statusEl.textContent = message;
 }
 
 /** Hide the loading overlay (and restore skip button visibility for next LLM gate). */

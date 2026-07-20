@@ -10,6 +10,7 @@
  *   boot.menuInteractive, boot.menuToFirstFrame, boot.terrainBake.batch,
  *   boot.firstMovable,
  *   gen.chunk            — per-chunk solid gen cost {cx, cy, ms}
+ *   boot.chunkProgress   — N/M bulk progress after each yielded chunk {n, m, cx, cy}
  *   boot.ensureChunks    — bulk yield path {count, ms, maxChunkMs, p95ChunkMs}
  *   chunk.boundary.syncBurst — sync ensure path {count, totalMs} when count>0
  */

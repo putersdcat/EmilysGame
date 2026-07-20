@@ -20,7 +20,7 @@
  * Public API:
  *   - chunkKey(cx, cy) — string key helper
  *   - ensureChunksAround(state) — SYNC load for rAF / boundary crosses (must stay sync)
- *   - ensureChunksAroundYielding(state) — ASYNC boot-only load (yield after each gen)
+ *   - ensureChunksAroundYielding(state) — ASYNC UI/boot bulk load (double-rAF + N/M + yield)
  *   - collectBorderConstraints(chunks, cx, cy) — read edge tags from neighbors
  *   - setPendingResolvedCells(cells) — store cells from save data
  *   - applyResolvedToChunk(key, chunk) — apply pending cells to fresh chunk
@@ -44,6 +44,7 @@ import { type GameState } from './game-state';
 import { type ChunkData, type BorderConstraints } from '../types/game.types';
 import { type ResolvedCell } from './save';
 import { bootMark, percentile, roundMs } from './boot-marks';
+import { updateWorldLoading } from './boot-loading';
 
 // ─── Module-level state ───────────────────────────────────────
 
@@ -74,9 +75,32 @@ export function chunkKey(cx: number, cy: number): string {
   return `${cx},${cy}`;
 }
 
-/** Yield to the browser event loop so the tab stays responsive during bulk gen. */
-function yieldToMain(): Promise<void> {
+/**
+ * Double-rAF (with setTimeout fallback) so the browser can paint the spinner
+ * and process input before / between solid chunk gens.
+ */
+function doubleRaf(): Promise<void> {
+  if (typeof requestAnimationFrame === 'function') {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve());
+      });
+    });
+  }
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/**
+ * Stronger main-thread yield for bulk gen.
+ * Prefer `scheduler.yield()` when available; else double-rAF / setTimeout(0).
+ * (Critical-path PR2 — inter-chunk yield, not mid-mutation split.)
+ */
+function yieldToMain(): Promise<void> {
+  const sch = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (sch && typeof sch.yield === 'function') {
+    return sch.yield();
+  }
+  return doubleRaf();
 }
 
 /**
@@ -141,12 +165,15 @@ export function ensureChunksAround(state: GameState): void {
  * Boot / session-orchestration bulk load with yields between chunks.
  *
  * Use ONLY from createInitialState / applySaveData / resetGameState /
- * menu spinner paths. After each `generateChunkSync`, yields via
- * setTimeout(0) so the browser can paint and process input (avoids
- * "Page Unresponsive" on cold load and Load/New Game).
+ * menu spinner / slot-load error recovery paths. Never call from rAF
+ * gameLoop / handleMovement / boundary crosses — those keep sync
+ * `ensureChunksAround` (budgeted in PR3).
  *
- * **Forbidden:** calling this from gameLoop / handleMovement / boundary
- * crosses — those must keep using sync `ensureChunksAround`.
+ * Hang-fix contract (critical-path PR2):
+ *   1. Double-rAF **before** first `ensureOneChunk` so spinner paints
+ *   2. N/M status via `updateWorldLoading` + `boot.chunkProgress` marks
+ *   3. Stronger inter-chunk yield (`scheduler.yield` / double-rAF)
+ *   4. Residual per-chunk solid cost is expected until phase cheapening
  */
 export async function ensureChunksAroundYielding(
   state: GameState,
@@ -159,13 +186,34 @@ export async function ensureChunksAroundYielding(
   let count = 0;
   _batchChunkMs = [];
 
+  // Collect missing coords first so N/M progress has a stable M.
+  const missing: Array<{ cx: number; cy: number }> = [];
   for (let dy = -buf; dy <= buf; dy++) {
     for (let dx = -buf; dx <= buf; dx++) {
-      if (ensureOneChunk(state, pcx + dx, pcy + dy)) {
-        count++;
-        // Yield after each generated chunk so the main thread is not solid.
-        await yieldToMain();
+      const cx = pcx + dx;
+      const cy = pcy + dy;
+      if (!state.chunks.has(chunkKey(cx, cy))) {
+        missing.push({ cx, cy });
       }
+    }
+  }
+  const total = missing.length;
+
+  // Paint spinner before first solid chunk gen (double-rAF).
+  await doubleRaf();
+
+  if (total > 0) {
+    updateWorldLoading(`Loading world… 0/${total}`);
+  }
+
+  for (const { cx, cy } of missing) {
+    if (ensureOneChunk(state, cx, cy)) {
+      count++;
+      updateWorldLoading(`Loading world… ${count}/${total}`);
+      bootMark('boot.chunkProgress', { n: count, m: total, cx, cy });
+      // Yield after each generated chunk so the main thread is not solid
+      // multi-chunk (browser can paint + process input between gens).
+      await yieldToMain();
     }
   }
 

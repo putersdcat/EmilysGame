@@ -14,7 +14,7 @@ import { buildSaveData } from './save-build';
 import { saveToSlot, loadFromSlot, deleteSlot } from './save';
 import { applySaveData } from './save-apply';
 import { withWorldLoading } from './boot-loading';
-import { ensureChunksAround } from './chunk-lifecycle';
+import { ensureChunksAroundYielding } from './chunk-lifecycle';
 import { setControlLock, resetPlayMode, syncDerivedPaused } from './play-mode';
 
 /** Slot save action: serialize state, persist to slot, mark UI dirty, toast. */
@@ -55,12 +55,16 @@ export function makeSlotLoadHandler(state: GameState) {
         markSaveSlotsDirty();
         addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
       })
-      .catch((err: unknown) => {
+      .catch(async (err: unknown) => {
         console.error('[slot-load] applySaveData failed:', err);
         addToast(state.ui, 'Load failed — try again', '#f44336', 2500);
-        // Best-effort: fill viewport if clear() already ran mid-failure
+        // Best-effort: fill viewport if clear() already ran mid-failure.
+        // Never sync multi-chunk on UI click/error paths (critical-path PR2).
         try {
-          ensureChunksAround(state);
+          await withWorldLoading(
+            () => ensureChunksAroundYielding(state),
+            'Loading world…',
+          );
         } catch { /* ignore secondary ensure errors */ }
       })
       .finally(() => {

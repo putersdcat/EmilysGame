@@ -67,8 +67,9 @@ import { resetPlayMode } from './play-mode';
  * the chunks around the player's restored position with any saved
  * resolved cells re-applied. Called from save-load flows in main.ts.
  *
- * **Async** — uses boot-only `ensureChunksAroundYielding` so bulk gen
- * does not freeze the tab. Callers should show a loading spinner.
+ * **Async** — uses boot-only `ensureChunksAroundYielding` (N/M spinner
+ * progress + inter-chunk yield; critical-path PR2). Callers should show
+ * a loading spinner. Never falls back to sync multi-chunk ensure.
  */
 export async function applySaveData(state: GameState, data: SaveData): Promise<void> {
   // Modes re-default empty on load (no mid-quiz resume) — PR5

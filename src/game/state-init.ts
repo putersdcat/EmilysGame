@@ -87,11 +87,12 @@ export interface InitialStateResult {
  * gives the player the starter inventory bundle.
  *
  * Also kicks off the initial chunk generation around the spawn point
- * via boot-only `ensureChunksAroundYielding` (yields between chunks so
- * the tab stays responsive).
+ * via boot-only `ensureChunksAroundYielding` (double-rAF paint, N/M
+ * spinner progress, stronger inter-chunk yield — critical-path PR2).
  *
  * **Async** for bulk chunk gen only — does not await the LLM wordlist
- * (already swapped in async by bootstrapWordlist).
+ * (already swapped in async by bootstrapWordlist). Never uses sync
+ * multi-chunk ensure on this UI/boot path.
  */
 export async function createInitialState(): Promise<InitialStateResult> {
   const t0 = performance.now();

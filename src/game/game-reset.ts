@@ -66,8 +66,9 @@ import { resetPlayMode } from './play-mode';
  * Called from the new-game flow in main.ts (after the user picks
  * "New Game" from the pause menu).
  *
- * **Async** — uses boot-only `ensureChunksAroundYielding` so bulk gen
- * does not freeze the tab. Callers should show a loading spinner.
+ * **Async** — uses boot-only `ensureChunksAroundYielding` (N/M spinner
+ * progress + inter-chunk yield; critical-path PR2). Callers should show
+ * a loading spinner. Never uses sync multi-chunk ensure on this path.
  */
 export async function resetGameState(state: GameState): Promise<void> {
   state.player.x = PLAYER_CONFIG.startPosition.x;
