@@ -35,9 +35,9 @@ test.describe('Frame-Time Triage - Issue #79', () => {
     const debugOverlay = page.locator('#debugOverlay');
     await expect(debugOverlay).toBeVisible();
     const text = await debugOverlay.textContent();
-    // Perf line format: "Perf: W:<n> P:<n> Wi:<n> L:<n> Wx:<n>ms"
+    // Perf line format (current HUD): "Perf: R:<n> P:<n> Wi:<n> L:<n> Wx:<n> …"
     expect(text).toContain('Perf:');
-    expect(text).toMatch(/W:\d+\.\d/);
+    expect(text).toMatch(/R:\d+\.\d/);
     expect(text).toMatch(/P:\d+\.\d/);
     expect(text).toMatch(/L:\d+\.\d/);
     expect(text).toMatch(/Wx:\d+\.\d/);
