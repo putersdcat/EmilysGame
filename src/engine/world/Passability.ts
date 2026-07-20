@@ -5,14 +5,13 @@
  * the chunk's walkable cells are connected and that the chunk has at least
  * `WORLD_CONFIG.passabilityTarget` reachable area. The implementation:
  *
- *   1. Force the center cell walkable (unless it's water or a bridge — #100
- *      protects river integrity).
+ *   1. Force the center cell walkable (unless water / barrier-protected).
  *   2. BFS flood-fill from the center; count reachable cells.
  *   3. If reachable ratio is below the target, carve additional walkable
- *      cells in random non-water/bridge locations until the target is met
- *      or the attempt budget is exhausted.
- *   4. Force the 4 mid-edge cells walkable (entry points) unless they're
- *      water/bridge.
+ *      cells from **soft obstacles only** (tree/bush/rock) — never barriers,
+ *      functional gates, water, bridge, or starter structure (critical-path PR5).
+ *   4. Force mid-edge entry points when safe; skip barrier/gate cells and
+ *      prefer soft-neighbor carve along that edge (§5.2).
  *   5. Validate water integrity — any water cell that leaked to walkable
  *      gets un-walkable; bridge cells are forced walkable. Counts
  *      (waterCells, bridgeCells, leaks) are published via
@@ -28,10 +27,47 @@
 import { WORLD_CONFIG } from '../../config/game.config';
 import { bfsFloodFill } from '../utils';
 import type { CellData } from '../../types/game.types';
+import {
+  FUNCTIONAL_OPENING_KEYS,
+  isBarrierAssetKey,
+} from '../iso2-assemblies/scene-invariants';
 
 // --- Water debug state (read by getWaterDebugInfo, written by validateWaterIntegrity) ---
 
 let _lastWaterDebug = { waterCells: 0, bridgeCells: 0, leaks: 0 };
+
+/**
+ * Soft obstacles that `enforcePassability` may grass-carve to hit the
+ * passability target (design §5.1 soft allowlist). Everything else that is
+ * non-walkable is left alone — never punch barriers / gates / water.
+ */
+export const SOFT_CARVE_ASSET_KEYS = new Set([
+  'tree',
+  'tree_pine',
+  'tree_palm',
+  'bush',
+  'rock',
+]);
+
+/** True when assetKey is in the soft-carve allowlist. */
+export function isSoftCarvableAsset(assetKey: string): boolean {
+  return SOFT_CARVE_ASSET_KEYS.has(assetKey);
+}
+
+/**
+ * Assets passability + playability carves must never overwrite with grass.
+ * Shared protect list for Passability + Validation (design §5.1 / §5.3).
+ *
+ * Includes: water, bridge, barrier materials, functional openings, starter_*
+ * structure mass.
+ */
+export function isPassabilityProtectedAsset(assetKey: string): boolean {
+  if (assetKey === 'water' || assetKey === 'bridge') return true;
+  if (FUNCTIONAL_OPENING_KEYS.has(assetKey)) return true;
+  if (isBarrierAssetKey(assetKey)) return true;
+  if (assetKey.startsWith('starter_')) return true;
+  return false;
+}
 
 /**
  * Public read-only accessor for the most recent water-integrity pass.
@@ -42,6 +78,57 @@ export function getWaterDebugInfo(): { waterCells: number; bridgeCells: number; 
   return { ..._lastWaterDebug };
 }
 
+function carveToGrass(cells: CellData[][], x: number, y: number): void {
+  cells[y][x] = { assetKey: 'grass', walkable: true, interactable: false };
+}
+
+/**
+ * Mid-edge force (§5.2): open a chunk entry without destroying barrier rings.
+ *
+ * - water / bridge: leave (#100)
+ * - barrier / functional gate / starter: do NOT overwrite E; try ±1 along the
+ *   edge for already-walkable open terrain or a soft obstacle to carve
+ * - else: force E to walkable grass as before
+ */
+function forceMidEdgeEntry(cells: CellData[][], size: number, ep: { x: number; y: number }): void {
+  const cell = cells[ep.y][ep.x];
+  const key = cell.assetKey;
+
+  if (key === 'water' || key === 'bridge') return;
+
+  if (isPassabilityProtectedAsset(key)) {
+    // Neighbors along this edge (horizontal edge → ±x; vertical edge → ±y)
+    const alongEdge: Array<{ x: number; y: number }> =
+      ep.y === 0 || ep.y === size - 1
+        ? [
+            { x: ep.x - 1, y: ep.y },
+            { x: ep.x + 1, y: ep.y },
+          ]
+        : [
+            { x: ep.x, y: ep.y - 1 },
+            { x: ep.x, y: ep.y + 1 },
+          ];
+
+    for (const n of alongEdge) {
+      if (n.x < 0 || n.y < 0 || n.x >= size || n.y >= size) continue;
+      const nc = cells[n.y][n.x];
+      if (nc.walkable && !isPassabilityProtectedAsset(nc.assetKey)) {
+        // Already an open soft/open entry on this edge
+        return;
+      }
+      if (!nc.walkable && isSoftCarvableAsset(nc.assetKey)) {
+        carveToGrass(cells, n.x, n.y);
+        return;
+      }
+    }
+    // None found: accept slightly lower edge openness — never punch the barrier
+    return;
+  }
+
+  // Non-protected mid-edge (open terrain or soft obstacle): force walkable grass
+  carveToGrass(cells, ep.x, ep.y);
+}
+
 /**
  * Phase 4: Passability Enforcement.
  *
@@ -50,12 +137,13 @@ export function getWaterDebugInfo(): { waterCells: number; bridgeCells: number; 
  * that water/bridge cells are intact (water non-walkable, bridge walkable).
  *
  * Called twice in generateChunkSync:
- *   - L284: after Phase 3 stamp, before Phase 5 content population
- *   - L327: after Phase 5 content population, before validation pass
+ *   - after Phase 3 stamp, before Phase 5 content population
+ *   - after Phase 5 content population, before validation pass
  * The second call is what publishes the final _lastWaterDebug values.
  *
  * #100: preserves river integrity — never overwrites water or bridge
  * cells when carving or forcing edge cells.
+ * Critical-path PR5: soft-only carve allowlist; mid-edge skips barriers.
  */
 export function enforcePassability(
   cells: CellData[][],
@@ -63,10 +151,15 @@ export function enforcePassability(
   rng: () => number,
 ): void {
   const center = { x: Math.floor(size / 2), y: Math.floor(size / 2) };
-  // Only force center walkable if it's not water (#100: protect water cells)
-  if (cells[center.y][center.x].assetKey !== 'water') {
+  // Force center walkable only when it is not a protected barrier / water.
+  // Soft obstacles at center may be grass-carved; water/bridge/barriers stay.
+  const centerKey = cells[center.y][center.x].assetKey;
+  if (centerKey !== 'water' && !isPassabilityProtectedAsset(centerKey)) {
     cells[center.y][center.x].walkable = true;
     cells[center.y][center.x].assetKey = 'grass';
+  } else if (isSoftCarvableAsset(centerKey)) {
+    // Soft at center: carve so BFS has a seed (soft is not protected)
+    carveToGrass(cells, center.x, center.y);
   }
 
   const reachable = bfsFloodFill(
@@ -80,13 +173,26 @@ export function enforcePassability(
   if (passabilityRatio < WORLD_CONFIG.passabilityTarget) {
     const needed = Math.floor(WORLD_CONFIG.passabilityTarget * totalCells) - reachable.size;
     let carved = 0;
-    for (let attempt = 0; attempt < totalCells && carved < needed; attempt++) {
+    // Raised attempt budget: soft-only samples miss often; never punch barriers.
+    const maxAttempts = totalCells * 8;
+    for (let attempt = 0; attempt < maxAttempts && carved < needed; attempt++) {
       const x = Math.floor(rng() * size);
       const y = Math.floor(rng() * size);
-      // #100: Never carve through water or bridge cells — preserve river integrity
-      if (!cells[y][x].walkable && cells[y][x].assetKey !== 'water' && cells[y][x].assetKey !== 'bridge') {
-        cells[y][x] = { assetKey: 'grass', walkable: true, interactable: false };
+      const key = cells[y][x].assetKey;
+      if (!cells[y][x].walkable && isSoftCarvableAsset(key)) {
+        carveToGrass(cells, x, y);
         carved++;
+      }
+    }
+    // Deterministic sweep of remaining soft cells if random budget still short
+    if (carved < needed) {
+      for (let y = 0; y < size && carved < needed; y++) {
+        for (let x = 0; x < size && carved < needed; x++) {
+          if (!cells[y][x].walkable && isSoftCarvableAsset(cells[y][x].assetKey)) {
+            carveToGrass(cells, x, y);
+            carved++;
+          }
+        }
       }
     }
   }
@@ -99,10 +205,7 @@ export function enforcePassability(
     { x: size - 1, y: mid },
   ];
   for (const ep of edgePoints) {
-    // #100: Don't overwrite water cells at edge entry points
-    if (cells[ep.y][ep.x].assetKey !== 'water' && cells[ep.y][ep.x].assetKey !== 'bridge') {
-      cells[ep.y][ep.x] = { assetKey: 'grass', walkable: true, interactable: false };
-    }
+    forceMidEdgeEntry(cells, size, ep);
   }
 
   // #100: Validate river integrity — water cells must remain non-walkable

@@ -63,7 +63,13 @@ export { scatterCollectibles, layCoinTrails } from './world/CollectibleScatterer
 export { populateAnchors, clusterDecorations, scatterDecorations } from './world/Populator';
 
 // --- Passability Enforcement ---
-export { enforcePassability, getWaterDebugInfo } from './world/Passability';
+export {
+  enforcePassability,
+  getWaterDebugInfo,
+  isSoftCarvableAsset,
+  isPassabilityProtectedAsset,
+  SOFT_CARVE_ASSET_KEYS,
+} from './world/Passability';
 
 // --- Obstacle Solver + Lock-Key DAG ---
 export {

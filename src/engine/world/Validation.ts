@@ -6,6 +6,9 @@
  * (carve shortcuts through excess dead-ends; add/remove coins for density), and
  * accumulates cumulative metrics for the debug HUD.
  *
+ * Critical-path PR5: dead-end shortcut carves use the same barrier protect list as
+ * Passability — never grass-carve fence/wall/gates/water/bridge/starter structure.
+ *
  * `gen.ts` calls `validatePlayability` internally and re-exports `getPlayabilityStats`
  * (consumed by main.ts via __gameDebug) + the `PlayabilityReport` type.
  *
@@ -13,6 +16,7 @@
  * runtime → no module cycle). B4 (#253) moved it out of gen.ts.
  */
 import type { CellData } from '../../types/game.types';
+import { isPassabilityProtectedAsset } from './Passability';
 
 /** Accumulated validation metrics across all chunks for debugging. */
 const _validationAccum = {
@@ -99,7 +103,9 @@ export function validatePlayability(
         if (nx < 1 || ny < 1 || nx >= size - 1 || ny >= size - 1) continue;
         if (cells[ny][nx].walkable) continue; // already open
         if (cells[ny][nx].npcId || cells[ny][nx].itemId) continue; // don't destroy content
-        // Carve through
+        // Critical-path PR5: never punch barriers / functional gates / water / starter
+        if (isPassabilityProtectedAsset(cells[ny][nx].assetKey)) continue;
+        // Carve through soft / unprotected obstacles only
         cells[ny][nx] = {
           ...cells[ny][nx],
           assetKey: 'grass',

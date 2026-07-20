@@ -73,6 +73,11 @@
  * ensureMinimumQuizGates (no last-resort field punch / no 7.8 min-gate).
  * Intentional content change on the golden-hash coordinate set.
  *
+ * Re-captured 2026-07-20 (fc16f175 -> 129d024c) after critical-path PR5 walk
+ * barriers: passability soft-only carve allowlist + mid-edge barrier protect;
+ * validation dead-end carves share the same protect list. Intentional content
+ * change on the golden-hash coordinate set.
+ *
  * Run: npx playwright test tests/world-gen/gen-determinism.spec.ts --reporter=line
  */
 import { test, expect } from '@playwright/test';
@@ -82,8 +87,8 @@ const BASE_URL = 'http://localhost:5173/?test=1';
 // Fixed inputs — keep in sync with the in-page generator call below.
 const FIXED_WORDLIST = ['alpha beta', 'gamma delta', 'epsilon zeta', 'eta theta', 'iota kappa', 'lambda mu', 'nu xi', 'omicron pi'];
 const BIOME_SEED = 42;
-// Re-captured 2026-07-20 after critical-path PR4 (barrier seal + ranked gates)
-const GOLDEN_HASH = 'fc16f175';
+// Re-captured 2026-07-20 after critical-path PR5 (soft-only passability carve)
+const GOLDEN_HASH = '129d024c';
 
 /** Canonical hash of generated chunks (-1..1, 0..2) for fixed inputs. Runs in the browser. */
 const HASH_FN = ([wordlist, biomeSeed]: [string[], number]) => {
