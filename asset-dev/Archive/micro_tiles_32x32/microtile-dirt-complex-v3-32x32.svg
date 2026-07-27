@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="dirtNoise" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.5" numOctaves="2" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" />
+    </filter>
+    <radialGradient id="dirtGradDetailed" cx="16" cy="16" r="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A0522D" />
+      <stop offset="0.6" stop-color="#8B4513" />
+      <stop offset="1" stop-color="#654321" />
+    </radialGradient>
+    <pattern id="pebblePattern" width="6" height="6" patternUnits="userSpaceOnUse">
+      <circle cx="3" cy="3" r="2" fill="#654321" opacity="0.4" />
+    </pattern>
+  </defs>
+  <rect width="32" height="32" fill="url(#dirtGradDetailed)" filter="url(#dirtNoise)" />
+  <rect width="32" height="32" fill="url(#pebblePattern)" opacity="0.5" />
+  <path d="M2 4 Q6 2 10 4 Q14 6 18 4 Q22 2 26 4 Q30 6 32 4 M4 12 L12 16 M8 24 L20 12 M16 8 L28 20 M4 28 Q12 24 20 28" stroke="#4B3621" stroke-width="1" opacity="0.7" />
+  <path d="M6 10 L10 14 M14 18 L18 22 M22 6 L26 10" stroke="#4B3621" stroke-width="0.5" /> <!-- Fine cracks -->
+  <rect x="0" y="28" width="32" height="4" fill="#000000" opacity="0.2" filter="url(#dirtNoise)" /> <!-- Textured shadow -->
+</svg>

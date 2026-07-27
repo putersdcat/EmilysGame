@@ -1,0 +1,20 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="grassBlur" x="0" y="0" width="100%" height="100%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="0.5" />
+    </filter>
+    <linearGradient id="grassGradDetailed" x1="0" y1="0" x2="0" y2="32" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#98FB98" />
+      <stop offset="0.5" stop-color="#90EE90" />
+      <stop offset="1" stop-color="#228B22" />
+    </linearGradient>
+    <pattern id="grassNoise" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#006400" opacity="0.1" />
+      <circle cx="2" cy="2" r="1" fill="#006400" opacity="0.2" />
+    </pattern>
+  </defs>
+  <rect width="32" height="32" fill="url(#grassGradDetailed)" filter="url(#grassBlur)" />
+  <rect width="32" height="32" fill="url(#grassNoise)" opacity="0.3" />
+  <path d="M0 10 Q4 6 8 10 Q12 14 16 10 Q20 6 24 10 Q28 14 32 10 M0 14 Q4 10 8 14 Q12 18 16 14 Q20 10 24 14 Q28 18 32 14 M0 18 Q4 14 8 18 Q12 22 16 18 Q20 14 24 18 Q28 22 32 18 M0 22 Q4 18 8 22 Q12 26 16 22 Q20 18 24 22 Q28 26 32 22" stroke="#006400" stroke-width="0.8" opacity="0.9" />
+  <rect x="0" y="28" width="32" height="4" fill="#000000" opacity="0.15" filter="url(#grassBlur)" /> <!-- Enhanced shadow -->
+</svg>
