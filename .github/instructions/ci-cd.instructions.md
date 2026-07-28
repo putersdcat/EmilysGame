@@ -24,3 +24,12 @@ applyTo: ".github/workflows/**"
 2. Never auto-deploy — `pages-deploy.yml` is manual-only.
 3. See `.github/CI_CD_CHECKLIST.md` for pre-deploy verification steps.
 4. Screenshot script uses `?test=1` to avoid LLM dependency.
+5. **PRs that introduce god-file growth are blocked at review time** — see
+   `.github/instructions/architecture.instructions.md` for hard ceilings and
+   `npx tsc --noEmit` + module-size scan as part of CI gates.
+
+## Cross-References
+
+- `.github/instructions/architecture.instructions.md` — god-file prevention (CI gates)
+- `.github/instructions/llm-integration.instructions.md` — test-mode URL param
+- `.github/instructions/tests.instructions.md` — Playwright test categories

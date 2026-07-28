@@ -1,0 +1,17 @@
+{
+  "name": "isometric-2.0-experiment",
+  "version": "0.0.1",
+  "description": "Clean-sheet isometric rendering experiment for Emily's Game",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  },
+  "dependencies": {}
+}

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- dirt-01: Rich brown earth with cracks, stones, root fibers -->
+  <defs>
+    <radialGradient id="dBase" cx="45%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#9a6828"/>
+      <stop offset="60%" stop-color="#7a4e18"/>
+      <stop offset="100%" stop-color="#5a3810"/>
+    </radialGradient>
+    <linearGradient id="dSun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#c08040" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#301808" stop-opacity="0.25"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#dBase)"/>
+  <rect width="128" height="128" fill="url(#dSun)"/>
+  <ellipse cx="25" cy="65" rx="20" ry="12" fill="#4a3010" opacity="0.35"/>
+  <ellipse cx="85" cy="95" rx="18" ry="11" fill="#4a3010" opacity="0.3"/>
+  <ellipse cx="60" cy="30" rx="22" ry="13" fill="#4a3010" opacity="0.28"/>
+  <ellipse cx="105" cy="50" rx="16" ry="10" fill="#4a3010" opacity="0.25"/>
+  <ellipse cx="55" cy="80" rx="16" ry="9" fill="#b07a38" opacity="0.3"/>
+  <ellipse cx="15" cy="35" rx="12" ry="7" fill="#a07030" opacity="0.25"/>
+  <ellipse cx="100" cy="110" rx="14" ry="8" fill="#aa7835" opacity="0.3"/>
+  <g stroke="#3a2010" stroke-width="1" fill="none" opacity="0.5">
+    <path d="M30,40 Q35,48 28,58 Q24,65 30,72"/>
+    <path d="M30,58 Q38,55 46,60"/>
+    <path d="M75,20 Q80,30 72,42 Q68,50 74,58"/>
+    <path d="M72,42 Q80,38 88,44"/>
+    <path d="M50,85 Q55,93 48,103 Q44,110 50,118"/>
+    <path d="M95,70 Q100,78 94,88"/>
+    <path d="M10,80 Q15,88 10,96"/>
+    <path d="M110,95 Q115,103 110,110"/>
+  </g>
+  <g>
+    <ellipse cx="45" cy="55" rx="5" ry="3.5" fill="#808088" opacity="0.7"/>
+    <path d="M41,52 Q45,48 49,52 Q47,55 43,55 Z" fill="#a0a0a8" opacity="0.5"/>
+    <ellipse cx="90" cy="30" rx="4" ry="2.8" fill="#707078" opacity="0.7"/>
+    <ellipse cx="18" cy="100" rx="4.5" ry="3" fill="#888890" opacity="0.65"/>
+    <ellipse cx="110" cy="75" rx="3.5" ry="2.5" fill="#787880" opacity="0.7"/>
+    <ellipse cx="65" cy="115" rx="3" ry="2" fill="#808088" opacity="0.6"/>
+  </g>
+  <g stroke="#4a3010" stroke-width="0.8" stroke-linecap="round" fill="none" opacity="0.35">
+    <path d="M60,50 Q55,58 60,66 Q55,70 58,78"/>
+    <path d="M60,66 Q68,62 72,68"/>
+    <path d="M100,40 Q95,48 98,58"/>
+    <path d="M20,108 Q25,100 22,92"/>
+  </g>
+  <g fill="#3a2808" opacity="0.2">
+    <circle cx="35" cy="90" r="6"/><circle cx="80" cy="60" r="5"/>
+    <circle cx="110" cy="30" r="4"/><circle cx="15" cy="50" r="5"/>
+  </g>
+</svg>

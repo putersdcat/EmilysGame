@@ -3,6 +3,7 @@
     {
       "id": "bach___badinerie",
       "file": "bach___badinerie.json",
+      "midiFile": "midi/Bach_-_Badinerie.mid",
       "name": "🎼 Badinerie (Orchestral Suite No. 2)",
       "composer": "Johann Sebastian Bach",
       "style": "Classical",
@@ -11,12 +12,12 @@
         1
       ],
       "tempo": 104,
-      "source": "midi",
-      "midiFile": "midi/Bach_-_Badinerie.mid"
+      "source": "midi"
     },
     {
       "id": "bach___prelude_1",
       "file": "bach___prelude_1.json",
+      "midiFile": "midi/Bach_-_Prelude_1.mid",
       "name": "🎼 Prelude No. 1 in C Major",
       "composer": "Johann Sebastian Bach",
       "style": "Classical",
@@ -25,12 +26,12 @@
         2
       ],
       "tempo": 92,
-      "source": "midi",
-      "midiFile": "midi/Bach_-_Prelude_1.mid"
+      "source": "midi"
     },
     {
       "id": "bach___toccata_and_fugue_dm",
       "file": "bach___toccata_and_fugue_dm.json",
+      "midiFile": "midi/Bach_-_Toccata_and_Fugue_Dm.mid",
       "name": "🎼 Toccata and Fugue in D minor",
       "composer": "Johann Sebastian Bach",
       "style": "Classical",
@@ -38,12 +39,12 @@
         2
       ],
       "tempo": 20,
-      "source": "midi",
-      "midiFile": "midi/Bach_-_Toccata_and_Fugue_Dm.mid"
+      "source": "midi"
     },
     {
       "id": "beethoven___fur_elise",
       "file": "beethoven___fur_elise.json",
+      "midiFile": "midi/Beethoven_-_Fur_Elise.mid",
       "name": "🎼 Fur Elise",
       "composer": "Ludwig van Beethoven",
       "style": "Classical",
@@ -52,12 +53,12 @@
         2
       ],
       "tempo": 75,
-      "source": "midi",
-      "midiFile": "midi/Beethoven_-_Fur_Elise.mid"
+      "source": "midi"
     },
     {
       "id": "beethoven___moonlight_sonata_1",
       "file": "beethoven___moonlight_sonata_1.json",
+      "midiFile": "midi/Beethoven_-_Moonlight_Sonata_1.mid",
       "name": "🎼 Moonlight Sonata (1st Mvt)",
       "composer": "Ludwig van Beethoven",
       "style": "Classical",
@@ -65,12 +66,12 @@
         2
       ],
       "tempo": 51,
-      "source": "midi",
-      "midiFile": "midi/Beethoven_-_Moonlight_Sonata_1.mid"
+      "source": "midi"
     },
     {
       "id": "beethoven___ode_to_joy",
       "file": "beethoven___ode_to_joy.json",
+      "midiFile": "midi/Beethoven_-_Ode_to_Joy.mid",
       "name": "🎼 Ode to Joy (Symphony No. 9)",
       "composer": "Ludwig van Beethoven",
       "style": "Classical",
@@ -79,12 +80,12 @@
         1
       ],
       "tempo": 124,
-      "source": "midi",
-      "midiFile": "midi/Beethoven_-_Ode_to_Joy.mid"
+      "source": "midi"
     },
     {
       "id": "beethoven___symphony_5_1",
       "file": "beethoven___symphony_5_1.json",
+      "midiFile": "midi/Beethoven_-_Symphony_5_1.mid",
       "name": "🎼 Symphony No. 5 (1st Mvt)",
       "composer": "Ludwig van Beethoven",
       "style": "Classical",
@@ -93,12 +94,12 @@
         3
       ],
       "tempo": 212,
-      "source": "midi",
-      "midiFile": "midi/Beethoven_-_Symphony_5_1.mid"
+      "source": "midi"
     },
     {
       "id": "bizet___the_top",
       "file": "bizet___the_top.json",
+      "midiFile": "midi/Bizet_-_The_Top.mid",
       "name": "🎼 The Top (Jeux d'Enfants)",
       "composer": "Georges Bizet",
       "style": "Classical",
@@ -107,12 +108,12 @@
         3
       ],
       "tempo": 150,
-      "source": "midi",
-      "midiFile": "midi/Bizet_-_The_Top.mid"
+      "source": "midi"
     },
     {
       "id": "boccherini___minuet",
       "file": "boccherini___minuet.json",
+      "midiFile": "midi/Boccherini_-_Minuet.mid",
       "name": "🎼 Minuet",
       "composer": "Luigi Boccherini",
       "style": "Classical",
@@ -121,12 +122,12 @@
         1
       ],
       "tempo": 100,
-      "source": "midi",
-      "midiFile": "midi/Boccherini_-_Minuet.mid"
+      "source": "midi"
     },
     {
       "id": "brahms___lullaby",
       "file": "brahms___lullaby.json",
+      "midiFile": "midi/Brahms_-_Lullaby.mid",
       "name": "🎼 Lullaby (Wiegenlied)",
       "composer": "Johannes Brahms",
       "style": "Classical",
@@ -135,12 +136,12 @@
         2
       ],
       "tempo": 72,
-      "source": "midi",
-      "midiFile": "midi/Brahms_-_Lullaby.mid"
+      "source": "midi"
     },
     {
       "id": "bratton___teddy_bears_picnic",
       "file": "bratton___teddy_bears_picnic.json",
+      "midiFile": "midi/Bratton_-_Teddy_Bears_Picnic.mid",
       "name": "🎼 The Teddy Bears' Picnic",
       "composer": "John Walter Bratton",
       "style": "Children",
@@ -149,12 +150,12 @@
         3
       ],
       "tempo": 150,
-      "source": "midi",
-      "midiFile": "midi/Bratton_-_Teddy_Bears_Picnic.mid"
+      "source": "midi"
     },
     {
       "id": "chopin___minute_waltz",
       "file": "chopin___minute_waltz.json",
+      "midiFile": "midi/Chopin_-_Minute_Waltz.mid",
       "name": "🎼 Minute Waltz",
       "composer": "Frederic Chopin",
       "style": "Classical",
@@ -163,12 +164,12 @@
         3
       ],
       "tempo": 180,
-      "source": "midi",
-      "midiFile": "midi/Chopin_-_Minute_Waltz.mid"
+      "source": "midi"
     },
     {
       "id": "chopin___raindrop_prelude",
       "file": "chopin___raindrop_prelude.json",
+      "midiFile": "midi/Chopin_-_Raindrop_Prelude.mid",
       "name": "🎼 Raindrop Prelude",
       "composer": "Frederic Chopin",
       "style": "Classical",
@@ -176,12 +177,12 @@
         2
       ],
       "tempo": 66,
-      "source": "midi",
-      "midiFile": "midi/Chopin_-_Raindrop_Prelude.mid"
+      "source": "midi"
     },
     {
       "id": "debussy___clair_de_lune",
       "file": "debussy___clair_de_lune.json",
+      "midiFile": "midi/Debussy_-_Clair_de_Lune.mid",
       "name": "🎼 Clair de Lune",
       "composer": "Claude Debussy",
       "style": "Classical",
@@ -189,12 +190,12 @@
         2
       ],
       "tempo": 48,
-      "source": "midi",
-      "midiFile": "midi/Debussy_-_Clair_de_Lune.mid"
+      "source": "midi"
     },
     {
       "id": "debussy___golliwogs_cakewalk",
       "file": "debussy___golliwogs_cakewalk.json",
+      "midiFile": "midi/Debussy_-_Golliwogs_Cakewalk.mid",
       "name": "🎼 Golliwog's Cakewalk",
       "composer": "Claude Debussy",
       "style": "Classical",
@@ -203,12 +204,12 @@
         1
       ],
       "tempo": 110,
-      "source": "midi",
-      "midiFile": "midi/Debussy_-_Golliwogs_Cakewalk.mid"
+      "source": "midi"
     },
     {
       "id": "elgar___nimrod",
       "file": "elgar___nimrod.json",
+      "midiFile": "midi/Elgar_-_Nimrod.mid",
       "name": "🎼 Nimrod (Enigma Variations)",
       "composer": "Edward Elgar",
       "style": "Classical",
@@ -216,12 +217,12 @@
         2
       ],
       "tempo": 42,
-      "source": "midi",
-      "midiFile": "midi/Elgar_-_Nimrod.mid"
+      "source": "midi"
     },
     {
       "id": "elgar___pomp_and_circumstance",
       "file": "elgar___pomp_and_circumstance.json",
+      "midiFile": "midi/Elgar_-_Pomp_and_Circumstance.mid",
       "name": "🎼 Land of Hope and Glory (Pomp and Circumstance)",
       "composer": "Edward Elgar",
       "style": "Classical",
@@ -230,12 +231,12 @@
         2
       ],
       "tempo": 82,
-      "source": "midi",
-      "midiFile": "midi/Elgar_-_Pomp_and_Circumstance.mid"
+      "source": "midi"
     },
     {
       "id": "grieg___morning_mood",
       "file": "grieg___morning_mood.json",
+      "midiFile": "midi/Grieg_-_Morning_Mood.mid",
       "name": "🎼 Morning Mood (Peer Gynt)",
       "composer": "Edvard Grieg",
       "style": "Classical",
@@ -244,12 +245,12 @@
         2
       ],
       "tempo": 84,
-      "source": "midi",
-      "midiFile": "midi/Grieg_-_Morning_Mood.mid"
+      "source": "midi"
     },
     {
       "id": "handel___hornpipe",
       "file": "handel___hornpipe.json",
+      "midiFile": "midi/Handel_-_Hornpipe.mid",
       "name": "🎼 Hornpipe (Water Music)",
       "composer": "George Frideric Handel",
       "style": "Classical",
@@ -258,12 +259,12 @@
         3
       ],
       "tempo": 218,
-      "source": "midi",
-      "midiFile": "midi/Handel_-_Hornpipe.mid"
+      "source": "midi"
     },
     {
       "id": "handel___largo",
       "file": "handel___largo.json",
+      "midiFile": "midi/Handel_-_Largo.mid",
       "name": "🎼 Largo (Ombra Mai Fu)",
       "composer": "George Frideric Handel",
       "style": "Classical",
@@ -271,12 +272,12 @@
         2
       ],
       "tempo": 65,
-      "source": "midi",
-      "midiFile": "midi/Handel_-_Largo.mid"
+      "source": "midi"
     },
     {
       "id": "holst___jupiter",
       "file": "holst___jupiter.json",
+      "midiFile": "midi/Holst_-_Jupiter.mid",
       "name": "🎼 I Vow To Thee My Country (Jupiter)",
       "composer": "Gustav Holst",
       "style": "Classical",
@@ -285,12 +286,12 @@
         2
       ],
       "tempo": 70,
-      "source": "midi",
-      "midiFile": "midi/Holst_-_Jupiter.mid"
+      "source": "midi"
     },
     {
       "id": "joplin___the_entertainer",
       "file": "joplin___the_entertainer.json",
+      "midiFile": "midi/Joplin_-_The_Entertainer.mid",
       "name": "🎼 The Entertainer",
       "composer": "Scott Joplin",
       "style": "Ragtime",
@@ -299,12 +300,12 @@
         2
       ],
       "tempo": 72,
-      "source": "midi",
-      "midiFile": "midi/Joplin_-_The_Entertainer.mid"
+      "source": "midi"
     },
     {
       "id": "liszt___liebestraum_3",
       "file": "liszt___liebestraum_3.json",
+      "midiFile": "midi/Liszt_-_Liebestraum_3.mid",
       "name": "🎼 Liebestraum No. 3",
       "composer": "Franz Liszt",
       "style": "Classical",
@@ -313,12 +314,12 @@
         1
       ],
       "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Liszt_-_Liebestraum_3.mid"
+      "source": "midi"
     },
     {
       "id": "massenet___meditation",
       "file": "massenet___meditation.json",
+      "midiFile": "midi/Massenet_-_Meditation.mid",
       "name": "🎼 Meditation from Thais",
       "composer": "Jules Massenet",
       "style": "Classical",
@@ -326,12 +327,12 @@
         2
       ],
       "tempo": 65,
-      "source": "midi",
-      "midiFile": "midi/Massenet_-_Meditation.mid"
+      "source": "midi"
     },
     {
       "id": "mendelssohn___hark_the_herald_angels",
       "file": "mendelssohn___hark_the_herald_angels.json",
+      "midiFile": "midi/Mendelssohn_-_Hark_The_Herald_Angels.mid",
       "name": "🎼 Hark The Herald Angels Sing",
       "composer": "Felix Mendelssohn",
       "style": "Classical",
@@ -340,12 +341,12 @@
         2
       ],
       "tempo": 98,
-      "source": "midi",
-      "midiFile": "midi/Mendelssohn_-_Hark_The_Herald_Angels.mid"
+      "source": "midi"
     },
     {
       "id": "mendelssohn___wedding_march",
       "file": "mendelssohn___wedding_march.json",
+      "midiFile": "midi/Mendelssohn_-_Wedding_March.mid",
       "name": "🎼 Wedding March",
       "composer": "Felix Mendelssohn",
       "style": "Classical",
@@ -354,12 +355,12 @@
         1
       ],
       "tempo": 112,
-      "source": "midi",
-      "midiFile": "midi/Mendelssohn_-_Wedding_March.mid"
+      "source": "midi"
     },
     {
       "id": "mozart___alla_turca",
       "file": "mozart___alla_turca.json",
+      "midiFile": "midi/Mozart_-_Alla_Turca.mid",
       "name": "🎼 Rondo Alla Turca",
       "composer": "Wolfgang Amadeus Mozart",
       "style": "Classical",
@@ -368,12 +369,12 @@
         3
       ],
       "tempo": 132,
-      "source": "midi",
-      "midiFile": "midi/Mozart_-_Alla_Turca.mid"
+      "source": "midi"
     },
     {
       "id": "mozart___eine_kleine_nachtmusik",
       "file": "mozart___eine_kleine_nachtmusik.json",
+      "midiFile": "midi/Mozart_-_Eine_Kleine_Nachtmusik.mid",
       "name": "🎼 Eine Kleine Nachtmusik (1st Mvt)",
       "composer": "Wolfgang Amadeus Mozart",
       "style": "Classical",
@@ -382,12 +383,12 @@
         3
       ],
       "tempo": 140,
-      "source": "midi",
-      "midiFile": "midi/Mozart_-_Eine_Kleine_Nachtmusik.mid"
+      "source": "midi"
     },
     {
       "id": "mozart___elvira_madigan",
       "file": "mozart___elvira_madigan.json",
+      "midiFile": "midi/Mozart_-_Elvira_Madigan.mid",
       "name": "🎼 Piano Concerto No. 21 (Elvira Madigan)",
       "composer": "Wolfgang Amadeus Mozart",
       "style": "Classical",
@@ -395,12 +396,12 @@
         2
       ],
       "tempo": 58,
-      "source": "midi",
-      "midiFile": "midi/Mozart_-_Elvira_Madigan.mid"
+      "source": "midi"
     },
     {
       "id": "mozart___symphony_40",
       "file": "mozart___symphony_40.json",
+      "midiFile": "midi/Mozart_-_Symphony_40.mid",
       "name": "🎼 Symphony No. 40 (1st Mvt)",
       "composer": "Wolfgang Amadeus Mozart",
       "style": "Classical",
@@ -409,12 +410,12 @@
         3
       ],
       "tempo": 220,
-      "source": "midi",
-      "midiFile": "midi/Mozart_-_Symphony_40.mid"
+      "source": "midi"
     },
     {
       "id": "mussorgsky___promenade",
       "file": "mussorgsky___promenade.json",
+      "midiFile": "midi/Mussorgsky_-_Promenade.mid",
       "name": "🎼 Promenade (Pictures at an Exhibition)",
       "composer": "Modest Mussorgsky",
       "style": "Classical",
@@ -423,12 +424,12 @@
         1
       ],
       "tempo": 104,
-      "source": "midi",
-      "midiFile": "midi/Mussorgsky_-_Promenade.mid"
+      "source": "midi"
     },
     {
       "id": "pachelbel___canon_in_d",
       "file": "pachelbel___canon_in_d.json",
+      "midiFile": "midi/Pachelbel_-_Canon_in_D.mid",
       "name": "🎼 Canon in D",
       "composer": "Johann Pachelbel",
       "style": "Classical",
@@ -436,12 +437,12 @@
         2
       ],
       "tempo": 42,
-      "source": "midi",
-      "midiFile": "midi/Pachelbel_-_Canon_in_D.mid"
+      "source": "midi"
     },
     {
       "id": "rachmaninoff___prelude_c_sharp_minor",
       "file": "rachmaninoff___prelude_c_sharp_minor.json",
+      "midiFile": "midi/Rachmaninoff_-_Prelude_C_Sharp_Minor.mid",
       "name": "🎼 Prelude in C# Minor",
       "composer": "Sergei Rachmaninoff",
       "style": "Classical",
@@ -449,12 +450,12 @@
         2
       ],
       "tempo": 40,
-      "source": "midi",
-      "midiFile": "midi/Rachmaninoff_-_Prelude_C_Sharp_Minor.mid"
+      "source": "midi"
     },
     {
       "id": "saintsaens___the_elephant",
       "file": "saintsaens___the_elephant.json",
+      "midiFile": "midi/SaintSaens_-_The_Elephant.mid",
       "name": "🎼 The Elephant",
       "composer": "Camille Saint-Saens",
       "style": "Classical",
@@ -462,12 +463,12 @@
         2
       ],
       "tempo": 53,
-      "source": "midi",
-      "midiFile": "midi/SaintSaens_-_The_Elephant.mid"
+      "source": "midi"
     },
     {
       "id": "saintsaens___the_swan",
       "file": "saintsaens___the_swan.json",
+      "midiFile": "midi/SaintSaens_-_The_Swan.mid",
       "name": "🎼 The Swan",
       "composer": "Camille Saint-Saens",
       "style": "Classical",
@@ -475,12 +476,12 @@
         2
       ],
       "tempo": 67,
-      "source": "midi",
-      "midiFile": "midi/SaintSaens_-_The_Swan.mid"
+      "source": "midi"
     },
     {
       "id": "satie___gnossienne_1",
       "file": "satie___gnossienne_1.json",
+      "midiFile": "midi/Satie_-_Gnossienne_1.mid",
       "name": "🎼 Gnossienne No. 1",
       "composer": "Erik Satie",
       "style": "Classical",
@@ -489,12 +490,12 @@
         2
       ],
       "tempo": 83,
-      "source": "midi",
-      "midiFile": "midi/Satie_-_Gnossienne_1.mid"
+      "source": "midi"
     },
     {
       "id": "satie___gymnopedie_1",
       "file": "satie___gymnopedie_1.json",
+      "midiFile": "midi/Satie_-_Gymnopedie_1.mid",
       "name": "🎼 Gymnopedie No. 1",
       "composer": "Erik Satie",
       "style": "Classical",
@@ -503,12 +504,12 @@
         2
       ],
       "tempo": 80,
-      "source": "midi",
-      "midiFile": "midi/Satie_-_Gymnopedie_1.mid"
+      "source": "midi"
     },
     {
       "id": "schubert___the_trout",
       "file": "schubert___the_trout.json",
+      "midiFile": "midi/Schubert_-_The_Trout.mid",
       "name": "🎼 The Trout Quintet (Vars)",
       "composer": "Franz Schubert",
       "style": "Classical",
@@ -516,12 +517,12 @@
         2
       ],
       "tempo": 60,
-      "source": "midi",
-      "midiFile": "midi/Schubert_-_The_Trout.mid"
+      "source": "midi"
     },
     {
       "id": "schumann___traumerei",
       "file": "schumann___traumerei.json",
+      "midiFile": "midi/Schumann_-_Traumerei.mid",
       "name": "🎼 Traumerei",
       "composer": "Robert Schumann",
       "style": "Classical",
@@ -529,82 +530,68 @@
         2
       ],
       "tempo": 60,
-      "source": "midi",
-      "midiFile": "midi/Schumann_-_Traumerei.mid"
+      "source": "midi"
     },
     {
       "id": "scott_joplin___euphonic_sounds",
       "file": "scott_joplin___euphonic_sounds.json",
-      "name": "🎼 Scott Joplin — Euphonic Sounds",
-      "composer": "Unknown",
-      "style": "Classical",
+      "midiFile": "midi/Scott_Joplin_-_Euphonic_Sounds.mid",
+      "name": "🎼 Euphonic Sounds",
+      "composer": "Scott Joplin",
+      "style": "Ragtime",
       "biomes": [
         0,
         1
       ],
       "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Scott_Joplin_-_Euphonic_Sounds.mid"
+      "source": "midi"
     },
     {
       "id": "scott_joplin___maple_leaf_rag",
       "file": "scott_joplin___maple_leaf_rag.json",
-      "name": "🎼 Scott Joplin — Maple Leaf Rag",
-      "composer": "Unknown",
-      "style": "Classical",
+      "midiFile": "midi/Scott_Joplin_-_Maple_Leaf_Rag.mid",
+      "name": "🎼 Maple Leaf Rag",
+      "composer": "Scott Joplin",
+      "style": "Ragtime",
       "biomes": [
         0,
         1
       ],
       "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Scott_Joplin_-_Maple_Leaf_Rag.mid"
+      "source": "midi"
     },
     {
       "id": "scott_joplin___pineapple_rag_easy_winners",
       "file": "scott_joplin___pineapple_rag_easy_winners.json",
-      "name": "🎼 Scott Joplin — Pineapple Rag Easy Winners",
-      "composer": "Unknown",
-      "style": "Classical",
+      "midiFile": "midi/Scott_Joplin_-_Pineapple_Rag_Easy_Winners.mid",
+      "name": "🎼 Pineapple Rag Easy Winners",
+      "composer": "Scott Joplin",
+      "style": "Ragtime",
       "biomes": [
         0,
         1
       ],
       "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Scott_Joplin_-_Pineapple_Rag_Easy_Winners.mid"
+      "source": "midi"
     },
     {
       "id": "scott_joplin___the_cascades",
       "file": "scott_joplin___the_cascades.json",
-      "name": "🎼 Scott Joplin — The Cascades",
-      "composer": "Unknown",
-      "style": "Classical",
+      "midiFile": "midi/Scott_Joplin_-_The_Cascades.mid",
+      "name": "🎼 The Cascades",
+      "composer": "Scott Joplin",
+      "style": "Ragtime",
       "biomes": [
         0,
         1
       ],
       "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Scott_Joplin_-_The_Cascades.mid"
-    },
-    {
-      "id": "scott_joplin___the_entertainer",
-      "file": "scott_joplin___the_entertainer.json",
-      "name": "🎼 Scott Joplin — The Entertainer",
-      "composer": "Unknown",
-      "style": "Classical",
-      "biomes": [
-        0,
-        1
-      ],
-      "tempo": 120,
-      "source": "midi",
-      "midiFile": "midi/Scott_Joplin_-_The_Entertainer.mid"
+      "source": "midi"
     },
     {
       "id": "strauss___blue_danube",
       "file": "strauss___blue_danube.json",
+      "midiFile": "midi/Strauss_-_Blue_Danube.mid",
       "name": "🎼 The Blue Danube",
       "composer": "Johann Strauss II",
       "style": "Classical",
@@ -613,12 +600,12 @@
         3
       ],
       "tempo": 146,
-      "source": "midi",
-      "midiFile": "midi/Strauss_-_Blue_Danube.mid"
+      "source": "midi"
     },
     {
       "id": "tchaikovsky___sugar_plum_fairy",
       "file": "tchaikovsky___sugar_plum_fairy.json",
+      "midiFile": "midi/Tchaikovsky_-_Sugar_Plum_Fairy.mid",
       "name": "🎼 Dance of the Sugar Plum Fairy",
       "composer": "Pyotr Ilyich Tchaikovsky",
       "style": "Classical",
@@ -626,12 +613,12 @@
         2
       ],
       "tempo": 62,
-      "source": "midi",
-      "midiFile": "midi/Tchaikovsky_-_Sugar_Plum_Fairy.mid"
+      "source": "midi"
     },
     {
       "id": "traditional___dies_irae",
       "file": "traditional___dies_irae.json",
+      "midiFile": "midi/Traditional_-_Dies_Irae.mid",
       "name": "🎼 Dies Irae",
       "composer": "Traditional",
       "style": "Classical",
@@ -640,12 +627,12 @@
         2
       ],
       "tempo": 85,
-      "source": "midi",
-      "midiFile": "midi/Traditional_-_Dies_Irae.mid"
+      "source": "midi"
     },
     {
       "id": "traditional___drunken_sailor",
       "file": "traditional___drunken_sailor.json",
+      "midiFile": "midi/Traditional_-_Drunken_Sailor.mid",
       "name": "🎼 Drunken Sailor",
       "composer": "Traditional",
       "style": "Folk",
@@ -654,12 +641,12 @@
         3
       ],
       "tempo": 175,
-      "source": "midi",
-      "midiFile": "midi/Traditional_-_Drunken_Sailor.mid"
+      "source": "midi"
     },
     {
       "id": "traditional___wellerman",
       "file": "traditional___wellerman.json",
+      "midiFile": "midi/Traditional_-_Wellerman.mid",
       "name": "🎼 Wellerman",
       "composer": "Traditional",
       "style": "Folk",
@@ -668,12 +655,12 @@
         3
       ],
       "tempo": 175,
-      "source": "midi",
-      "midiFile": "midi/Traditional_-_Wellerman.mid"
+      "source": "midi"
     },
     {
       "id": "vivaldi___autumn",
       "file": "vivaldi___autumn.json",
+      "midiFile": "midi/Vivaldi_-_Autumn.mid",
       "name": "🎼 Autumn - Four Seasons",
       "composer": "Antonio Vivaldi",
       "style": "Classical",
@@ -682,12 +669,12 @@
         1
       ],
       "tempo": 112,
-      "source": "midi",
-      "midiFile": "midi/Vivaldi_-_Autumn.mid"
+      "source": "midi"
     },
     {
       "id": "vivaldi___winter_largo",
       "file": "vivaldi___winter_largo.json",
+      "midiFile": "midi/Vivaldi_-_Winter_Largo.mid",
       "name": "🎼 Winter (Largo) - Four Seasons",
       "composer": "Antonio Vivaldi",
       "style": "Classical",
@@ -695,12 +682,12 @@
         2
       ],
       "tempo": 32,
-      "source": "midi",
-      "midiFile": "midi/Vivaldi_-_Winter_Largo.mid"
+      "source": "midi"
     },
     {
       "id": "wagner___bridal_chorus",
       "file": "wagner___bridal_chorus.json",
+      "midiFile": "midi/Wagner_-_Bridal_Chorus.mid",
       "name": "🎼 Bridal Chorus (Here Comes the Bride)",
       "composer": "Richard Wagner",
       "style": "Classical",
@@ -709,8 +696,7 @@
         2
       ],
       "tempo": 80,
-      "source": "midi",
-      "midiFile": "midi/Wagner_-_Bridal_Chorus.mid"
+      "source": "midi"
     }
   ]
 }

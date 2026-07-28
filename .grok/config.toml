@@ -1,0 +1,61 @@
+# Project-scoped Grok configuration for EmilysGame
+#
+# This file contributes ONLY [mcp_servers], [plugins], and [permission] entries.
+# Other sections (cli, ui, etc.) are loaded only from ~/.grok/config.toml.
+#
+# Priority (highest wins for MCPs with same name):
+#   <cwd>/.grok/config.toml > <repo-root>/.grok/config.toml > ~/.grok/config.toml
+#
+# Sources ported here:
+#   - playwright from user's global ~/.grok/config.toml (the --extension setup)
+#   - svgRenderer + isoSvgRenderer from .vscode/mcp.json (local custom MCP tools)
+#
+# After changes:
+#   - In TUI: run `/mcps` (or Ctrl+L → MCP tab) and press 'r' to reload list
+#   - Or start a fresh grok session from within (or under) this repo
+#   - Then use search_tool (e.g. query "isoSvgRenderer" or "playwright navigate") + use_tool
+#
+# Notes:
+#   - For playwright --extension: Edge + Playwright MCP browser extension must be running
+#     with the matching PLAYWRIGHT_MCP_EXTENSION_TOKEN configured in the extension.
+#   - For the local renderers: make sure the dist/ outputs are built if you change their src.
+#     (CopilotSvgToolv2: npm run build inside it; AiTools: npm run build inside it)
+#   - Tool names will be prefixed: e.g. playwright__..., svgRenderer__..., isoSvgRenderer__...
+
+[mcp_servers.playwright]
+# Playwright MCP in --extension mode (talks to Playwright browser extension in Edge/Chrome).
+# Requires:
+#   - Microsoft Edge running
+#   - "Playwright MCP" browser extension installed in Edge, with the matching token configured in the extension
+# Tools will be available as playwright__* after adding/refreshing.
+command = "npx"
+args = [
+  "@playwright/mcp@latest",
+  "--extension",
+  "--browser", "msedge",
+  "--viewport-size", "1920,1440",
+  "--timeout-navigation", "90000",
+  "--timeout-action", "8000"
+]
+env = { 
+  PLAYWRIGHT_MCP_EXTENSION_TOKEN = "obgyGeSZpYO4mMb2V4hkCc6u04zihHJLcDuKItvUhFQ",
+  npm_config_yes = "true"
+}
+enabled = true
+startup_timeout_sec = 30
+
+[mcp_servers.svgRenderer]
+# Local MCP server: SVG → PNG renderer (from CopilotSvgToolv2)
+# Originally from .vscode/mcp.json
+# Useful for fast visual previews of SVG assets (game tiles, etc.)
+command = "node"
+args = ["CopilotSvgToolv2/dist/index.js"]
+enabled = true
+
+[mcp_servers.isoSvgRenderer]
+# Local MCP server: Isometric SVG renderer (diamond mode etc.) for Iso 2.0 experiment
+# Originally from .vscode/mcp.json under experiment/isometric-2.0/AiTools
+# Heavily used for rendering game scenes with players for walkability/occlusion proofs.
+command = "node"
+args = ["experiment/isometric-2.0/AiTools/dist/index.js"]
+enabled = true

@@ -5,9 +5,11 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5173/?test=1';
 
 async function waitForGame(page: import('@playwright/test').Page) {
+  // Use ?test=1 for deterministic fresh state (bare URL restores the
+  // developer's real save in non-test mode → flaky test isolation).
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -18,10 +20,8 @@ async function waitForGame(page: import('@playwright/test').Page) {
   }
 
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
-  await page.waitForTimeout(1000);
-
-  const hasDebug = await page.evaluate(() => !!(window as any).__gameDebug);
-  expect(hasDebug).toBe(true);
+  // Poll for debug surface instead of fixed sleep (avoids boot-race flakiness).
+  await page.waitForFunction(() => !!(window as any).__gameDebug, { timeout: 20000 });
 }
 
 test.describe('Visual Debuff Effects (#110)', () => {

@@ -1,0 +1,657 @@
+{
+  "shardId": "articles-003",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:14:18.000Z",
+  "articles": [
+    {
+      "id": "article_space_age_begins_001",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "The Space Age Begins: Sputnik",
+      "summary": "How a beeping satellite in 1957 changed the world.",
+      "content": "On **4 October 1957**, the Soviet Union launched **Sputnik 1**, the first artificial satellite. It was a metal sphere with antennas that sent simple radio beeps as it orbited Earth.\n\nWhy it mattered:\n- It proved humans could place machines in **orbit**\n- It began the **Space Age** and sped up science and engineering worldwide\n- It led to new tools we use every day, from weather satellites to global communications\n\nWithin months, more satellites followed. The race to send people and later to reach the Moon had begun.",
+      "keyTerms": [
+        "Sputnik",
+        "satellite",
+        "orbit",
+        "Space Age"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_gagarin_002",
+        "article_space_orbit_basics_010"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/sputnik.jpg",
+        "alt": "Sputnik satellite",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_gagarin_002",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Yuri Gagarin: First Human in Orbit",
+      "summary": "One orbit that made history in 1961.",
+      "content": "On **12 April 1961**, cosmonaut **Yuri Gagarin** flew aboard **Vostok 1**. He completed about one full **orbit** of Earth and returned safely.\n\nPeople around the world celebrated — for the first time, a human had left the atmosphere and seen our planet from space. Gagarin’s flight showed that crewed spaceflight was possible, and it inspired other nations to train astronauts and build safer spacecraft.\n\nToday, April 12 is often honored as a day of human spaceflight achievement.",
+      "keyTerms": [
+        "Yuri Gagarin",
+        "Vostok 1",
+        "cosmonaut",
+        "orbit"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_age_begins_001",
+        "article_space_apollo11_004"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-space-gagarin-002.png",
+        "alt": "Yuri Gagarin: First Human in Orbit",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_space_women_pioneers_003",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Women Pioneers in Space",
+      "summary": "From Tereshkova to Ride and beyond.",
+      "content": "**Valentina Tereshkova** became the first woman in space in **1963** on Vostok 6. Decades later, **Sally Ride** became the first American woman in space on the Shuttle in **1983**.\n\nSince then, women have commanded stations, walked in space, and led science on orbit. Modern crews on the **International Space Station** routinely include women from several countries.\n\nSpace exploration is a human story — and more of humanity gets to write the next chapters.",
+      "keyTerms": [
+        "Tereshkova",
+        "Sally Ride",
+        "astronaut",
+        "inclusion"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_gagarin_002",
+        "article_space_iss_006"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-space-women-pioneers-003.png",
+        "alt": "Women Pioneers in Space",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_space_apollo11_004",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Apollo 11 and the Moon Landing",
+      "summary": "The day people walked on the Moon.",
+      "content": "In **July 1969**, the Apollo 11 mission sent three astronauts toward the Moon. **Neil Armstrong** and **Buzz Aldrin** landed in the lunar module **Eagle** while **Michael Collins** orbited above in the command ship.\n\nArmstrong stepped onto the surface and said words about a “giant leap for mankind.” They collected rocks, set up experiments, and returned safely to Earth.\n\nIt took huge teamwork — engineers, scientists, and controllers on the ground — to make that one soft landing possible.",
+      "keyTerms": [
+        "Apollo 11",
+        "Moon",
+        "Neil Armstrong",
+        "Buzz Aldrin"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_apollo_program_005",
+        "article_space_artemis_009"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/moon-surface.jpg",
+        "alt": "Apollo on the Moon",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_apollo_program_005",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "From Mercury to Apollo",
+      "summary": "How NASA practiced before landing on the Moon.",
+      "content": "U.S. crewed programs built skills step by step:\n\n1. **Mercury** — put Americans into space and into orbit (e.g., John Glenn).\n2. **Gemini** — longer flights, spacewalks, rendezvous and docking practice.\n3. **Apollo** — powerful Saturn V rockets, command modules, and lunar modules for landing.\n\nSix Apollo missions landed twelve people on the Moon (1969–1972). The program also drove advances in computing, materials, and systems engineering that influenced later stations and shuttles.",
+      "keyTerms": [
+        "Mercury",
+        "Gemini",
+        "Apollo",
+        "Saturn V"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_apollo11_004",
+        "article_space_shuttle_007"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-rise.jpg",
+        "alt": "Earthrise from the Moon",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_iss_006",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Living on the International Space Station",
+      "summary": "A laboratory home circling Earth.",
+      "content": "The **International Space Station (ISS)** is a large spacecraft assembled in **low Earth orbit**. Countries including the United States, Russia, Japan, Canada, and European partners built modules that dock together.\n\nCrews live there for months. They:\n- Run science experiments\n- Exercise to protect bones and muscles\n- Maintain life-support systems\n- Photograph Earth and study microgravity\n\nThe ISS has been continuously crewed since **2000**, teaching us how humans can live off the planet for long periods.",
+      "keyTerms": [
+        "ISS",
+        "orbit",
+        "microgravity",
+        "crew"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_orbit_basics_010",
+        "article_space_commercial_008"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/iss-crew.jpg",
+        "alt": "Crew on the station",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_shuttle_007",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "The Space Shuttle Era",
+      "summary": "A winged orbiter that launched like a rocket and landed like a glider.",
+      "content": "From **1981 to 2011**, NASA’s **Space Shuttle** carried astronauts and cargo to orbit. It launched vertically with boosters, spent time in orbit with a large cargo bay, and landed on a runway.\n\nThe Shuttle helped build the early **ISS**, launched and serviced the **Hubble Space Telescope**, and flew many science missions. It was a bridge between early capsules and today’s mix of government and commercial spacecraft.",
+      "keyTerms": [
+        "Space Shuttle",
+        "orbiter",
+        "Hubble",
+        "runway landing"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_iss_006",
+        "article_space_telescopes_011"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Shuttle and Hubble",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_commercial_008",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Commercial Crew and Today’s Access to Space",
+      "summary": "When companies fly astronauts alongside national agencies.",
+      "content": "In the 2010s–2020s, spaceflight changed again. NASA’s **Commercial Crew Program** hired private companies to build crewed capsules. **SpaceX Crew Dragon** began flying astronauts to the ISS in **2020**. Other vehicles and providers continue to develop.\n\nMeanwhile, reusable rockets, rideshare launches, and small satellites (**CubeSats**) made orbit more reachable for universities and startups. Human spaceflight is no longer only a two-nation story — it is a growing global industry with science, exploration, and Earth services intertwined.",
+      "keyTerms": [
+        "Commercial Crew",
+        "Crew Dragon",
+        "reusable rocket",
+        "CubeSat"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_iss_006",
+        "article_space_artemis_009"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/launch-pad.jpg",
+        "alt": "Launch pad and rocket",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_artemis_009",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Artemis and Returning to the Moon",
+      "summary": "The modern plan for lunar exploration.",
+      "content": "**Artemis** is NASA’s program (with international and commercial partners) to return humans to the Moon and explore more of it than Apollo did — including plans involving the lunar south polar region and long-term infrastructure ideas.\n\nKey ideas:\n- New rockets and spacecraft (such as SLS and Orion in the U.S. architecture)\n- International cooperation\n- Using the Moon as a step toward future Mars exploration\n\nAs of the mid-2020s, uncrewed and crewed test flights are staged milestones. Exact landing dates can shift, but the scientific goal is clear: learn to live and work farther from Earth.",
+      "keyTerms": [
+        "Artemis",
+        "Moon",
+        "exploration",
+        "Orion"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_apollo11_004",
+        "article_space_mars_012"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-rise.jpg",
+        "alt": "Earthrise from the Moon",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_orbit_basics_010",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "What Is an Orbit?",
+      "summary": "Falling around a planet without hitting it.",
+      "content": "An **orbit** is a path around a planet or moon. Imagine throwing a ball so fast that as it falls, the ground curves away beneath it — that is the idea of orbit!\n\nSatellites and the ISS stay in orbit because they move sideways very fast while gravity pulls them inward. They are not “floating with zero gravity outside” in the cartoon sense; they are in continuous freefall, which feels like weightlessness to astronauts.",
+      "keyTerms": [
+        "orbit",
+        "gravity",
+        "satellite",
+        "freefall"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_age_begins_001",
+        "article_space_iss_006"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/satellite.jpg",
+        "alt": "Earth-observing satellite",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_telescopes_011",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Eyes in the Sky: Space Telescopes",
+      "summary": "Hubble, Webb, and why altitude helps astronomy.",
+      "content": "Telescopes in space avoid much of Earth’s blurry, glowing atmosphere.\n\n- **Hubble Space Telescope** (launched 1990) has taken famous visible and ultraviolet images of galaxies and nebulae.\n- **James Webb Space Telescope** (launched 2021) sees mainly **infrared** light, great for dusty star nurseries and distant early galaxies.\n\nThese observatories help us understand how stars form, how galaxies grow, and what other planetary systems are like.",
+      "keyTerms": [
+        "Hubble",
+        "James Webb",
+        "infrared",
+        "astronomy"
+      ],
+      "readingLevel": 5.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_shuttle_007",
+        "article_space_mars_012"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/shuttle-hubble.jpg",
+        "alt": "Shuttle and Hubble",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_mars_012",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Robots on Mars",
+      "summary": "Rovers and a helicopter exploring another world.",
+      "content": "Mars is too far for easy human visits (so far), so we send **robots**.\n\nRovers such as **Curiosity** and **Perseverance** drive across the surface, drill rocks, and search for signs of past water and habitability. In 2021, the **Ingenuity** helicopter made the first powered flights on another planet.\n\nEvery radio message takes minutes to travel, so robots follow careful plans from Earth teams. They are scouts preparing knowledge for possible future explorers.",
+      "keyTerms": [
+        "Mars",
+        "rover",
+        "Perseverance",
+        "Ingenuity"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_artemis_009",
+        "article_space_probes_013"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/mars-rover.jpg",
+        "alt": "Mars rover",
+        "credit": "NASA/JPL",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_probes_013",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Probes Across the Solar System",
+      "summary": "Voyagers, landers, and the long reach of robots.",
+      "content": "Uncrewed **probes** have visited every planet in our solar system. Highlights include:\n\n- **Viking** landers (1970s) on Mars\n- **Voyager 1 & 2** grand tour of outer planets; Voyager 1 later entered interstellar space\n- Missions to Jupiter, Saturn (Cassini), Pluto (New Horizons), and asteroids/comets\n\nProbes expand human knowledge without risking crews. They also teach navigation, power, and communication tricks used by crewed missions closer to home.",
+      "keyTerms": [
+        "probe",
+        "Voyager",
+        "Viking",
+        "solar system"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_mars_012",
+        "article_space_orbit_basics_010"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/solar-system.jpg",
+        "alt": "Solar system",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_rockets_014",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "How Rockets Work",
+      "summary": "Push down to go up.",
+      "content": "A **rocket** carries fuel and oxygen (or chemicals that make hot gas). When gas blasts out the bottom, the rocket is pushed the other way — **action and reaction**.\n\nRockets can work in space because they bring their own “push stuff”; they do not need air to push against. Tall rockets often use **stages** that drop away when empty so the rest can fly higher and faster.",
+      "keyTerms": [
+        "rocket",
+        "thrust",
+        "stages",
+        "action-reaction"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_orbit_basics_010",
+        "article_space_commercial_008"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/launch-pad.jpg",
+        "alt": "Launch pad and rocket",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_space_timeline_015",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Spaceflight Timeline: 1957 to Today",
+      "summary": "A quick path from Sputnik to commercial crew and lunar plans.",
+      "content": "A short map of major eras (not every mission!):\n\n- **1957** — Sputnik 1: first satellite\n- **1961** — Gagarin: first human in orbit\n- **1969** — Apollo 11: first people on the Moon\n- **1970s–80s** — stations like Skylab; Shuttle flights begin (1981)\n- **1990** — Hubble launches\n- **1998–2000s** — ISS assembly; continuous crews from 2000\n- **2010s–2020s** — reusable rockets, CubeSats, Chinese station Tiangong, Crew Dragon to ISS, JWST, Mars helicopters, Artemis lunar plans\n\nThe theme of “today” is **more players**: many countries and companies share the sky, while science stations and telescopes keep expanding what we know.",
+      "keyTerms": [
+        "timeline",
+        "Sputnik",
+        "Apollo",
+        "ISS",
+        "Artemis"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_age_begins_001",
+        "article_space_commercial_008",
+        "article_space_artemis_009"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-space-timeline-015.png",
+        "alt": "Spaceflight Timeline: 1957 to Today",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_space_careers_016",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Jobs That Build Spaceflight",
+      "summary": "Not only astronauts — engineers, coders, and scientists.",
+      "content": "Astronauts are famous, but most space work happens on Earth:\n\n- **Engineers** design rockets, suits, and stations\n- **Software developers** write guidance and robotics code\n- **Scientists** plan experiments and study data\n- **Flight controllers** watch systems in Mission Control\n- **Technicians** build and test hardware carefully\n\nIf you like puzzles, teamwork, and learning from failure, space careers welcome many skills — including art and writing that explain discoveries to everyone.",
+      "keyTerms": [
+        "career",
+        "engineer",
+        "Mission Control",
+        "teamwork"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_iss_006",
+        "article_space_rockets_014"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-space-careers-016.png",
+        "alt": "Jobs That Build Spaceflight",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_space_china_india_017",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "More Nations Reach Space",
+      "summary": "China, India, and a multipolar space age.",
+      "content": "Spaceflight is global. Examples:\n\n- **China** — crewed Shenzhou flights; **Tiangong** space station; Chang’e lunar landers (including the first soft landing on the Moon’s far side).\n- **India** — ISRO missions including Mars Orbiter (Mangalyaan) and lunar efforts such as Chandrayaan.\n- **Europe, Japan, Canada**, and many others contribute stations, probes, and launchers.\n\nCooperation and competition both shape what launches next — from Earth science satellites to deep-space probes.",
+      "keyTerms": [
+        "Tiangong",
+        "ISRO",
+        "Chang’e",
+        "international"
+      ],
+      "readingLevel": 6.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_timeline_015",
+        "article_space_iss_006"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-space-china-india-017.png",
+        "alt": "More Nations Reach Space",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_space_safety_018",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Space Is Hard: Safety and Training",
+      "summary": "Why practice on Earth saves lives in orbit.",
+      "content": "Space has no air to breathe, extreme temperatures, and sharp speed differences. Crews train for years in simulators, pools (for spacewalk practice), and classrooms.\n\nSpacecraft need:\n- Reliable life support\n- Heat shields for re-entry\n- Abort systems for launch emergencies\n- Careful mission rules\n\nLearning from past accidents made modern systems safer. Courage in space always rides with careful engineering on the ground.",
+      "keyTerms": [
+        "safety",
+        "training",
+        "life support",
+        "re-entry"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      },
+      "related": [
+        "article_space_rockets_014",
+        "article_space_iss_006"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/earth-apollo17.jpg",
+        "alt": "Earth from space",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    }
+  ]
+}

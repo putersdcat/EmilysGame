@@ -7,7 +7,7 @@
  * GitHub: #22 — Enhanced Micro Tile Metadata & Per-Side Edge Vectors
  */
 
-import type { TileType } from '../tiles';
+import type { TileType } from '../rendering/tiles';
 
 // ─── Edge & Traversal Types ─────────────────────────────────
 
@@ -224,6 +224,36 @@ export const MICRO_TILE_DEFS: Record<TileType, MicroTileDef> = {
     connectable: true, decorationEligible: false,
     variationFamily: 'gate', variationIndex: 1,
     description: 'Quiz gate — answer a question to pass',
+    climate: { moisture: [0, 1], temperature: [0, 1] },
+    lod: 'detail',
+  },
+  troll_bridge: {
+    type: 'troll_bridge', walkable: false, edgeTag: 'gate',
+    edges: { n: 'open', s: 'open', e: 'water', w: 'water' },
+    traversal: 'conditional', surface: 'wood', height: 2,
+    connectable: false, decorationEligible: false,
+    variationFamily: 'bridge', variationIndex: 1,
+    description: 'Quiz-gated troll bridge',
+    climate: { moisture: [0.5, 1.0], temperature: [0.1, 0.9] },
+    lod: 'detail',
+  },
+  homestead_wall: {
+    type: 'homestead_wall', walkable: false, edgeTag: 'wall',
+    edges: { n: 'wall', s: 'wall', e: 'wall', w: 'wall' },
+    traversal: 'blocked', surface: 'wood', height: 6,
+    connectable: true, decorationEligible: false,
+    variationFamily: 'homestead', variationIndex: 0,
+    description: 'Timber-frame homestead wall module',
+    climate: { moisture: [0, 1], temperature: [0.1, 0.9] },
+    lod: 'detail',
+  },
+  cathedral_wall: {
+    type: 'cathedral_wall', walkable: false, edgeTag: 'wall',
+    edges: { n: 'wall', s: 'wall', e: 'wall', w: 'wall' },
+    traversal: 'blocked', surface: 'stone', height: 8,
+    connectable: true, decorationEligible: false,
+    variationFamily: 'cathedral', variationIndex: 0,
+    description: 'Dark ruined cathedral wall module',
     climate: { moisture: [0, 1], temperature: [0, 1] },
     lod: 'detail',
   },
@@ -482,7 +512,22 @@ export function computeRotations(template: WorldUnitTemplate): RotatedTemplate[]
   // Auto-compute new edge-contract fields (#42)
   let tc = template.traversalChannels ?? computeTraversalChannels(template.cells);
   let cc = computeCornerCells(template.cells);
-  let cp = template.chainPorts ?? computeChainPorts(template.edgeTags, template.chainType, template.terminator);
+  // #42 fix (2026-07-09): fully self-contained rooms (connectivity ===
+  // 'enclosure', e.g. castle_courtyard, fence_enclosure -- 8 templates as
+  // of this writing) are walled/fenced on ALL 4 sides BY DESIGN, not
+  // dangling chain features. Before this fix, computeChainPorts treated
+  // every non-open side as a chain port needing termination (since
+  // `terminator: true` + all-4-sides-non-open just meant "entries on all
+  // 4 sides"), so enforceChainIntegrity would try to replace a courtyard
+  // corner touching a chunk boundary with an unrelated terminator (falling
+  // through to a generic meadow_base, since 'castle_courtyard' matches no
+  // known terminator-family prefix) -- confirmed via a real-pipeline sweep
+  // in gen-chain-integrity-boundary-audit.spec.ts. An enclosure has no
+  // "opposite side" that continues the shape the way a river/wall/path
+  // chain does, so it must never be a dangling-chain candidate at all.
+  let cp = template.chainPorts ?? (template.connectivity === 'enclosure'
+    ? { entries: [], exits: [] }
+    : computeChainPorts(template.edgeTags, template.chainType, template.terminator));
 
   for (let r = 0; r < 4; r++) {
     const deg = r * 90;
@@ -736,17 +781,17 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Wooden fence enclosure (square fence with opening) ---
+  // --- Wooden fence enclosure (square fence with functional quiz_gate opening) ---
   {
     name: 'fence_enclosure',
     cells: [
-      ['wooden_fence', 'wooden_fence', 'grass', 'wooden_fence', 'wooden_fence'],
+      ['wooden_fence', 'wooden_fence', 'quiz_gate', 'wooden_fence', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence', 'wooden_fence'],
     ],
-    edgeTags: { n: 'fence', s: 'fence', e: 'fence', w: 'fence' },
+    edgeTags: { n: 'gate', s: 'fence', e: 'fence', w: 'fence' },
     rotatable: true,
     terminator: true,
     chainType: 'fence',
@@ -1334,15 +1379,15 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Mixed terrain (grass/dirt natural variation) ---
+  // --- Mixed terrain (coherent dirt patch + soft grass fringe; V1 no checkerboard) ---
   {
     name: 'mixed_terrain',
     cells: [
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
     ],
     edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
     rotatable: false,
@@ -1359,15 +1404,15 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
     ],
   },
 
-  // --- Meadow Garden (flower rows with item in center) ---
+  // --- Meadow Garden (grass lawn + dirt cross-path + flower beds; V1 no checkerboard) ---
   {
     name: 'meadow_garden',
     cells: [
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'dirt', 'dirt', 'grass'],
-      ['dirt', 'grass', 'dirt', 'grass', 'dirt'],
-      ['grass', 'dirt', 'grass', 'dirt', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
+      ['grass', 'flower', 'dirt', 'flower_pink', 'grass'],
+      ['dirt', 'dirt', 'dirt', 'dirt', 'dirt'],
+      ['grass', 'flower_red', 'dirt', 'tulip', 'grass'],
+      ['grass', 'grass', 'dirt', 'grass', 'grass'],
     ],
     edgeTags: { n: 'open', s: 'open', e: 'open', w: 'open' },
     rotatable: false,
@@ -1905,7 +1950,7 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 
   // ─────────── Fence Templates (fence-post edges) ─────────────
 
-  // --- Fenced Garden (enclosed by fences with post termination) ---
+  // --- Fenced Garden (enclosed by fences; south opening is functional quiz_gate) ---
   {
     name: 'fenced_garden',
     cells: [
@@ -1913,9 +1958,9 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
       ['wooden_fence', 'grass', 'grass', 'grass', 'wooden_fence'],
-      ['grass', 'wooden_fence', 'grass', 'wooden_fence', 'grass'],
+      ['grass', 'wooden_fence', 'quiz_gate', 'wooden_fence', 'grass'],
     ],
-    edgeTags: { n: 'fence-post', s: 'fence-post', e: 'fence-post', w: 'fence-post' },
+    edgeTags: { n: 'fence-post', s: 'gate', e: 'fence-post', w: 'fence-post' },
     rotatable: false,
     terminator: true,
     chainType: 'fence',
@@ -2141,52 +2186,56 @@ export const WORLD_UNIT_TEMPLATES: WorldUnitTemplate[] = [
 /** Biome-specific template weights. Higher = more likely to spawn. */
 export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
   meadow: {
-    meadow_base: 0.18,
-    meadow_garden: 0.06,
-    dirt_clearing: 0.08,
+    meadow_base: 0.20,
+    meadow_garden: 0.07,
+    dirt_clearing: 0.09,
     mixed_terrain: 0.05,
-    sandy_patch: 0.04,
+    // V1: no free-floating sandy_patch / sand_path / beach_cove in meadow —
+    // sand only via lake/river shore templates where it reads as water edge.
     forest_clearing: 0.04,
-    lake: 0.03,
-    dirt_path_ns: 0.07,
-    dirt_path_ew: 0.07,
+    // V3: prefer linear rivers over square lake/pond tanks; modular pond-clearing
+    // handles intentional pools. Keep a little river_end_pond as chain terminators.
+    lake: 0.01,
+    dirt_path_ns: 0.08,
+    dirt_path_ew: 0.08,
     path_bend_ne: 0.03,
     path_t_junction: 0.02,
     path_crossroads: 0.01,
     path_dead_end: 0.02,
-    river_straight_ns: 0.04,
-    river_straight_ew: 0.04,
-    river_bend_ne: 0.02,
-    river_bend_nw: 0.02,
-    river_end_pond: 0.03,
-    river_t_junction: 0.01,
+    river_straight_ns: 0.07,
+    river_straight_ew: 0.07,
+    river_bend_ne: 0.03,
+    river_bend_nw: 0.03,
+    river_end_pond: 0.015,
+    river_t_junction: 0.015,
     river_crossroads: 0.005,
     shore_n: 0.02,
     shore_corner_ne: 0.01,
-    bridge_ns: 0.02,
-    bridge_ew: 0.02,
-    fence_enclosure: 0.05,
+    bridge_ns: 0.025,
+    bridge_ew: 0.025,
     rocky_outcrop: 0.03,
-    wall_gate: 0.01,
-    wall_segment: 0.01,
-    wall_corner: 0.005,
-    wall_end: 0.005,
-    fenced_yard: 0.03,
-    market_square: 0.04,
     spiral_path: 0.03,
-    water_garden: 0.03,
-    wall_bastion: 0.02,
-    wall_corner_capped: 0.02,
-    fenced_garden: 0.03,
-    fence_row: 0.03,
-    beach_cove: 0.02,
-    sand_path: 0.03,
-    // #99 Themed Structures
-    homestead_compound: 0.05,
-    seller_cart_yard: 0.04,
-    inn_compound: 0.03,
-    // #110 Outhouse
-    outhouse_clearing: 0.03,
+    water_garden: 0.01,
+    // Scene-first PR5 (2026-07-16): demote structure/enclosure WU templates.
+    // Walls, free fence pens, and compound stamps only via modular scenes +
+    // starter homestead. Weight 0 is hard-skipped in buildBiomeCandidatePool
+    // (before the 0.005 floor). Keep pure terrain / path / river / lake / shore.
+    fence_enclosure: 0,
+    wall_gate: 0,
+    wall_segment: 0,
+    wall_corner: 0,
+    wall_end: 0,
+    wall_bastion: 0,
+    wall_corner_capped: 0,
+    fenced_yard: 0,
+    fenced_garden: 0,
+    // fence_row is linear decoration but still free fence atoms without gates.
+    fence_row: 0,
+    market_square: 0,
+    homestead_compound: 0,
+    seller_cart_yard: 0,
+    inn_compound: 0,
+    outhouse_clearing: 0,
   },
   forest: {
     meadow_base: 0.05,
@@ -2196,7 +2245,8 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     mixed_terrain: 0.05,
     rocky_outcrop: 0.06,
     rock_cluster: 0.05,
-    lake: 0.03,
+    // V3: fewer square lakes; more flowing river pieces
+    lake: 0.01,
     ruins: 0.03,
     dirt_path_ns: 0.06,
     dirt_path_ew: 0.06,
@@ -2204,34 +2254,33 @@ export const BIOME_TEMPLATE_WEIGHTS: Record<string, Record<string, number>> = {
     path_t_junction: 0.03,
     path_crossroads: 0.02,
     path_dead_end: 0.04,
-    river_straight_ns: 0.05,
-    river_straight_ew: 0.05,
-    river_bend_ne: 0.03,
-    river_bend_nw: 0.03,
-    river_end_pond: 0.04,
-    river_t_junction: 0.02,
+    river_straight_ns: 0.07,
+    river_straight_ew: 0.07,
+    river_bend_ne: 0.04,
+    river_bend_nw: 0.04,
+    river_end_pond: 0.02,
+    river_t_junction: 0.025,
     shore_n: 0.02,
     shore_corner_ne: 0.01,
-    bridge_ns: 0.03,
-    bridge_ew: 0.03,
-    wall_segment: 0.02,
-    wall_gate: 0.02,
-    fence_enclosure: 0.03,
-    fenced_yard: 0.02,
+    bridge_ns: 0.035,
+    bridge_ew: 0.035,
     spiral_path: 0.03,
-    water_garden: 0.03,
-    river_island: 0.02,
-    wall_bastion: 0.02,
-    wall_corner_capped: 0.02,
-    fenced_garden: 0.02,
-    fence_row: 0.02,
+    water_garden: 0.01,
+    river_island: 0.015,
     beach_cove: 0.02,
-    // #99 Themed Structures
-    homestead_compound: 0.04,
-    seller_cart_yard: 0.03,
-    inn_compound: 0.03,
-    // #110 Outhouse
-    outhouse_clearing: 0.02,
+    // Scene-first PR5: same structure demotion as meadow (weight 0 hard-skip).
+    fence_enclosure: 0,
+    wall_segment: 0,
+    wall_gate: 0,
+    wall_bastion: 0,
+    wall_corner_capped: 0,
+    fenced_yard: 0,
+    fenced_garden: 0,
+    fence_row: 0,
+    homestead_compound: 0,
+    seller_cart_yard: 0,
+    inn_compound: 0,
+    outhouse_clearing: 0,
   },
   cave: {
     rock_cluster: 0.08,

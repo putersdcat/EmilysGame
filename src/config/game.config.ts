@@ -5,11 +5,24 @@
  */
 
 // ─── Rendering ───────────────────────────────────────────────
+/**
+ * Pre-Iso2.0 on-screen diamond width when emojiSize/spriteSize (32/48) were
+ * authored. See memories/repo/visual-scale-dpi-mismatch-2026-07-15.md.
+ *
+ * History: 64 → 256 (13ade67) zoomed the FOV way in without scaling entities.
+ * 2026-07-15: display diamonds 128×64 (2× legacy, half of 256) so more tiles
+ * fit the viewport; 144px nano source still supersamples into them. Player
+ * stays ~spriteSize in viewport pixels but is larger *relative to each tile*.
+ */
+export const LEGACY_TILE_WIDTH = 64;
+
 export const RENDER_CONFIG = {
   canvasWidth: 800,
   canvasHeight: 600,
-  tileWidth: 64,        // Isometric tile width in px
-  tileHeight: 32,       // Isometric tile height in px (squished Y)
+  // On-screen diamond (FOV). Smaller = zoomed out = more tiles visible.
+  // Keep 2:1 with ISO_DIAMOND_* in iso-renderer.types.ts / nano-tile.
+  tileWidth: 128,
+  tileHeight: 64,
   targetFPS: 60,
   renderScale: 1.0,   // Internal render resolution (0.5=half, 1.0=full).
   maxDrawCmds: 400,    // Max draw commands per frame (graceful degradation beyond this)
@@ -17,22 +30,36 @@ export const RENDER_CONFIG = {
   useWasmRenderer: false, // Disabled: JS path with object cache is faster (no marshal overhead)
   shadowAlpha: 0.5,
   shadowScale: { width: 22, height: 12 },
-  emojiSize: 32,        // Base emoji font size
-  spriteSize: 48,       // Base SVG sprite render size
+  emojiSize: 32,        // Base emoji font size (source raster)
+  spriteSize: 48,       // Base SVG sprite render size (source)
   emojiBrightness: 1.15,
   emojiSaturation: 1.25,
-  /** Source pixel size of micro-tile SVGs fed into the isometric transform (#192).
-   *  Set to 96 (3× original 32) as prep for the PNG asset pipeline.
-   *  Larger src size = better SVG rasterisation quality into the 64×32 iso diamond.
-   *  TODO: DOC - microTileSize config field, PNG asset pipeline */
-  microTileSize: 96,
+  /** Source pixel size of micro-tile SVGs fed into the isometric transform.
+   *  Iso 2.0 uses 144 so the nano sub-grid divides cleanly into 3×48px cells.
+   *  Independent of on-screen tileWidth (supersample into smaller diamonds). */
+  microTileSize: 144,
+  /**
+   * Character display scale = (tileWidth / LEGACY_TILE_WIDTH) * entityScaleFactor.
+   * With tileWidth 128 and factor 0.5 → scale 1.0: player stays ~48px on screen
+   * (not viewport-huge) while player∶tile ≈ 48/128 = 0.375 (was 0.125 at 256).
+   */
+  entityScaleFactor: 0.5,
 };  // Mutable: canvasWidth/canvasHeight updated on viewport resize
+
+/**
+ * On-screen scale for player/NPC sprites.
+ * With FOV zoom-out (tileWidth 128), default factor keeps viewport avatar size
+ * modest while improving ratio vs each diamond.
+ */
+export function entityDisplayScale(): number {
+  return (RENDER_CONFIG.tileWidth / LEGACY_TILE_WIDTH) * RENDER_CONFIG.entityScaleFactor;
+}
 
 // ─── Grid / World ────────────────────────────────────────────
 export const WORLD_CONFIG = {
   chunkSize: 25,        // Cells per chunk side (25x25 = 5×5 world units)
   worldUnitSize: 5,     // Cells per world unit side
-  cellPixels: 128,      // Logical cell size in px
+  cellPixels: 64,       // Logical cell size in px (match on-screen tileHeight scale)
   viewportBuffer: 1,    // Extra chunks rendered off-screen (0 = tight, 1 = smooth)
 
   /** Density thresholds for procedural gen (0-100 from hash) */
@@ -51,16 +78,20 @@ export const WORLD_CONFIG = {
 
 // ─── Player / Ego ────────────────────────────────────────────
 export const PLAYER_CONFIG = {
-  speed: 0.05,          // Grid units per frame
+  // 0.05 (~3 cells/s @60fps) felt leisurely/grindy for short sessions;
+  // 0.08 (~4.8 cells/s) keeps control while making explore→gate loops viable.
+  speed: 0.08,          // grid units per MOVE_STEP_MS (1/60 s)
   startPosition: { x: 12.5, y: 12.5 }, // Center of cell at chunk midpoint (avoids footprint overlap with adjacent walls)
   height: 3,
+  /** Extra multiplier on top of entityDisplayScale() (tile DPI restore). */
   scale: 1.0,
   defaultVariation: 'blonde_pink',
   animationFrames: 6,   // Walking animation frame count
   /** Collision footprint half-extents in grid units (centered on player position).
-   *  Tight rectangle prevents walk-through on all approach directions (#151, #180). */
-  collisionHalfW: 0.3,  // X half-width (grid units)
-  collisionHalfH: 0.3,  // Y half-height (grid units)
+   *  Slightly under half-cell so axis-slide along fence/wall edges feels playable
+   *  without allowing center-of-tile walk-through of full solids (#151, #180). */
+  collisionHalfW: 0.22,  // X half-width (grid units)
+  collisionHalfH: 0.22,  // Y half-height (grid units)
 } as const;
 
 // ─── LLM / Entropy ──────────────────────────────────────────
@@ -159,8 +190,11 @@ export interface DifficultyProfile {
 }
 
 const DIFFICULTY_TIERS: DifficultyProfile[] = [
-  { tierName: 'Safe Zone',  tier: 0, obstacleDensity: 0.6, quizGateFrequency: 0.0, collectibleRate: 1.5, guardianRatio: 0.0, keyRate: 0.5, extraObstacles: 0 },
-  { tierName: 'Easy',       tier: 1, obstacleDensity: 0.8, quizGateFrequency: 0.6, collectibleRate: 1.2, guardianRatio: 0.2, keyRate: 0.8, extraObstacles: 0 },
+  // quizGateFrequency was 0.0 in Safe Zone which zeroed placeQuizGates even
+  // when biome weight > 0 (effectiveWeight = weight * mult). Small nonzero
+  // keeps the teaching loop present in the dist-0..1 ring without flooding.
+  { tierName: 'Safe Zone',  tier: 0, obstacleDensity: 0.6, quizGateFrequency: 0.45, collectibleRate: 1.5, guardianRatio: 0.0, keyRate: 0.5, extraObstacles: 0 },
+  { tierName: 'Easy',       tier: 1, obstacleDensity: 0.8, quizGateFrequency: 0.85, collectibleRate: 1.2, guardianRatio: 0.2, keyRate: 0.8, extraObstacles: 0 },
   { tierName: 'Medium',     tier: 2, obstacleDensity: 1.0, quizGateFrequency: 1.0, collectibleRate: 1.0, guardianRatio: 0.4, keyRate: 1.0, extraObstacles: 2 },
   { tierName: 'Hard',       tier: 3, obstacleDensity: 1.3, quizGateFrequency: 1.4, collectibleRate: 0.8, guardianRatio: 0.6, keyRate: 1.2, extraObstacles: 4 },
   { tierName: 'Extreme',    tier: 4, obstacleDensity: 1.6, quizGateFrequency: 1.8, collectibleRate: 0.6, guardianRatio: 0.8, keyRate: 1.5, extraObstacles: 6 },

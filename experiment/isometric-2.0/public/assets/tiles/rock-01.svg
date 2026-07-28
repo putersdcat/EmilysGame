@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- rock-01: Chunky stone boulders with strong 3D shading -->
+  <defs>
+    <linearGradient id="rBase" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9a9a9a"/>
+      <stop offset="100%" stop-color="#4a4a50"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#rBase)"/>
+  <g>
+    <ellipse cx="32" cy="88" rx="24" ry="12" fill="#222228" opacity="0.5"/>
+    <ellipse cx="30" cy="72" rx="24" ry="20" fill="#7a7a80"/>
+    <path d="M15,65 Q30,50 45,65 Q38,72 22,72 Z" fill="#aaaaaa" opacity="0.7"/>
+    <path d="M45,65 Q50,78 44,88 Q35,82 30,88 Q20,82 18,78 Q13,70 15,65 Q25,75 45,65 Z" fill="#505058" opacity="0.5"/>
+    <path d="M25,60 Q28,65 24,72" stroke="#383840" stroke-width="0.8" fill="none"/>
+    <path d="M35,62 Q38,70 36,76" stroke="#383840" stroke-width="0.7" fill="none"/>
+    <path d="M14,64 Q30,48 46,64" stroke="#c0c0c8" stroke-width="1.2" fill="none" opacity="0.6"/>
+  </g>
+  <g>
+    <ellipse cx="88" cy="60" rx="18" ry="10" fill="#222228" opacity="0.45"/>
+    <ellipse cx="86" cy="48" rx="18" ry="16" fill="#828288"/>
+    <path d="M73,43 Q86,31 99,43 Q93,50 79,50 Z" fill="#b0b0b8" opacity="0.65"/>
+    <path d="M99,43 Q103,53 97,60 Q88,55 86,60 Q78,55 76,52 Q71,45 73,43 Q82,52 99,43 Z" fill="#505058" opacity="0.5"/>
+    <path d="M72,42 Q86,30 100,42" stroke="#d0d0d8" stroke-width="1" fill="none" opacity="0.55"/>
+  </g>
+  <g>
+    <ellipse cx="58" cy="105" rx="10" ry="6" fill="#6a6a72"/>
+    <path d="M50,101 Q58,94 66,101 Q62,105 54,105 Z" fill="#909095" opacity="0.7"/>
+    <ellipse cx="110" cy="85" rx="8" ry="5" fill="#707078"/>
+    <path d="M103,81 Q110,75 117,81 Q113,85 107,85 Z" fill="#989898" opacity="0.6"/>
+    <ellipse cx="18" cy="112" rx="7" ry="4" fill="#6a6a72"/>
+    <ellipse cx="75" cy="38" rx="6" ry="4" fill="#888890"/>
+    <path d="M70,35 Q75,30 80,35 Q77,38 73,38 Z" fill="#aaaaaa" opacity="0.6"/>
+    <ellipse cx="110" cy="25" rx="5" ry="3" fill="#828288"/>
+    <ellipse cx="15" cy="28" rx="6" ry="3.5" fill="#6a6a72"/>
+    <circle cx="45" cy="120" r="3" fill="#666670"/>
+    <circle cx="95" cy="118" r="2.5" fill="#6a6a74"/>
+    <circle cx="8" cy="95" r="2" fill="#606068"/>
+  </g>
+  <g fill="#505055" opacity="0.25">
+    <circle cx="60" cy="90" r="3"/><circle cx="50" cy="112" r="2.5"/>
+    <circle cx="15" cy="60" r="2"/><circle cx="105" cy="100" r="2.5"/>
+    <circle cx="118" cy="65" r="2"/><circle cx="70" cy="70" r="2.5"/>
+    <circle cx="40" cy="30" r="2"/><circle cx="100" cy="110" r="3"/>
+  </g>
+</svg>

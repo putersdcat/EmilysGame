@@ -1,0 +1,1919 @@
+{
+  "shardId": "quizzes-006",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:14:18.000Z",
+  "questions": [
+    {
+      "id": "q_space_e_001",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What is an astronaut?",
+      "answers": [
+        "A person trained to travel and work in space",
+        "A fish that lives in rivers",
+        "A type of cloud",
+        "A mountain climber only"
+      ],
+      "hint": "Space traveler.",
+      "explanation": "Astronauts (and cosmonauts) are people trained to fly and work in space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "astronaut"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_002",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What do we call the path a satellite takes around Earth?",
+      "answers": [
+        "Orbit",
+        "Tunnel",
+        "Sidewalk",
+        "Cave"
+      ],
+      "hint": "Goes around and around.",
+      "explanation": "An orbit is a curved path around a planet or moon.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "orbit",
+        "satellite"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_003",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "In 1969, Apollo 11 astronauts walked on the…",
+      "answers": [
+        "Moon",
+        "Sun",
+        "Bottom of the ocean only",
+        "Inside a volcano only"
+      ],
+      "hint": "Night-sky neighbor.",
+      "explanation": "Apollo 11 landed people on the Moon in 1969.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "apollo",
+        "moon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_004",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A rocket is useful because it can…",
+      "answers": [
+        "Push itself upward with hot gas thrust",
+        "Only dig holes",
+        "Only float on lakes",
+        "Only paint fences"
+      ],
+      "hint": "Whoosh!",
+      "explanation": "Rockets expel gas downward to push the vehicle up (Newton’s third law).",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "rocket"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_005",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "The first artificial satellite launched into space was named…",
+      "answers": [
+        "Sputnik 1",
+        "The Golden Boat",
+        "Paper Plane One",
+        "Cloud Ship"
+      ],
+      "hint": "1957 — beeping ball.",
+      "explanation": "The Soviet Union launched Sputnik 1 in 1957, the first artificial satellite.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "sputnik",
+        "satellite"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_006",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Where do many astronauts live and work for months today?",
+      "answers": [
+        "The International Space Station (ISS)",
+        "Inside a hollow tree only",
+        "Under a bridge only",
+        "In a desert tent only"
+      ],
+      "hint": "A home in orbit.",
+      "explanation": "The ISS is a large laboratory in orbit around Earth where crews live and research.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "iss"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_007",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What keeps the Moon going around Earth?",
+      "answers": [
+        "Gravity",
+        "String",
+        "Wind only",
+        "Glue"
+      ],
+      "hint": "Invisible pull.",
+      "explanation": "Gravity pulls the Moon toward Earth while its motion keeps it in orbit.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "gravity",
+        "moon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_008",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A satellite can help people on Earth by…",
+      "answers": [
+        "Sending weather and communication signals",
+        "Only watering plants by hand",
+        "Only baking bread",
+        "Only counting sheep"
+      ],
+      "hint": "Sky helpers.",
+      "explanation": "Satellites support weather forecasts, GPS-style navigation, TV, and science.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "satellite"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_009",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Neil Armstrong is famous for…",
+      "answers": [
+        "Being among the first people to walk on the Moon",
+        "Inventing the bicycle only",
+        "Discovering electricity only",
+        "Painting the first cave art only"
+      ],
+      "hint": "One small step…",
+      "explanation": "Armstrong was the first person to step onto the lunar surface on Apollo 11.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "apollo",
+        "armstrong"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_e_010",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "In space, far from a planet’s surface, astronauts float because…",
+      "answers": [
+        "They and their craft are falling around Earth together (microgravity)",
+        "There is magic glue on their boots only",
+        "Air is thicker than water",
+        "The Sun pushes them sideways only"
+      ],
+      "hint": "Orbit freefall.",
+      "explanation": "Orbiting is continuous freefall that creates a feeling of weightlessness.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "microgravity",
+        "orbit"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_001",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Who was the first human to orbit Earth (1961)?",
+      "answers": [
+        "Yuri Gagarin",
+        "Christopher Columbus",
+        "Marie Curie",
+        "Wright brothers together in one capsule"
+      ],
+      "hint": "Soviet cosmonaut, Vostok 1.",
+      "explanation": "Yuri Gagarin completed one orbit on Vostok 1 in April 1961.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "gagarin",
+        "vostok"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_002",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What year did Apollo 11 land people on the Moon?",
+      "answers": [
+        "1969",
+        "1492",
+        "2001",
+        "1914"
+      ],
+      "hint": "Late 1960s.",
+      "explanation": "Apollo 11 landed on July 20, 1969 (UTC date conventions may vary by zone).",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "apollo",
+        "1969"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_003",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Valentina Tereshkova is famous for…",
+      "answers": [
+        "Being the first woman to fly in space",
+        "Building the first railroad only",
+        "Inventing the telescope only",
+        "Drawing the first map of Mars only"
+      ],
+      "hint": "1963 flight.",
+      "explanation": "Tereshkova flew on Vostok 6 in 1963, the first woman in space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "tereshkova",
+        "cosmonaut"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_004",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why do rockets need multiple stages?",
+      "answers": [
+        "To drop empty tanks and go lighter as they climb",
+        "To make louder music only",
+        "To grow plants mid-flight only",
+        "To paint the sky"
+      ],
+      "hint": "Shed weight.",
+      "explanation": "Staging discards empty mass so remaining engines can accelerate the payload more efficiently.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "rocket",
+        "staging"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_005",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "The Hubble Space Telescope is special because it…",
+      "answers": [
+        "Observes space from above most of Earth’s atmosphere",
+        "Only photographs kitchens",
+        "Only measures ocean fish",
+        "Only works underwater"
+      ],
+      "hint": "Clearer sky view.",
+      "explanation": "Hubble’s orbit above much of the atmosphere gives sharper images of deep space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "hubble",
+        "telescope"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_006",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "The Space Race of the 1950s–60s was mainly a competition between…",
+      "answers": [
+        "The United States and the Soviet Union",
+        "Australia and Antarctica only",
+        "Two neighboring farms",
+        "Ships on a single lake"
+      ],
+      "hint": "Cold War era.",
+      "explanation": "U.S. and Soviet programs raced for satellite, human, and lunar firsts.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "space-race",
+        "cold-war"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_007",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is a rover on Mars?",
+      "answers": [
+        "A robot vehicle that explores the surface",
+        "A cloud that rains only candy",
+        "A type of sandwich",
+        "A wooden sailing ship"
+      ],
+      "hint": "Wheels on another world.",
+      "explanation": "Rovers like Curiosity and Perseverance study Mars geology and climate remotely.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "mars",
+        "rover"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_008",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "GPS-style navigation for phones often depends on…",
+      "answers": [
+        "A constellation of satellites timing signals",
+        "Only paper maps glued to shoes",
+        "Only shouting loudly",
+        "Only candle smoke"
+      ],
+      "hint": "Sky clocks.",
+      "explanation": "Global navigation satellite systems broadcast precise time signals receivers use to locate themselves.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "gps",
+        "satellite"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_009",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What was the Space Shuttle designed to do?",
+      "answers": [
+        "Launch like a rocket, land like a glider, and fly to orbit many times",
+        "Only dig tunnels under cities",
+        "Only float on lakes forever",
+        "Only map the ocean floor by swimming"
+      ],
+      "hint": "Reusable winged orbiter.",
+      "explanation": "NASA’s Shuttle (1981–2011) carried crews and cargo to orbit and landed on a runway.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "shuttle"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_010",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Low Earth orbit is where…",
+      "answers": [
+        "Many satellites and the ISS travel around Earth relatively close by",
+        "The center of the Sun is",
+        "The bottom of the deepest mine only",
+        "A cave under the Moon only"
+      ],
+      "hint": "Near-Earth loops.",
+      "explanation": "LEO is a region of orbits a few hundred kilometers up, used by the ISS and many satellites.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "leo",
+        "orbit"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_011",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "John Glenn is known in U.S. space history for…",
+      "answers": [
+        "Being the first American to orbit Earth",
+        "Inventing the airplane alone in 1900 only",
+        "Discovering Pluto with a phone only",
+        "Building the Eiffel Tower"
+      ],
+      "hint": "Friendship 7, 1962.",
+      "explanation": "Glenn orbited Earth in Friendship 7 during Project Mercury.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "mercury",
+        "glenn"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_012",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why do spacesuits protect astronauts on a spacewalk?",
+      "answers": [
+        "They supply air, pressure, and temperature control",
+        "They only look shiny for photos",
+        "They make gravity stronger",
+        "They turn space into water"
+      ],
+      "hint": "Personal spacecraft.",
+      "explanation": "Suits act like tiny ships: oxygen, pressure, cooling, and micrometeoroid layers.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "spacesuit",
+        "eva"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_013",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "China’s first astronaut (taikonaut) in space was…",
+      "answers": [
+        "Yang Liwei (Shenzhou 5, 2003)",
+        "Marco Polo",
+        "Ada Lovelace",
+        "James Cook"
+      ],
+      "hint": "Shenzhou program.",
+      "explanation": "Yang Liwei flew Shenzhou 5 in 2003, China’s first crewed spaceflight.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "china",
+        "shenzhou"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_014",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What does “payload” mean on a rocket launch?",
+      "answers": [
+        "The cargo or spacecraft the rocket is carrying",
+        "Only the smoke trail",
+        "Only the launch pad concrete",
+        "Only the audience"
+      ],
+      "hint": "What rides on top.",
+      "explanation": "Payload is the useful mass delivered — satellites, probes, or crewed capsules.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "rocket",
+        "payload"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_m_015",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "The International Space Station is special because…",
+      "answers": [
+        "Many countries built and operate it together",
+        "It is permanently on the Moon’s surface only",
+        "It never orbits Earth",
+        "It is only a movie set"
+      ],
+      "hint": "Cooperation in orbit.",
+      "explanation": "The ISS is a multinational laboratory continuously crewed since 2000.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "iss",
+        "cooperation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_001",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Sputnik 1’s 1957 launch is historically important because it…",
+      "answers": [
+        "Proved artificial satellites could orbit Earth and opened the Space Age",
+        "Ended all weather forever",
+        "Stopped radio from existing",
+        "Made oceans disappear"
+      ],
+      "hint": "First beep from orbit.",
+      "explanation": "Sputnik demonstrated orbital technology and accelerated global space efforts.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "sputnik",
+        "1957"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_002",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Project Gemini’s main goal for NASA was to…",
+      "answers": [
+        "Practice rendezvous, docking, and longer flights before Apollo",
+        "Only map the ocean floor",
+        "Only grow corn in orbit for fun",
+        "Only photograph birds"
+      ],
+      "hint": "Bridge to the Moon.",
+      "explanation": "Gemini developed skills and systems needed for Apollo lunar missions.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "gemini",
+        "apollo"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_003",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Apollo used a lunar module so that…",
+      "answers": [
+        "A light lander could touch the Moon while the command ship stayed in lunar orbit",
+        "Astronauts could drive underwater cars only",
+        "Rockets never needed fuel",
+        "The Sun could be landed on safely"
+      ],
+      "hint": "Two-ship plan.",
+      "explanation": "The LM landed two astronauts; the CSM waited in lunar orbit for return to Earth.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "apollo",
+        "lunar-module"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_004",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Skylab was…",
+      "answers": [
+        "America’s first space station in the 1970s",
+        "A submarine under ice only",
+        "A medieval castle",
+        "A type of bicycle"
+      ],
+      "hint": "Orbital workshop.",
+      "explanation": "Skylab hosted three crewed missions studying Earth, Sun, and long-duration flight.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "skylab",
+        "station"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_005",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Reusable first-stage boosters (like modern Falcon 9 landings) matter because they…",
+      "answers": [
+        "Can lower launch cost by flying hardware more than once",
+        "Remove the need for physics",
+        "Stop Earth from rotating",
+        "Make orbits optional"
+      ],
+      "hint": "Catch and reuse.",
+      "explanation": "Recovering boosters aims to make access to space more affordable and frequent.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "reusable",
+        "falcon",
+        "commercial"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_006",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Crew Dragon (SpaceX) is notable in recent history for…",
+      "answers": [
+        "Carrying astronauts to the ISS under commercial crew contracts",
+        "Being the first wooden ship to Mars",
+        "Replacing all airplanes in 1903",
+        "Mining the Sun"
+      ],
+      "hint": "Commercial crew era.",
+      "explanation": "Since 2020, Crew Dragon has regularly flown NASA and other crews to the ISS.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "crew-dragon",
+        "commercial",
+        "iss"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_007",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "NASA’s Artemis program is primarily focused on…",
+      "answers": [
+        "Returning humans to the Moon and preparing for deeper exploration",
+        "Building only underwater cities",
+        "Ending all satellite use",
+        "Mapping only one city park"
+      ],
+      "hint": "Moon to Mars pathway.",
+      "explanation": "Artemis aims for sustainable lunar exploration with international and commercial partners.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "artemis",
+        "moon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_008",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "James Webb Space Telescope (JWST) mainly observes in…",
+      "answers": [
+        "Infrared light to study early galaxies and star formation",
+        "Only ocean sonar",
+        "Only human speech frequencies",
+        "Only X-rays from toasters"
+      ],
+      "hint": "Heat-glow universe.",
+      "explanation": "JWST’s infrared instruments look through dust and back in cosmic time.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "jwst",
+        "telescope"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_009",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Escape velocity is best described as…",
+      "answers": [
+        "The speed needed to break free of a body’s gravitational pull without further thrust",
+        "The speed of walking",
+        "The speed of sound only on Earth always",
+        "A speed that removes mass from Earth"
+      ],
+      "hint": "Leave the gravity well.",
+      "explanation": "Escape velocity depends on mass and radius of the body you are leaving.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "physics",
+        "gravity"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_010",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "The first soft landing of a probe on Mars that returned useful surface data included missions such as…",
+      "answers": [
+        "Viking landers (1970s) among early successes",
+        "Only hot-air balloons in 1800",
+        "Only wooden rafts",
+        "Only kites in a storm"
+      ],
+      "hint": "Red planet robots.",
+      "explanation": "Viking 1 and 2 landed in 1976 and returned landmark Mars surface science.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "mars",
+        "viking"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_011",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A geostationary satellite appears nearly fixed in the sky because it…",
+      "answers": [
+        "Orbits once per day above the equator matching Earth’s rotation",
+        "Is glued to a cloud",
+        "Does not orbit at all",
+        "Sits on a mountain peak"
+      ],
+      "hint": "24-hour orbit.",
+      "explanation": "GEO altitude and equatorial placement keep the satellite over one longitude.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "geo",
+        "satellite"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_012",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Sally Ride is remembered as…",
+      "answers": [
+        "The first American woman in space (1983, STS-7)",
+        "The inventor of the steam engine only",
+        "The first person on Mars in 1950",
+        "A medieval queen only"
+      ],
+      "hint": "Shuttle era.",
+      "explanation": "Ride flew on the Space Shuttle Challenger on STS-7 in 1983.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "shuttle",
+        "ride"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_013",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Tiangong is…",
+      "answers": [
+        "China’s modular space station in low Earth orbit",
+        "A type of desert cactus only",
+        "A Roman road",
+        "A single-use paper glider only"
+      ],
+      "hint": "Heavenly Palace.",
+      "explanation": "China’s Tiangong station hosts crews and research in LEO.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "tiangong",
+        "china"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_014",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Why is re-entry heating a big engineering problem?",
+      "answers": [
+        "Air compresses and heats the craft as it slams into the atmosphere at high speed",
+        "Space is full of lava fountains always",
+        "Rockets freeze solid only",
+        "There is no air friction ever"
+      ],
+      "hint": "Plasma glow.",
+      "explanation": "Heat shields manage extreme temperatures during atmospheric re-entry.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "reentry",
+        "heat-shield"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_015",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Voyager 1 is famous partly because it…",
+      "answers": [
+        "Flew past outer planets and later entered interstellar space",
+        "Only mapped one city block",
+        "Never left Earth",
+        "Is a weather balloon only"
+      ],
+      "hint": "Grand Tour probe.",
+      "explanation": "Voyager 1 explored the outer solar system and crossed into interstellar space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "voyager",
+        "probe"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_016",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "CubeSats are important today because they…",
+      "answers": [
+        "Let universities and small teams fly small, cheaper satellites",
+        "Replace all food on Earth",
+        "Remove the need for orbits",
+        "Work only underground"
+      ],
+      "hint": "Smallsats boom.",
+      "explanation": "Standardized small satellites lowered the barrier to flying experiments.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "cubesat",
+        "smallsat"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_017",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Private companies launching astronauts in the 2020s shows that…",
+      "answers": [
+        "Commercial partners now share crewed access to orbit with government agencies",
+        "Only kings may fly",
+        "Spaceflight ended in 1972 forever",
+        "Rockets are illegal worldwide"
+      ],
+      "hint": "NewSpace era.",
+      "explanation": "Commercial crew and tourism flights expanded who can fly and how missions are bought.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "commercial",
+        "crew"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_018",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A transfer orbit (like Hohmann) is used mainly to…",
+      "answers": [
+        "Move a spacecraft between two circular orbits efficiently",
+        "Cook food faster",
+        "Measure only rainfall",
+        "Stop a planet’s spin"
+      ],
+      "hint": "Orbital highways.",
+      "explanation": "Hohmann transfers use timed burns to change orbital energy with less propellant.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "orbital-mechanics"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_019",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "The first soft landing on the Moon’s far side was achieved by…",
+      "answers": [
+        "China’s Chang’e-4 mission (2019)",
+        "A paper airplane in 1900",
+        "Only Apollo 11 on the near side again",
+        "A weather kite"
+      ],
+      "hint": "Far-side first.",
+      "explanation": "Chang’e-4 landed in Von Kármán crater on the lunar far side in 2019.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "chang-e",
+        "moon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_020",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Starlink and similar mega-constellations mainly provide…",
+      "answers": [
+        "Broadband internet via many satellites in low Earth orbit",
+        "Only free pizza delivery",
+        "Only underground mining",
+        "Only paper mail sorting"
+      ],
+      "hint": "Internet from LEO.",
+      "explanation": "Large LEO constellations aim for global connectivity; they also raise space-traffic concerns.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "constellation",
+        "leo",
+        "internet"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_021",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Apollo–Soyuz (1975) is remembered as…",
+      "answers": [
+        "A docking of U.S. and Soviet spacecraft symbol symbol Cold War cooperation",
+        "The end of all spaceflight",
+        "The first car on Mars",
+        "A medieval treaty only"
+      ],
+      "hint": "Handshake in orbit.",
+      "explanation": "Apollo–Soyuz Test Project practiced joint docking and showed political thaw in space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "apollo-soyuz",
+        "cooperation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_022",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Why do astronauts exercise on the ISS?",
+      "answers": [
+        "To reduce bone and muscle loss in microgravity",
+        "Because space has heavier gravity than Earth always",
+        "To make the station spin faster only",
+        "Exercise is banned on Earth only"
+      ],
+      "hint": "Use it or lose it.",
+      "explanation": "Without loading, bones and muscles weaken; exercise counters some effects.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "iss",
+        "health"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_023",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Ingenuity on Mars was special as…",
+      "answers": [
+        "The first powered aircraft to fly on another planet",
+        "The first wooden ship on Earth",
+        "A type of sandwich recipe",
+        "A subway train under Paris only"
+      ],
+      "hint": "Helicopter on Mars.",
+      "explanation": "NASA’s Ingenuity helicopter proved controlled flight in Mars’s thin atmosphere.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "mars",
+        "ingenuity"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_024",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Ion thrusters are useful in deep space because they…",
+      "answers": [
+        "Provide efficient low-thrust propulsion over long times using electric power",
+        "Only work as flashlights",
+        "Require ocean water only",
+        "Cannot leave the atmosphere"
+      ],
+      "hint": "Sip fuel, long push.",
+      "explanation": "Electric propulsion trades low thrust for high efficiency on long missions.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "propulsion",
+        "ion"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_h_025",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "From Sputnik (1957) to today, the biggest change in human spaceflight access is…",
+      "answers": [
+        "More nations and commercial companies can launch and operate spacecraft",
+        "Rockets became illegal",
+        "Only one country may use radio",
+        "Satellites stopped existing"
+      ],
+      "hint": "Who gets to fly.",
+      "explanation": "Space activity broadened from two superpowers to many agencies and companies worldwide.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "space-age",
+        "today"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_math_e_01",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A rocket countdown goes 3, 2, 1… What number comes just before liftoff after 1?",
+      "answers": [
+        "0 (blast off!)",
+        "5",
+        "10",
+        "100"
+      ],
+      "hint": "Zero!",
+      "explanation": "Countdowns reach zero at liftoff.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "countdown",
+        "numbers"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_math_m_01",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "If a satellite completes 16 orbits in one day, about how many hours is one orbit?",
+      "answers": [
+        "1.5 hours",
+        "16 hours",
+        "24 hours",
+        "0 hours"
+      ],
+      "hint": "24 ÷ 16.",
+      "explanation": "24 hours / 16 orbits ≈ 1.5 hours per orbit (ISS is near this range).",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "orbits",
+        "division"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_math_h_01",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Light from the Sun takes about 8 minutes to reach Earth. If a radio signal travels at light speed, a one-way message to a probe near Mars at a time when Mars is 12 light-minutes away takes about…",
+      "answers": [
+        "12 minutes",
+        "8 seconds",
+        "12 hours",
+        "1 year"
+      ],
+      "hint": "Light-time delay.",
+      "explanation": "Signals cannot beat light speed; delay equals distance in light-time.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "light-speed",
+        "comms"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_logic_m_01",
+      "category": "logic",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "True or false reasoning: All rockets need fuel. This vehicle is a rocket. Therefore…",
+      "answers": [
+        "It needs fuel",
+        "It cannot exist",
+        "It only needs paint",
+        "It must be a boat"
+      ],
+      "hint": "Apply the rule.",
+      "explanation": "If all rockets need fuel and this is a rocket, it needs fuel.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "reasoning"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_geo_m_01",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Launches near the equator can get a free speed boost eastward because…",
+      "answers": [
+        "Earth rotates fastest there, helping rockets going east",
+        "The equator has no gravity",
+        "Oceans push rockets up automatically",
+        "Compasses reverse forever"
+      ],
+      "hint": "Spin assist.",
+      "explanation": "Earth’s rotation gives an eastward velocity; larger near the equator.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "launch",
+        "earth-rotation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_lang_e_01",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "The word “lunar” is about the…",
+      "answers": [
+        "Moon",
+        "Ocean only",
+        "Kitchen only",
+        "Shoe only"
+      ],
+      "hint": "Luna = Moon.",
+      "explanation": "Lunar means related to the Moon.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_lang_m_01",
+      "category": "language",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "“Microgravity” means…",
+      "answers": [
+        "A condition of very small apparent weight, as in freefall orbit",
+        "Super-heavy gravity only",
+        "No motion allowed",
+        "Only gravity on Mars always"
+      ],
+      "hint": "Tiny-g feeling.",
+      "explanation": "Microgravity describes the near-weightless freefall environment of orbit.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_art_e_01",
+      "category": "art",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Many space posters show Earth as a blue marble. Blue mainly shows…",
+      "answers": [
+        "Oceans and atmosphere",
+        "Only deserts of pure gold",
+        "Only forests of metal",
+        "Only volcanoes of cheese"
+      ],
+      "hint": "Planet colors.",
+      "explanation": "Oceans and sky tones make Earth look blue from space.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "earth",
+        "color"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_tech_e_01",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Mission Control is a place where teams…",
+      "answers": [
+        "Watch spacecraft data and help astronauts",
+        "Only bake cookies",
+        "Only repair bicycles",
+        "Only sell tickets to movies"
+      ],
+      "hint": "Ground helpers.",
+      "explanation": "Flight controllers monitor systems and communicate with the crew.",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "mission-control"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    },
+    {
+      "id": "q_space_hist_e_01",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "People first launched a satellite before people first…",
+      "answers": [
+        "Walked on the Moon",
+        "Invented the wheel",
+        "Built the first house",
+        "Learned to speak"
+      ],
+      "hint": "Order of firsts.",
+      "explanation": "Sputnik (1957) came before Apollo 11 (1969).",
+      "tags": [
+        "spaceflight",
+        "space-history",
+        "timeline"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:14:18.000Z",
+        "curator": "agent-content-spaceflight-history-2026-07",
+        "sourceUrl": "https://www.nasa.gov/education/"
+      }
+    }
+  ]
+}

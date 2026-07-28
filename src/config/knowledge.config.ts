@@ -28,6 +28,13 @@ export const SUBJECTS: SubjectDef[] = [
 
 // ─── Articles ────────────────────────────────────────────────
 
+export interface KnowledgeArticleImage {
+  url: string;
+  alt: string;
+  credit?: string;
+  license?: string;
+}
+
 export interface KnowledgeArticle {
   id: string;
   subject: SubjectId;
@@ -38,6 +45,8 @@ export interface KnowledgeArticle {
   keyTerms: string[];
   /** Related article ids */
   related?: string[];
+  /** Optional top-of-article illustration */
+  image?: KnowledgeArticleImage;
 }
 
 export const KNOWLEDGE_ARTICLES: KnowledgeArticle[] = [

@@ -1,0 +1,696 @@
+{
+  "shardId": "articles-002",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:09:00.000Z",
+  "articles": [
+    {
+      "id": "article_nature_meadow_001",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "What Is a Meadow?",
+      "summary": "A sunny grassy place full of plants, bugs, and birds.",
+      "content": "A **meadow** is an open place where grasses and wildflowers grow. It is brighter and more open than a deep forest.\n\nIn a meadow you might see:\n- Tall grass waving in the wind\n- Colorful flowers\n- Bees, butterflies, and birds\n\nMeadows are important homes (**habitats**) for many small animals. When you explore a meadow in a game or outside, walk gently and look closely — tiny lives are busy all around you!",
+      "keyTerms": [
+        "meadow",
+        "habitat",
+        "grass",
+        "wildflowers"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_nature_bees_002",
+        "article_nature_photosynthesis_003"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-nature-meadow-001.png",
+        "alt": "What Is a Meadow?",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_nature_bees_002",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Busy Bees and Pollination",
+      "summary": "How bees help plants make seeds and fruit.",
+      "content": "Bees visit flowers to collect **nectar** (sweet liquid food) and **pollen**. As a bee moves from flower to flower, pollen sticks to its body and gets carried along.\n\nThat travel is called **pollination**. Many plants need pollination to make seeds and fruit. Without pollinators like bees, some crops and wild plants would struggle.\n\n**Be kind to bees:**\n- Don’t swat at them\n- Leave wildflowers when you can\n- Remember they are workers, not villains\n\nNext time you see a bee on a blossom, you are watching a tiny delivery service for nature!",
+      "keyTerms": [
+        "bee",
+        "nectar",
+        "pollen",
+        "pollination"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_nature_meadow_001",
+        "article_nature_photosynthesis_003"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/bee.jpg",
+        "alt": "Honey bee",
+        "credit": "Wikimedia Commons",
+        "license": "CC BY-SA"
+      }
+    },
+    {
+      "id": "article_nature_photosynthesis_003",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "How Plants Make Food",
+      "summary": "Photosynthesis in kid-friendly language.",
+      "content": "Plants are amazing cooks that use light!\n\n**Photosynthesis** is how green plants make food. They take in:\n- **Sunlight**\n- **Water** from the soil (through roots)\n- **Carbon dioxide** from the air\n\nInside green leaves, plants build sugars they can use for energy and growth. As a bonus for animals and people, many plants release **oxygen** we breathe.\n\nThat is why forests, meadows, and gardens matter so much — they are living factories powered by the Sun.",
+      "keyTerms": [
+        "photosynthesis",
+        "sunlight",
+        "oxygen",
+        "carbon dioxide"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_nature_meadow_001",
+        "article_nature_water_cycle_004"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-nature-photosynthesis-003.png",
+        "alt": "How Plants Make Food",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_nature_water_cycle_004",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "The Water Cycle",
+      "summary": "How water moves from land to sky and back again.",
+      "content": "Earth’s water is always on the move. This journey is called the **water cycle**.\n\n1. **Evaporation** — The Sun heats water in rivers, lakes, and oceans. Some water turns into vapor and rises.\n2. **Condensation** — Cooler air high up turns vapor into tiny droplets that form clouds.\n3. **Precipitation** — Water falls as rain, snow, sleet, or hail.\n4. **Collection** — Water flows into streams, soaks into soil, or returns to larger bodies of water.\n\nThe same water has been cycling for a very long time. When it rains on a meadow, you are meeting an ancient traveler!",
+      "keyTerms": [
+        "water cycle",
+        "evaporation",
+        "condensation",
+        "precipitation"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_geo_rivers_005",
+        "article_nature_photosynthesis_003"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-nature-water-cycle-004.png",
+        "alt": "The Water Cycle",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_geo_rivers_005",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Rivers: Moving Water",
+      "summary": "What rivers are and why towns love them.",
+      "content": "A **river** is fresh water that flows across the land. It usually starts in hills or mountains and travels toward a lake or the sea.\n\nRivers help people and animals by providing:\n- Drinking water (after it is cleaned)\n- Homes for fish\n- Paths for boats\n- Rich soil nearby for farming\n\nIn adventure games, a river can be a barrier — or a path if you find a bridge. In real life, rivers are precious, so we keep them clean.",
+      "keyTerms": [
+        "river",
+        "fresh water",
+        "bridge",
+        "stream"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_nature_water_cycle_004",
+        "article_hist_towns_rivers_008"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/river-delta.jpg",
+        "alt": "River landscape",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
+      }
+    },
+    {
+      "id": "article_geo_maps_006",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Reading a Simple Map",
+      "summary": "Symbols, directions, and finding your way.",
+      "content": "A **map** is a drawing of a place from above. Maps use **symbols** so they can show a lot of information in a small space.\n\nUseful map parts:\n- **Title** — what the map shows\n- **Legend (key)** — what symbols mean\n- **Compass rose** — which way is north, south, east, west\n- **Scale** — how map distance compares to real distance\n\nWhen you explore a game world, a minimap works the same idea: a tiny guide so you don’t get lost.",
+      "keyTerms": [
+        "map",
+        "compass rose",
+        "legend",
+        "scale"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_geo_rivers_005"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-geo-maps-006.png",
+        "alt": "Reading a Simple Map",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_hist_castles_007",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Why Castles Were Built",
+      "summary": "Stone homes that were also fortresses.",
+      "content": "In parts of medieval Europe, powerful families and rulers built **castles**. A castle was more than a fancy house — it was a stronghold.\n\nCastles helped with:\n- **Protection** behind thick walls\n- **Lookouts** from towers\n- **Storage** of food and tools\n- **Leadership** — a place to organize people and land\n\nGates and walls mattered. If a gate stayed locked, only trusted people could enter — a real-life version of needing the right key (or, in a learning game, the right answer!).",
+      "keyTerms": [
+        "castle",
+        "medieval",
+        "fortress",
+        "gate"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_hist_towns_rivers_008",
+        "article_tech_simple_machines_012"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-hist-castles-007.png",
+        "alt": "Why Castles Were Built",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_hist_towns_rivers_008",
+      "subject": "history",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Rivers and Early Towns",
+      "summary": "How water shaped where people settled.",
+      "content": "Many early towns grew beside **rivers**. Water was not optional — it was survival and opportunity.\n\nRivers offered:\n- Fresh water for people and animals\n- Fish for food\n- Fertile soil for crops in floodplains\n- Transport routes for trade\n\nBecause rivers connected places, ideas and goods could travel farther. That is one reason maps of old settlements often follow waterways like blue threads.",
+      "keyTerms": [
+        "settlement",
+        "trade",
+        "river",
+        "agriculture"
+      ],
+      "readingLevel": 5.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_geo_rivers_005",
+        "article_hist_castles_007"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-hist-towns-rivers-008.png",
+        "alt": "Rivers and Early Towns",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_lang_nouns_009",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Nouns: Naming Words",
+      "summary": "Words for people, places, and things.",
+      "content": "A **noun** is a naming word. It can name:\n- A **person** (farmer, friend)\n- A **place** (meadow, castle)\n- A **thing** (coin, bridge, egg)\n\nIn a sentence like “The fox runs,” *fox* is a noun. When you write adventure stories, strong nouns help readers picture your world.",
+      "keyTerms": [
+        "noun",
+        "grammar",
+        "sentence"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_lang_story_010"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-lang-nouns-009.png",
+        "alt": "Nouns: Naming Words",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_lang_story_010",
+      "subject": "language",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Beginning, Middle, End",
+      "summary": "A simple shape for clear stories.",
+      "content": "Most satisfying stories have three big parts:\n\n1. **Beginning** — Who is the character? Where are we? What starts the adventure?\n2. **Middle** — Problems, choices, and tries (including helpful failures!)\n3. **End** — How things change after the challenge\n\nIn a learning quest, the “middle” might be a locked gate. A wrong answer is not the end of the story — it is a chance to learn and try again.",
+      "keyTerms": [
+        "story structure",
+        "beginning",
+        "middle",
+        "end"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_lang_nouns_009"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-lang-story-010.png",
+        "alt": "Beginning, Middle, End",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_tech_algorithms_011",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Algorithms Are Recipes for Problems",
+      "summary": "Step-by-step thinking used by people and computers.",
+      "content": "An **algorithm** is a clear list of steps to finish a task. A cookie recipe is an algorithm. So is a set of directions across a farm.\n\nComputers need algorithms written in languages they understand. Good algorithms are:\n- **Clear** (no fuzzy steps)\n- **Ordered** (sequence matters)\n- **Finishable** (they end)\n\nWhen a game checks if you answered a quiz correctly, it is following an algorithm too!",
+      "keyTerms": [
+        "algorithm",
+        "steps",
+        "coding",
+        "sequence"
+      ],
+      "readingLevel": 4.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_tech_simple_machines_012"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-tech-algorithms-011.png",
+        "alt": "Algorithms Are Recipes for Problems",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_tech_simple_machines_012",
+      "subject": "technology",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Simple Machines Help Us Work",
+      "summary": "Levers, ramps, and wheels make jobs easier.",
+      "content": "**Simple machines** help people move things with less effort. Common ones include:\n- **Lever** — like a seesaw or crowbar\n- **Inclined plane (ramp)** — a slope instead of a tall climb\n- **Wheel and axle** — carts and wagons\n- **Pulley** — ropes and wheels for lifting\n\nFarm tools, castle gates, and bridges all use these ideas. Technology started with clever helpers, not only with computers.",
+      "keyTerms": [
+        "simple machine",
+        "lever",
+        "wheel",
+        "ramp"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_tech_algorithms_011",
+        "article_hist_castles_007"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-tech-simple-machines-012.png",
+        "alt": "Simple Machines Help Us Work",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_art_color_013",
+      "subject": "art",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Primary Colors",
+      "summary": "Red, blue, and yellow as building blocks of color.",
+      "content": "In paint, **primary colors** are often red, blue, and yellow. You can mix them to make many other colors:\n- Red + yellow → orange\n- Blue + yellow → green\n- Red + blue → purple\n\nArtists also use light and dark, and warm colors (reds/oranges) versus cool colors (blues/greens). Looking carefully at color helps you notice the world — and draw it better.",
+      "keyTerms": [
+        "primary colors",
+        "mixing",
+        "paint"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_art_landscape_014"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-art-color-013.png",
+        "alt": "Primary Colors",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_art_landscape_014",
+      "subject": "art",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Landscape Pictures",
+      "summary": "Art that shows outdoor places.",
+      "content": "A **landscape** is art that shows outdoor scenery — hills, meadows, rivers, skies, and paths.\n\nArtists choose:\n- What is close (large, detailed)\n- What is far (smaller, softer)\n- Where the horizon line sits\n\nIsometric game views are a special way of drawing places with depth. Even when a world is made of tiles, artists still think about light, color, and readable shapes.",
+      "keyTerms": [
+        "landscape",
+        "horizon",
+        "scenery",
+        "composition"
+      ],
+      "readingLevel": 4.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_art_color_013",
+        "article_nature_meadow_001"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-art-landscape-014.png",
+        "alt": "Landscape Pictures",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_math_garden_015",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Counting in the Garden",
+      "summary": "Practice adding and subtracting with plants and animals.",
+      "content": "Math lives outdoors too!\n\n- If you plant **4** seeds and plant **3** more, you planted **7** seeds (4+3).\n- If a nest has **5** eggs and **2** hatch, **3** eggs are left (5−2).\n\nWhen you explore, try counting fence posts, flowers, or coins. Counting is the start of bigger math adventures.",
+      "keyTerms": [
+        "addition",
+        "subtraction",
+        "counting"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_math_area_016"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-garden-015.png",
+        "alt": "Counting in the Garden",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_math_area_016",
+      "subject": "math",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Area of a Rectangle",
+      "summary": "How to measure space inside a rectangular garden.",
+      "content": "The **area** of a shape is how much flat space it covers.\n\nFor a **rectangle**:\n**Area = length × width**\n\nExample: a garden plot 8 meters long and 3 meters wide has area 8 × 3 = **24 square meters** (m²).\n\nUnits matter: meters × meters make square meters. Area helps farmers plan planting space and builders plan floors.",
+      "keyTerms": [
+        "area",
+        "rectangle",
+        "measurement",
+        "square meters"
+      ],
+      "readingLevel": 5.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_math_garden_015"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-area-016.png",
+        "alt": "Area of a Rectangle",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_science_seasons_017",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "Four Seasons",
+      "summary": "Spring, summer, autumn, and winter in simple terms.",
+      "content": "Many places on Earth have four **seasons**:\n- **Spring** — plants wake up; many flowers bloom\n- **Summer** — warmer days; lots of growth\n- **Autumn (fall)** — leaves may change color and drop\n- **Winter** — colder weather; some animals rest or adapt\n\nSeasons change because Earth is tilted as it travels around the Sun. You do not need the full astronomy yet — just notice how the world looks different across the year!",
+      "keyTerms": [
+        "seasons",
+        "spring",
+        "summer",
+        "autumn",
+        "winter"
+      ],
+      "readingLevel": 2.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_nature_meadow_001",
+        "article_nature_deciduous_018"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-seasons-017.png",
+        "alt": "Four Seasons",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_nature_deciduous_018",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "title": "Deciduous and Evergreen Trees",
+      "summary": "Two common strategies trees use through the year.",
+      "content": "**Deciduous** trees shed leaves in a cold or dry season. Dropping leaves helps them save water and survive tough weather. In autumn many deciduous leaves turn bright colors before falling.\n\n**Evergreen** trees keep leaves (often needles) year-round. Needles can handle cold and dry conditions better in many climates.\n\nBoth strategies work. Forests and meadows often mix plant types, which supports more kinds of animals.",
+      "keyTerms": [
+        "deciduous",
+        "evergreen",
+        "leaves",
+        "adaptation"
+      ],
+      "readingLevel": 5.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_science_seasons_017",
+        "article_nature_photosynthesis_003"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-nature-deciduous-018.png",
+        "alt": "Deciduous and Evergreen Trees",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_logic_patterns_019",
+      "subject": "science",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "title": "Patterns Help Us Predict",
+      "summary": "Seeing order in numbers, nature, and stories.",
+      "content": "A **pattern** is something that repeats in a predictable way. Examples:\n- Numbers: 2, 4, 6, 8…\n- Nature: day and night\n- Music: a beat that returns\n\nScientists look for patterns to make good guesses about what happens next. In a game, patterns help you learn rules — including when a gate opens after you succeed.",
+      "keyTerms": [
+        "pattern",
+        "prediction",
+        "sequence"
+      ],
+      "readingLevel": 3.5,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_tech_algorithms_011"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-logic-patterns-019.png",
+        "alt": "Patterns Help Us Predict",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    },
+    {
+      "id": "article_geo_compass_020",
+      "subject": "geography",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "title": "North, South, East, West",
+      "summary": "The four main directions.",
+      "content": "The four main directions are:\n- **North**\n- **South**\n- **East**\n- **West**\n\nA compass points toward magnetic north to help travelers. On many maps, north is toward the top. Learning directions helps you describe where things are: “the river is south of the cottage,” for example.",
+      "keyTerms": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "compass"
+      ],
+      "readingLevel": 2.0,
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:09:00.000Z",
+        "curator": "agent-content-nature-explore-2026-07"
+      },
+      "related": [
+        "article_geo_maps_006"
+      ],
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-geo-compass-020.png",
+        "alt": "North, South, East, West",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
+      }
+    }
+  ]
+}

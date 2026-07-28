@@ -1,0 +1,1700 @@
+{
+  "shardId": "quizzes-007",
+  "schemaVersion": "1.0.0",
+  "createdAt": "2026-07-18T14:36:24.000Z",
+  "questions": [
+    {
+      "id": "q_ocean_e_001",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Most of Earth’s surface is covered by…",
+      "answers": [
+        "Ocean water",
+        "Only forests",
+        "Only cities",
+        "Only ice cream"
+      ],
+      "hint": "Blue planet.",
+      "explanation": "Oceans cover about 70% of Earth’s surface.",
+      "tags": [
+        "ocean",
+        "marine",
+        "earth"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_002",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Ocean water tastes…",
+      "answers": [
+        "Salty",
+        "Like pure sugar always",
+        "Like lemon only",
+        "Like nothing ever"
+      ],
+      "hint": "Not for drinking straight from the sea.",
+      "explanation": "Seawater contains dissolved salts, mainly sodium chloride.",
+      "tags": [
+        "ocean",
+        "marine",
+        "saltwater"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_003",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A fish breathes underwater mainly using…",
+      "answers": [
+        "Gills",
+        "Only lungs like land mammals always",
+        "Only leaves",
+        "Only wheels"
+      ],
+      "hint": "Side flaps.",
+      "explanation": "Gills take oxygen from water so fish can “breathe” underwater.",
+      "tags": [
+        "ocean",
+        "marine",
+        "fish",
+        "gills"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_004",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Waves at the beach are mostly powered by…",
+      "answers": [
+        "Wind blowing across the water",
+        "Fish singing",
+        "Underwater drums only",
+        "Moonlight paint"
+      ],
+      "hint": "Air on water.",
+      "explanation": "Wind transfers energy to the surface and builds waves.",
+      "tags": [
+        "ocean",
+        "marine",
+        "waves",
+        "wind"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_005",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "The biggest ocean on Earth is the…",
+      "answers": [
+        "Pacific Ocean",
+        "A tiny pond",
+        "Only the kitchen sink",
+        "A single raindrop ocean"
+      ],
+      "hint": "Largest basin.",
+      "explanation": "The Pacific is the largest and deepest major ocean.",
+      "tags": [
+        "ocean",
+        "marine",
+        "pacific"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_006",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A whale is…",
+      "answers": [
+        "A mammal that lives in the ocean",
+        "A giant fish with scales like carp always",
+        "A type of seaweed",
+        "A floating rock only"
+      ],
+      "hint": "Warm-blooded ocean giant.",
+      "explanation": "Whales are mammals: they breathe air and feed milk to their young.",
+      "tags": [
+        "ocean",
+        "marine",
+        "whale",
+        "mammal"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_007",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Coral reefs are built largely by…",
+      "answers": [
+        "Tiny animals called coral polyps",
+        "Only metal robots",
+        "Only snowflakes",
+        "Only airplanes"
+      ],
+      "hint": "Living builders.",
+      "explanation": "Coral polyps form hard skeletons that build reefs over long times.",
+      "tags": [
+        "ocean",
+        "marine",
+        "coral",
+        "reef"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_008",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "What should you do with trash near the ocean or a river?",
+      "answers": [
+        "Put it in a bin so it doesn’t wash into waterways",
+        "Throw it in the waves for fish toys",
+        "Bury plastic under sand always",
+        "Feed it to seagulls only"
+      ],
+      "hint": "Keep seas clean.",
+      "explanation": "Litter can harm wildlife; proper disposal protects oceans and rivers.",
+      "tags": [
+        "ocean",
+        "marine",
+        "conservation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_009",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A beach is where…",
+      "answers": [
+        "Land meets the sea or a large lake",
+        "Only mountains touch clouds",
+        "Only deserts meet forests always",
+        "Only cities meet farms"
+      ],
+      "hint": "Shoreline.",
+      "explanation": "Beaches form along shorelines where waves and sediment meet land.",
+      "tags": [
+        "ocean",
+        "marine",
+        "beach",
+        "shore"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_010",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Seaweed is a kind of…",
+      "answers": [
+        "Plant-like ocean algae (not a tree)",
+        "Metal cable only",
+        "Type of cloud",
+        "Desert cactus only"
+      ],
+      "hint": "Green in the water.",
+      "explanation": "Many seaweeds are algae that grow in sunlight near coasts.",
+      "tags": [
+        "ocean",
+        "marine",
+        "seaweed",
+        "algae"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_011",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Sharks are…",
+      "answers": [
+        "Fish with skeletons made mostly of cartilage",
+        "Mammals like dogs",
+        "Birds that swim only",
+        "Insects with eight legs"
+      ],
+      "hint": "Cartilage, not bone like ours.",
+      "explanation": "Sharks are cartilaginous fish; they are important ocean predators.",
+      "tags": [
+        "ocean",
+        "marine",
+        "shark",
+        "fish"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_e_012",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A tide pool has 4 crabs. 2 more crawl in. How many crabs now?",
+      "answers": [
+        "6",
+        "2",
+        "8",
+        "1"
+      ],
+      "hint": "4 + 2.",
+      "explanation": "4 + 2 = 6 crabs.",
+      "tags": [
+        "ocean",
+        "marine",
+        "addition"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_001",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What mainly causes ocean tides on Earth?",
+      "answers": [
+        "Gravity of the Moon (and Sun) pulling on Earth’s water",
+        "Fish swimming in circles only",
+        "Only underwater volcanoes always",
+        "Airplane noise"
+      ],
+      "hint": "Lunar tug.",
+      "explanation": "The Moon’s gravity (and the Sun’s) raises tidal bulges as Earth rotates.",
+      "tags": [
+        "ocean",
+        "marine",
+        "tides",
+        "moon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_002",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Phytoplankton are important because they…",
+      "answers": [
+        "Make a lot of Earth’s oxygen through photosynthesis",
+        "Only eat whales",
+        "Only live in deserts",
+        "Build rockets"
+      ],
+      "hint": "Tiny ocean plants.",
+      "explanation": "Microscopic phytoplankton produce a large share of planetary oxygen and form food-web bases.",
+      "tags": [
+        "ocean",
+        "marine",
+        "phytoplankton",
+        "oxygen"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_003",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Salinity means…",
+      "answers": [
+        "How much salt is dissolved in water",
+        "How loud waves are",
+        "How tall a cliff is",
+        "How fast a boat is"
+      ],
+      "hint": "Saltiness measure.",
+      "explanation": "Salinity is the concentration of dissolved salts in water.",
+      "tags": [
+        "ocean",
+        "marine",
+        "salinity"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_004",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "The deep ocean is dark mainly because…",
+      "answers": [
+        "Sunlight is absorbed and scattered in the upper layers",
+        "Fish turn off the Sun",
+        "There is a permanent umbrella",
+        "Space blocks the ocean only"
+      ],
+      "hint": "Light runs out with depth.",
+      "explanation": "Water absorbs light; below the photic zone it is permanently dark.",
+      "tags": [
+        "ocean",
+        "marine",
+        "deep-sea",
+        "light"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_005",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "A food web in the ocean usually starts with…",
+      "answers": [
+        "Producers like phytoplankton and algae",
+        "Only great white sharks",
+        "Only plastic bottles",
+        "Only boats"
+      ],
+      "hint": "Tiny producers first.",
+      "explanation": "Energy enters most marine webs through photosynthetic producers.",
+      "tags": [
+        "ocean",
+        "marine",
+        "food-web",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_006",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "A current is…",
+      "answers": [
+        "A flowing “river” of water within the ocean",
+        "A type of cloud only",
+        "A mountain path only",
+        "A dry desert wind only"
+      ],
+      "hint": "Moving ocean streams.",
+      "explanation": "Ocean currents transport heat, nutrients, and organisms around basins.",
+      "tags": [
+        "ocean",
+        "marine",
+        "current"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_007",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Coral bleaching happens when stressed corals…",
+      "answers": [
+        "Lose the colorful algae partners that live in their tissues",
+        "Turn into solid gold",
+        "Grow legs and walk ashore",
+        "Become mammals"
+      ],
+      "hint": "Color leaves the coral.",
+      "explanation": "Under heat or stress, corals may expel symbiotic algae and look white/bleached.",
+      "tags": [
+        "ocean",
+        "marine",
+        "coral",
+        "climate"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_008",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Why can plastic trash harm ocean animals?",
+      "answers": [
+        "They may eat it or get tangled in it",
+        "Plastic turns into healthy vitamins always",
+        "Animals need plastic for bones",
+        "Plastic evaporates into pure air only"
+      ],
+      "hint": "Pollution problem.",
+      "explanation": "Plastics can be swallowed or entangle wildlife and break into microplastics.",
+      "tags": [
+        "ocean",
+        "marine",
+        "pollution",
+        "conservation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_009",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Sonar helps ships and scientists…",
+      "answers": [
+        "Map the seafloor with sound echoes",
+        "Cook seafood instantly",
+        "Make waves larger for surfing only",
+        "Stop the Moon’s gravity"
+      ],
+      "hint": "Ping and listen.",
+      "explanation": "Sonar measures how long sound takes to bounce back from underwater surfaces.",
+      "tags": [
+        "ocean",
+        "marine",
+        "sonar",
+        "mapping"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_010",
+      "category": "history",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Polynesian navigators were famous for…",
+      "answers": [
+        "Ocean voyages using stars, waves, and birds as guides",
+        "Only inventing snowboards",
+        "Only mapping deserts with cars",
+        "Building the first rockets in 1957 only"
+      ],
+      "hint": "Pacific wayfinding.",
+      "explanation": "Traditional Pacific navigation enabled long ocean crossings without modern GPS.",
+      "tags": [
+        "ocean",
+        "marine",
+        "navigation",
+        "history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_011",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Estuaries are special because…",
+      "answers": [
+        "Fresh river water mixes with salty seawater",
+        "They are only dry caves",
+        "They are only on Mars",
+        "They never change"
+      ],
+      "hint": "Brackish nurseries.",
+      "explanation": "Estuaries are productive habitats where rivers meet the sea.",
+      "tags": [
+        "ocean",
+        "marine",
+        "estuary",
+        "habitat"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_012",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "What is kelp?",
+      "answers": [
+        "A large brown seaweed that can form underwater forests",
+        "A type of dolphin",
+        "A metal submarine",
+        "A desert shrub only"
+      ],
+      "hint": "Tall ocean “trees.”",
+      "explanation": "Kelp forests shelter many species along cool coasts.",
+      "tags": [
+        "ocean",
+        "marine",
+        "kelp",
+        "seaweed"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_013",
+      "category": "geography",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "The Mariana Trench is known as…",
+      "answers": [
+        "One of the deepest places in Earth’s oceans",
+        "The tallest mountain above sea level only",
+        "A freshwater lake in a desert",
+        "A river in a city park only"
+      ],
+      "hint": "Deepest deep.",
+      "explanation": "The Mariana Trench in the Pacific reaches extreme depths below sea level.",
+      "tags": [
+        "ocean",
+        "marine",
+        "trench",
+        "pacific"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_014",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Dolphins are…",
+      "answers": [
+        "Marine mammals that breathe air",
+        "Fish that never need air",
+        "Insects with shells",
+        "Types of coral"
+      ],
+      "hint": "Blowholes up top.",
+      "explanation": "Dolphins are mammals; they surface to breathe air through a blowhole.",
+      "tags": [
+        "ocean",
+        "marine",
+        "dolphin",
+        "mammal"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_m_015",
+      "category": "math",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "If the tide rises 2 meters and later falls 2 meters back to the start, the net change is…",
+      "answers": [
+        "0 meters",
+        "4 meters higher forever",
+        "2 meters lower forever",
+        "100 meters"
+      ],
+      "hint": "Up then down.",
+      "explanation": "Rising +2 and falling −2 returns to the original level (net 0).",
+      "tags": [
+        "ocean",
+        "marine",
+        "tides",
+        "integers"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_001",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Thermohaline circulation is driven mainly by differences in…",
+      "answers": [
+        "Temperature and salinity that change water density",
+        "Only bird migration",
+        "Only moonlight color",
+        "Only ship traffic noise"
+      ],
+      "hint": "Heat + salt density.",
+      "explanation": "Cold, salty water can sink and help drive global deep currents.",
+      "tags": [
+        "ocean",
+        "marine",
+        "circulation",
+        "density"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_002",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Upwelling is important because it…",
+      "answers": [
+        "Brings nutrient-rich deep water toward the surface",
+        "Removes all fish instantly",
+        "Boils the ocean",
+        "Stops winds forever"
+      ],
+      "hint": "Nutrients rise.",
+      "explanation": "Upwelling fertilizes surface waters and can support rich fisheries.",
+      "tags": [
+        "ocean",
+        "marine",
+        "upwelling",
+        "nutrients"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_003",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Ocean acidification is linked mainly to…",
+      "answers": [
+        "Extra carbon dioxide dissolving into seawater",
+        "Only louder waves",
+        "Only colder sand",
+        "Only more seagulls"
+      ],
+      "hint": "CO₂ into water.",
+      "explanation": "Absorbed CO₂ forms carbonic acid, lowering pH and stressing some shell-builders.",
+      "tags": [
+        "ocean",
+        "marine",
+        "acidification",
+        "carbon"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_004",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "El Niño is a climate pattern involving…",
+      "answers": [
+        "Unusual warming of parts of the tropical Pacific and weather shifts worldwide",
+        "Only a single raindrop in one city",
+        "Only moon eclipses monthly",
+        "Only desert expansion on Mars"
+      ],
+      "hint": "Pacific climate swing.",
+      "explanation": "El Niño/La Niña phases alter Pacific temperatures and global weather patterns.",
+      "tags": [
+        "ocean",
+        "marine",
+        "el-nino",
+        "climate"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_005",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Hydrothermal vents support life mainly using…",
+      "answers": [
+        "Chemical energy from Earth’s interior (chemosynthesis)",
+        "Only tropical sunlight at the surface always",
+        "Only human food scraps",
+        "Only wind turbines underwater"
+      ],
+      "hint": "Dark ecosystem power.",
+      "explanation": "Vent microbes use chemical energy; animals farm or eat those microbes.",
+      "tags": [
+        "ocean",
+        "marine",
+        "hydrothermal",
+        "chemosynthesis"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_006",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "The continental shelf is…",
+      "answers": [
+        "The shallow seafloor bordering continents before the steep slope",
+        "The center of the Sun",
+        "A cloud layer only",
+        "A mountain summit only"
+      ],
+      "hint": "Shallow margin.",
+      "explanation": "Shelves are relatively shallow and often biologically productive.",
+      "tags": [
+        "ocean",
+        "marine",
+        "shelf",
+        "seafloor"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_007",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Argo floats help ocean science by…",
+      "answers": [
+        "Drifting and measuring temperature and salinity profiles automatically",
+        "Only painting maps by hand",
+        "Only counting beach towels",
+        "Only powering streetlights"
+      ],
+      "hint": "Robot ocean network.",
+      "explanation": "Argo profilers dive and surface to send data used in climate and ocean models.",
+      "tags": [
+        "ocean",
+        "marine",
+        "argo",
+        "observation"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_008",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "The Challenger expedition (1870s) is remembered for…",
+      "answers": [
+        "Founding modern oceanography with global sampling voyages",
+        "Landing on the Moon",
+        "Inventing the smartphone",
+        "Building the first railroad only"
+      ],
+      "hint": "Science at sea.",
+      "explanation": "HMS Challenger’s voyage systematically studied depths, life, and chemistry worldwide.",
+      "tags": [
+        "ocean",
+        "marine",
+        "oceanography",
+        "history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_009",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Bioluminescence is…",
+      "answers": [
+        "Living organisms producing light",
+        "Only reflected sunlight always",
+        "Only flashlight batteries in fish",
+        "Only lightning in storms"
+      ],
+      "hint": "Living glow.",
+      "explanation": "Many deep-sea species use chemical light for signaling, hunting, or defense.",
+      "tags": [
+        "ocean",
+        "marine",
+        "bioluminescence",
+        "deep-sea"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_010",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "A gyre is…",
+      "answers": [
+        "A large system of circulating ocean currents",
+        "A type of coral polyp only",
+        "A single tide pool",
+        "A mountain glacier only"
+      ],
+      "hint": "Spinning basin flow.",
+      "explanation": "Subtropical gyres circulate water and can concentrate floating debris.",
+      "tags": [
+        "ocean",
+        "marine",
+        "gyre",
+        "current"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_011",
+      "category": "geography",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Mid-ocean ridges are places where…",
+      "answers": [
+        "New seafloor forms as tectonic plates spread apart",
+        "Continents always sink forever",
+        "Rivers begin as ice only",
+        "Deserts form under ice only"
+      ],
+      "hint": "Seafloor spreading.",
+      "explanation": "Magma rises at divergent boundaries, creating new oceanic crust.",
+      "tags": [
+        "ocean",
+        "marine",
+        "plate-tectonics",
+        "ridge"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_012",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Mangrove forests help coasts by…",
+      "answers": [
+        "Buffering storms and providing nursery habitat",
+        "Removing all salt from the ocean",
+        "Stopping the Moon’s orbit",
+        "Turning seawater into lava"
+      ],
+      "hint": "Rooted shoreline protectors.",
+      "explanation": "Mangrove roots stabilize shorelines and shelter young fish.",
+      "tags": [
+        "ocean",
+        "marine",
+        "mangrove",
+        "habitat"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_013",
+      "category": "technology",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Remotely operated vehicles (ROVs) are useful because they…",
+      "answers": [
+        "Explore deep or dangerous waters while pilots stay on a ship",
+        "Only work on dry sidewalks",
+        "Replace all fish permanently",
+        "Stop tides"
+      ],
+      "hint": "Robots on tethers.",
+      "explanation": "ROVs carry cameras and tools to study wrecks, vents, and deep habitats.",
+      "tags": [
+        "ocean",
+        "marine",
+        "rov",
+        "exploration"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_014",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Dissolved oxygen in seawater matters because…",
+      "answers": [
+        "Most marine animals need it to respire",
+        "Fish drink pure oxygen bubbles only from space",
+        "Salt replaces oxygen always",
+        "Waves remove the need to breathe"
+      ],
+      "hint": "Breathe dissolved O₂.",
+      "explanation": "Low-oxygen “dead zones” stress or kill organisms that cannot escape.",
+      "tags": [
+        "ocean",
+        "marine",
+        "oxygen",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_015",
+      "category": "history",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Modern ocean conservation efforts often focus on…",
+      "answers": [
+        "Marine protected areas, sustainable fishing, and reducing pollution",
+        "Banning all science forever",
+        "Filling trenches with plastic",
+        "Stopping rainfall worldwide"
+      ],
+      "hint": "Protect and manage.",
+      "explanation": "Science-based management tries to keep ecosystems productive for the future.",
+      "tags": [
+        "ocean",
+        "marine",
+        "conservation",
+        "policy"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_016",
+      "category": "science",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Sea ice is important for climate because it…",
+      "answers": [
+        "Reflects sunlight and affects polar ecosystems",
+        "Creates deserts in the tropics always",
+        "Removes gravity",
+        "Stops all ocean currents instantly"
+      ],
+      "hint": "Bright white cooler.",
+      "explanation": "Ice albedo reflects energy; melting changes habitats and feedbacks.",
+      "tags": [
+        "ocean",
+        "marine",
+        "sea-ice",
+        "climate"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_017",
+      "category": "math",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "Pressure in the ocean increases with depth roughly because…",
+      "answers": [
+        "More water weight presses from above",
+        "Fish push harder for fun",
+        "Light becomes heavier",
+        "Salt disappears"
+      ],
+      "hint": "Stack of water.",
+      "explanation": "Hydrostatic pressure rises with the weight of the overlying water column.",
+      "tags": [
+        "ocean",
+        "marine",
+        "pressure",
+        "depth"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_018",
+      "category": "logic",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "If all reefs need clean water, and this bay’s water is heavily polluted, then…",
+      "answers": [
+        "The reef there is at higher risk",
+        "Pollution always helps coral",
+        "Reefs cannot exist on Earth",
+        "Clean water is irrelevant"
+      ],
+      "hint": "Apply the rule.",
+      "explanation": "Given the premise, polluted water threatens reef health.",
+      "tags": [
+        "ocean",
+        "marine",
+        "reasoning",
+        "reefs"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_019",
+      "category": "language",
+      "difficulty": "hard",
+      "ageMetadata": {
+        "minAge": 11,
+        "maxAge": null,
+        "ageBand": "11-12+"
+      },
+      "question": "“Abyssal” in ocean science usually refers to…",
+      "answers": [
+        "The deep seafloor zone",
+        "Only the sunny beach surface",
+        "Only river foam",
+        "Only cloud tips"
+      ],
+      "hint": "Deep plains.",
+      "explanation": "The abyssal zone is a deep, dark region of the ocean basins.",
+      "tags": [
+        "ocean",
+        "marine",
+        "vocabulary",
+        "abyssal"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_h_020",
+      "category": "art",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Painters of seascapes often study…",
+      "answers": [
+        "Light on waves, horizon lines, and color of water and sky",
+        "Only underground caves with no water",
+        "Only silent empty rooms",
+        "Only desert sand dunes always"
+      ],
+      "hint": "Ocean pictures.",
+      "explanation": "Seascapes focus on water, weather, ships, and coastal light.",
+      "tags": [
+        "ocean",
+        "marine",
+        "seascape",
+        "art"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_tech_e_01",
+      "category": "technology",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "A life jacket helps a person in water by…",
+      "answers": [
+        "Helping them float so they can breathe",
+        "Making them sink faster",
+        "Turning water into ice always",
+        "Calling fish to dinner only"
+      ],
+      "hint": "Stay up.",
+      "explanation": "Buoyant life jackets keep airways above water.",
+      "tags": [
+        "ocean",
+        "marine",
+        "safety"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_hist_e_01",
+      "category": "history",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Long ago, people crossed oceans mainly using…",
+      "answers": [
+        "Sailing ships powered by wind",
+        "Only jet packs",
+        "Only subways under the sea always",
+        "Only hot-air balloons over land only"
+      ],
+      "hint": "Canvas and wind.",
+      "explanation": "Wind-powered ships connected distant coasts for trade and exploration.",
+      "tags": [
+        "ocean",
+        "marine",
+        "ships",
+        "history"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_lang_e_01",
+      "category": "language",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "The word “marine” is about…",
+      "answers": [
+        "The sea and ocean life",
+        "Only mountains",
+        "Only outer space stars always",
+        "Only kitchen spoons"
+      ],
+      "hint": "Sea-related.",
+      "explanation": "Marine means of or relating to the sea.",
+      "tags": [
+        "ocean",
+        "marine",
+        "vocabulary"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_tech_m_01",
+      "category": "technology",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "A tide gauge measures…",
+      "answers": [
+        "How high the sea surface is over time",
+        "Only wind speed on mountains",
+        "Only soil dryness in deserts",
+        "Only star brightness"
+      ],
+      "hint": "Sea level sensor.",
+      "explanation": "Tide gauges record water height for ports, science, and flood planning.",
+      "tags": [
+        "ocean",
+        "marine",
+        "measurement"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_sci_e_13",
+      "category": "science",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "Penguins are birds that…",
+      "answers": [
+        "Swim well but do not fly in the air like eagles",
+        "Only live in hot deserts always",
+        "Breathe with gills like fish",
+        "Have eight legs"
+      ],
+      "hint": "Waddle and dive.",
+      "explanation": "Penguins are flightless birds adapted for swimming (many in cold southern seas).",
+      "tags": [
+        "ocean",
+        "marine",
+        "penguin",
+        "birds"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_geo_e_02",
+      "category": "geography",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "An island is land that is…",
+      "answers": [
+        "Surrounded by water",
+        "Only on top of clouds",
+        "Never near water",
+        "Always underground"
+      ],
+      "hint": "Water all around.",
+      "explanation": "Islands are land areas fully surrounded by water.",
+      "tags": [
+        "ocean",
+        "marine",
+        "island"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_sci_m_16",
+      "category": "science",
+      "difficulty": "medium",
+      "ageMetadata": {
+        "minAge": 8,
+        "maxAge": 10,
+        "ageBand": "8-10"
+      },
+      "question": "Symbiosis means…",
+      "answers": [
+        "Different species living closely, often helping each other",
+        "Only animals fighting always",
+        "Only rocks melting",
+        "Only storms forming"
+      ],
+      "hint": "Living partners.",
+      "explanation": "Coral and algae are a classic marine partnership example.",
+      "tags": [
+        "ocean",
+        "marine",
+        "symbiosis",
+        "ecology"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    },
+    {
+      "id": "q_ocean_math_e_02",
+      "category": "math",
+      "difficulty": "easy",
+      "ageMetadata": {
+        "minAge": 5,
+        "maxAge": 7,
+        "ageBand": "5-7"
+      },
+      "question": "You see 5 starfish, then 3 swim out of sight. How many can you still see?",
+      "answers": [
+        "2",
+        "8",
+        "5",
+        "0 always"
+      ],
+      "hint": "5 − 3.",
+      "explanation": "5 − 3 = 2 starfish still visible.",
+      "tags": [
+        "ocean",
+        "marine",
+        "subtraction"
+      ],
+      "provenance": {
+        "source": "manual-curation",
+        "license": "CC0-1.0",
+        "dateIngested": "2026-07-18T14:36:24.000Z",
+        "curator": "agent-content-oceans-marine-2026-07"
+      }
+    }
+  ]
+}

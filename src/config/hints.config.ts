@@ -42,6 +42,24 @@ export const HINTS: Record<string, HintDef> = {
     cooldown: 60000,
     emoji: '🔑',
   },
+  need_crowbar: {
+    id: 'need_crowbar',
+    text: 'This barricade needs a crowbar!',
+    type: 'thought',
+    priority: 4,
+    duration: 5250,
+    cooldown: 60000,
+    emoji: '🛠️',
+  },
+  map_scroll_hint: {
+    id: 'map_scroll_hint',
+    text: 'Press E to use a map scroll!',
+    type: 'thought',
+    priority: 3,
+    duration: 4500,
+    cooldown: 90000,
+    emoji: '🗺️',
+  },
 
   // ── Status-aware triggers (#111) ──
   low_energy: {
@@ -180,7 +198,7 @@ export const HINTS: Record<string, HintDef> = {
   },
   near_gate: {
     id: 'near_gate',
-    text: 'A gate! I wonder what\'s behind it...',
+    text: 'A gate! Press Space to try it!',
     type: 'thought',
     priority: 5,
     duration: 4500,

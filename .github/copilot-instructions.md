@@ -1,131 +1,60 @@
-# Copilot Agent Instructions — Emily's Game
+# Copilot instructions — Emily's Game
 
-## Project Overview
+Isometric browser adventure (TypeScript, Vite, Canvas 2D): places, quiz gates, procedural world, educational content.
 
-Emily's Game is an isometric browser-based procedural adventure game with LLM-driven entropy, educational quizzes, and biome progression. Built with TypeScript, Vite, and Canvas 2D.
+**Laws + layout:** root [`AGENTS.md`](../AGENTS.md). Architecture deep-dive: [`ARCHITECTURE.md`](../ARCHITECTURE.md). Path rules auto-attach from [`.github/instructions/`](instructions/).
 
-**All planning, feature tracking, and task management is in GitHub Issues and the GitHub Project board.** Reference issues and milestones first — do not create standalone Markdown planning documents.
+## Autonomy first
 
-## GitHub Project Location
+You are an **implementation agent**. Drive the user's request to completion across many tool turns.
 
-- **Project Board:** "EmilysGame - Development Roadmap" (user-level GitHub Project V2)
-- **Repository:** `putersdcat/EmilysGame`
-- GitHub Projects V2 are user/org-level (not repo-level). The project name includes the repository prefix for clarity.
-- The master epic is Issue #2 — all feature and task issues are linked as sub-issues.
+- **Do not** stop after one turn to report progress, restate the plan, or ask “should I continue?” when the next step is clear.
+- **Do not** treat “token efficiency” or “small slices” as “one file then halt.” Ship the whole requested outcome; slice only *internally* if helpful.
+- **Do** implement, typecheck/test as needed, fix failures, and finish. End with a brief summary of what changed and how you verified.
+- Ask the user only for genuine product forks (branch/greenfield, FOV change, new ontology) or when hard-blocked (missing secret, external service down after a real try).
 
-## Agent Workflow Rules
+“Closed campaign / do not re-run scene-first” = don’t revive finished multi-PR plans. It is **not** an anti-autonomy rule.
 
-### Starting a Session
-1. Check GitHub Issues for assigned or prioritized tasks. Reference the issue number (e.g., `#4`) before proceeding.
-2. Review the Project board for current sprint/backlog priorities.
-3. Pull latest from the working branch before making changes.
+## Product constraints (short)
 
-### During Work
-1. Break work into small, verifiable steps. Use the todo list tool to track progress.
-2. Reference the issue's acceptance criteria throughout. Do not claim done until all criteria are met.
-3. Follow the coding standards below for all code changes.
-4. Write or update Playwright tests for any new functionality.
-5. Run `npx tsc --noEmit` (type check) and `npx playwright test` (E2E tests) before considering work complete.
+- Branch: **`experiment/isometric-2.0`**
+- Flat sim owns walkability; Iso2 is **paint only**; FOV **128×64**
+- Success for feel work = playtest-relevant outcome, not only green tests
 
-### Ending a Session
-1. Update the GitHub Issue with a comment summarizing what was done.
-2. If code was changed, commit to a feature branch and open/update a PR referencing the issue.
-3. Update issue status (move to Review/Done on the project board if applicable).
+## Layout
 
-### Creating New Work Items
-- **Always create GitHub Issues** for new tasks, features, or bugs — never standalone Markdown planning docs.
-- Use labels: `epic`, `task`, `feature`, `performance`, `ui`, `rendering`, `llm`, `world-generation`, `education`, `infrastructure`, `ci-cd`, `sprites`, `art`, `tooling`, `high-priority`.
-- Link child issues to the appropriate epic using sub-issues.
-- Add acceptance criteria to every issue.
+```
+src/main.ts        # rAF orchestrator (keep thin)
+src/engine/        # gen, mechanics, world, llm, quiz
+src/rendering/     # isometric paint
+src/game/          # state, save, menus, audio
+src/ui/            # DOM HUD
+src/config/        # *.config.ts
+src/types/
+tests/             # Playwright
+```
 
-### Hallucination Prevention
-- If uncertain about any aspect, ask the user. Always ground decisions in repo context (existing code, issues, config files).
-- Scan actual files before assuming content. Do not fabricate file paths or API endpoints.
-- Verify build/test results before reporting success.
+No live root `src/render.ts` / `src/gen.ts` / `src/ui.ts` — those moved under the folders above.
 
-## Coding Standards
+## Verify
 
-### Language & Framework
-- **TypeScript** (strict mode) with Vite bundler
-- **Canvas 2D** for rendering (not WebGL)
-- **HTML DOM** for all UI elements (not canvas-drawn UI)
+- Dev: `npm run dev` → `http://localhost:5173`
+- `npx tsc --noEmit`; targeted `npx playwright test <path>` when useful
+- LLM via Vite `/api/llm` (port is machine-local). Tests may use `?test=1` bypass.
 
-### Architecture
-- Game loop in `src/main.ts` with `requestAnimationFrame`
-- Configuration in `src/config/*.config.ts` files
-- UI sync in `src/ui.ts`, DOM elements in `src/index.html`
-- Input edge detection via `justPressed()`/`endFrame()` pattern in `src/input.ts`
+## Don’t
 
-### Performance Requirements
-- All render operations must be viewport-culled
-- Throttle animation frames (don't tick `animFrame` every rAF)
-- Throttle DOM syncs (not every frame)
-- Avoid closure allocations in hot paths (render loop)
-- Chunk loading only when player crosses chunk boundaries
+- Re-open closed scene-first / paint-architecture campaigns from stale docs
+- Paste multi‑MB screenshots into chat
+- Invent parallel planning docs; use Issues + existing `memories/repo/*` when needed
 
-### LLM Integration
-- LLM endpoint: `http://127.0.0.1:8002` (BitNet local server)
-- Game startup gates on LLM health check (`GET /health`)
-- Use `POST /v1/chat/completions` for entropy/NPC chat
-- Fallback to TypeScript RNG if LLM inference >1-2s
-- Configuration must be flexible (local/remote, configurable URL)
-- See Docs\LocalBitNet_Integration_Readme.md for details
+## Agents
 
-### Testing
-- E2E tests via Playwright in `tests/` directory
-- Run: `npx playwright test --reporter=line`
-- Dev server: `npx vite` (localhost:5173)
-- Type check: `npx tsc --noEmit`
-- Build: `npx vite build`
+| Agent | Role |
+|-------|------|
+| [GameMan](agents/GameMan.agent.md) | Default implementer — **autonomous** |
+| [GameMan-sub](agents/GameMan-sub.agent.md) | Subagent only (`user-invocable: false`) |
+| [IsoVisualLoop](agents/IsoVisualLoop.agent.md) | Iso paint MCP loops |
+| [RefactorMan](agents/RefactorMan.agent.md) | Justified extractions only |
 
-## Path-Scoped Instructions
-
-Detailed, context-aware instructions live in `.github/instructions/`. These auto-attach when editing matching files:
-
-| Instruction File | Scope | Key Content |
-|-----------------|-------|-------------|
-| `src-main.instructions.md` | `src/main.ts` | God-file mitigation, extraction targets |
-| `src-gen.instructions.md` | `src/gen.ts` | Monolith extraction strategy |
-| `rendering.instructions.md` | `src/{render,terrain-cache,local-lights,shadows,fog,lighting}.ts` | Zero-allocation rules, Camera dedup |
-| `config-files.instructions.md` | `src/config/*.config.ts` | Typing, immutability, duplicate types |
-| `types.instructions.md` | `src/types/**` | Type centralization strategy |
-| `audio.instructions.md` | `src/{sfx,music,sampled-sfx,midi-loader,npc-voice}.ts` | Error handling, factory patterns |
-| `tests.instructions.md` | `tests/**` | Test mode, sharding, coverage gaps |
-| `state-management.instructions.md` | On-demand | State architecture, save/load rules |
-| `performance.instructions.md` | On-demand | Hot-path rules, throttling, chunks |
-| `llm-integration.instructions.md` | `src/llm.ts` | Test mode bypass, fallback strategy |
-| `scripts.instructions.md` | `scripts/**` | Script conventions, content pipeline |
-| `ci-cd.instructions.md` | `.github/workflows/**` | Workflow rules, deployment process |
-
-## Key Files Reference
-
-| File | Purpose |
-|------|---------|
-| `src/main.ts` | Game loop, LLM gate, perf tracking (**⚠️ 3,150-line god file — see instructions**) |
-| `src/render.ts` | Viewport-culled isometric renderer |
-| `src/ui.ts` | HTML DOM UI sync |
-| `src/input.ts` | Edge detection input handling |
-| `src/sprites.ts` | SVG sprite generation + cache |
-| `src/llm.ts` | LLM client (health, chat, entropy) |
-| `src/gen.ts` | World generation (**⚠️ 2,480-line monolith — see instructions**) |
-| `src/quiz.ts` | Quiz system |
-| `src/inventory.ts` | Item/inventory management |
-| `src/mechanics.ts` | Game mechanics (collision, interaction) |
-| `src/save.ts` | Save/load via localStorage |
-| `src/index.html` | HTML structure (splash, HUD, overlays) |
-| `src/config/*.config.ts` | All game configuration |
-
-## Issue Structure
-
-| Issue | Title | Type |
-|-------|-------|------|
-| #1 | Performance Optimizations | Task (High Priority) |
-| #2 | Game Bible - Master Design | Epic (Parent) |
-| #3 | Isometric Rendering Engine | Epic |
-| #4 | LLM Entropy System | Epic |
-| #5 | Character Sprite System | Epic |
-| #6 | Tile & World Generation | Epic |
-| #7 | Book of Knowledge | Epic |
-| #8 | Knowledge Capture Pipeline | Task |
-| #9 | CI/CD Pipeline | Task |
-| #10 | UI Layout & Sidebar | Task |
+Map: [agents/README.md](agents/README.md).

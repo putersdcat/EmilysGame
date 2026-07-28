@@ -8,7 +8,7 @@
 
 // ─── Types ───────────────────────────────────────────────────
 
-import type { TileType } from '../tiles';
+import type { TileType } from '../rendering/tiles';
 
 export type ObjectCategory = 'terrain' | 'plant' | 'obstacle' | 'interactive' | 'collectible' | 'npc' | 'ego';
 export type DrawLayer = 'base' | 'mid' | 'high' | 'overlay';
@@ -23,7 +23,8 @@ export interface AssetDef {
   walkable: boolean;        // Can the player walk through this?
   interactable: boolean;    // Can the player interact (Space)?
   description: string;      // Short tooltip / dev reference
-  tileType?: TileType;      // SVG tile type for ground rendering (if available)
+  /** Base tile or Iso2 nano tile key. Some Iso2-only keys are handled by nano-tile-defs, not tiles.ts. */
+  tileType?: TileType | string;
   jitter?: number;           // 0-1 sub-cell placement jitter range (fraction of half-tile). 0 = centered. (#82)
   /** Hazard damage on collision (#137). 0/undefined = safe, >0 = deterministic injury. */
   hazardDamage?: number;
@@ -139,6 +140,54 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     description: 'Brick wall segment', tileType: 'stone_wall',
     occluderRatio: 0.6,
   },
+  starter_foundation: {
+    emoji: '⬜', category: 'obstacle', height: 3, layer: 'mid',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage foundation stone', tileType: 'stone_wall_cottage_foundation',
+    occluderRatio: 0.35,
+  },
+  starter_wall_plaster: {
+    emoji: '🏠', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Starter cottage plaster/timber wall', tileType: 'starter_homestead_wall_plaster',
+    occluderRatio: 0.65,
+  },
+  starter_cottage: {
+    emoji: '🏠', category: 'obstacle', height: 7, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Starter cottage nano geometry with 45-degree roof and player-scale front door', tileType: 'starter_cottage',
+    occluderRatio: 0.55,
+  },
+  castle_keep: {
+    emoji: '🏰', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Single-cell castle keep nano geometry proof', tileType: 'castle_keep',
+    occluderRatio: 0.70,
+  },
+  cathedral_chapel: {
+    emoji: '⛪', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Single-cell cathedral chapel nano geometry proof', tileType: 'cathedral_chapel',
+    occluderRatio: 0.70,
+  },
+  starter_roof_left: {
+    emoji: '🛖', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof left slope', tileType: 'starter_roof_thatch_slope_left',
+    occluderRatio: 0.55,
+  },
+  starter_roof_right: {
+    emoji: '🛖', category: 'obstacle', height: 8, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof right slope', tileType: 'starter_roof_thatch_slope_right',
+    occluderRatio: 0.55,
+  },
+  starter_roof_ridge: {
+    emoji: '🛖', category: 'obstacle', height: 9, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: false,
+    description: 'Starter cottage thatch roof ridge', tileType: 'starter_roof_thatch_ridge',
+    occluderRatio: 0.55,
+  },
   door_locked: {
     emoji: '🔒', category: 'obstacle', height: 5, layer: 'high',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
@@ -149,12 +198,14 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
     emoji: '🪵', category: 'obstacle', height: 3, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
     description: 'Wooden barricade (needs crowbar)', tileType: 'wooden_fence',
-    hazardDamage: 0.3, hazardLabel: 'a splintery barricade',
+    // No passive hazard on bump: full-tile collision makes every approach a
+    // "hit"; injury should not punish normal blocking (use Space + crowbar).
+    hazardDamage: 0, hazardLabel: 'a splintery barricade',
   },
   toll_gate: {
     emoji: '🚧', category: 'obstacle', height: 4, layer: 'mid',
     scale: 1.0, shadow: true, walkable: false, interactable: true,
-    description: 'Toll gate (pay coins to pass)',
+    description: 'Toll gate (pay coins to pass)', tileType: 'troll_bridge',
   },
   quiz_gate: {
     emoji: '❓', category: 'obstacle', height: 4, layer: 'mid',
@@ -374,17 +425,23 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   house: {
     emoji: '🏠', category: 'obstacle', height: 8, layer: 'high',
     scale: 1.4, shadow: true, walkable: false, interactable: true,
-    description: 'Small house',
+    description: 'Small house', tileType: 'homestead_wall',
   },
   hut: {
     emoji: '🛖', category: 'obstacle', height: 6, layer: 'high',
     scale: 1.2, shadow: true, walkable: false, interactable: true,
-    description: 'Rustic hut',
+    description: 'Rustic hut', tileType: 'homestead_wall',
   },
   shop: {
     emoji: '🏪', category: 'obstacle', height: 7, layer: 'high',
     scale: 1.3, shadow: true, walkable: false, interactable: true,
-    description: 'Small shop',
+    description: 'Small shop', tileType: 'homestead_wall',
+  },
+  cathedral_wall: {
+    emoji: '⛪', category: 'obstacle', height: 12, layer: 'high',
+    scale: 1.0, shadow: true, walkable: false, interactable: true,
+    description: 'Ruined cathedral wall section', tileType: 'cathedral_wall',
+    occluderRatio: 0.75,
   },
   // Themed shop variants (#112 Phase 2)
   shop_general: {
@@ -405,7 +462,7 @@ export const ASSET_DEFS: Record<string, AssetDef> = {
   fence: {
     emoji: '🚧', category: 'obstacle', height: 2, layer: 'mid',
     scale: 0.7, shadow: false, walkable: false, interactable: true,
-    description: 'Wooden fence segment',
+    description: 'Wooden fence segment', tileType: 'wooden_fence',
   },
 
   // --- Effects & particles (#58) ---

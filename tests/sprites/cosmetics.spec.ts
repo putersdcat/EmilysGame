@@ -91,6 +91,54 @@ test.describe('Cosmetics Unlock System', () => {
     expect(result).not.toContain('hair_rainbow');
   });
 
+  // ─── Coin-Count-Based Unlock (2026-07-13, Finding #14 residual) ────
+
+  test('collecting 50 coins unlocks outfit_treasure_hunter', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const state = debug.state;
+      state.inventory.addItem('coin', 50);
+      debug.checkUnlocks();
+      return debug.getUnlockedCosmetics();
+    });
+    expect(result).toContain('outfit_treasure_hunter');
+  });
+
+  test('fewer than 50 coins does not unlock outfit_treasure_hunter', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const state = debug.state;
+      state.inventory.addItem('coin', 49);
+      debug.checkUnlocks();
+      return debug.getUnlockedCosmetics();
+    });
+    expect(result).not.toContain('outfit_treasure_hunter');
+  });
+
+  // ─── Streak-Based Unlock (2026-07-13, Finding #14 residual) ────────
+
+  test('an 8-answer correct streak unlocks hair_streak_flame', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const state = debug.state;
+      state.streak.consecutiveCorrect = 8;
+      debug.checkUnlocks();
+      return debug.getUnlockedCosmetics();
+    });
+    expect(result).toContain('hair_streak_flame');
+  });
+
+  test('a shorter correct streak does not unlock hair_streak_flame', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      const debug = (window as any).__gameDebug;
+      const state = debug.state;
+      state.streak.consecutiveCorrect = 7;
+      debug.checkUnlocks();
+      return debug.getUnlockedCosmetics();
+    });
+    expect(result).not.toContain('hair_streak_flame');
+  });
+
   // ─── Customizer Lock Display ───────────────────────────────
 
   test('customizer shows locked swatches with lock icon', async ({ page }) => {

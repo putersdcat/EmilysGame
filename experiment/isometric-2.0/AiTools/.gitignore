@@ -1,0 +1,12 @@
+dist/
+node_modules/
+*.png
+# Generated test artifacts — not for commit
+test-assets/*.png
+test-assets/*.svg
+# Temp scripts from dev sessions
+make-combo.ts
+gen-composite.ts
+extrusion-proof.ts
+visual-test.ts
+test-read.js

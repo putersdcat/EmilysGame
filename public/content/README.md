@@ -6,26 +6,39 @@ Emily's Game now has a scalable educational content system with externalized con
 
 ## Content Delivered (Issue #8)
 
-### Quiz Questions: 420 total (COMPLETED second doubling goal!)
-- **Categories:** Math (125), Science (125), History (39), Language (43), Logic (30), Geography (37), Technology (20), Art (1)
-- **Age Bands:** 5-7 years (120), 8-10 years (152), 11-12+ years (148)
-- **Difficulties:** Easy (124), Medium (154), Hard (142)
-- **Shards:** 5 shard files (100+100+100+100+20 questions)
-- **Progress:** 105→210→330→420 ✅ GOAL ACHIEVED
+### Quiz Questions: see **`manifest.json`** (default-v1)
+- **Categories:** Math, Science, History, Language, Logic, Geography, Technology, Art
+- **Age Bands:** 5–7, 8–10, 11–12+
+- **Shards:** `quizzes-001` … `quizzes-007`
+  - `005` nature · `006` spaceflight · `007` **oceans & marine**
+- Live totals always in `manifest.json` stats
 
-### Knowledge Articles: 31 total (Baseline complete, expansion to 120 in progress)
-- **Subjects:** Math (5), Science (8), History (5), Language (4), Technology (4), Geography (3), Art (2)
-- **Age Bands:** 5-7 years (8), 8-10 years (14), 11-12+ years (9)
-- **Shards:** 2 shard files
-- **Progress:** 15→30→31 (targeting 120)
+### Knowledge Articles: see **`manifest.json`**
+- **Subjects:** Math, Science, History, Language, Technology, Geography, Art
+- **Shards:** `articles-001` … `articles-004`
+  - `002` nature · `003` spaceflight · `004` **oceans & marine Book**
+- Long-term target still ~120+ articles
 
 ## Architecture
 
 ### Schema v1 (`src/types/content-pack.types.ts`)
 - **QuizQuestionPack:** Quiz questions with metadata
 - **KnowledgeArticlePack:** Educational articles with metadata
+- **Optional `image`:** `{ url, alt, credit?, license? }` hero illustration in Book UI
 - **ContentPackManifest:** Pack-level metadata and statistics
 - **Sharding:** Max 100 questions or 50 articles per shard file
+
+### Book images (offline-only)
+- Structured field `article.image` (preferred) and/or markdown `![alt](/content/…)` in body
+- **Allow-listed paths only:** `/content/…` (no remote `http(s)://` — game stays playable offline)
+- Free media ship in-repo under `packs/default-v1/images/`
+- **Source guide + licenses:** [`packs/default-v1/images/SOURCES.md`](packs/default-v1/images/SOURCES.md)
+- **Per-file registry:** [`packs/default-v1/images/sources-registry.json`](packs/default-v1/images/sources-registry.json)
+- Renderer: `src/ui/markdown.ts` + Book UI in `src/game/knowledge.ts` + styles in `src/index.html`
+- Scripts:
+  - `python scripts/content-pipeline/fetch_nasa_book_images.py` — NASA PD fetch + registry rebuild
+  - `python scripts/content-pipeline/assign_unique_book_images.py` — unique on-topic assignment
+  - `python scripts/content-pipeline/download_unique_book_images.py` — broader catalog attempts
 
 ### Metadata Features
 - **Age Banding:** 5-7, 8-10, 11-12+ with min/max age filtering
@@ -63,14 +76,19 @@ Scans all shards and creates `manifest.json` with statistics.
 
 ```
 content/packs/default-v1/
-├── manifest.json          # Pack metadata and statistics (210 quizzes, 30 articles)
+├── manifest.json
 ├── quizzes/
-│   ├── quizzes-001.json  # 100 questions
-│   ├── quizzes-002.json  # 100 questions
-│   └── quizzes-003.json  # 10 questions
+│   ├── quizzes-001.json … quizzes-006.json
+│   └── quizzes-007.json   # oceans & marine (2026-07)
 └── articles/
-    └── articles-001.json  # 30 articles
+    ├── articles-001.json … articles-003.json
+    └── articles-004.json  # oceans Book (2026-07)
 ```
+
+Optional regenerators:
+- `python scripts/content-pipeline/author_nature_pack_slice.py`
+- `python scripts/content-pipeline/author_spaceflight_history_slice.py`
+- `python scripts/content-pipeline/author_oceans_marine_slice.py`
 
 ## Usage Example
 

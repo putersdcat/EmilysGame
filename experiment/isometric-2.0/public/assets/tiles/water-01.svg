@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- water-01: Deep blue water with ripples, glints, surface reflections -->
+  <defs>
+    <radialGradient id="wBase" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#3a85cc"/>
+      <stop offset="60%" stop-color="#1a5fa0"/>
+      <stop offset="100%" stop-color="#0d3d70"/>
+    </radialGradient>
+    <linearGradient id="wShim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#60b8f0" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#082850" stop-opacity="0.2"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#wBase)"/>
+  <rect width="128" height="128" fill="url(#wShim)"/>
+  <ellipse cx="40" cy="70" rx="28" ry="18" fill="#083860" opacity="0.4"/>
+  <ellipse cx="90" cy="35" rx="22" ry="14" fill="#083860" opacity="0.35"/>
+  <ellipse cx="75" cy="100" rx="20" ry="12" fill="#083860" opacity="0.3"/>
+  <g stroke="#5aabec" stroke-width="1" fill="none" opacity="0.5">
+    <ellipse cx="35" cy="55" rx="14" ry="6"/>
+    <ellipse cx="35" cy="55" rx="20" ry="9"/>
+    <ellipse cx="80" cy="90" rx="12" ry="5"/>
+    <ellipse cx="80" cy="90" rx="18" ry="8"/>
+    <ellipse cx="95" cy="30" rx="10" ry="4"/>
+    <ellipse cx="95" cy="30" rx="15" ry="6"/>
+    <ellipse cx="20" cy="100" rx="10" ry="4"/>
+    <ellipse cx="55" cy="25" rx="8" ry="3"/>
+  </g>
+  <g stroke="#6ab8f0" stroke-width="0.8" fill="none" opacity="0.4">
+    <path d="M15,72 Q20,68 25,72 Q30,76 35,72"/>
+    <path d="M45,85 Q50,81 55,85 Q60,89 65,85"/>
+    <path d="M70,60 Q75,56 80,60 Q85,64 90,60"/>
+    <path d="M95,100 Q100,96 105,100 Q110,104 115,100"/>
+    <path d="M10,45 Q15,41 20,45 Q25,49 30,45"/>
+    <path d="M60,110 Q65,106 70,110 Q75,114 80,110"/>
+    <path d="M100,75 Q105,71 110,75 Q115,79 120,75"/>
+  </g>
+  <g fill="#d0eeff" opacity="0.7">
+    <ellipse cx="55" cy="42" rx="3" ry="1.5" transform="rotate(-20,55,42)"/>
+    <ellipse cx="100" cy="60" rx="2.5" ry="1.2" transform="rotate(-20,100,60)"/>
+    <ellipse cx="25" cy="80" rx="2" ry="1" transform="rotate(-20,25,80)"/>
+    <ellipse cx="75" cy="115" rx="2.5" ry="1.2" transform="rotate(-20,75,115)"/>
+    <ellipse cx="115" cy="38" rx="2" ry="1" transform="rotate(-20,115,38)"/>
+  </g>
+  <g fill="#ffffff" opacity="0.5">
+    <circle cx="58" cy="40" r="1.2"/>
+    <circle cx="88" cy="68" r="1"/>
+    <circle cx="30" cy="95" r="0.9"/>
+    <circle cx="108" cy="45" r="1.1"/>
+  </g>
+</svg>

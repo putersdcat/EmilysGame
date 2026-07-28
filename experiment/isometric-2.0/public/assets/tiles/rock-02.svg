@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- rock-02: Lighter slate rock slabs with strong contrast and lichen -->
+  <rect width="128" height="128" fill="#8a9090"/>
+  <ellipse cx="64" cy="64" rx="55" ry="50" fill="#7a8484" opacity="0.5"/>
+  <ellipse cx="30" cy="30" rx="25" ry="22" fill="#9aa0a0" opacity="0.3"/>
+  <ellipse cx="95" cy="95" rx="22" ry="20" fill="#7a8080" opacity="0.3"/>
+  <!-- Main large rock slab -->
+  <ellipse cx="55" cy="82" rx="34" ry="11" fill="#202428" opacity="0.55"/>
+  <path d="M24,76 Q55,63 86,76 Q82,82 55,86 Q28,82 24,76 Z" fill="#6c7880"/>
+  <path d="M24,75 Q55,60 86,75 Q72,66 55,64 Q38,66 24,75 Z" fill="#c8d0d8"/>
+  <path d="M26,74 Q55,58 84,74" stroke="#e0e8f0" stroke-width="1.5" fill="none" opacity="0.7"/>
+  <path d="M36,63 Q42,70 38,78 Q37,81 40,84" stroke="#404850" stroke-width="1" fill="none"/>
+  <path d="M62,61 Q66,66 64,72" stroke="#404850" stroke-width="0.8" fill="none"/>
+  <ellipse cx="44" cy="67" rx="8" ry="3" fill="#6a9048" opacity="0.5"/>
+  <ellipse cx="70" cy="65" rx="6" ry="2.5" fill="#789858" opacity="0.45"/>
+  <!-- Right slab -->
+  <ellipse cx="102" cy="52" rx="20" ry="7" fill="#202428" opacity="0.45"/>
+  <path d="M84,46 Q102,38 120,46 Q117,52 102,56 Q87,52 84,46 Z" fill="#707c84"/>
+  <path d="M84,46 Q102,35 120,46 Q110,40 102,39 Q94,40 84,46 Z" fill="#c0c8d0"/>
+  <path d="M85,45 Q102,33 119,45" stroke="#d8e0e8" stroke-width="1.2" fill="none" opacity="0.65"/>
+  <ellipse cx="98" cy="40" rx="5" ry="2" fill="#6a8840" opacity="0.45"/>
+  <!-- Top-left small slab -->
+  <ellipse cx="22" cy="28" rx="14" ry="5" fill="#202428" opacity="0.35"/>
+  <path d="M10,24 Q22,18 34,24 Q32,28 22,30 Q12,28 10,24 Z" fill="#787e86"/>
+  <path d="M10,24 Q22,16 34,24 Q26,20 22,19 Q18,20 10,24 Z" fill="#bec8d0"/>
+  <path d="M11,23 Q22,15 33,23" stroke="#d8e0e8" stroke-width="1" fill="none" opacity="0.6"/>
+  <!-- Scattered pebbles -->
+  <ellipse cx="60" cy="100" rx="8" ry="3.5" fill="#7c8286"/>
+  <path d="M53,97 Q60,91 67,97 Q64,100 60,101 Q56,100 53,97 Z" fill="#b0b8c0" opacity="0.8"/>
+  <ellipse cx="112" cy="90" rx="7" ry="3" fill="#787e84"/>
+  <path d="M106,87 Q112,81 118,87" stroke="#aab2bc" stroke-width="0.8" fill="none" opacity="0.6"/>
+  <ellipse cx="10" cy="90" rx="6" ry="2.8" fill="#7e8488"/>
+  <ellipse cx="30" cy="110" rx="7" ry="3" fill="#7a8086"/>
+  <ellipse cx="95" cy="120" rx="6" ry="2.5" fill="#808690"/>
+  <ellipse cx="118" cy="65" rx="5" ry="2" fill="#7e8490"/>
+  <circle cx="50" cy="22" r="3" fill="#8a9098"/>
+  <circle cx="78" cy="18" r="2.5" fill="#848a92"/>
+  <circle cx="108" cy="22" r="2" fill="#7e8490"/>
+  <circle cx="120" cy="108" r="2.5" fill="#7c8288"/>
+  <circle cx="8" cy="50" r="2" fill="#80888e"/>
+  <circle cx="72" cy="112" r="2.5" fill="#7a8086"/>
+  <g fill="#505860" opacity="0.3">
+    <circle cx="45" cy="95" r="3"/><circle cx="85" cy="30" r="2.5"/>
+    <circle cx="25" cy="115" r="2.5"/><circle cx="100" cy="60" r="3"/>
+  </g>
+</svg>

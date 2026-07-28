@@ -5,9 +5,12 @@
  */
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = 'http://localhost:5173/';
+const BASE_URL = 'http://localhost:5173/?test=1';
 
 async function waitForGame(page: import('@playwright/test').Page) {
+  // Use ?test=1 so the game runs in test mode (no LLM gate, deterministic
+  // fresh state). Going to the bare URL runs non-test mode, which restores
+  // the developer's real save and pollutes test isolation (flaky failures).
   await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: 'domcontentloaded' });
@@ -18,8 +21,9 @@ async function waitForGame(page: import('@playwright/test').Page) {
   }
 
   await page.locator('#gameContainer canvas').waitFor({ state: 'attached', timeout: 15000 });
-  await page.waitForTimeout(1000);
-  expect(await page.evaluate(() => !!(window as any).__gameState)).toBe(true);
+  // Wait for the game state to actually initialize (poll, not fixed sleep —
+  // a fixed 1000ms races boot on slower machines and causes flaky false failures).
+  await page.waitForFunction(() => !!(window as any).__gameState, { timeout: 20000 });
 }
 
 test.describe('Injury & Bandaid System (#109)', () => {
@@ -261,16 +265,18 @@ test.describe('Injury & Bandaid System (#109)', () => {
       };
     });
 
-    // Hazardous objects
+    // Hazardous objects (cactus/rock injure on bump)
     expect(hazards.cactus).toBeGreaterThan(0);
     expect(hazards.rock).toBeGreaterThan(0);
-    expect(hazards.barricade).toBeGreaterThan(0);
     // Cactus is the most dangerous
     expect(hazards.cactus).toBeGreaterThan(hazards.rock);
-    // Non-hazardous objects
+    // Non-hazardous objects — barricade is intentionally 0 (assets.config:
+    // full-tile collision means every approach is a "hit", so no passive
+    // bump hazard; injury would punish normal blocking. Product design #137).
     expect(hazards.tree).toBe(0);
     expect(hazards.wall).toBe(0);
     expect(hazards.grass).toBe(0);
+    expect(hazards.barricade).toBe(0);
   });
 
   test('hazard labels exist for hazardous assets (#137)', async ({ page }) => {
@@ -285,6 +291,8 @@ test.describe('Injury & Bandaid System (#109)', () => {
       };
     });
 
+    // Labels exist for bump-hazard assets; barricade also has one for flavor
+    // (its label is used in the crowbar hint path, not the injury path).
     expect(labels.cactus).toBeTruthy();
     expect(labels.rock).toBeTruthy();
     expect(labels.barricade).toBeTruthy();

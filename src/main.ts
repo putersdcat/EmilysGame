@@ -4,661 +4,336 @@
  * TODO: DOC - game loop sequence diagram
  */
 
-import { WORLD_CONFIG, PLAYER_CONFIG, RENDER_CONFIG, getDifficulty } from './config/game.config';
-import { perfStats, perfSmooth, recordFrameTime, resetFrameHistory, getFrameBenchmark } from './perf';
-import { getBiome, BIOME_DEFS } from './config/biomes.config';
+import { WORLD_CONFIG, getDifficulty } from './config/game.config';
+import { perfStats, perfSmooth, recordFrameTime } from './engine/perf';
 import { ASSET_DEFS } from './config/assets.config';
-import { DIRECTION_WORDS } from './config/entropy.config';
-import { IsometricRenderer, setDialogNpc, type Camera } from './render';
-import { InputManager, type TouchControlMode } from './input';
-import { shouldAutoShowTouchOverlay, isTeslaMode, setTeslaMode, detectTeslaBrowser } from './platform';
-import { initTutorial, isTutorialActive, tickTutorial, shouldShowTutorial, resetTutorial, dismissTutorial } from './tutorial';
-import { characterVariations, loadCharacterSprite, loadCharacterSpriteAsync, clearVariationCache, generateIdleCharacterSVG, generateSideIdleCharacterSVG, generateSideWalkingCharacterSVG, spriteCache, type CharacterVariation } from './sprites';
-import { generateChunkSync, setWordlist, setBiomeNoiseSeed, feedEntropy, getEntropyBuffer, restoreEntropyBuffer, getWaterDebugInfo, getLockKeyDebugInfo, getChunkClimate, deriveMood, detectBiomeTransitions, selectBiomeCoherent, getPlayabilityStats, type ChunkData, type BorderConstraints } from './gen';
-import { generateWordlist, checkLlmHealth, isTestMode } from './llm';
-import { getScrambledWordlist } from './config/wordlists.asset';
-import { isFootprintWalkable, interact, autoCollect, resolveQuizGate, getCellAt, type InteractionResult } from './mechanics';
-import { createInventory, type Inventory } from './inventory';
-import { createQuizState, startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, blendDifficulty, createStreakState, recordQuizResult, modulateDifficulty, getStreakDebugInfo, type QuizState, type StreakState } from './quiz';
-import { type QuizDifficulty } from './config/quiz.config';
-import { createUIState, addToast, showDialog, advanceDialog, closeDialog, renderUI, wireHudButtons, markSaveSlotsDirty, syncStatusBars, syncMusicUI, syncSfxUI, syncVoiceUI, type UIState } from './ui';
-import { saveGame, loadGame, saveToSlot, loadFromSlot, deleteSlot, deleteSave, getAllSlotInfo, type SaveData, type ResolvedCell } from './save';
-import { getNpcPersona, getShopPersona } from './config/npc.config';
-import { preloadTiles } from './tiles';
+import { IsometricRenderer, setDialogNpc } from './rendering/render';
+import { InputManager } from './game/input';
+import { isTutorialActive, tickTutorial } from './game/tutorial';
+import { feedEntropy } from './engine/gen';
+import { interact, autoCollect, resolveQuizGate, getCellAt, SPAWN_ESCAPE_RISE_PX } from './engine/mechanics';
+import { startQuiz, quizNavigate, quizSubmit, quizClose, quizReward, quizSelectIndex, getDifficultyForPosition, recordQuizResult, modulateDifficulty, pickQuizQuestion } from './game/quiz';
+import { prefetchQuizRephrase } from './engine/llm';
+import { addToast, showDialog, advanceDialog } from './ui/ui';
+// B5 micro-slice 11.40 (#268): slot save/load/delete handlers extracted
+// to ./game/slot-actions.ts. Each make*Handler(state) returns a closure
+// used as a wireHudButtons callback.
+// B5 micro-slice 11.41 (#268): new-game onboarding flow (reset +
+// customizer + age band + subjects + tutorial) and the load-slot- helper
+// extracted to ./game/new-game-flow.ts. main() now branches into
+// runNewGameFlow(state) or loadSlotIntoState(state, slot).
+// B5 micro-slice 11.42 (#268): MIDI + sampled-SFX background loading
+// extracted to ./game/audio-bootstrap.ts. bootstrapAudio(state) kicks
+// off both pipelines as fire-and-forget; oscillator fallbacks cover
+// the loading window so the game loop can start in parallel.
+// B5 micro-slice 11.43 (#268): post-init HUD wiring + debug surface +
+// startup toasts extracted to ./game/startup-hud.ts. wireStartupHud()
+// wraps the fog-pref restore, Tesla badge, wireHudButtons() with slot
+// action handlers, __gameDebug surface, welcome toasts, and wireHudEvents().
+// B5 micro-slice 11.44 (#268): main-menu flow orchestration extracted
+// to ./game/menu-flow.ts. runMenuFlow() handles the welcome splash +
+// main menu choice dispatch (new-game → runNewGameFlow, load-slot-N →
+// loadSlotIntoState, continue → no-op). Skips entirely in test mode.
+// B5 micro-slice 11.45 (#268): player visual state update extracted
+// to ./game/player-visuals.ts. updatePlayerVisuals(state, mv, isMoving)
+// owns direction, facingDx/Dy, facingPose, isMoving, animFrame, egoImg.
+import { runMenuFlow } from './game/menu-flow';
+import { bootstrapAudio } from './game/audio-bootstrap';
+import { wireStartupHud } from './game/startup-hud';
+import { updatePlayerVisuals } from './game/player-visuals';
+// B5 micro-slice 11.10 (#268): showMainMenu extracted to ./game/main-menu.ts.
+// (B5.44 — usage moved to ./game/menu-flow.ts.)
+// B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
+// with dependency-inversion for save/options/bug-report/main-menu actions.
+// (showPauseMenu unused in main.ts — called from input-extra-keys.ts)
+// B5 micro-slice 11.12 (#268): showAgeSelection extracted to
+// ./game/age-selection.ts. Pure DOM overlay with no main.ts callbacks.
+// (B5.41 — usage moved to ./game/new-game-flow.ts)
+// B5 micro-slice 11.17 (#268): showOptionsOverlay extracted from main.ts
+// to ./game/options-overlay.ts. Pure DOM (volume sliders, touch controls,
+// fog, Tesla mode, replay tutorial). The main menu passes it as a
+// callback to ./game/menu-flow.ts via dependency-inversion (B5.44).
+import { showOptionsOverlay } from './game/options-overlay';
+// B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
+// _eyeBlinkTimer / _eyeSwayPhase module-level state extracted to
+// ./game/wildlife-render.ts. getRevealedCreatures() lives there too
+// and is imported directly by debug-api.ts (no DI needed).
+// getNpcPersona used via play-mode drain / tryOpenPendingTrade
+import { MICRO_TILE_DEFS } from './config/tiles.config';
+import { evictDistantChunks } from './rendering/terrain-cache';
+
+import { searchBookArticles, getBookArticlesBySubject } from './ui/book-content';
+import { type SubjectId } from './config/knowledge.config';
+import { openArticle, getQuizBias } from './game/knowledge';
+import { getCycleProgress } from './rendering/lighting';
+import { getWeatherInfo } from './rendering/weather';
+import { isFlashlightOn } from './rendering/local-lights';
+// invalidateShadowCache now called from input-extra-keys.ts (B5.20)
+import { updateFog } from './rendering/fog';
 import {
-  MICRO_TILE_DEFS, WORLD_UNIT_TEMPLATES, BIOME_PALETTES,
-  validateAllTileDefs, validateTemplate, normalizeTileDef,
-  isValidAnchorRole, tileMatchesClimate, getTileLOD, tilesAtLOD,
-  getBiomePalette,
-  computeTraversalChannels, computeCornerCells, computeChainPorts,
-  getAllRotations as getAllTemplateRotations,
-} from './config/tiles.config';
-import { initWasmRenderer, isWasmReady, wasmBenchmark, updateWasmConfig } from './wasm-bridge';
-import { clearTerrainCache, tickWaterAnimation, invalidateChunkTerrain, evictDistantChunks, getBlendIntensity, setBlendIntensity } from './terrain-cache';
-import { clearObjectCache, invalidateObjectCache } from './render';
-import { preloadEmojiSprites } from './emoji-cache';
-import { preloadAssetSprites, hasAssetSprite } from './asset-sprites';
-import { preloadNpcSprites, generateNpcSVG, loadNpcSpriteAsync, getNpcSprite, hasNpcSprite, NPC_APPEARANCES } from './npc-sprites';
-import { initMinimap, renderMinimap } from './minimap';
+  updateWildlife, interactWithWildlife,
+} from './game/wildlife';
+// B5 micro-slice 11.13 (#268): getAnimationOffset, getTimeSlot, getSpecies,
+// getEmojiSprite, and the _revealedCreatures state moved to
+// ./game/wildlife-render.ts (only used inside renderWildlife).
+// B5 micro-slice 11.39 (#268): most thought-bubble exports moved to
+// ./game/debug-expose.ts (__bubbles global). triggerHint/tickBubbles/
+// dismissBubble remain here for main.ts hot-path call sites.
+
 import {
-  createKnowledgeState, toggleBook, syncBookUI, wireBookUI, showSubjectSelection,
-  getQuizBias, openArticle,
-  type KnowledgeState,
-} from './knowledge';
-import { searchBookArticles, initBookContent, getBookContentStats, isPackContentLoaded } from './book-content';
-import { createAgeProfile, setAgeBand, AGE_BANDS, getAgeProfileDebug, type AgeProfile } from './age-profile';
-import type { AgeBand } from './types/content-pack.types';
-import { showCustomizer, createDefaultVariation, serializeVariation, deserializeVariation, setUnlockedCosmetics, HAIR_STYLES, EYE_COLORS, ACCESSORIES, OUTFIT_PATTERNS } from './customizer';
-import { checkAllUnlocks, getCosmeticById, type ProgressionData } from './config/cosmetics.config';
-import { updateAndRenderParticles, clearParticles } from './particles';
-import { tickLighting, setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds, setPlayedSeconds } from './lighting';
-import { updateAndRenderWeather, setWeather, getWeatherInfo, clearWeather, didLightningStrike } from './weather';
-import { clearLights, addPointLight, addFlashlight, renderLocalLights, toggleFlashlight, isFlashlightOn, isInFlashlightCone } from './local-lights';
-import { FIRE_VARIANTS, FIRE_ASSET_KEYS } from './config/fire.config';
-import { invalidateShadowCache } from './shadows';
-import { updateFog, renderFog, toggleFog, isFogEnabled, setFogEnabled, getVisitedCount, serializeVisited, deserializeVisited, getFogDebugInfo } from './fog';
+  triggerHint, tickBubbles, dismissBubble,
+} from './ui/thought-bubbles';
 import {
-  updateWildlife, getVisibleWildlife, interactWithWildlife, getAnimationOffset,
-  clearWildlife, getDiscoveredSpeciesArray, restoreDiscoveredSpecies, getWildlifeStats,
-  getTimeSlot,
-} from './wildlife';
-import { getSpecies } from './config/wildlife.config';
-import { getEmojiSprite } from './emoji-cache';
-import {
-  triggerHint, tickBubbles, updateBubblePosition, dismissBubble,
-  clearBubbles, getBubbleState, resetCooldowns,
-  getMessageHistory, toggleHistoryPanel,
-} from './thought-bubbles';
-import { HINTS } from './config/hints.config';
-import {
-  createTradeState, openTrade, closeTrade, tradeNavigate,
-  executeTrade, executeSell, toggleTradeMode, getSellPrice, getSellableItems,
-  syncTradeDOM, type TradeState,
+  tradeNavigate,
+  executeTrade, executeSell, getSellPrice, getSellableItems,
+  syncTradeDOM,
   generateBarterQuiz, shouldTriggerBarter, barterNavigate, submitBarterAnswer,
   syncBarterQuizDOM, getTradeDialog,
-} from './trading';
+} from './game/trading';
 import {
-  createPlayerStatus, tickStatus, getDebuffs, useStatusItem, applyStatusEffect,
-  serializeStatus, deserializeStatus, resetTickCounter,
+  tickStatus,
   CRITICAL_THRESHOLD,
-  type PlayerStatus,
-} from './status';
+} from './game/status';
 import {
-  initDebuffVisuals, updateBlurOverlay, updateFlies, renderFlies, getDebuffVisualsState,
-  triggerInjuryFlash, updateInjuryFlash, getInjuryFlashAlpha,
-  setDiarrheaOverlay, updateDiarrheaOverlay,
-  spawnPoopBurst, updateAndRenderPoopParticles, renderPoopMarkers,
-} from './debuff-visuals';
+  triggerInjuryFlash,
+} from './rendering/debuff-visuals';
 import {
-  createInjuryState, checkHazardInjury, applyBandaid, applyWoundQuizBonus,
-  getWoundCareQuestion, getInjurySpeedMult, serializeInjury, deserializeInjury,
-  type InjuryState,
-} from './injury';
+  checkHazardInjury, applyWoundQuizBonus,
+} from './game/injury';
+// B5 micro-slice 11.8 (#268): inline HYGIENE_QUESTIONS / INSECT_QUESTIONS +
+// _startHygieneQuiz / _startInsectQuiz extracted from main.ts to
+// ./game/quiz-specials.ts. startWoundCareQuiz now lives in ./game/injury.ts
+// next to its WOUND_CARE_QUESTIONS data + getWoundCareQuestion shuffler.
+// startInsectQuiz drained via play-mode pendingNext (PR5)
+// B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + _pendingResolved
+// module-level state extracted from main.ts to ./game/chunk-lifecycle.ts.
+// Maintained as a thin wrapper in main.ts (see maybeLoadChunks) because it
+// chains eviction + auto-save on chunk exit.
 import {
-  createMusicState, play as musicPlay, pause as musicPause, stop as musicStop,
-  nextTrack, prevTrack, togglePlayPause, toggleMute, setVolume as musicSetVolume,
-  startDucking, stopDucking, setBiome as musicSetBiome,
-  serializeMusicSettings, deserializeMusicSettings,
-  getCurrentTrackInfo, initMidiTracks, getTotalTrackCount, updateMidiProgress,
-  type MusicState,
-} from './music';
+  loadChunksOnBoundaryCross,
+  ensureChunksAroundBudgeted,
+} from './game/chunk-lifecycle';
+// B5 micro-slice 11.15 (#268): applySaveData extracted from main.ts to
+// ./game/save-apply.ts. Pure orchestration — sequences deserializers across
+// ~15 subsystems. (B5.41 — usage moved to ./game/new-game-flow.ts.)
+// B5 micro-slice 11.21 (#268): buildSaveData + doSave extracted from
+// main.ts to ./game/save-build.ts. Sibling to save-apply.ts. Re-imported
+// here so main.ts can pass doSave as a callback to setupExtraKeys +
+// debug-api without the new module depending on main.ts.
+import { doSave } from './game/save-build';
+// B5 micro-slice 11.16 (#268): resetGameState extracted from main.ts to
+// ./game/game-reset.ts. (B5.41 — usage moved to ./game/new-game-flow.ts.)
+// B5 micro-slice 11.18 (#268): checkBubbleTriggers extracted from main.ts
+// to ./game/bubble-triggers.ts. Pure logic — evaluates state and calls
+// triggerHint() per matching hint category. The lastBubbleBiomeId and
+// lastBubbleDiffTier "last seen" state moved with the function.
+// resetBubbleTriggerState() is called by resetGameState (in game-reset.ts).
+import { checkBubbleTriggers } from './game/bubble-triggers';
+// B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome + FIRST_RUN_KEY
+// extracted from main.ts to ./game/welcome-splash.ts. Pure DOM overlay.
+// (B5.44 — usage moved to ./game/menu-flow.ts.)
+// B5 micro-slice 11.23 (#268): captureBugReport extracted from main.ts
+// to ./game/bug-report.ts. Bundles canvas screenshot + game state into
+// a downloadable JSON. Pure function (no module state, no side effects).
+import { captureBugReport } from './game/bug-report';
+// B5 micro-slice 11.24 (#268): shouldAutoRead + autoReadQuizQuestion
+// extracted from main.ts to ./game/auto-read.ts. Decides whether to
+// auto-read quiz questions aloud based on age band + voice settings.
+import { shouldAutoRead as _shouldAutoRead, autoReadQuizQuestion as _autoReadQuizQuestion } from './game/auto-read';
+// B5 micro-slice 11.25 (#268): checkCosmeticUnlocks extracted from main.ts
+// to ./game/cosmetic-unlocks.ts. Checks quiz + wildlife progression against
+// the unlock table and grants new cosmetics (with toasts).
+import { checkCosmeticUnlocks } from './game/cosmetic-unlocks';
+// B5 micro-slice 11.26 (#268): waitForLlm extracted from main.ts to
+// ./game/llm-gate.ts. Shows LLM splash, polls health, supports dev skip.
+import { waitForLlm } from './game/llm-gate';
+import { renderFrame as renderFrameImpl } from './rendering/render-frame';
+// B5 micro-slice 11.19 (#268): handleInteraction extracted from main.ts
+// to ./game/interaction-handler.ts. The _lastDialogNpcId +
+// _pendingPoopBurst module-level state moved with the function
+// (state-moves-with-consumer pattern). main.ts uses these accessors
+// from the dialog queue (update ~L725) and render path (~L1559).
 import {
-  createSfxState, playSfx, stopAmbience,
-  setSfxVolume, setAmbienceVolume, toggleSfxMute, toggleAmbienceMute,
-  serializeSfxSettings, deserializeSfxSettings,
-  initSampledSfxPipeline, updateListenerPosition,
+  handleInteraction,
+  getLastDialogNpcId,
+  setLastDialogNpcId,
+} from './game/interaction-handler';
+import {
+  setBiome as musicSetBiome,
+} from './game/audio/music';
+import {
+  playSfx,
+  updateListenerPosition,
   playFootstep, resetFootstepCounter,
-  playPositionalSfx, getPositionalSourceCount,
   updateAmbienceEnhanced, tickAnimalCalls, playRoosterCrow,
-  type SfxState,
-} from './sfx';
+} from './game/audio/sfx';
+// B5 micro-slice 11.9 (#268): positional-audio data + scanner extracted
+// from main.ts to ./game/audio/positional-sources.ts. playPositionalSfx
+// also moved there (used internally by scanPositionalAudioSources).
+import { scanPositionalAudioSources } from './game/audio/positional-sources';
 import {
-  createVoiceState, speakLine, cancelSpeech, toggleVoice,
-  setVoiceVolume, serializeVoiceSettings, deserializeVoiceSettings,
-  type VoiceState,
-} from './npc-voice';
-import type { FacingPose } from './sprites';
-
-
-// ─── Extra Key Queue (numeric + R for quiz accessibility, #94) ───
-
-/** Keys pressed this frame — consumed by quiz input block, cleared each frame */
-const _extraKeyQueue: Set<string> = new Set();
-
-function _setupExtraKeyCapture(): void {
-  window.addEventListener('keydown', (e) => {
-    // Capture 1-9 and R/r for quiz accessibility
-    if (/^[1-9r]$/i.test(e.key)) {
-      _extraKeyQueue.add(e.key.toLowerCase());
-    }
-  });
-}
-
-function _consumeExtraKey(key: string): boolean {
-  if (_extraKeyQueue.has(key)) {
-    _extraKeyQueue.delete(key);
-    return true;
-  }
-  return false;
-}
-
-function _clearExtraKeys(): void {
-  _extraKeyQueue.clear();
-}
-
+  speakLine, cancelSpeech,
+} from './game/audio/npc-voice';
+// B5 micro-slice 11.1 (#268): extra key queue extracted to
+// ./game/input-extra-keys.ts (quiz accessibility, #94).
+import {
+  setupExtraKeyCapture as _setupExtraKeyCapture,
+  consumeExtraKey as _consumeExtraKey,
+  clearExtraKeys as _clearExtraKeys,
+  setupExtraKeys,
+} from './game/input-extra-keys';
+// B5 micro-slice 11.2 (#268): diarrhea illness config + state factory
+// extracted to ./game/illness.ts. State init uses createInitialDiarrheaState.
+import {
+  MOVE_STEP_MS,
+  MOVE_MAX_CATCHUP_MS,
+} from './game/player-motor';
+import {
+  exitModal,
+  enterDialogModal,
+  queueAfterClose,
+  setBookOpen,
+  tryOpenPendingTrade,
+  syncDerivedPaused,
+} from './game/play-mode';
+// Ensure DrainActivator is registered (side-effect of play-mode adapter)
+import './game/play-mode';
+import {
+  runPlayFrame,
+  startPlayLoop,
+  type PlayFrameHooks,
+  type MoveResult,
+  type MovementVector,
+} from './game/play-kernel';
+// B5 micro-slice 11.3 (#268): transient expression system extracted to
+// circular dependency with main.ts GameState definition.
+import {
+  setTransientExpression,
+  tickExpressionOverride,
+} from './game/expression';
+// B5 micro-slice 11.4 (#268): GameState interface + createGameState factory
+// extracted to ./game/game-state.ts. B5.38 (#268): state init+save-restore
+// extracted to ./game/state-init.ts. createInitialState() wraps the
+// factory + save overrides + chunk generation.
+import { type GameState } from './game/game-state';
+// B5 micro-slice 11.5 (#268): __gameDebug surface extracted to
+// ./game/debug-api.ts. (B5.43 — usage moved to ./game/startup-hud.ts.)
+// B5 micro-slice 11.6 (#268): HUD DOM event wiring extracted to
+// ./game/dom-wiring.ts. (B5.43 — usage moved to ./game/startup-hud.ts.)
 
 // ─── Game State ──────────────────────────────────────────────
+// GameState interface and createGameState factory are in ./game/game-state.ts
+// (B5 micro-slice 11.4 / #268). The interface was previously inline here;
+// main.ts now imports the type and calls the factory.
 
-interface GameState {
-  player: {
-    x: number;
-    y: number;
-    direction: number;    // 1 = right, -1 = left (sprite flip)
-    facingDx: number;     // Last movement dx (-1/0/1)
-    facingDy: number;     // Last movement dy (-1/0/1)
-    facingPose: FacingPose; // 'front' or 'back' for sprite selection
-    speed: number;
-    isMoving: boolean;
-    animFrame: number;
-  };
-  playerVariation: CharacterVariation;
-  camera: Camera;
-  chunks: Map<string, ChunkData>;
-  inventory: Inventory;
-  quiz: QuizState;
-  ui: UIState;
-  knowledge: KnowledgeState;
-  quizStats: { answered: number; correct: number };
-  egoImg: HTMLImageElement | null;
-  frameCount: number;
-  fps: number;
-  lastFpsTime: number;
-  fpsCounter: number;
-  paused: boolean;          // True when dialog/quiz active
-  initialized: boolean;
-  // Perf tracking: avoid redundant work
-  lastAnimFrame: number;
-  lastFacingPose: FacingPose;
-  lastChunkX: number;
-  lastChunkY: number;
-  // Pending quiz triggered by NPC — starts when dialog closes
-  pendingQuiz: { difficulty: QuizDifficulty; npcId: string; bias?: Record<string, number> } | null;
-  // Pending quiz triggered by quiz gate — resolves gate cell on correct answer
-  pendingGateQuiz: { chunkKey: string; lx: number; ly: number } | null;
-  // NPC trading state
-  trade: TradeState;
-  // Pending trade to open after dialog closes (NPC persona id)
-  pendingTrade: string | null;
-  // Player survival status (#70)
-  status: PlayerStatus;
-  // Injury state (#109)
-  injury: InjuryState;
-  // Unlocked cosmetic IDs (#66)
-  unlockedCosmetics: string[];
-  // Music state (#74)
-  music: MusicState;
-  // SFX & ambience state (#75)
-  sfx: SfxState;
-  // NPC voice state (#76)
-  voice: VoiceState;
-  // Quiz streak state (#103)
-  streak: StreakState;
-  // Age band profile (#92)
-  ageProfile: AgeProfile;
-  // Transient expression override (#102) — reverts after timer expires
-  expressionOverride: { expr: import('./sprites').Expression; until: number } | null;
-  // Base default expression to revert to after transient override (#102)
-  _baseExpression: import('./sprites').Expression;
-  // Diarrhea illness chain (#133)
-  streamDrinkCount: number;
-  diarrheaUntil: number;       // frameCount when speed-debuff ends (0 = inactive)
-  diarrheaLocked: boolean;     // true = control locked during acute event
-  diarrheaLockUntil: number;   // frameCount when lock ends
-  diarrheaLastTrigger: number; // frameCount of last trigger (cooldown)
-  poopMarkers: { x: number; y: number; placedAt: number }[];
-  // Quiz type flags — tracks which special quiz is active (#109, #110)
-  _woundCareQuiz: boolean;
-  _hygieneQuiz: boolean;
-  _insectQuiz: boolean;
-  _pendingInsectQuiz: boolean;
-  // Last time-of-day slot for dawn rooster detection (#108)
-  _lastTimeSlot: 'day' | 'dusk' | 'night';
-}
-
-// Track NPC id for voice lines during dialog (#76)
-let _lastDialogNpcId: string | null = null;
+// Track NPC id for voice lines during dialog (#76) — B5.19: moved to
+// ./game/interaction-handler.ts with getLastDialogNpcId/setLastDialogNpcId
+// accessors
 
 // ─── Diarrhea Illness Config (#133) ─────────────────────────
-
-const DIARRHEA_CONFIG = {
-  DRINK_THRESHOLD: 3,         // Min drinks before risk starts
-  BASE_CHANCE: 0.20,          // 20% per drink after threshold
-  GUARANTEED_AT: 6,           // 100% chance at this many drinks
-  LOCK_DURATION_FRAMES: 1500, // ~25s at 60fps: player can't move
-  DEBUFF_DURATION_FRAMES: 1800, // ~30s speed debuff after lock ends
-  SPEED_DEBUFF: 0.7,          // Speed multiplier during non-locked diarrhea
-  COOLDOWN_FRAMES: 3600,      // 60s cooldown between events
-  MARKER_DURATION_FRAMES: 3600, // 60s poop marker persistence
-  PARTICLE_COUNT: 18,         // Poop VFX particle count
-} as const;
+// B5 micro-slice 11.2 (#268): DIARRHEA_CONFIG moved to ./game/illness.ts.
+// Imported above. State is accessed via state.diarrhea.*
 
 // ─── Transient Expression System (#102) ─────────────────────
+// B5 micro-slice 11.3 (#268): setTransientExpression + tickExpressionOverride
+// moved to ./game/expression.ts. Imported above.
 
-import type { Expression as SpriteExpression } from './sprites';
+// ─── Wound-Care / Hygiene / Insect Quizzes (#109, #110) ──────
+// B5 micro-slice 11.8 (#268): inline data + start functions extracted
+// to ./game/quiz-specials.ts (hygiene + insect) and ./game/injury.ts
+// (wound care). Imported at the top of this file. Each module co-locates
+// its question pool, Fisher-Yates shuffler, and startQuiz(state) helper.
 
-/** Temporarily override player expression — reverts automatically */
-function setTransientExpression(state: GameState, expr: SpriteExpression, durationMs: number): void {
-  state.expressionOverride = { expr, until: performance.now() + durationMs };
-  // Apply immediately to playerVariation so next sprite load uses it
-  state.playerVariation.expression = expr;
-  state.lastAnimFrame = -1; // force sprite reload
-}
-
-/** Tick the expression override timer; revert when expired */
-function tickExpressionOverride(state: GameState): void {
-  if (!state.expressionOverride) return;
-  if (performance.now() >= state.expressionOverride.until) {
-    // Revert to base expression (from save / customizer default)
-    state.playerVariation.expression = state._baseExpression ?? 'happy';
-    state.expressionOverride = null;
-    state.lastAnimFrame = -1; // force sprite reload
-  }
-}
-
-// ─── Wound-Care Quiz (#109) ─────────────────────────────────
-
-import type { WoundCareQuestion } from './injury';
-
-/**
- * Start a wound-care mini-quiz after bandaid use.
- * Uses the regular quiz UI but with a custom wound-care question.
- */
-function _startWoundCareQuiz(state: GameState, wq: WoundCareQuestion): void {
-  // Populate quiz state directly (bypass normal startQuiz which loads from content packs)
-  state.quiz.active = true;
-  state.quiz.displayText = `🩹 Wound Care: ${wq.question}`;
-  state.quiz.choices = [...wq.answers, "I don't know 📖"];
-  state.quiz.correctIndex = wq.correctIndex;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `wound_care_${Date.now()}`,
-    question: wq.question,
-    answers: wq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about first aid!',
-  };
-  state.paused = true;
-  // Mark this as a wound-care quiz for bonus logic
-  state._woundCareQuiz = true;
-}
-
-// ─── Hygiene Quiz (#110 Phase 2) ─────────────────────────────
-
-/** Hygiene quiz questions for outhouse interaction */
-const HYGIENE_QUESTIONS = [
-  {
-    question: 'When should you wash your hands?',
-    answers: ['Before eating and after using the bathroom', 'Only when they look dirty', 'Once a week', 'Never'],
-  },
-  {
-    question: 'How long should you wash your hands with soap?',
-    answers: ['At least 20 seconds', '2 seconds', '1 minute', 'Just rinse with water'],
-  },
-  {
-    question: 'What kills germs on your hands?',
-    answers: ['Soap and water', 'Just water', 'Blowing on them', 'Wiping on your shirt'],
-  },
-  {
-    question: 'Why do we brush our teeth?',
-    answers: ['To remove bacteria and prevent cavities', 'To make them shiny', 'Because adults say so', 'To wake up faster'],
-  },
-  {
-    question: 'What should you do after sneezing?',
-    answers: ['Wash your hands or use sanitizer', 'Wipe on your sleeve and forget about it', 'Nothing', 'Sneeze again to clear it'],
-  },
-  {
-    question: 'How often should you take a bath or shower?',
-    answers: ['Every day or every other day', 'Once a month', 'Only in summer', 'When someone tells you'],
-  },
-];
-
-/**
- * Start a hygiene mini-quiz after outhouse interaction.
- * Correct → full cleanliness restore; Wrong → keep partial restore only.
- */
-function _startHygieneQuiz(state: GameState): void {
-  const hq = HYGIENE_QUESTIONS[Math.floor(Math.random() * HYGIENE_QUESTIONS.length)];
-  // Shuffle answers (correct is always index 0 in source)
-  const shuffled = [...hq.answers];
-  const correctAnswer = shuffled[0];
-  // Fisher-Yates shuffle
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const correctIdx = shuffled.indexOf(correctAnswer);
-
-  state.quiz.active = true;
-  state.quiz.displayText = `🚽 Hygiene Quiz: ${hq.question}`;
-  state.quiz.choices = [...shuffled, "I don't know 📖"];
-  state.quiz.correctIndex = correctIdx;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `hygiene_${Date.now()}`,
-    question: hq.question,
-    answers: hq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about hygiene and health!',
-  };
-  state.paused = true;
-  state._hygieneQuiz = true;
-}
-
-// ─── Insect Safety Quiz (#110 Phase 3) ───────────────────────
-
-/** Insect safety quiz questions for eat worms interaction */
-const INSECT_QUESTIONS = [
-  {
-    question: 'Is it safe to eat insects?',
-    answers: ['Some insects are safe if cooked, but many are not', 'All insects are safe to eat', 'No insects are ever safe', 'Only butterflies are safe'],
-  },
-  {
-    question: 'Why do some people eat insects?',
-    answers: ['They are high in protein and sustainable', 'They taste like candy', 'There is no reason', 'Insects have magic powers'],
-  },
-  {
-    question: 'What should you NEVER eat from the ground?',
-    answers: ['Unknown berries, mushrooms, or bugs', 'Grass', 'Dirt', 'Leaves'],
-  },
-  {
-    question: 'What is the safest way to prepare insects for eating?',
-    answers: ['Cook them thoroughly first', 'Eat them raw and alive', 'Wash them with soap', 'Freeze them for a minute'],
-  },
-];
-
-/**
- * Start an insect safety quiz after eating worms.
- * Correct → bonus energy; Wrong → just the tiny +5
- */
-function _startInsectQuiz(state: GameState): void {
-  const iq = INSECT_QUESTIONS[Math.floor(Math.random() * INSECT_QUESTIONS.length)];
-  const shuffled = [...iq.answers];
-  const correctAnswer = shuffled[0];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  const correctIdx = shuffled.indexOf(correctAnswer);
-
-  state.quiz.active = true;
-  state.quiz.displayText = `🐛 Insect Safety: ${iq.question}`;
-  state.quiz.choices = [...shuffled, "I don't know 📖"];
-  state.quiz.correctIndex = correctIdx;
-  state.quiz.selectedIndex = 0;
-  state.quiz.result = 'pending';
-  state.quiz.npcId = null;
-  state.quiz.difficulty = 'easy';
-  state.quiz.question = {
-    id: `insect_${Date.now()}`,
-    question: iq.question,
-    answers: iq.answers,
-    category: 'science',
-    difficulty: 'easy',
-    correctIndex: 0 as const,
-    hint: 'Think about food safety!',
-  };
-  state.paused = true;
-  state._insectQuiz = true;
-}
-
-// ─── Chunk Management ────────────────────────────────────────
-
-function chunkKey(cx: number, cy: number): string {
-  return `${cx},${cy}`;
-}
-
-function ensureChunksAround(state: GameState): void {
-  const size = WORLD_CONFIG.chunkSize;
-  const pcx = Math.floor(state.player.x / size);
-  const pcy = Math.floor(state.player.y / size);
-  const buf = WORLD_CONFIG.viewportBuffer;
-
-  for (let dy = -buf; dy <= buf; dy++) {
-    for (let dx = -buf; dx <= buf; dx++) {
-      const cx = pcx + dx;
-      const cy = pcy + dy;
-      const key = chunkKey(cx, cy);
-      if (!state.chunks.has(key)) {
-        // Collect border constraints from already-generated neighbors (#17)
-        const bc = collectBorderConstraints(state.chunks, cx, cy);
-        const chunk = generateChunkSync(cx, cy, bc);
-        state.chunks.set(key, chunk);
-        // Re-apply any resolved cells from save data
-        applyResolvedToChunk(key, chunk);
-        // Invalidate adjacent chunk terrain caches for cross-chunk auto-tile transitions (#6)
-        invalidateChunkTerrain(chunkKey(cx - 1, cy));
-        invalidateChunkTerrain(chunkKey(cx + 1, cy));
-        invalidateChunkTerrain(chunkKey(cx, cy - 1));
-        invalidateChunkTerrain(chunkKey(cx, cy + 1));
-      }
-    }
-  }
-}
-
-/** Read edge tags from adjacent chunks' borderEdges for inter-chunk stitching. */
-function collectBorderConstraints(
-  chunks: Map<string, ChunkData>,
-  cx: number,
-  cy: number,
-): BorderConstraints | undefined {
-  const northChunk = chunks.get(chunkKey(cx, cy - 1));
-  const southChunk = chunks.get(chunkKey(cx, cy + 1));
-  const eastChunk = chunks.get(chunkKey(cx + 1, cy));
-  const westChunk = chunks.get(chunkKey(cx - 1, cy));
-
-  const hasAny = northChunk?.borderEdges || southChunk?.borderEdges ||
-                 eastChunk?.borderEdges || westChunk?.borderEdges;
-  if (!hasAny) return undefined;
-
-  return {
-    n: northChunk?.borderEdges?.s,  // south border of chunk above
-    s: southChunk?.borderEdges?.n,  // north border of chunk below
-    e: eastChunk?.borderEdges?.w,   // west border of chunk to the east
-    w: westChunk?.borderEdges?.e,   // east border of chunk to the west
-    // Traversal continuity from neighbors (#46)
-    nTraversal: northChunk?.borderEdges?.sTraversal,
-    sTraversal: southChunk?.borderEdges?.nTraversal,
-    eTraversal: eastChunk?.borderEdges?.wTraversal,
-    wTraversal: westChunk?.borderEdges?.eTraversal,
-  };
-}
-
-// ─── Resolved Cells Persistence ──────────────────────────────
-// Tracks cells mutated during gameplay (chests opened, doors unlocked, quiz gates passed)
-// so they survive save/load across chunk regeneration.
-
-/** Pending resolved cells keyed by chunkKey, applied after chunk generation */
-const _pendingResolved = new Map<string, ResolvedCell[]>();
-
-/** Store resolved cells from save data for deferred application after chunk gen */
-function setPendingResolvedCells(cells: ResolvedCell[]): void {
-  _pendingResolved.clear();
-  for (const rc of cells) {
-    let arr = _pendingResolved.get(rc.chunkKey);
-    if (!arr) {
-      arr = [];
-      _pendingResolved.set(rc.chunkKey, arr);
-    }
-    arr.push(rc);
-  }
-}
-
-/** Apply any pending resolved cells to a freshly generated chunk */
-function applyResolvedToChunk(key: string, chunk: ChunkData): void {
-  const cells = _pendingResolved.get(key);
-  if (!cells) return;
-  for (const rc of cells) {
-    if (rc.ly >= 0 && rc.ly < chunk.cells.length &&
-        rc.lx >= 0 && rc.lx < chunk.cells[0].length) {
-      const def = ASSET_DEFS[rc.newAssetKey];
-      chunk.cells[rc.ly][rc.lx] = {
-        assetKey: rc.newAssetKey,
-        walkable: def?.walkable ?? true,
-        interactable: false,
-        resolved: true,
-      };
-    }
-  }
-  invalidateObjectCache(key);
-}
-
-/** Scan all loaded chunks and collect cells with resolved=true */
-function collectResolvedCells(chunks: Map<string, ChunkData>): ResolvedCell[] {
-  const result: ResolvedCell[] = [];
-  for (const [key, chunk] of chunks) {
-    for (let ly = 0; ly < chunk.cells.length; ly++) {
-      for (let lx = 0; lx < chunk.cells[ly].length; lx++) {
-        const cell = chunk.cells[ly][lx];
-        if (cell.resolved) {
-          result.push({ chunkKey: key, lx, ly, newAssetKey: cell.assetKey });
-        }
-      }
-    }
-  }
-  return result;
-}
+// ─── Chunk Lifecycle ──────────────────────────────────────────
+// B5 micro-slice 11.14 (#268): 6 chunk-lifecycle functions + the
+// _pendingResolved module-level state extracted to
+// ./game/chunk-lifecycle.ts. Thin wrapper `maybeLoadChunks` stays here
+// because it also drives terrain eviction + auto-save (doSave lives in
+// this file), chained off the boundary-cross boolean returned by
+// `loadChunksOnBoundaryCross`.
 
 // ─── Positional Audio Source Scanner (#108) ─────────────────
-// Scans nearby chunks for campfire & water tiles; starts positional loops.
-// Assets that emit positional audio:
-const POSITIONAL_AUDIO_ASSETS: Record<string, { sampleId: string; maxDist: number; volume: number }> = {
-  campfire:    { sampleId: 'campfire_loop', maxDist: 8,  volume: 0.5 },
-  water:       { sampleId: 'waterfall_loop', maxDist: 12, volume: 0.3 },
-};
+// B5 micro-slice 11.9 (#268): scanPositionalAudioSources + the
+// POSITIONAL_AUDIO_ASSETS registry moved to ./game/audio/positional-sources.ts.
+// Imported above. Call once per frame from update().
 
-/** Track which positional IDs we've attempted so we don't spam attempts */
-const _positionalScanned = new Set<string>();
+/** Last difficulty tier we announced (playability feedback on exploration). */
+let _lastAnnouncedDiffTier = -1;
+/** Once: player left the origin chunk for the first time. */
+let _leftHomeAnnounced = false;
 
-function _scanPositionalAudioSources(state: GameState): void {
-  const size = WORLD_CONFIG.chunkSize;
-  const pcx = Math.floor(state.player.x / size);
-  const pcy = Math.floor(state.player.y / size);
-
-  // Scan player's chunk and immediate neighbors (3x3 grid)
-  for (let dx = -1; dx <= 1; dx++) {
-    for (let dy = -1; dy <= 1; dy++) {
-      const key = `${pcx + dx},${pcy + dy}`;
-      const chunk = state.chunks.get(key);
-      if (!chunk) continue;
-
-      const baseX = (pcx + dx) * size;
-      const baseY = (pcy + dy) * size;
-
-      for (let ly = 0; ly < size; ly++) {
-        for (let lx = 0; lx < size; lx++) {
-          const cell = chunk.cells[ly][lx];
-          const audioDef = POSITIONAL_AUDIO_ASSETS[cell.assetKey];
-          if (!audioDef) continue;
-
-          const wx = baseX + lx;
-          const wy = baseY + ly;
-          const id = `pos_${audioDef.sampleId}_${wx}_${wy}`;
-
-          // Skip if already started or attempted
-          if (_positionalScanned.has(id)) continue;
-          _positionalScanned.add(id);
-
-          playPositionalSfx(state.sfx, audioDef.sampleId, wx, wy, audioDef.maxDist, audioDef.volume);
-        }
-      }
-    }
-  }
-
-  // Clean up scanned set for distant chunks (avoid unbounded growth)
-  if (_positionalScanned.size > 500) {
-    _positionalScanned.clear();
-  }
-}
-
-/** Only call ensureChunksAround when player crosses a chunk boundary */
+/**
+ * Thin wrapper: boundary enqueue + every-frame budgeted drain + eviction.
+ * Critical-path PR3: drain runs even when the player did not cross a
+ * chunk boundary so the deferred queue amortizes across frames.
+ */
 function maybeLoadChunks(state: GameState): void {
+  const crossed = loadChunksOnBoundaryCross(state);
+  // Drain every frame while queue non-empty (player hard force + maxPerTick=1).
+  ensureChunksAroundBudgeted(state);
+  if (!crossed) return;
   const size = WORLD_CONFIG.chunkSize;
   const pcx = Math.floor(state.player.x / size);
   const pcy = Math.floor(state.player.y / size);
-  if (pcx !== state.lastChunkX || pcy !== state.lastChunkY) {
-    // Determine crossing direction and feed entropy (#4)
-    const dx = pcx - state.lastChunkX;
-    const dy = pcy - state.lastChunkY;
-    const dir = Math.abs(dx) >= Math.abs(dy)
-      ? (dx > 0 ? 'right' : 'left')
-      : (dy > 0 ? 'down' : 'up');
-    const table = DIRECTION_WORDS[dir];
-    if (table) {
-      const verb = table.verbs[Math.floor(Math.random() * table.verbs.length)];
-      const noun = table.nouns[Math.floor(Math.random() * table.nouns.length)];
-      feedEntropy(`move:${verb} ${noun}`);
-    }
+  // Evict distant terrain caches to stay under memory budget (#47)
+  evictDistantChunks(pcx, pcy, 3);
 
-    state.lastChunkX = pcx;
-    state.lastChunkY = pcy;
-    ensureChunksAround(state);
-    // Evict distant terrain caches to stay under memory budget (#47)
-    evictDistantChunks(pcx, pcy, 3);
-    // Auto-save on chunk exit
-    doSave(state);
+  // First step beyond the homestead chunk — teach that the world continues
+  if (!_leftHomeAnnounced && (pcx !== 0 || pcy !== 0)) {
+    _leftHomeAnnounced = true;
+    addToast(state.ui, '🧭 Beyond the yard! Keep exploring — more gates await.', '#81c784', 3500);
+    playSfx(state.sfx, 'pickup_item');
   }
+
+  // Announce difficulty tier changes so exploration progress is legible
+  const dist = Math.abs(pcx) + Math.abs(pcy);
+  const diff = getDifficulty(dist);
+  if (diff.tier !== _lastAnnouncedDiffTier) {
+    const prev = _lastAnnouncedDiffTier;
+    _lastAnnouncedDiffTier = diff.tier;
+    if (prev >= 0) {
+      const tierLines: Record<number, string> = {
+        0: '🟢 Back to Safe Zone — soft grass and soft quizzes.',
+        1: '🟡 Easy wilds — stretch your legs (and brain).',
+        2: '🟠 Medium country — the gates mean business.',
+        3: '🔴 Hard lands — pack keys, coins, and courage.',
+        4: '💀 Extreme! Even the mushrooms look judgmental.',
+      };
+      addToast(state.ui, tierLines[diff.tier] ?? `🗺️ Now entering: ${diff.tierName}`, '#ffd54f', 3200);
+      playSfx(state.sfx, 'pickup_item');
+    }
+  }
+  // Auto-save on chunk exit
+  doSave(state);
 }
 
 // ─── LLM Connection Gate ─────────────────────────────────────
-
-/** Show splash and poll LLM until connected. Skips in test mode. Returns only when healthy or skipped. */
-async function waitForLlm(): Promise<void> {
-  const splash = document.getElementById('llmSplash');
-
-  // In test mode, skip LLM gate entirely (#26)
-  if (isTestMode()) {
-    console.log('[LLM] Test mode: skipping LLM health gate');
-    if (splash) splash.style.display = 'none';
-    return;
-  }
-
-  const statusEl = document.getElementById('llmStatus');
-  const skipBtn = document.getElementById('btnSkipLlm');
-  if (!splash || !statusEl) return; // Fallback: skip if no splash DOM
-
-  splash.style.display = 'flex';
-
-  // Allow dev skip
-  let skipped = false;
-  if (skipBtn) {
-    skipBtn.onclick = () => { skipped = true; };
-  }
-
-  let attempt = 0;
-  while (true) {
-    attempt++;
-    statusEl.textContent = `Connecting to LLM... (attempt ${attempt})`;
-    const ok = await checkLlmHealth();
-    if (ok || skipped) {
-      statusEl.textContent = ok ? 'LLM connected! Starting game...' : 'Skipping LLM (dev mode)...';
-      await new Promise((r) => setTimeout(r, 400));
-      splash.style.display = 'none';
-      return;
-    }
-    // Wait 2s before retry
-    await new Promise((r) => setTimeout(r, 2000));
-  }
-}
+// B5 micro-slice 11.26 (#268): waitForLlm extracted to ./game/llm-gate.ts.
+// Shows LLM splash, polls health, supports dev skip button + test mode.
+// B5 micro-slice 11.35 (#268): canvas setup + responsive resize extracted
+// to ./game/canvas-bootstrap.ts. setupCanvasAndRenderer() owns the canvas
+// element, the IsometricRenderer construction, and the resize listeners.
+// B5 micro-slice 11.36 (#268): wordlist + biome seed init extracted to
+// ./game/wordlist-bootstrap.ts. bootstrapWordlist() handles the test-mode
+// vs production branch (no LLM in tests; non-blocking scrambled fallback
+// + LLM swap in production, #26).
+// B5 micro-slice 11.37 (#268): asset + content + WASM pre-roll extracted
+// to ./game/asset-bootstrap.ts. bootstrapAssets() awaits SVG tile preload,
+// runs sync pre-renders, then awaits book content + WASM (with fallback).
+// B5 micro-slice 11.38 (#268): state init + save restore extracted to
+// ./game/state-init.ts. createInitialState() loads save, builds state via
+// factory, layers save overrides, applies starter items for new games,
+// and generates initial chunks.
+// B5 micro-slice 11.39 (#268): window.__game* debug exposures extracted
+// to ./game/debug-expose.ts. exposeDebugGlobals(state) sets __gameState,
+// __wildlife, __lighting, __bubbles, __trade (read by E2E tests #68/71/72/111/112).
+import { setupCanvasAndRenderer } from './game/canvas-bootstrap';
+import { bootstrapWordlist } from './game/wordlist-bootstrap';
+import { bootstrapAssets } from './game/asset-bootstrap';
+import { createInitialState } from './game/state-init';
+import { exposeDebugGlobals } from './game/debug-expose';
+import { withWorldLoading } from './game/boot-loading';
+import { markFirstFrameIfNeeded, markFirstMovableIfNeeded } from './game/boot-marks';
 
 // ─── Initialization ──────────────────────────────────────────
 
@@ -666,795 +341,420 @@ async function init(): Promise<{ state: GameState; renderer: IsometricRenderer; 
   // --- LLM gate: must be connected before proceeding ---
   await waitForLlm();
 
-  // Canvas setup
-  const container = document.getElementById('gameContainer');
-  if (!container) throw new Error('Game container not found');
-
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-
-  const renderer = new IsometricRenderer(canvas);
-
-  // Responsive canvas: fill viewport, render at scaled resolution
-  const resizeCanvas = () => {
-    const container = document.getElementById('gameContainer');
-    if (!container) return;
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    const scale = RENDER_CONFIG.renderScale;
-    const rw = Math.round(w * scale);
-    const rh = Math.round(h * scale);
-    if (rw > 0 && rh > 0 && (rw !== canvas.width || rh !== canvas.height)) {
-      canvas.style.width = `${w}px`;
-      canvas.style.height = `${h}px`;
-      canvas.style.imageRendering = 'pixelated';
-      canvas.width = rw;
-      canvas.height = rh;
-      RENDER_CONFIG.canvasWidth = rw;
-      RENDER_CONFIG.canvasHeight = rh;
-      updateWasmConfig(rw, rh);
-      clearTerrainCache(); // terrain cache depends on viewport
-      clearObjectCache(); // object cell cache depends on chunk rendering
-    }
-  };
-  window.addEventListener('resize', resizeCanvas);
-  // Also resize when sidebar toggles
-  const sidebarToggle = document.getElementById('sidebarToggle');
-  sidebarToggle?.addEventListener('click', () => {
-    setTimeout(resizeCanvas, 300); // after CSS transition
-  });
-  resizeCanvas();
+  // Canvas + renderer (responsive resize wired internally)
+  const renderer = setupCanvasAndRenderer();
 
   const input = new InputManager();
 
-  // Start with scrambled bundled wordlist immediately, swap in LLM wordlist when ready.
-  // In test mode: never call LLM; use scrambled bundled list for deterministic variance.
-  // In normal mode: generateWordlist() checks sessionStorage cache first, only calls
-  // LLM if no cache exists. Result is cached for future startups. (#26)
-  if (isTestMode()) {
-    setWordlist(getScrambledWordlist());
-    setBiomeNoiseSeed(12345); // Deterministic biome map for tests
-    console.log('[INIT] Test mode: using scrambled bundled wordlist (no LLM)');
-  } else {
-    setWordlist(getScrambledWordlist()); // Immediate non-blocking fallback
-    setBiomeNoiseSeed(Date.now()); // Session-unique biome regions
-    generateWordlist().then((wl) => {
-      setWordlist(wl);
-      console.log('[INIT] LLM wordlist ready');
-    });
-  }
+  // Wordlist + biome seed bootstrap (non-blocking — LLM wordlist swaps in async)
+  bootstrapWordlist();
 
   // NOTE: cleanupLlmSessions() available but not auto-called —
   // BitNet server lacks /v1/sessions endpoint. Call manually if needed.
 
-  // Preload SVG tile sprites (async, must complete before rendering)
-  await preloadTiles();
+  // Asset + content + WASM pre-roll (tile preload blocks render, #82)
+  await bootstrapAssets();
 
-  // Pre-render emoji sprites → eliminates per-frame ctx.filter + fillText
-  preloadEmojiSprites();
+  // State init + save restore under spinner (bulk yielding chunk gen)
+  const { state, hasSaveData } = await withWorldLoading(
+    () => createInitialState(),
+    'Loading world…',
+  );
 
-  // Pre-render SVG asset sprites for trees, rocks, fire (#115)
-  await preloadAssetSprites();
+  // Expose debug globals for E2E tests + browser DevTools
+  exposeDebugGlobals(state);
 
-  // Preload NPC paper-cut sprites (#85)
-  preloadNpcSprites();
-
-  // Initialize minimap canvas
-  initMinimap();
-
-  // Initialize debuff visual effects (#110)
-  initDebuffVisuals();
-
-  // Load content packs for Book of Knowledge (#120)
-  await initBookContent();
-  const contentStats = getBookContentStats();
-  console.log(`[INIT] Book content: ${contentStats.totalArticles} articles (${contentStats.packArticles} from pack, ${contentStats.staticArticles} static)`);
-
-  // Load WASM rendering core (non-blocking; falls back to JS if unavailable)
-  const wasmOk = await initWasmRenderer();
-  if (wasmOk) {
-    console.log('[INIT] WASM rendering core loaded');
-    // Run benchmark on first load
-    wasmBenchmark();
-  } else {
-    console.log('[INIT] WASM unavailable, using JS renderer');
-  }
-
-  // Load char sprite (initial idle)
-  // Try loading saved game first to get player variation
-  const save = loadGame();
-  const playerVariation = save?.playerVariation 
-    ? deserializeVariation(save.playerVariation) 
-    : (characterVariations[PLAYER_CONFIG.defaultVariation] ?? createDefaultVariation());
-  const egoImg = loadCharacterSprite(playerVariation, 0, false);
-
-  const startX = save?.player.x ?? PLAYER_CONFIG.startPosition.x;
-  const startY = save?.player.y ?? PLAYER_CONFIG.startPosition.y;
-  const size = WORLD_CONFIG.chunkSize;
-
-  const state: GameState = {
-    player: {
-      x: startX,
-      y: startY,
-      direction: save?.player.direction ?? 1,
-      facingDx: 1,
-      facingDy: 0,
-      facingPose: 'front' as FacingPose,
-      speed: PLAYER_CONFIG.speed,
-      isMoving: false,
-      animFrame: 0,
-    },
-    playerVariation,
-    camera: {
-      x: startX,
-      y: startY,
-    },
-    chunks: new Map(),
-    inventory: createInventory(),
-    quiz: createQuizState(),
-    ui: createUIState(),
-    knowledge: createKnowledgeState(),
-    quizStats: save?.quizStats ?? { answered: 0, correct: 0 },
-    egoImg,
-    frameCount: 0,
-    fps: 0,
-    lastFpsTime: performance.now(),
-    fpsCounter: 0,
-    paused: false,
-    initialized: true,
-    lastAnimFrame: -1,
-    lastFacingPose: 'front' as FacingPose,
-    lastChunkX: Math.floor(startX / size),
-    lastChunkY: Math.floor(startY / size),
-    pendingQuiz: null,
-    pendingGateQuiz: null,
-    trade: createTradeState(),
-    pendingTrade: null,
-    status: createPlayerStatus(),
-    injury: createInjuryState(),
-    unlockedCosmetics: save?.unlockedCosmetics ?? [],
-    music: createMusicState(),
-    sfx: createSfxState(),
-    voice: createVoiceState(),
-    streak: createStreakState(),
-    ageProfile: createAgeProfile(),
-    expressionOverride: null,
-    _baseExpression: playerVariation.expression ?? 'happy',
-    // Diarrhea illness chain (#133)
-    streamDrinkCount: 0,
-    diarrheaUntil: 0,
-    diarrheaLocked: false,
-    diarrheaLockUntil: 0,
-    diarrheaLastTrigger: 0,
-    poopMarkers: [],
-    // Quiz type flags (#109, #110)
-    _woundCareQuiz: false,
-    _hygieneQuiz: false,
-    _insectQuiz: false,
-    _pendingInsectQuiz: false,
-    _lastTimeSlot: 'day',
-  };
-
-  // Sync unlocked cosmetics to customizer
-  setUnlockedCosmetics(state.unlockedCosmetics);
-
-  // Restore inventory from save
-  if (save?.inventory) {
-    for (const slot of save.inventory) {
-      state.inventory.addItem(slot.itemId, slot.quantity);
-    }
-  }
-
-  // Restore knowledge state from save
-  if (save) {
-    if (save.selectedSubjects) state.knowledge.selectedSubjects = save.selectedSubjects as any;
-    if (save.wordBag) state.knowledge.wordBag = save.wordBag;
-    if (save.readArticles) state.knowledge.readArticles = new Set(save.readArticles);
-    if (save.discoveryPoints) state.knowledge.discoveryPoints = save.discoveryPoints;
-    state.knowledge.subjectsChosen = true;
-    // Restore entropy buffer from auto-save (#4)
-    if (save.entropyBuffer) {
-      restoreEntropyBuffer(save.entropyBuffer);
-    }
-    // Restore music settings (#74)
-    if (save.musicSettings) {
-      state.music.settings = deserializeMusicSettings(save.musicSettings);
-    }
-    // Restore SFX settings (#75)
-    if (save.sfxSettings) {
-      deserializeSfxSettings(state.sfx, save.sfxSettings);
-    }
-    // Restore voice settings (#76)
-    if (save.voiceSettings) {
-      deserializeVoiceSettings(state.voice, save.voiceSettings);
-    }
-    // Restore fog-of-war visited cells (#114)
-    if (save.visitedFog) {
-      deserializeVisited(save.visitedFog);
-    }
-    // Restore age band profile (#92)
-    if (save.ageBand) {
-      setAgeBand(state.ageProfile, save.ageBand as AgeBand);
-    }
-  }
-
-  // Give starter items for new games (#109)
-  if (!save) {
-    state.inventory.addItem('bandage', 3);
-    state.inventory.addItem('snack', 2);
-    state.inventory.addItem('water_flask', 1);
-  }
-
-  // Prepare resolved cells from save for application during chunk generation
-  setPendingResolvedCells(save?.resolvedCells ?? []);
-
-  // Generate initial chunks
-  ensureChunksAround(state);
-
-  // Expose state for debugging / E2E tests
-  (window as any).__gameState = state;
-  // Expose wildlife + lighting module functions for E2E tests (#68)
-  (window as any).__wildlife = {
-    getVisibleWildlife,
-    interactWithWildlife,
-    clearWildlife,
-    getDiscoveredSpeciesArray,
-    restoreDiscoveredSpecies,
-    updateWildlife,
-    getWildlifeStats,
-  };
-  (window as any).__lighting = { setTimeOfDay, getCycleProgress, getTimeOfDay, getPlayedSeconds };
-  // Expose thought bubble functions for E2E tests (#71, #111)
-  (window as any).__bubbles = {
-    triggerHint, tickBubbles, dismissBubble, clearBubbles,
-    getBubbleState, resetCooldowns, updateBubblePosition,
-    getMessageHistory, toggleHistoryPanel,
-    HINTS,
-  };
-  // Expose trade functions for E2E tests (#72, #112)
-  (window as any).__trade = {
-    openTrade, closeTrade, tradeNavigate, executeTrade, syncTradeDOM,
-    createTradeState, toggleTradeMode, executeSell, getSellPrice, getSellableItems,
-    getShopPersona, // #112 themed shop persona lookup
-  };
-
-  return { state, renderer, input, hasSaveData: !!save };
+  return { state, renderer, input, hasSaveData };
 }
 
 // ─── Quiz Accessibility Helpers (#94) ────────────────────────
-
-/** Should auto-read be enabled based on player's age band? */
-function _shouldAutoRead(state: GameState): boolean {
-  const band = state.ageProfile.ageBand;
-  // Auto-read for young bands (5-7 always, 8-10 if voice enabled)
-  if (band === '5-7') return true;
-  if (band === '8-10' && state.voice.settings.enabled) return true;
-  return false;
-}
-
-/** Auto-read the current quiz question aloud via TTS (#94) */
-function _autoReadQuizQuestion(state: GameState): void {
-  if (!_shouldAutoRead(state)) return;
-  if (!state.quiz.active || !state.quiz.displayText) return;
-  // Small delay so quiz overlay renders first
-  setTimeout(() => {
-    if (state.quiz.active) {
-      speakLine(state.voice, state.quiz.displayText, null);
-    }
-  }, 300);
-}
+// B5 micro-slice 11.24 (#268): _shouldAutoRead + _autoReadQuizQuestion
+// extracted to ./game/auto-read.ts. Aliased imports retain call-site
+// stability (no rename of all 2 call sites).
 
 // ─── Update ──────────────────────────────────────────────────
 
-function update(state: GameState, input: InputManager): void {
-  // Poll gamepad state each frame (#124)
-  input.pollGamepad();
 
-  // FPS tracking
-  state.fpsCounter++;
-  const now = performance.now();
-  if (now - state.lastFpsTime >= 1000) {
-    state.fps = state.fpsCounter;
-    state.fpsCounter = 0;
-    state.lastFpsTime = now;
-  }
-
-  state.frameCount++;
-
-  // Edge-detected keys for single-fire actions
-  const justKeys = input.justPressed();
-
-  // --- Book of Knowledge open: absorb input, skip game logic ---
-  if (state.knowledge.bookOpen) {
-    input.endFrame();
-    return;
-  }
-
-  // --- Quiz Input (edge-detected) ---
+/**
+ * Handle input while a quiz is active.
+ * B5 micro-slice 11.28 (#268): extracted from update() in main.ts.
+ * Manages: numeric/R key shortcuts, quiz result branch (correct/wrong/idk),
+ * quiz reward application, post-quiz flow (trade or unpause).
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a quiz was active at entry (wasActive); return value is
+ * informational only after play-kernel PR1 (pipeline never aborts).
+ */
+function handleQuizInput(state: GameState, justKeys: any): boolean {
+  // #4 fix (Step 4 gameplay audit, 2026-07-10): capture BEFORE the body
+  // runs, since quizClose() below sets state.quiz.active = false as part
+  // of normal result processing -- we must still report "this frame was
+  // consumed by quiz handling" even though the flag flips mid-body.
+  // Without this, this function always fell through to `return false`
+  // (a hardcoded value outside the `if` block, ignoring what happened
+  // inside it), which contradicts this function's own JSDoc ("Returns
+  // true if a quiz is active and handled input") and, critically, let
+  // update()'s `if (handleQuizInput(...)) { endFrame(); return; }` NEVER
+  // short-circuit -- handleMovement + handleSpaceInteraction ran in the
+  // SAME frame using the SAME justKeys.interact=true, silently re-firing
+  // a brand-new interaction the instant a quiz was submitted/closed while
+  // the player was still facing the same interactable (gate, NPC, etc).
+  // See tests/gameplay/quiz-gate-retry-loop.spec.ts for the live-engine
+  // proof this was reachable (a quiz gate's dialog reopening endlessly on
+  // every space press) and handleTradeInput below for the ALREADY-correct
+  // sibling pattern this now matches.
+  const wasActive = state.quiz.active;
   if (state.quiz.active) {
-    if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
-    if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.up) { quizNavigate(state.quiz, -1); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.down) { quizNavigate(state.quiz, 1); playSfx(state.sfx, 'menu_navigate'); }
 
-    // ── Numeric keys 1-9 select quiz choice directly (#94) ──
-    for (let n = 1; n <= 9; n++) {
-      if (_consumeExtraKey(String(n))) {
-        if (state.quiz.result === 'pending') {
-          if (quizSelectIndex(state.quiz, n - 1)) {
-            playSfx(state.sfx, 'menu_navigate');
-          }
+  // ── Numeric keys 1-9 select quiz choice directly (#94) ──
+  for (let n = 1; n <= 9; n++) {
+    if (_consumeExtraKey(String(n))) {
+      if (state.quiz.result === 'pending') {
+        if (quizSelectIndex(state.quiz, n - 1)) {
+          playSfx(state.sfx, 'menu_navigate');
         }
       }
     }
+  }
 
-    // ── R key repeats question readout (#94) ──
-    if (_consumeExtraKey('r')) {
-      if (state.quiz.displayText && state.voice.settings.enabled) {
-        speakLine(state.voice, state.quiz.displayText, null);
-      }
+  // ── R key repeats question readout (#94) ──
+  if (_consumeExtraKey('r')) {
+    if (state.quiz.displayText && state.voice.settings.enabled) {
+      speakLine(state.voice, state.quiz.displayText, null);
     }
+  }
 
-    if (justKeys.interact) {
-      if (state.quiz.result !== 'pending') {
-        if (state.quiz.result === 'correct') {
-          const rewards = quizReward(state.quiz.difficulty);
-          for (const r of rewards) state.inventory.addItem(r.itemId, r.qty);
-          addToast(state.ui, `Quiz reward! +${rewards.map((r) => `${r.qty} ${r.itemId}`).join(', ')}`, '#4caf50');
-          state.quizStats.correct++;
-          playSfx(state.sfx, 'quiz_correct');
-          // Transient expression: happy for 2s (#102)
-          setTransientExpression(state, 'happy', 2000);
-          checkCosmeticUnlocks(state);
-
-          // Wound-care quiz bonus heal (#109)
-          if (state._woundCareQuiz) {
-            applyWoundQuizBonus(state.status);
-            addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
-            state._woundCareQuiz = false;
+  if (justKeys.interact) {
+    if (state.quiz.result !== 'pending') {
+      if (state.quiz.result === 'correct') {
+        const rewards = quizReward(state.quiz.difficulty);
+        const granted: string[] = [];
+        let anyDenied = false;
+        for (const r of rewards) {
+          if (state.inventory.addItem(r.itemId, r.qty)) {
+            granted.push(`${r.qty} ${r.itemId}`);
+          } else {
+            anyDenied = true;
           }
+        }
+        if (granted.length > 0) {
+          addToast(state.ui, `Quiz reward! +${granted.join(', ')}`, '#4caf50');
+        }
+        if (anyDenied) {
+          addToast(state.ui, '🎒 Inventory full — some rewards dropped!', '#ff9800', 2500);
+        }
+        state.quizStats.correct++;
+        playSfx(state.sfx, 'quiz_correct');
+        // Transient expression: happy for 2s (#102)
+        setTransientExpression(state, 'happy', 2000);
+        // Playability milestones — celebrate learning progress
+        if (state.quizStats.correct === 5) {
+          addToast(state.ui, '🏅 Five correct! Scholar of the meadow!', '#ffd54f', 3000);
+        } else if (state.quizStats.correct === 10) {
+          addToast(state.ui, '🏆 Ten correct! The Book is proud of you!', '#ffd54f', 3200);
+        } else if (state.quizStats.correct === 25) {
+          addToast(state.ui, '🧠 Twenty-five correct!! Walking encyclopedia!', '#e1bee7', 3500);
+        }
+        checkCosmeticUnlocks(state);
 
-          // Hygiene quiz bonus — full cleanliness restore (#110)
-          if (state._hygieneQuiz) {
-            state.status.cleanliness = 100;
-            addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
-            playSfx(state.sfx, 'outhouse_clean');
-            state._hygieneQuiz = false;
+        // Wound-care quiz bonus heal (#109)
+        if (state._woundCareQuiz) {
+          applyWoundQuizBonus(state.status);
+          addToast(state.ui, '🩹 Bonus heal! You know first aid!', '#88ccff', 2500);
+          state._woundCareQuiz = false;
+        }
+
+        // Hygiene quiz bonus — full cleanliness restore (#110)
+        if (state._hygieneQuiz) {
+          state.status.cleanliness = 100;
+          addToast(state.ui, '🚽 Sparkling clean! Full cleanliness restored!', '#4caf50', 2500);
+          playSfx(state.sfx, 'outhouse_clean');
+          state._hygieneQuiz = false;
+        }
+
+        // Insect safety quiz bonus — extra energy (#110 Phase 3)
+        if (state._insectQuiz) {
+          state.status.energy = Math.min(100, state.status.energy + 10);
+          addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
+          state._insectQuiz = false;
+        }
+
+        // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
+        if (state.pendingGateQuiz) {
+          const g = state.pendingGateQuiz;
+          // Cell rewrite to door_open is the real unlock. Do NOT set the
+          // global 'quiz-gate' condition to unlocked — that single id is
+          // shared by every quiz_gate; walkability is cell SSOT only (PR3).
+          resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
+          state.pendingGateQuiz = null;
+          // Keep gate-open toast ≥ celebration duration so a hitchy doSave
+          // cannot expire it before the player (or Playwright) sees it.
+          addToast(state.ui, '🚪 The gate opens!', '#64b5f6', 4000);
+          if (state.quizStats.correct === 1) {
+            addToast(state.ui, '🌟 First gate conquered! The world is a little bigger now.', '#ce93d8', 3500);
+          } else if (state.streak.consecutiveCorrect >= 3) {
+            addToast(state.ui, '🔥 Brain streak! The gate practically bowed.', '#ffab40', 2800);
           }
-
-          // Insect safety quiz bonus — extra energy (#110 Phase 3)
-          if (state._insectQuiz) {
-            state.status.energy = Math.min(100, state.status.energy + 10);
-            addToast(state.ui, '🐛 Bonus energy! You know about food safety! +10', '#8bc34a', 2500);
-            state._insectQuiz = false;
-          }
-
-          // Resolve quiz gate if this quiz was gate-triggered (Doc 05 §3.5)
-          if (state.pendingGateQuiz) {
-            const g = state.pendingGateQuiz;
-            resolveQuizGate(g.chunkKey, g.lx, g.ly, state.chunks);
+          playSfx(state.sfx, 'gate_open');
+          // Persist progress so a quit mid-chunk doesn't re-lock gates.
+          // Defer off the interact frame so toast DOM + setTimeouts aren't
+          // starved by a synchronous localStorage write hitch.
+          setTimeout(() => doSave(state), 0);
+        }
+      } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
+        // Wrong at a gate: keep the gate pending and deal another question
+        // immediately so kids don't have to walk away and re-press Space.
+        addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
+        playSfx(state.sfx, 'quiz_wrong');
+        setTransientExpression(state, 'surprised', 1500);
+        state.quizStats.answered++;
+        const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
+        const gateDiff = modulateDifficulty(baseGateDiff, state.streak);
+        const gateBias = getQuizBias(state.knowledge);
+        const nextQ = pickQuizQuestion(gateDiff, gateBias);
+        if (!nextQ) {
+          // No eligible questions — exit quiz so player is never soft-locked
+          addToast(state.ui, '📖 No more questions right now — try again later!', '#ff9800', 2500);
+          state.pendingGateQuiz = null;
+          quizClose(state.quiz);
+          exitModal(state, 'quiz');
+          return wasActive;
+        }
+        prefetchQuizRephrase(nextQ.question);
+        // Gate wrong re-deal: stay on quiz frame; sync activate again (S/handshake).
+        void startQuiz(state.quiz, gateDiff, 'quiz_gate', gateBias, nextQ).then((ok) => {
+          if (!ok) {
             state.pendingGateQuiz = null;
-            addToast(state.ui, '🚪 The gate opens!', '#64b5f6');
-            playSfx(state.sfx, 'gate_open');
+            exitModal(state, 'quiz');
           }
-        } else if (state.quiz.result === 'wrong' && state.pendingGateQuiz) {
-          // Wrong answer — gate stays closed
-          state.pendingGateQuiz = null;
-          addToast(state.ui, '🚫 The gate remains shut. Try again!', '#f44336');
-          playSfx(state.sfx, 'quiz_wrong');
-          setTransientExpression(state, 'surprised', 1500);
-        } else if (state.quiz.result === 'wrong') {
-          playSfx(state.sfx, 'quiz_wrong');
-          setTransientExpression(state, 'surprised', 1500);
-          state._woundCareQuiz = false; // Clear wound-care flag (#109)
-          state._hygieneQuiz = false; // Clear hygiene flag (#110)
-          state._insectQuiz = false; // Clear insect flag (#110 P3)
-        } else if (state.quiz.result === 'idk') {
-          state._woundCareQuiz = false; // Clear wound-care flag (#109)
-          state._hygieneQuiz = false; // Clear hygiene flag (#110)
-          state._insectQuiz = false; // Clear insect flag (#110 P3)
-          // "I don't know" → open Book to related article
-          const category = state.quiz.question?.category || '';
-          const questionText = state.quiz.question?.question || '';
-          // Search for articles related to the quiz category or question
-          const related = searchBookArticles(category) || searchBookArticles(questionText);
-          if (related.length > 0) {
-            openArticle(state.knowledge, related[0].id);
-            state.knowledge.bookOpen = true;
-            state.knowledge.activeTab = 'browse';
-            addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
-          } else {
-            state.knowledge.bookOpen = true;
-            state.knowledge.activeTab = 'browse';
-            addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
-          }
-          // Don't count "I don't know" as answered
-          // Clear pending gate quiz on "I don't know" too
-          state.pendingGateQuiz = null;
+        });
+        // Stay on quiz stack frame — do not pop/push
+        syncDerivedPaused(state);
+        return wasActive;
+      } else if (state.quiz.result === 'wrong') {
+        playSfx(state.sfx, 'quiz_wrong');
+        setTransientExpression(state, 'surprised', 1500);
+        state._woundCareQuiz = false; // Clear wound-care flag (#109)
+        state._hygieneQuiz = false; // Clear hygiene flag (#110)
+        state._insectQuiz = false; // Clear insect flag (#110 P3)
+      } else if (state.quiz.result === 'idk') {
+        state._woundCareQuiz = false; // Clear wound-care flag (#109)
+        state._hygieneQuiz = false; // Clear hygiene flag (#110)
+        state._insectQuiz = false; // Clear insect flag (#110 P3)
+        // Quiz-gate retry clarity (Step 4 audit, 2026-07-10): "I don't know"
+        // at a quiz gate previously cleared pendingGateQuiz silently -- the
+        // Book of Knowledge opening could read as a "reward" rather than
+        // "you're still blocked," unlike the 'wrong' branch above which has
+        // an explicit "gate remains shut" toast. The retry mechanism itself
+        // was already sound (the gate cell is never touched here, so the
+        // player can freely re-approach it), but the feedback was
+        // ambiguous. Mirror the 'wrong' branch's clarity for this case too.
+        if (state.pendingGateQuiz) {
+          addToast(state.ui, '🚪 The gate is still locked — read up, then try again!', '#f44336');
         }
-        if (state.quiz.result !== 'idk') {
-          state.quizStats.answered++;
-        }
-        quizClose(state.quiz);
-        // After quiz, open trade panel if NPC had trades, otherwise unpause
-        if (state.pendingTrade && !state.knowledge.bookOpen) {
-          const tradePersona = getNpcPersona(state.pendingTrade);
-          state.pendingTrade = null;
-          if (tradePersona && openTrade(state.trade, tradePersona)) {
-            state.paused = true;
-          } else {
-            state.paused = state.knowledge.bookOpen;
-          }
+        // "I don't know" → open Book to related article
+        const category = state.quiz.question?.category || '';
+        const questionText = state.quiz.question?.question || '';
+        // Prefer an exact subject match (category values overlap with
+        // SubjectId for math/science/history/language/technology/geography)
+        // since it's precise regardless of an article's specific wording --
+        // a plain text search for e.g. "technology" misses articles that
+        // are correctly tagged subject:'technology' but never use that
+        // literal word (see Docs/VisionAlignmentAudit.md quiz<->book gap).
+        // Categories with no Book subject counterpart (e.g. 'logic', which
+        // is intentionally book-less -- riddles are self-contained) fall
+        // through to the text search below.
+        // Intent only — do NOT write bookOpen here (PR4 handshake: setBookOpen
+        // / enterModal own the flag + stack together after quiz exits).
+        const bySubject = getBookArticlesBySubject([category as SubjectId]);
+        const related = bySubject.length > 0
+          ? bySubject
+          : (searchBookArticles(category) || searchBookArticles(questionText));
+        if (related.length > 0) {
+          openArticle(state.knowledge, related[0].id);
+          state.knowledge.activeTab = 'browse';
+          addToast(state.ui, '📖 Check the Book of Knowledge for help!', '#ce93d8', 3000);
         } else {
-          state.paused = state.knowledge.bookOpen;
+          state.knowledge.activeTab = 'browse';
+          addToast(state.ui, '📖 Browse articles for clues!', '#ce93d8', 3000);
         }
-      } else {
-        quizSubmit(state.quiz);
-        // Record outcome for streak tracking (#103)
-        recordQuizResult(state.streak, state.quiz.result as 'correct' | 'wrong' | 'idk');
-        // Feed quiz answer text into entropy pool (#4)
-        if (state.quiz.question && state.quiz.selectedIndex >= 0) {
-          const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
-          feedEntropy(`quiz:${state.quiz.question.question}:${answerText}`);
-        }
+        // Don't count "I don't know" as answered
+        // Clear pending gate quiz on "I don't know" too
+        state.pendingGateQuiz = null;
+      }
+      if (state.quiz.result !== 'idk') {
+        state.quizStats.answered++;
+      }
+      // idk always opens Book (checklist 8b) — local intent, not content flag
+      const openBookAfter = state.quiz.result === 'idk';
+      // Drop pending trade if opening book (product rule: idk → book, not trade)
+      if (openBookAfter) {
+        state.pendingTrade = null;
+        // Remove queued trade frames so drain won't open shop after book
+        state.playMode.pendingNext = state.playMode.pendingNext.filter((f) => f.kind !== 'trade');
+      }
+      quizClose(state.quiz);
+      exitModal(state, 'quiz'); // drain pendingNext (trade) if any
+      // Handshake: setBookOpen owns bookOpen + stack (never raw bookOpen=true)
+      if (openBookAfter && !state.playMode.stack.some((f) => f.kind === 'book')) {
+        setBookOpen(state, true);
+      } else if (!openBookAfter && state.pendingTrade) {
+        // Legacy carrier: trade not pre-queued as pendingNext
+        tryOpenPendingTrade(state);
+      }
+    } else {
+      quizSubmit(state.quiz);
+      // Record outcome for streak tracking (#103)
+      recordQuizResult(state.streak, state.quiz.result as 'correct' | 'wrong' | 'idk');
+      // Feed quiz answer text into entropy pool (#4)
+      if (state.quiz.question && state.quiz.selectedIndex >= 0) {
+        const answerText = state.quiz.choices[state.quiz.selectedIndex] || '';
+        feedEntropy(`quiz:${state.quiz.question.question}:${answerText}`);
       }
     }
-    input.endFrame();
-    return;
   }
+  }
+  return wasActive;
+}
 
-  // --- Dialog Input (edge-detected) ---
+/**
+ * Handle input while a dialog is active.
+ * B5 micro-slice 11.29 (#268): extracted from update() in main.ts.
+ * Manages: dialog advance/close, post-dialog flow (pending quiz, trade,
+ * or unpause).
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a dialog was active at entry (wasActive); informational
+ * only after play-kernel PR1 (pipeline never aborts on modal).
+ */
+function handleDialogInput(state: GameState, justKeys: any): boolean {
+  const wasActive = state.ui.dialog.active;
   if (state.ui.dialog.active) {
-    if (justKeys.interact) {
-      if (!advanceDialog(state.ui)) {
-        closeDialog(state.ui);
-        cancelSpeech(state.voice); // Stop voice on dialog close (#76)
-        setDialogNpc(null); // Stop mouth animation (#113)
-        playSfx(state.sfx, 'dialog_close');
-        // Start pending quiz if NPC queued one, then trade after quiz, otherwise open trade or unpause
-        if (state.pendingQuiz) {
-          const pq = state.pendingQuiz;
-          state.pendingQuiz = null;
-          startQuiz(state.quiz, pq.difficulty, pq.npcId, pq.bias);
-          playSfx(state.sfx, 'quiz_start');
-          // Auto-read question for young age bands (#94)
-          _autoReadQuizQuestion(state);
-          // state.paused stays true for quiz
-        } else if (state._pendingInsectQuiz) {
-          // Insect safety quiz after eating worms (#110 Phase 3)
-          state._pendingInsectQuiz = false;
-          _startInsectQuiz(state);
-          playSfx(state.sfx, 'quiz_start');
-          _autoReadQuizQuestion(state);
-        } else if (state.pendingTrade) {
-          // Open trade panel directly (no quiz pending)
-          const persona = getNpcPersona(state.pendingTrade);
-          state.pendingTrade = null;
-          if (persona && openTrade(state.trade, persona)) {
-            playSfx(state.sfx, 'shop_open');
-            // state.paused stays true for trade
-          } else {
-            state.paused = false;
-          }
-        } else {
-          state.paused = false;
-        }
-      } else {
-        playSfx(state.sfx, 'dialog_advance');
-        // Speak the new dialog line (#76)
-        setDialogNpc(_lastDialogNpcId); // Reset mouth cycle for new line (#113)
-        const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
-        if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : _lastDialogNpcId);
+  if (justKeys.interact) {
+    if (!advanceDialog(state.ui)) {
+      cancelSpeech(state.voice); // Stop voice on dialog close (#76)
+      setDialogNpc(null); // Stop mouth animation (#113)
+      playSfx(state.sfx, 'dialog_close');
+      // exitModal pops dialog + drains pendingNext via content helpers (PR5 handshake)
+      exitModal(state, 'dialog');
+      if (state.quiz.active) {
+        playSfx(state.sfx, 'quiz_start');
+        _autoReadQuizQuestion(state);
+      } else if (state.trade.active) {
+        playSfx(state.sfx, 'shop_open');
       }
+    } else {
+      playSfx(state.sfx, 'dialog_advance');
+      // Speak the new dialog line (#76)
+      setDialogNpc(getLastDialogNpcId()); // Reset mouth cycle for new line (#113)
+      const line = state.ui.dialog.lines[state.ui.dialog.currentLine];
+      if (line) speakLine(state.voice, line, state.ui.dialog.npcName === 'Sign' ? null : getLastDialogNpcId());
     }
-    input.endFrame();
-    return;
   }
+  }
+  return wasActive;
+}
 
-  // --- Trade Input (edge-detected) ---
+/**
+ * Handle input while a trade panel is active.
+ * B5 micro-slice 11.30 (#268): extracted from update() in main.ts.
+ * Manages: barter quiz input, sell/buy navigation, post-trade flow.
+ * Must NOT call input.endFrame() — runPlayFrame owns endFrame in finally.
+ * Returns true if a trade is active; informational only after play-kernel PR1.
+ */
+function handleTradeInput(state: GameState, justKeys: any): boolean {
   if (state.trade.active) {
-    // Barter quiz active — handle quiz input first (#112 Phase 3)
-    if (state.trade.barterQuiz) {
-      if (justKeys.up) { barterNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
-      if (justKeys.down) { barterNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
-      if (justKeys.interact) {
-        const answer = submitBarterAnswer(state.trade);
-        if (answer.correct) {
-          addToast(state.ui, answer.feedback, '#4caf50', 3000);
-          playSfx(state.sfx, 'quiz_correct');
-        } else {
-          addToast(state.ui, answer.feedback, '#f44336', 3000);
-          playSfx(state.sfx, 'quiz_wrong');
-        }
-        // Apply discount on the pending trade (already executed)
-      }
-      syncBarterQuizDOM(state.trade);
-      syncTradeDOM(state.trade, state.inventory);
-      input.endFrame();
-      return;
-    }
-
-    if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
-    if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
+  // Barter quiz active — handle quiz input first (#112 Phase 3)
+  if (state.trade.barterQuiz) {
+    if (justKeys.up) { barterNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
+    if (justKeys.down) { barterNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
     if (justKeys.interact) {
-      if (state.trade.mode === 'sell') {
-        const sellable = getSellableItems(state.inventory);
-        const item = sellable[state.trade.selectedIndex];
-        if (item && shouldTriggerBarter()) {
-          const price = getSellPrice(item.itemId, state.trade);
-          state.trade.barterQuiz = generateBarterQuiz(item.displayName, price);
-          state.trade.barterSelectedIndex = 0;
-          playSfx(state.sfx, 'menu_navigate');
-          syncBarterQuizDOM(state.trade);
-        } else {
-          const result = executeSell(state.trade, state.inventory);
-          const dialog = getTradeDialog(state.trade.persona, result);
-          if (result.ok) {
-            addToast(state.ui, dialog, '#ffab40');
-            playSfx(state.sfx, 'shop_buy');
-          } else {
-            playSfx(state.sfx, 'shop_fail');
-          }
-        }
+      const answer = submitBarterAnswer(state.trade);
+      if (answer.correct) {
+        addToast(state.ui, answer.feedback, '#4caf50', 3000);
+        playSfx(state.sfx, 'quiz_correct');
       } else {
-        const trade = state.trade.trades[state.trade.selectedIndex];
-        if (trade && shouldTriggerBarter()) {
-          state.trade.barterQuiz = generateBarterQuiz(
-            trade.gives,
-            trade.wants === 'coin' ? trade.cost : trade.cost
-          );
-          state.trade.barterSelectedIndex = 0;
-          playSfx(state.sfx, 'menu_navigate');
-          syncBarterQuizDOM(state.trade);
-        } else {
-          const result = executeTrade(state.trade, state.inventory);
-          const dialog = getTradeDialog(state.trade.persona, result);
-          if (result.ok) {
-            addToast(state.ui, dialog, '#4caf50');
-            playSfx(state.sfx, 'shop_buy');
-          } else {
-            playSfx(state.sfx, 'shop_fail');
-          }
-        }
+        addToast(state.ui, answer.feedback, '#f44336', 3000);
+        playSfx(state.sfx, 'quiz_wrong');
       }
-      // Don't close — let player buy/sell multiple items
+      // Apply discount on the pending trade (already executed)
     }
-    // Escape handled in global keydown handler
+    syncBarterQuizDOM(state.trade);
     syncTradeDOM(state.trade, state.inventory);
-    input.endFrame();
-    return;
+    return true;
   }
 
-  // --- Diarrhea control lock check (#133) ---
-  if (state.diarrheaLocked) {
-    if (state.frameCount >= state.diarrheaLockUntil) {
-      // Lock expired — recover
-      state.diarrheaLocked = false;
-      setDiarrheaOverlay(false);
-      addToast(state.ui, '😮‍💨 Phew... feeling better now.', '#4fc3f7', 2500);
-      playSfx(state.sfx, 'pickup_item'); // relief SFX
-    } else {
-      // Still locked — skip all movement and interaction, just render
-      input.endFrame();
-      return;
-    }
-  }
-
-  // --- Movement ---
-  const mv = input.getMovementVector();
-  const isMoving = mv.dx !== 0 || mv.dy !== 0;
-
-  if (isMoving) {
-    // Apply survival status + injury + diarrhea speed debuffs (#70, #109, #110, #133)
-    const debuffs = getDebuffs(state.status);
-    const injuryMult = getInjurySpeedMult(state.injury);
-    const diarrheaMult = state.diarrheaUntil > state.frameCount ? DIARRHEA_CONFIG.SPEED_DEBUFF : 1.0;
-    const effectiveSpeed = state.player.speed * debuffs.speedMult * injuryMult * diarrheaMult;
-    const dx = mv.dx * effectiveSpeed;
-    const dy = mv.dy * effectiveSpeed;
-    const newX = state.player.x + dx;
-    const newY = state.player.y + dy;
-
-    // Axis-independent collision resolution with footprint (#151, #180)
-    // Try combined move first; if blocked, try each axis independently (wall-sliding)
-    let movedX = false;
-    let movedY = false;
-    if (isFootprintWalkable(newX, newY, state.chunks)) {
-      state.player.x = newX;
-      state.player.y = newY;
-      movedX = true;
-      movedY = true;
-    } else {
-      // Try X-only
-      if (dx !== 0 && isFootprintWalkable(newX, state.player.y, state.chunks)) {
-        state.player.x = newX;
-        movedX = true;
+  if (justKeys.up) { tradeNavigate(state.trade, 'up'); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.down) { tradeNavigate(state.trade, 'down'); playSfx(state.sfx, 'menu_navigate'); }
+  if (justKeys.interact) {
+    if (state.trade.mode === 'sell') {
+      const sellable = getSellableItems(state.inventory);
+      const item = sellable[state.trade.selectedIndex];
+      if (item && shouldTriggerBarter()) {
+        const price = getSellPrice(item.itemId, state.trade);
+        state.trade.barterQuiz = generateBarterQuiz(item.displayName, price);
+        state.trade.barterSelectedIndex = 0;
+        playSfx(state.sfx, 'menu_navigate');
+        syncBarterQuizDOM(state.trade);
+      } else {
+        const result = executeSell(state.trade, state.inventory);
+        const dialog = getTradeDialog(state.trade.persona, result);
+        if (result.ok) {
+          addToast(state.ui, dialog, '#ffab40');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
+        }
       }
-      // Try Y-only
-      if (dy !== 0 && isFootprintWalkable(state.player.x, newY, state.chunks)) {
-        state.player.y = newY;
-        movedY = true;
-      }
-    }
-
-    if (movedX || movedY) {
-      // Terrain-aware footstep SFX (#108)
-      const footCell = getCellAt(Math.round(state.player.x), Math.round(state.player.y), state.chunks);
-      const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./tiles').TileType] : undefined;
-      const surface = footTileDef?.surface ?? 'grass';
-      playFootstep(state.sfx, surface);
     } else {
-      // Wall bump SFX (#75) — debounce handles frame-spam
-      playSfx(state.sfx, 'wall_bump');
-      // Deterministic hazard injury (#137) — only hazardous obstacles cause injury
-      const hitCell = getCellAt(Math.round(newX), Math.round(newY), state.chunks);
-      const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
-      const hazardDmg = hitDef?.hazardDamage ?? 0;
-      if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
-        const label = hitDef?.hazardLabel ?? 'something sharp';
-        playSfx(state.sfx, 'ouch');
-        triggerHint('ouch_injury');
-        setTransientExpression(state, 'surprised', 3000);
-        triggerInjuryFlash(); // (#109 Phase 3) red screen flash
-        addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
-        // Achievement milestones (#109 Phase 3)
-        if (state.injury.injuryCount === 5) {
-          addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 10) {
-          addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
-        } else if (state.injury.injuryCount === 25) {
-          addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
+      const trade = state.trade.trades[state.trade.selectedIndex];
+      if (trade && shouldTriggerBarter()) {
+        state.trade.barterQuiz = generateBarterQuiz(
+          trade.gives,
+          trade.wants === 'coin' ? trade.cost : trade.cost
+        );
+        state.trade.barterSelectedIndex = 0;
+        playSfx(state.sfx, 'menu_navigate');
+        syncBarterQuizDOM(state.trade);
+      } else {
+        const result = executeTrade(state.trade, state.inventory);
+        const dialog = getTradeDialog(state.trade.persona, result);
+        if (result.ok) {
+          addToast(state.ui, dialog, '#4caf50');
+          playSfx(state.sfx, 'shop_buy');
+        } else {
+          playSfx(state.sfx, 'shop_fail');
         }
       }
     }
-
-    // Direction (left/right flip)
-    if (mv.dx > 0) state.player.direction = 1;
-    else if (mv.dx < 0) state.player.direction = -1;
-
-    // Track full 2D facing direction for interaction
-    if (mv.dx !== 0 || mv.dy !== 0) {
-      state.player.facingDx = Math.sign(mv.dx);
-      state.player.facingDy = Math.sign(mv.dy);
-    }
-
-    // Determine facing pose from screen-space direction (what the player sees):
-    // Horizontal dominance (left/right keys) → side profile sprite
-    // Vertical dominance (up/down keys) → front (down) or back (up)
-    // Diagonal → use vertical component for front/back
-    const asx = Math.abs(mv.screenDx);
-    const asy = Math.abs(mv.screenDy);
-    if (asx > asy) {
-      state.player.facingPose = 'side';
-    } else if (mv.screenDy < 0) {
-      state.player.facingPose = 'back';
-    } else if (mv.screenDy > 0) {
-      state.player.facingPose = 'front';
-    }
-    // Equal diagonal (asx === asy && both > 0) → keep current facingPose
-
-    state.player.isMoving = true;
-    // Throttle animation: only advance sprite frame every 6th game frame
-    if (state.frameCount % 6 === 0) {
-      state.player.animFrame = (state.player.animFrame + 1) % PLAYER_CONFIG.animationFrames;
-    }
-
-    // Walking sprite - reload when frame or facing pose changes
-    if (state.player.animFrame !== state.lastAnimFrame ||
-        state.player.facingPose !== state.lastFacingPose) {
-      state.egoImg = loadCharacterSprite(
-        state.playerVariation, state.player.animFrame, true, state.player.facingPose,
-      );
-      state.lastAnimFrame = state.player.animFrame;
-      state.lastFacingPose = state.player.facingPose;
-    }
-
-    // Auto-collect walkable items
-    const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
-    if (collected && collected.type === 'collect') {
-      addToast(state.ui, collected.message, '#ffd700', 1200);
-      playSfx(state.sfx, collected.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
-    }
-
-    // Camera follow (smooth)
-    state.camera.x += (state.player.x - state.camera.x) * 0.1;
-    state.camera.y += (state.player.y - state.camera.y) * 0.1;
-
-    // Ensure chunks ONLY on chunk boundary crossing
-    maybeLoadChunks(state);
-  } else {
-    state.player.isMoving = false;
-    resetFootstepCounter(); // Reset footstep cadence when idle (#108)
-    // Idle sprite - only reload once when stopping (preserves facing pose)
-    if (state.player.animFrame !== 0 || state.lastAnimFrame !== 0) {
-      state.player.animFrame = 0;
-      state.egoImg = loadCharacterSprite(state.playerVariation, 0, false, state.player.facingPose);
-      state.lastAnimFrame = 0;
-      state.lastFacingPose = state.player.facingPose;
-    }
+    // Don't close — let player buy/sell multiple items
   }
-
-  // --- Interaction (Space, edge-detected) ---
-  if (justKeys.interact && !isMoving) {
-    // Try facing direction first, then check all 4 neighbors as fallback
-    // NOTE: facingDx can be 0 (vertical-only facing) — don't use || which treats 0 as falsy
-    const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
-    const facingDir = {
-      dx: hasFacing ? state.player.facingDx : state.player.direction,
-      dy: hasFacing ? state.player.facingDy : 0,
-    };
-
-    // Wildlife interaction check (before tile-based interactions)
-    const wildlifeHit = interactWithWildlife(
-      state.player.x, state.player.y, facingDir.dx, facingDir.dy,
-    );
-    if (wildlifeHit) {
-      const { species, entity } = wildlifeHit;
-      // Show creature dialog — use custom interaction lines if available (#142)
-      const wildlifeLine = species.interactLines && species.interactLines.length > 0
-        ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
-        : `You spotted a ${species.name}! ${species.emoji}`;
-      showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
-      state.paused = true;
-      playSfx(state.sfx, 'wildlife_discover');
-      // Speak wildlife discovery (#76)
-      _lastDialogNpcId = null;
-      speakLine(state.voice, wildlifeLine, null);
-      // Make creature flee after inspection
-      entity.behavior = 'flee';
-      entity.fleeCooldown = 180;
-      // Check cosmetic unlocks for wildlife discovery (#66)
-      checkCosmeticUnlocks(state);
-      // Queue a quiz if species has a quiz category
-      if (species.quizCategory) {
-        const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
-        const diff = modulateDifficulty(baseDiff, state.streak); // #103 streak modulation
-        state.pendingQuiz = {
-          difficulty: diff,
-          npcId: `wildlife_${species.id}`,
-          bias: { [species.quizCategory]: 2.0 },
-        };
-      }
-    } else {
-      let result = interact(
-        state.player.x, state.player.y,
-        facingDir, state.chunks, state.inventory,
-      );
-
-      // Fallback: try all 4 cardinal neighbors if facing dir had nothing
-      if (result.type === 'none') {
-        const dirs = [
-          { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
-          { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
-        ];
-        for (const d of dirs) {
-          result = interact(state.player.x, state.player.y, d, state.chunks, state.inventory);
-          if (result.type !== 'none') break;
-        }
-      }
-
-      // Eat worms desperation: if no interaction found and energy critically low (#110 Phase 3)
-      if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
-        result = { type: 'eat_worms', message: 'You found a worm in the ground... 🐛 Gulp!' };
-      }
-
-      handleInteraction(result, state);
-    }
+  // Escape handled in global keydown handler
+  syncTradeDOM(state.trade, state.inventory);
+  return true;
   }
+  return false;
+}
 
-  // --- Toggle Debug (F3) ---
-  // Handled in extended input listener below
-
+/**
+ * Run per-frame status ticks (survival, tutorial, audio, wildlife, fog, bubbles).
+ * B5 micro-slice 11.31 (#268): extracted from update() in main.ts.
+ * All subsystems are throttled (frame-count modulo) to avoid CPU churn.
+ * No early-return semantics — runs every frame, no input.endFrame() needed.
+ */
+function tickSubsystems(state: GameState, justKeys: any, dtMs: number = 16.67): void {
   // --- Survival Status tick (#70) ---
-  // tickStatus self-throttles internally (every 300 frames)
+  // tickStatus self-throttles internally by real elapsed ms (frame-rate independent)
   {
     const cs = WORLD_CONFIG.chunkSize;
     const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
     const chunk = state.chunks.get(cKey);
     const biomeId = chunk?.biomeId ?? 0;
-    tickStatus(state.status, state.player.isMoving, biomeId);
+    tickStatus(state.status, state.player.isMoving, biomeId, dtMs);
     // Music biome awareness (#74) — switch tracks on biome change
     musicSetBiome(state.music, biomeId);
   }
-
+  
   // --- Tutorial tick (#186) ---
   if (isTutorialActive()) {
     tickTutorial(
@@ -1465,10 +765,10 @@ function update(state: GameState, input: InputManager): void {
       justKeys.interact,
     );
   }
-
+  
   // --- Transient expression tick (#102) ---
   tickExpressionOverride(state);
-
+  
   // --- Ambience update (#75 + #108) — oscillator + sampled layers ---
   // Throttle to every 60th frame (~1s at 60fps) to avoid churn
   if (state.frameCount % 60 === 0) {
@@ -1485,33 +785,33 @@ function update(state: GameState, input: InputManager): void {
     }
     state._lastTimeSlot = timeSlot;
   }
-
+  
   // --- Positional audio listener update (#108) — every 10th frame ---
   if (state.frameCount % 10 === 0) {
     updateListenerPosition(state.sfx, state.player.x, state.player.y);
   }
-
+  
   // --- Positional audio source scan (#108) — every 120 frames (~2s) ---
   // Scans nearby chunks for campfire/waterfall and starts positional loops
   if (state.frameCount % 120 === 0 && state.sfx.sampledReady) {
-    _scanPositionalAudioSources(state);
+    scanPositionalAudioSources(state);
   }
-
+  
   // --- Auto-save every 30s ---
   if (state.frameCount % (60 * 30) === 0) {
     doSave(state);
   }
-
+  
   // --- Wildlife update (throttled to every 3rd frame for perf) ---
   if (state.frameCount % 3 === 0) {
     updateWildlife(state.chunks, state.player.x, state.player.y);
   }
-
+  
   // --- Fog-of-war: reveal cells around player (#114) ---
   if (state.frameCount % 6 === 0) {
     updateFog(state.player.x, state.player.y, isFlashlightOn());
   }
-
+  
   // --- Thought Bubble triggers (throttled to every 30th frame for perf) ---
   if (state.frameCount % 30 === 0 && !state.paused) {
     checkBubbleTriggers(state);
@@ -1525,2079 +825,391 @@ function update(state: GameState, input: InputManager): void {
       tickBubbles();
     }
   }
+  
+  
 
-  // Snapshot input for edge detection next frame
-  input.endFrame();
-  _clearExtraKeys(); // Clear numeric/R key queue (#94)
 }
 
-function handleInteraction(result: InteractionResult, state: GameState): void {
-  switch (result.type) {
-    case 'collect':
-      state.inventory.addItem(result.itemId, 1);
-      addToast(state.ui, result.message, '#ffd700');
-      playSfx(state.sfx, result.itemId === 'coin' ? 'pickup_coin' : 'pickup_item');
-      break;
+// Diarrhea control lock is owned by play-mode controlLock (PR5).
+// tickDiarrheaControlLock + setControlLock on trigger; locomotionAllowed gates move.
 
-    case 'chest':
-      for (const itemId of result.items) state.inventory.addItem(itemId, 1);
-      addToast(state.ui, result.message, '#ffaa00');
-      playSfx(state.sfx, 'open_chest');
-      break;
+/** Min wall time between wall_bump SFX while held into solid geometry. */
+const WALL_BUMP_COOLDOWN_MS = 280;
+let _lastWallBumpMs = 0;
 
-    case 'obstacle':
-      if (result.resolved) {
-        addToast(state.ui, result.message, '#4caf50');
-        playSfx(state.sfx, 'obstacle_resolved');
-      } else {
-        addToast(state.ui, result.message, '#f44336');
-        playSfx(state.sfx, 'obstacle_blocked');
+function shouldPlayWallBump(): boolean {
+  const now = performance.now();
+  if (now - _lastWallBumpMs < WALL_BUMP_COOLDOWN_MS) return false;
+  _lastWallBumpMs = now;
+  return true;
+}
+
+/**
+ * Movement presentation after motor integrate (runPlayFrame phase 8).
+ * Footsteps, sink, wall bump, facing sprites, camera, chunk load, auto-collect.
+ * Motor integrate is owned by runPlayFrame — do not call integrate here.
+ */
+function onMovementPresentation(
+  state: GameState,
+  result: MoveResult,
+  simDtMs: number,
+  mv: MovementVector,
+): void {
+  const frameMs = Math.min(Math.max(simDtMs, 0), MOVE_MAX_CATCHUP_MS);
+  const frameDt = frameMs / MOVE_STEP_MS;
+  const { anyMoved, lastAttemptX, lastAttemptY } = result;
+
+  markFirstMovableIfNeeded();
+
+  if (anyMoved) {
+    const footCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+    const footTileDef = footCell ? MICRO_TILE_DEFS[footCell.cell.assetKey as import('./rendering/tiles').TileType] : undefined;
+    const surface = footTileDef?.surface ?? 'grass';
+    playFootstep(state.sfx, surface, frameMs);
+
+    const currentCell = getCellAt(Math.floor(state.player.x), Math.floor(state.player.y), state.chunks);
+    if (currentCell && (currentCell.cell.assetKey === 'water' || currentCell.cell.assetKey === 'river')) {
+      state.player.sinkDepth = 4;
+    } else if (state.player.spawnEscape) {
+      state.player.sinkDepth = SPAWN_ESCAPE_RISE_PX;
+    } else {
+      state.player.sinkDepth = 0;
+    }
+  } else {
+    // Fully blocked this frame. Rate-limit bump SFX — firing every rAF at
+    // 60fps while held into a fence is an audio/feel "controls are broken"
+    // experience (not a collision correctness issue).
+    if (shouldPlayWallBump()) {
+      playSfx(state.sfx, 'wall_bump');
+    }
+    const hitCell = getCellAt(Math.floor(lastAttemptX), Math.floor(lastAttemptY), state.chunks);
+    const hitDef = hitCell ? ASSET_DEFS[hitCell.cell.assetKey] : undefined;
+    const hitKey = hitCell?.cell.assetKey;
+    if (
+      hitKey === 'quiz_gate' ||
+      hitKey === 'door_locked' ||
+      hitKey === 'toll_gate' ||
+      hitKey === 'door_gate' ||
+      hitKey === 'barricade'
+    ) {
+      if (hitKey === 'barricade') triggerHint('need_crowbar');
+      else triggerHint('near_gate');
+      const tcx = Math.floor(lastAttemptX);
+      const tcy = Math.floor(lastAttemptY);
+      const pcx = Math.floor(state.player.x);
+      const pcy = Math.floor(state.player.y);
+      const fdx = Math.sign(tcx - pcx);
+      const fdy = Math.sign(tcy - pcy);
+      if (fdx !== 0 || fdy !== 0) {
+        state.player.facingDx = fdx;
+        state.player.facingDy = fdy;
       }
-      break;
-
-    case 'npc': {
-      const persona = getNpcPersona(result.npcId);
-      const npcName = persona?.displayName || 'Stranger';
-      showDialog(state.ui, npcName, [result.greeting]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      // Speak greeting line (#76)
-      _lastDialogNpcId = result.npcId;
-      setDialogNpc(result.npcId); // Start mouth animation (#113)
-      speakLine(state.voice, result.greeting, result.npcId);
-
-      // Feed NPC greeting into entropy pool (#4)
-      feedEntropy(result.greeting);
-
-      // If NPC can quiz, queue quiz to start when dialog closes (not via setTimeout race)
-      // Difficulty = max(NPC preference, distance-based scaling) — Doc 05 §9.1
-      // Then modulate via streak (#103)
-      if (persona?.canQuiz) {
-        const bias = getQuizBias(state.knowledge);
-        const distDiff = getDifficultyForPosition(state.player.x, state.player.y);
-        const baseDifficulty = blendDifficulty(persona.quizDifficulty, distDiff);
-        const finalDifficulty = modulateDifficulty(baseDifficulty, state.streak);
-        state.pendingQuiz = { difficulty: finalDifficulty, npcId: result.npcId, bias };
+    }
+    const hazardDmg = hitDef?.hazardDamage ?? 0;
+    if (hazardDmg > 0 && checkHazardInjury(state.injury, hazardDmg)) {
+      const label = hitDef?.hazardLabel ?? 'something sharp';
+      playSfx(state.sfx, 'ouch');
+      triggerHint('ouch_injury');
+      setTransientExpression(state, 'surprised', 3000);
+      triggerInjuryFlash();
+      addToast(state.ui, `🤕 Ouch! You bumped into ${label}!`, '#f44336', 2500);
+      if (state.injury.injuryCount === 5) {
+        addToast(state.ui, '🏅 Owie Badge: 5 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 10) {
+        addToast(state.ui, '🏅 Tough Cookie: 10 injuries!', '#ff9800', 3000);
+      } else if (state.injury.injuryCount === 25) {
+        addToast(state.ui, '🏅 Survivor: 25 injuries!', '#ff9800', 3000);
       }
-
-      // If NPC has trades, queue trade panel to open after dialog + optional quiz
-      if (persona && persona.trades.length > 0) {
-        state.pendingTrade = result.npcId;
-      }
-      break;
     }
+  }
 
-    case 'sign':
-      showDialog(state.ui, 'Sign', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      break;
+  updatePlayerVisuals(state, mv, true, frameMs);
 
-    case 'quiz_gate': {
-      // Quiz gate — show dialog then trigger distance-based quiz (Doc 05 §3.5)
-      showDialog(state.ui, 'Quiz Gate', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      const baseGateDiff = getDifficultyForPosition(state.player.x, state.player.y);
-      const gateDiff = modulateDifficulty(baseGateDiff, state.streak); // #103 streak modulation
-      const gateBias = getQuizBias(state.knowledge);
-      state.pendingQuiz = { difficulty: gateDiff, npcId: 'quiz_gate', bias: gateBias };
-      state.pendingGateQuiz = { chunkKey: result.chunkKey, lx: result.lx, ly: result.ly };
-      break;
-    }
+  const camLerp = 1 - Math.pow(1 - 0.15, frameDt);
+  state.camera.x += (state.player.x - state.camera.x) * camLerp;
+  state.camera.y += (state.player.y - state.camera.y) * camLerp;
 
-    // --- Shop structure interaction (#77, #112 themed variants) ---
-    case 'shop': {
-      const shopPersona = getShopPersona(result.shopAsset);
-      showDialog(state.ui, shopPersona.displayName, [shopPersona.greetings[Math.floor(Math.random() * shopPersona.greetings.length)]]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      // Queue trade panel to open after dialog closes
-      state.pendingTrade = shopPersona.id;
-      break;
-    }
+  maybeLoadChunks(state);
 
-    // --- Outhouse hygiene interaction (#110 Phase 2) ---
-    case 'outhouse': {
-      playSfx(state.sfx, 'outhouse_enter');
-      // Immediate partial cleanliness restore
-      const cleanBefore = state.status.cleanliness;
-      const partialRestore = Math.min(100 - cleanBefore, 40);
-      state.status.cleanliness = Math.min(100, cleanBefore + partialRestore);
-      const cleanMsg = partialRestore > 0
-        ? `🧼 +${Math.round(partialRestore)} cleanliness!`
-        : '✨ Already squeaky clean!';
-      addToast(state.ui, `🚽 ${result.message}`, '#88ccff', 2500);
-      if (partialRestore > 0) {
-        addToast(state.ui, cleanMsg, '#4caf50', 2000);
-      }
-      // Start hygiene quiz for bonus full restore
-      _startHygieneQuiz(state);
-      break;
-    }
-
-    // --- Stream drinking (#110 Phase 3, #133 illness chain) ---
-    case 'stream_drink': {
-      playSfx(state.sfx, 'stream_drink');
-      const hydrationGain = 20;
-      state.status.hydration = Math.min(100, state.status.hydration + hydrationGain);
-
-      // Track stream drink count for diarrhea risk (#133)
-      state.streamDrinkCount++;
-      const drinkCount = state.streamDrinkCount;
-
-      // Diarrhea roll: 20% after threshold, guaranteed at 6+ drinks, with cooldown
-      const pastThreshold = drinkCount >= DIARRHEA_CONFIG.DRINK_THRESHOLD;
-      const offCooldown = (state.frameCount - state.diarrheaLastTrigger) >= DIARRHEA_CONFIG.COOLDOWN_FRAMES;
-      const chance = drinkCount >= DIARRHEA_CONFIG.GUARANTEED_AT
-        ? 1.0
-        : DIARRHEA_CONFIG.BASE_CHANCE;
-
-      if (pastThreshold && offCooldown && Math.random() < chance) {
-        // --- Trigger diarrhea illness event (#133) ---
-        state.diarrheaLocked = true;
-        state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-        state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-        state.diarrheaLastTrigger = state.frameCount;
-
-        // Spawn poop marker at current position
-        state.poopMarkers.push({
-          x: Math.round(state.player.x),
-          y: Math.round(state.player.y),
-          placedAt: state.frameCount,
-        });
-
-        // Poop particle burst VFX (uses screen coords — resolved in render)
-        _pendingPoopBurst = true;
-
-        // Green illness overlay
-        setDiarrheaOverlay(true);
-
-        // SFX + UI feedback
-        playSfx(state.sfx, 'diarrhea_gurgle');
-        addToast(state.ui, '🤢 Oh no! Stomach emergency... can\'t move!', '#ff4444', 4000);
-        triggerHint('stream_eww');
-        setTransientExpression(state, 'surprised', 5000);
-      } else {
-        addToast(state.ui, `💧 Refreshing stream water! +${hydrationGain} hydration`, '#4fc3f7', 2500);
-      }
-      break;
-    }
-
-    // --- Eat worms desperation (#110 Phase 3) ---
-    case 'eat_worms': {
-      playSfx(state.sfx, 'eat_worms');
-      const energyGain = 5;
-      state.status.energy = Math.min(100, state.status.energy + energyGain);
-      addToast(state.ui, '🐛 Gross! But you got a tiny bit of energy... +5', '#8bc34a', 3000);
-
-      // Queue insect safety quiz
-      state._pendingInsectQuiz = true;
-      showDialog(state.ui, '🐛 Yuck!', ['That was disgusting... but is it actually safe to eat insects?']);
-      state.paused = true;
-      _lastDialogNpcId = null;
-      break;
-    }
-
-    // --- Campfire rest interaction (#77) ---
-    case 'campfire': {
-      const changes = applyStatusEffect(state.status, { energy: 25, hydration: 10 });
-      const msg = changes.length > 0
-        ? `${result.message} ${changes.join(', ')}`
-        : `${result.message} You feel refreshed!`;
-      addToast(state.ui, msg, '#ff8844', 3000);
-      playSfx(state.sfx, 'pickup_item');
-      break;
-    }
-
-    // --- Structure flavor text (#77) ---
-    case 'structure':
-      showDialog(state.ui, '🏠 Structure', [result.message]);
-      state.paused = true;
-      playSfx(state.sfx, 'dialog_open');
-      _lastDialogNpcId = null;
-      speakLine(state.voice, result.message, null);
-      break;
+  const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
+  if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
+    handleInteraction(collected, state);
   }
 }
+
+/** Idle-frame presentation (embed already healed by runPlayFrame). */
+function onIdlePresentation(state: GameState, simDtMs: number): void {
+  const frameMs = Math.min(Math.max(simDtMs, 0), MOVE_MAX_CATCHUP_MS);
+  updatePlayerVisuals(state, { dx: 0, dy: 0, screenDx: 0, screenDy: 0 }, false, frameMs);
+  resetFootstepCounter();
+
+  // Drain deferred chunk queue every frame (not only while moving) — PR3.
+  maybeLoadChunks(state);
+
+  const collected = autoCollect(state.player.x, state.player.y, state.chunks, state.inventory);
+  if (collected && (collected.type === 'collect' || collected.type === 'inventory_full')) {
+    handleInteraction(collected, state);
+  }
+}
+
+/** Wired PlayFrameHooks — content handlers never call endFrame. */
+const playFrameHooks: PlayFrameHooks = {
+  onQuizInput: (state, justKeys) => { handleQuizInput(state, justKeys); },
+  onDialogInput: (state, justKeys) => { handleDialogInput(state, justKeys); },
+  onTradeInput: (state, justKeys) => { handleTradeInput(state, justKeys); },
+  // Book UI is DOM-owned; stack/topMode freezes locomotion via entryTop.
+  onBookInput: undefined,
+  onPauseInput: undefined,
+  onMovementPresentation,
+  onIdlePresentation,
+  onWorldInteract: (state, justKeys) => { handleSpaceInteraction(state, justKeys); },
+  tickPlayWorld: (state, justKeys, simDtMs) => { tickSubsystems(state, justKeys, simDtMs); },
+};
+
+function handleSpaceInteraction(state: GameState, justKeys: any): void {
+  // Allow Space while still moving — kids hold a key into a gate and press
+  // interact in the same moment; requiring isMoving===false dropped presses.
+  if (!justKeys.interact) return;
+
+  // Settle motion so the next frames don't immediately walk away mid-dialog.
+  state.player.isMoving = false;
+
+  // Try facing direction first, then neighbors as fallback.
+  // NOTE: facingDx can be 0 — don't use || which treats 0 as falsy
+  const hasFacing = state.player.facingDx !== 0 || state.player.facingDy !== 0;
+  const facingDir = {
+    dx: hasFacing ? state.player.facingDx : state.player.direction,
+    dy: hasFacing ? state.player.facingDy : 0,
+  };
+
+  const wildlifeHit = interactWithWildlife(
+    state.player.x, state.player.y, facingDir.dx, facingDir.dy,
+  );
+  if (wildlifeHit) {
+    const { species, entity } = wildlifeHit;
+    const wildlifeLine = species.interactLines && species.interactLines.length > 0
+      ? species.interactLines[Math.floor(Math.random() * species.interactLines.length)]
+      : `You spotted a ${species.name}! ${species.emoji}`;
+    showDialog(state.ui, species.name, [wildlifeLine, species.fact]);
+    playSfx(state.sfx, 'wildlife_discover');
+    setLastDialogNpcId(null);
+    speakLine(state.voice, wildlifeLine, null);
+    entity.behavior = 'flee';
+    entity.fleeCooldown = 180;
+    checkCosmeticUnlocks(state);
+    if (species.quizCategory) {
+      const baseDiff = getDifficultyForPosition(state.player.x, state.player.y);
+      const diff = modulateDifficulty(baseDiff, state.streak);
+      const bias = { [species.quizCategory]: 2.0 };
+      const question = pickQuizQuestion(diff, bias);
+      state.pendingQuiz = {
+        difficulty: diff,
+        npcId: `wildlife_${species.id}`,
+        bias,
+        question,
+      };
+      if (question) prefetchQuizRephrase(question.question);
+      queueAfterClose(state, { kind: 'quiz', owner: `wildlife_${species.id}` });
+    }
+    enterDialogModal(state, `wildlife:${species.id}`);
+    return;
+  }
+
+  const priority = (r: { type: string }): number => {
+    switch (r.type) {
+      case 'quiz_gate': return 100;
+      case 'obstacle': return 90;
+      case 'npc': return 80;
+      case 'chest': return 70;
+      case 'sign': return 60;
+      case 'shop': return 55;
+      case 'collect': return 50;
+      case 'outhouse': return 40;
+      case 'campfire': return 30;
+      case 'stream_drink': return 25;
+      case 'structure': return 10;
+      case 'eat_worms': return 5;
+      default: return 0;
+    }
+  };
+  const tryInteract = (dir: { dx: number; dy: number }) =>
+    interact(state.player.x, state.player.y, dir, state.chunks, state.inventory);
+
+  let result = tryInteract(facingDir);
+
+  // Diagonal facing → also try cardinal components; keep best hit
+  if (facingDir.dx !== 0 && facingDir.dy !== 0) {
+    for (const d of [{ dx: facingDir.dx, dy: 0 }, { dx: 0, dy: facingDir.dy }]) {
+      const r = tryInteract(d);
+      if (priority(r) > priority(result)) result = r;
+    }
+  }
+
+  // Current cell + 4 neighbors — prefer gate/NPC over fence flavor
+  for (const d of [
+    { dx: 0, dy: 0 },
+    { dx: 0, dy: -1 }, { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 }, { dx: 1, dy: 0 },
+  ]) {
+    const r = tryInteract(d);
+    if (priority(r) > priority(result)) result = r;
+  }
+
+  if (result.type === 'none' && state.status.energy <= CRITICAL_THRESHOLD) {
+    result = { type: 'eat_worms', message: 'You found a worm in the ground... Gulp!' };
+  }
+
+  handleInteraction(result, state);
+}
+
+
+/**
+ * Per-frame play update — thin delegate (debug / tests). Production path is
+ * startPlayLoop → runPlayFrame with the same hooks.
+ */
+export function update(state: GameState, input: InputManager, dtMs: number = 16.67): void {
+  runPlayFrame(state, input, dtMs, playFrameHooks, {
+    clearExtraKeys: _clearExtraKeys,
+  });
+}
+
+// B5 micro-slice 11.19 (#268): handleInteraction (195 lines) + 2
+// module-level vars (_lastDialogNpcId, _pendingPoopBurst) extracted
+// to ./game/interaction-handler.ts. State-moves-with-consumer pattern
+// (B5.13/B5.18). main.ts uses getLastDialogNpcId/setLastDialogNpcId
+// from dialog queue (update ~L725), getPendingPoopBurst/setPendingPoopBurst
+// from render path (~L1559).
 
 // ─── Save ────────────────────────────────────────────────────
 
 /** Build SaveData from current game state */
-function buildSaveData(state: GameState): SaveData {
-  return {
-    version: 1,
-    timestamp: Date.now(),
-    player: {
-      x: state.player.x,
-      y: state.player.y,
-      direction: state.player.direction,
-    },
-    inventory: state.inventory.serialize(),
-    visitedChunks: Array.from(state.chunks.keys()),
-    resolvedCells: collectResolvedCells(state.chunks),
-    quizStats: state.quizStats,
-    wordlistSeed: '',
-    entropyBuffer: getEntropyBuffer(), // Persist entropy pool (#4)
-    selectedSubjects: state.knowledge.selectedSubjects,
-    wordBag: state.knowledge.wordBag,
-    readArticles: [...state.knowledge.readArticles],
-    discoveryPoints: state.knowledge.discoveryPoints,
-    playerVariation: serializeVariation(state.playerVariation),
-    discoveredWildlife: getDiscoveredSpeciesArray(),
-    playerStatus: serializeStatus(state.status),
-    injuryState: serializeInjury(state.injury),
-    unlockedCosmetics: state.unlockedCosmetics,
-    musicSettings: serializeMusicSettings(state.music),
-    sfxSettings: serializeSfxSettings(state.sfx),
-    voiceSettings: serializeVoiceSettings(state.voice),
-    streakHistory: [...state.streak.history],
-    visitedFog: serializeVisited(),
-    ageBand: state.ageProfile.ageBand ?? undefined,
-    playedSeconds: getPlayedSeconds(),
-    touchControlMode: localStorage.getItem('emilys_game_touch_vis') ?? 'whisper',
-  };
-}
-
-/** Apply loaded save data to current game state */
-function applySaveData(state: GameState, data: SaveData): void {
-  state.player.x = data.player.x;
-  state.player.y = data.player.y;
-  state.player.direction = data.player.direction;
-  state.inventory.deserialize(data.inventory);
-  state.quizStats = { ...data.quizStats };
-  // Restore knowledge state
-  if (data.selectedSubjects) state.knowledge.selectedSubjects = data.selectedSubjects as any;
-  if (data.wordBag) state.knowledge.wordBag = data.wordBag;
-  if (data.readArticles) state.knowledge.readArticles = new Set(data.readArticles);
-  if (data.discoveryPoints) state.knowledge.discoveryPoints = data.discoveryPoints;
-  state.knowledge.subjectsChosen = true;
-  // Restore entropy buffer (#4)
-  if (data.entropyBuffer) {
-    restoreEntropyBuffer(data.entropyBuffer);
-  }
-  // Restore player variation
-  if (data.playerVariation) {
-    state.playerVariation = deserializeVariation(data.playerVariation);
-    state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
-    state.lastAnimFrame = -1; // force sprite reload
-  }
-  // Restore discovered wildlife
-  if (data.discoveredWildlife) {
-    restoreDiscoveredSpecies(data.discoveredWildlife);
-  }
-  // Restore survival status (#70)
-  state.status = deserializeStatus(data.playerStatus);
-  resetTickCounter();
-  // Restore injury state (#109)
-  state.injury = deserializeInjury(data.injuryState);
-  // Restore unlocked cosmetics (#66)
-  state.unlockedCosmetics = data.unlockedCosmetics ?? [];
-  setUnlockedCosmetics(state.unlockedCosmetics);
-  // Restore music settings (#74)
-  state.music.settings = deserializeMusicSettings(data.musicSettings);
-  // Restore SFX settings (#75)
-  if (data.sfxSettings) deserializeSfxSettings(state.sfx, data.sfxSettings);
-  // Restore voice settings (#76)
-  if (data.voiceSettings) deserializeVoiceSettings(state.voice, data.voiceSettings);
-  // Restore streak history (#103)
-  if (data.streakHistory) {
-    state.streak = createStreakState();
-    for (const outcome of data.streakHistory) {
-      recordQuizResult(state.streak, outcome);
-    }
-  }
-  // Restore fog-of-war visited cells (#114)
-  if (data.visitedFog) {
-    deserializeVisited(data.visitedFog);
-  }
-  // Restore age band profile (#92)
-  if (data.ageBand) {
-    setAgeBand(state.ageProfile, data.ageBand as AgeBand);
-  }
-  // Restore cumulative playtime (#136)
-  if (data.playedSeconds != null) {
-    setPlayedSeconds(data.playedSeconds);
-  }
-  // Restore touch control visibility mode (#144)
-  if (data.touchControlMode) {
-    localStorage.setItem('emilys_game_touch_vis', data.touchControlMode);
-  }
-  // Force camera + chunk reload
-  state.camera.x = data.player.x;
-  state.camera.y = data.player.y;
-  // Store resolved cells for deferred application after chunk regeneration
-  setPendingResolvedCells(data.resolvedCells ?? []);
-  // Clear chunks so they regenerate with resolved cells applied
-  state.chunks.clear();
-  clearTerrainCache();
-  clearObjectCache();
-  clearParticles();
-  clearWeather();
-  clearWildlife();
-  // Regenerate chunks around new player position
-  state.lastChunkX = Math.floor(data.player.x / WORLD_CONFIG.chunkSize);
-  state.lastChunkY = Math.floor(data.player.y / WORLD_CONFIG.chunkSize);
-  ensureChunksAround(state);
-}
-
-function doSave(state: GameState): void {
-  saveGame(buildSaveData(state));
-  markSaveSlotsDirty();
-}
+// B5 micro-slice 11.21 (#268): buildSaveData (33 lines) + doSave (3 lines)
+// extracted from main.ts to ./game/save-build.ts. Sibling to
+// ./game/save-apply.ts (B5.15). Pure data serialization — no module-level
+// state. main.ts imports both and re-passes doSave to setupExtraKeys +
+// debug-api as a function reference.
 
 // ─── Cosmetic Unlock Check (#66) ────────────────────────────────
-/** Check progression and grant newly unlocked cosmetics */
-function checkCosmeticUnlocks(state: GameState): void {
-  const progress: ProgressionData = {
-    quizCorrect: state.quizStats.correct,
-    quizAnswered: state.quizStats.answered,
-    wildlifeDiscovered: getWildlifeStats().discovered,
-  };
-  const newUnlocks = checkAllUnlocks(progress, new Set(state.unlockedCosmetics));
-  if (newUnlocks.length > 0) {
-    state.unlockedCosmetics.push(...newUnlocks);
-    setUnlockedCosmetics(state.unlockedCosmetics);
-    // Show toast for each unlock
-    for (const id of newUnlocks) {
-      const cosmetic = getCosmeticById(id);
-      if (cosmetic) {
-        addToast(state.ui, `🔓 New cosmetic unlocked: ${cosmetic.name}!`, '#ffab40', 4000);
-      }
-    }
-  }
-}
+// B5 micro-slice 11.25 (#268): checkCosmeticUnlocks extracted to
+// ./game/cosmetic-unlocks.ts. Pure side-effecting function that
+// checks progression and grants new cosmetics with toasts.
 
 // ─── Menu System ───────────────────────────────────────────────────
 // TODO: DOC - menu flow state diagram
 
-// ─── Age Band Selection (#92) ───────────────────────────────────
+// B5 micro-slice 11.12 (#268): showAgeSelection extracted to
+// ./game/age-selection.ts (58 lines). Pure DOM overlay, no callbacks.
 
-/** Show age band selection overlay. Resolves when player picks or skips. */
-function showAgeSelection(profile: AgeProfile): Promise<void> {
-  return new Promise(resolve => {
-    const overlay = document.getElementById('ageOverlay');
-    if (!overlay) { resolve(); return; }
-
-    const list = document.getElementById('ageBandList');
-    const confirmBtn = document.getElementById('ageConfirm') as HTMLButtonElement;
-    const skipBtn = document.getElementById('ageSkip');
-
-    if (!list || !confirmBtn) { resolve(); return; }
-
-    let selected: AgeBand | null = null;
-
-    function renderOptions(): void {
-      list!.innerHTML = AGE_BANDS.map(b => {
-        const sel = selected === b.id;
-        return `<div class="age-band-option ${sel ? 'selected' : ''}" data-band="${b.id}">
-          <span class="age-band-icon">${b.icon}</span>
-          <div class="age-band-info">
-            <span class="age-band-label">${b.label}</span>
-            <span class="age-band-range">${b.range}</span>
-          </div>
-        </div>`;
-      }).join('');
-
-      // Wire option clicks
-      list!.querySelectorAll('.age-band-option').forEach(el => {
-        el.addEventListener('click', () => {
-          selected = (el as HTMLElement).dataset.band as AgeBand;
-          confirmBtn.disabled = false;
-          renderOptions();
-        });
-      });
-    }
-
-    renderOptions();
-    overlay.style.display = 'flex';
-
-    const onConfirm = () => {
-      if (selected) setAgeBand(profile, selected);
-      overlay.style.display = 'none';
-      confirmBtn.removeEventListener('click', onConfirm);
-      skipBtn?.removeEventListener('click', onSkip);
-      resolve();
-    };
-
-    const onSkip = () => {
-      // Skip = no age band, show everything
-      overlay.style.display = 'none';
-      confirmBtn.removeEventListener('click', onConfirm);
-      skipBtn?.removeEventListener('click', onSkip);
-      resolve();
-    };
-
-    confirmBtn.addEventListener('click', onConfirm);
-    skipBtn?.addEventListener('click', onSkip);
-  });
-}
-
-/** Show main menu overlay. Returns promise resolving to player choice. */
+// ─── Options Overlay (#117 Phase 3) ──────────────────────────
 // ─── Options Overlay (#117 Phase 3) ──────────────────────────
 
 /**
  * Show options overlay. Syncs with sidebar sliders bidirectionally.
  * If state is null, we're in main menu context (audio controls only affect sidebar defaults).
  */
-function showOptionsOverlay(_state: GameState | null, inputMgr?: InputManager): void {
-  const overlay = document.getElementById('optionsOverlay')!;
-  overlay.style.display = 'flex';
+// B5 micro-slice 11.17 (#268): showOptionsOverlay (174 lines) extracted
+// to ./game/options-overlay.ts. Pure DOM manipulation with optional
+// game-state + input-mgr coupling. No module-level state moves.
 
-  // Sync options sliders FROM sidebar current values
-  const sidebarMusic = document.getElementById('musicVolume') as HTMLInputElement | null;
-  const sidebarSfx = document.getElementById('sfxVolume') as HTMLInputElement | null;
-  const sidebarAmbience = document.getElementById('ambienceVolume') as HTMLInputElement | null;
-  const sidebarVoice = document.getElementById('voiceVolume') as HTMLInputElement | null;
+// B5 micro-slice 11.10 (#268): showMainMenu extracted from main.ts
+// to ./game/main-menu.ts. The Options button inside the menu
+// delegates to a caller-supplied callback so this module stays
+// independent of showOptionsOverlay.
 
-  const optMusic = document.getElementById('optMusicVol') as HTMLInputElement;
-  const optSfx = document.getElementById('optSfxVol') as HTMLInputElement;
-  const optAmbience = document.getElementById('optAmbienceVol') as HTMLInputElement;
-  const optVoice = document.getElementById('optVoiceVol') as HTMLInputElement;
-
-  // Read current values from sidebar/popup controls
-  if (sidebarMusic) optMusic.value = sidebarMusic.value;
-  if (sidebarSfx) optSfx.value = sidebarSfx.value;
-  if (sidebarAmbience) optAmbience.value = sidebarAmbience.value;
-  if (sidebarVoice) optVoice.value = sidebarVoice.value;
-
-  // Update display values
-  const updateDisplay = () => {
-    document.getElementById('optMusicVal')!.textContent = optMusic.value;
-    document.getElementById('optSfxVal')!.textContent = optSfx.value;
-    document.getElementById('optAmbienceVal')!.textContent = optAmbience.value;
-    document.getElementById('optVoiceVal')!.textContent = optVoice.value;
-  };
-  updateDisplay();
-
-  // Sync options → sidebar on input (live preview)
-  const syncToSidebar = (optEl: HTMLInputElement, sidebarEl: HTMLInputElement | null) => {
-    if (sidebarEl) {
-      sidebarEl.value = optEl.value;
-      sidebarEl.dispatchEvent(new Event('input'));
-    }
-    updateDisplay();
-  };
-
-  optMusic.oninput = () => syncToSidebar(optMusic, sidebarMusic);
-  optSfx.oninput = () => syncToSidebar(optSfx, sidebarSfx);
-  optAmbience.oninput = () => syncToSidebar(optAmbience, sidebarAmbience);
-  optVoice.oninput = () => syncToSidebar(optVoice, sidebarVoice);
-
-  // #138: LLM config is now Options-only (no sidebar sync needed)
-  // LLM settings load/applied via initLlmConfigPanel() in ui.ts
-
-  // Touch controls toggle (#124, #126 — UA-based auto-show)
-  const optTouch = document.getElementById('optTouchControls') as HTMLSelectElement | null;
-
-  // Touch visibility mode (#144 — 3-way: whisper/slide/visible)
-  const TOUCH_VIS_KEY = 'emilys_game_touch_vis';
-  const optTouchVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
-  const sbTouchVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
-  const savedTouchVis = (localStorage.getItem(TOUCH_VIS_KEY) || 'whisper') as TouchControlMode;
-  if (inputMgr) inputMgr.setTouchControlMode(savedTouchVis);
-  const syncTouchVis = (mode: TouchControlMode) => {
-    if (inputMgr) inputMgr.setTouchControlMode(mode);
-    localStorage.setItem(TOUCH_VIS_KEY, mode);
-    if (optTouchVis) optTouchVis.value = mode;
-    if (sbTouchVis) sbTouchVis.value = mode;
-  };
-  if (optTouchVis) {
-    optTouchVis.value = savedTouchVis;
-    optTouchVis.onchange = () => syncTouchVis(optTouchVis.value as TouchControlMode);
-  }
-  if (sbTouchVis) {
-    sbTouchVis.value = savedTouchVis;
-    sbTouchVis.onchange = () => syncTouchVis(sbTouchVis.value as TouchControlMode);
-  }
-
-  // Fog of War toggle (#127)
-  const FOG_PREF_KEY = 'emilys_game_fog_enabled';
-  const optFog = document.getElementById('optFogOfWar') as HTMLSelectElement | null;
-  if (optFog) {
-    optFog.value = isFogEnabled() ? 'on' : 'off';
-    optFog.onchange = () => {
-      const enabled = optFog.value === 'on';
-      setFogEnabled(enabled);
-      localStorage.setItem(FOG_PREF_KEY, enabled ? '1' : '0');
-    };
-  }
-  const optGamepadStatus = document.getElementById('optGamepadStatus');
-  if (optTouch && inputMgr) {
-    // (#126) Determine current state: 'auto' means UA-matched, 'on' means forced, 'off' means disabled
-    if (inputMgr.touchEnabled) {
-      optTouch.value = shouldAutoShowTouchOverlay() ? 'auto' : 'on';
-    } else {
-      optTouch.value = 'off';
-    }
-    optTouch.onchange = () => {
-      if (!inputMgr) return;
-      if (optTouch.value === 'on') {
-        inputMgr.enableTouchControls();
-      } else if (optTouch.value === 'off') {
-        inputMgr.disableTouchControls();
-      } else {
-        // Auto: only enable if UA matches (#126)
-        if (shouldAutoShowTouchOverlay()) {
-          inputMgr.enableTouchControls();
-        } else {
-          inputMgr.disableTouchControls();
-        }
-      }
-    };
-  }
-  if (optGamepadStatus && inputMgr) {
-    optGamepadStatus.textContent = inputMgr.gamepadConnected ? '✅ Connected' : '❌ Not connected';
-    optGamepadStatus.style.color = inputMgr.gamepadConnected ? '#88ff88' : '#888';
-  }
-
-  // Tesla Mode (#185)
-  const optTesla = document.getElementById('optTeslaMode') as HTMLSelectElement | null;
-  const teslaBadge = document.getElementById('teslaBadge');
-  const applyTeslaMode = (active: boolean) => {
-    // Show/hide Tesla "T" badge
-    if (teslaBadge) {
-      teslaBadge.classList.toggle('active', active);
-    }
-    // Auto-enable/disable touch controls when Tesla mode changes
-    if (inputMgr) {
-      if (active && !inputMgr.touchEnabled) {
-        inputMgr.enableTouchControls();
-        if (optTouch) optTouch.value = 'on';
-      }
-    }
-  };
-  if (optTesla) {
-    // Determine initial state
-    const teslaActive = isTeslaMode();
-    const teslaAutoDetected = detectTeslaBrowser();
-    if (teslaActive) {
-      optTesla.value = 'on';
-    } else if (teslaAutoDetected) {
-      optTesla.value = 'auto';
-    } else {
-      optTesla.value = 'off';
-    }
-    applyTeslaMode(teslaActive);
-
-    optTesla.onchange = () => {
-      if (optTesla.value === 'on') {
-        setTeslaMode(true);
-        applyTeslaMode(true);
-      } else if (optTesla.value === 'off') {
-        setTeslaMode(false);
-        applyTeslaMode(false);
-      } else {
-        // Auto: enable only if auto-detected
-        const auto = detectTeslaBrowser();
-        setTeslaMode(auto);
-        applyTeslaMode(auto);
-      }
-    };
-  } else {
-    // No settings element — still apply if Tesla mode active (e.g. ?tesla=1)
-    if (isTeslaMode()) {
-      applyTeslaMode(true);
-    }
-  }
-
-  // Close button
-  document.getElementById('optionsClose')!.onclick = () => {
-    overlay.style.display = 'none';
-  };
-
-  // Replay Tutorial (#186)
-  document.getElementById('optReplayTutorial')?.addEventListener('click', () => {
-    resetTutorial();
-    initTutorial();
-    overlay.style.display = 'none';
-    if (_state) _state.paused = false;
-  });
-}
-
-function showMainMenu(hasSaveData: boolean): Promise<string> {
-  return new Promise((resolve) => {
-    const menu = document.getElementById('mainMenu')!;
-    const buttonsPanel = document.getElementById('menuButtonsPanel')!;
-    const loadPanel = document.getElementById('menuLoadPanel')!;
-    const continueBtn = document.getElementById('menuContinue') as HTMLButtonElement;
-    const newGameBtn = document.getElementById('menuNewGame') as HTMLButtonElement;
-    const loadGameBtn = document.getElementById('menuLoadGame') as HTMLButtonElement;
-    const loadBackBtn = document.getElementById('menuLoadBack') as HTMLButtonElement;
-    const slotList = document.getElementById('menuSlotList')!;
-
-    // Show/hide continue based on auto-save
-    continueBtn.style.display = hasSaveData ? 'block' : 'none';
-
-    // Show/hide load based on any save existing
-    const slots = getAllSlotInfo();
-    const anySlots = hasSaveData || slots.some((s) => s.hasData);
-    loadGameBtn.style.display = anySlots ? 'block' : 'none';
-
-    // Reset to buttons view
-    buttonsPanel.style.display = 'flex';
-    loadPanel.style.display = 'none';
-    menu.style.display = 'flex';
-
-    const cleanup = () => { menu.style.display = 'none'; };
-
-    continueBtn.onclick = () => { cleanup(); resolve('continue'); };
-    newGameBtn.onclick = () => { cleanup(); resolve('new-game'); };
-
-    loadGameBtn.onclick = () => {
-      buttonsPanel.style.display = 'none';
-      loadPanel.style.display = 'block';
-      slotList.innerHTML = '';
-
-      // Auto-save slot
-      if (hasSaveData) {
-        const autoSave = loadGame();
-        const autoEl = document.createElement('div');
-        autoEl.className = 'menu-slot';
-        autoEl.innerHTML = `
-          <div class="menu-slot-info">
-            <div class="menu-slot-name">💾 Auto-Save</div>
-            <div class="menu-slot-time">${autoSave?.timestamp ? new Date(autoSave.timestamp).toLocaleString() : 'Unknown'}</div>
-          </div>
-          <div class="menu-slot-icon">▶</div>`;
-        autoEl.onclick = () => { cleanup(); resolve('continue'); };
-        slotList.appendChild(autoEl);
-      }
-
-      // Manual save slots
-      for (const info of slots) {
-        const el = document.createElement('div');
-        el.className = 'menu-slot' + (info.hasData ? '' : ' empty');
-        if (info.hasData) {
-          el.innerHTML = `
-            <div class="menu-slot-info">
-              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
-              <div class="menu-slot-time">${info.timestamp ? new Date(info.timestamp).toLocaleString() : '—'}</div>
-            </div>
-            <div class="menu-slot-icon">▶</div>`;
-          const slotIdx = info.slot;
-          el.onclick = () => { cleanup(); resolve(`load-slot-${slotIdx}`); };
-        } else {
-          el.innerHTML = `
-            <div class="menu-slot-info">
-              <div class="menu-slot-name">Slot ${info.slot + 1}</div>
-              <div class="menu-slot-time">Empty</div>
-            </div>`;
-        }
-        slotList.appendChild(el);
-      }
-    };
-
-    loadBackBtn.onclick = () => {
-      loadPanel.style.display = 'none';
-      buttonsPanel.style.display = 'flex';
-    };
-
-    // Options button (#117 Phase 3)
-    document.getElementById('menuOptions')!.onclick = () => {
-      showOptionsOverlay(null); // null = no game state (main menu context)
-    };
-  });
-}
 
 /** Reset game state for a new game */
-function resetGameState(state: GameState): void {
-  state.player.x = PLAYER_CONFIG.startPosition.x;
-  state.player.y = PLAYER_CONFIG.startPosition.y;
-  state.player.direction = 1;
-  state.player.facingDx = 1;
-  state.player.facingDy = 0;
-  state.player.facingPose = 'front' as FacingPose;
-  state.player.isMoving = false;
-  state.player.animFrame = 0;
-  state.camera.x = state.player.x;
-  state.camera.y = state.player.y;
-  state.chunks.clear();
-  state.inventory = createInventory();
-  state.quiz = createQuizState();
-  state.knowledge = createKnowledgeState();
-  state.quizStats = { answered: 0, correct: 0 };
-  state.streak = createStreakState(); // #103 reset streak
-  state.pendingQuiz = null;
-  state.pendingGateQuiz = null;
-  state.trade = createTradeState();
-  state.pendingTrade = null;
-  state.status = createPlayerStatus();
-  state.injury = createInjuryState();
-  resetTickCounter();
-  state.unlockedCosmetics = [];
-  setUnlockedCosmetics([]);
-  // Reset diarrhea illness chain (#133)
-  state.streamDrinkCount = 0;
-  state.diarrheaUntil = 0;
-  state.diarrheaLocked = false;
-  state.diarrheaLockUntil = 0;
-  state.diarrheaLastTrigger = 0;
-  state.poopMarkers.length = 0;
-  setDiarrheaOverlay(false);
-  // Reset quiz type flags (#109, #110)
-  state._woundCareQuiz = false;
-  state._hygieneQuiz = false;
-  state._insectQuiz = false;
-  state._pendingInsectQuiz = false;
-  // Keep music settings across new game — just stop playback
-  musicStop(state.music);
-  // Keep SFX settings across new game — just stop ambience
-  stopAmbience(state.sfx);
-  // Keep voice settings across new game — just cancel speech
-  cancelSpeech(state.voice);
-  state.lastChunkX = Math.floor(state.player.x / WORLD_CONFIG.chunkSize);
-  state.lastChunkY = Math.floor(state.player.y / WORLD_CONFIG.chunkSize);
-  state.playerVariation = createDefaultVariation();
-  state.egoImg = loadCharacterSprite(state.playerVariation, 0, false);
-  state.lastAnimFrame = -1;
-  clearTerrainCache();
-  clearObjectCache();
-  clearParticles();
-  clearWeather();
-  clearBubbles();
-  _pendingResolved.clear(); // Clear resolved cells for fresh game
-  deleteSave();
-  ensureChunksAround(state);
-}
+// B5 micro-slice 11.16 (#268): resetGameState (54 lines) extracted to
+// ./game/game-reset.ts. Sibling to save-apply.ts; both are pure
+// orchestration. No module-level state moves.
 
 // ─── Bug Report Capture (#117) ──────────────────────────────
-
-function captureBugReport(state: GameState, description: string): void {
-  // Capture canvas screenshot
-  const canvas = document.querySelector('#gameContainer canvas') as HTMLCanvasElement | null;
-  const screenshotDataUrl = canvas ? canvas.toDataURL('image/png') : '';
-
-  // Build metadata
-  const cs = WORLD_CONFIG.chunkSize;
-  const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
-  const chunk = state.chunks.get(cKey);
-  const metadata = {
-    timestamp: new Date().toISOString(),
-    description,
-    player: {
-      x: Math.round(state.player.x * 100) / 100,
-      y: Math.round(state.player.y * 100) / 100,
-      biome: chunk?.biomeName ?? 'unknown',
-      biomeId: chunk?.biomeId ?? -1,
-    },
-    status: { ...state.status },
-    inventory: state.inventory.serialize().map((s) => ({ id: s.itemId, qty: s.quantity })),
-    timeOfDay: getCycleProgress(),
-    frameCount: state.frameCount,
-    platform: navigator.userAgent,
-  };
-
-  // Bundle into a downloadable JSON + embedded screenshot
-  const report = {
-    version: '1.0',
-    ...metadata,
-    screenshot: screenshotDataUrl,
-  };
-
-  const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `bug-report-${Date.now()}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
+// B5 micro-slice 11.23 (#268): captureBugReport extracted to
+// ./game/bug-report.ts. Bundles canvas screenshot + game state into
+// a downloadable JSON. Pure function (no module state).
 
 // ─── Welcome Splash (#117) ──────────────────────────────────
+// B5 micro-slice 11.22 (#268): showWelcomeSplash + shouldShowWelcome
+// extracted to ./game/welcome-splash.ts. FIRST_RUN_KEY moved with them.
 
-const FIRST_RUN_KEY = 'emilys_game_first_run';
+// B5 micro-slice 11.11 (#268): showPauseMenu extracted to ./game/pause-menu.ts
+// (76 lines). Handlers for save/options/bug-report/main-menu are wired
+// at the call site below to keep this module decoupled.
 
-function shouldShowWelcome(): boolean {
-  return !localStorage.getItem(FIRST_RUN_KEY);
-}
-
-function showWelcomeSplash(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!shouldShowWelcome()) {
-      resolve();
-      return;
-    }
-
-    const splash = document.getElementById('welcomeSplash')!;
-    splash.style.display = 'flex';
-
-    document.getElementById('welcomeDismiss')!.onclick = () => {
-      splash.style.display = 'none';
-      localStorage.setItem(FIRST_RUN_KEY, '1');
-      resolve();
-    };
-  });
-}
-
-/** Show pause menu overlay (Escape during gameplay) */
-function showPauseMenu(state: GameState, inputMgr?: InputManager): void {
-  state.paused = true;
-  const menu = document.getElementById('pauseMenu')!;
-  menu.style.display = 'flex';
-
-  document.getElementById('pauseResume')!.onclick = () => {
-    menu.style.display = 'none';
-    state.paused = false;
-  };
-
-  document.getElementById('pauseSave')!.onclick = () => {
-    doSave(state);
-    addToast(state.ui, 'Game saved!', '#4caf50', 1500);
-  };
-
-  document.getElementById('pauseCustomize')!.onclick = async () => {
-    menu.style.display = 'none';
-    const newVariation = await showCustomizer(state.playerVariation, true);
-    if (!newVariation) {
-      // Cancelled — reopen pause menu
-      menu.style.display = 'flex';
-      return;
-    }
-    clearVariationCache('custom');
-    state.playerVariation = newVariation;
-    state._baseExpression = newVariation.expression ?? 'happy';
-    state.expressionOverride = null;
-    state.egoImg = loadCharacterSprite(newVariation, 0, false);
-    state.lastAnimFrame = -1;
-    state.paused = false;
-    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
-  };
-
-  document.getElementById('pauseMainMenu')!.onclick = () => {
-    doSave(state);
-    window.location.reload();
-  };
-
-  // Controls guide (#117)
-  document.getElementById('pauseControls')!.onclick = () => {
-    const guide = document.getElementById('controlsGuide')!;
-    guide.style.display = 'flex';
-    document.getElementById('controlsClose')!.onclick = () => {
-      guide.style.display = 'none';
-    };
-  };
-
-  // Options (#117 Phase 3)
-  document.getElementById('pauseOptions')!.onclick = () => {
-    showOptionsOverlay(state, inputMgr);
-  };
-
-  // Bug reporter (#117)
-  document.getElementById('pauseBugReport')!.onclick = () => {
-    const modal = document.getElementById('bugReportModal')!;
-    modal.style.display = 'flex';
-    const descEl = document.getElementById('bugDescription') as HTMLTextAreaElement;
-    descEl.value = '';
-
-    document.getElementById('bugCancel')!.onclick = () => {
-      modal.style.display = 'none';
-    };
-
-    document.getElementById('bugSubmit')!.onclick = () => {
-      captureBugReport(state, descEl.value);
-      modal.style.display = 'none';
-      addToast(state.ui, '🐛 Bug report downloaded!', '#ff8888', 2500);
-    };
-  };
-}
 // ─── Thought Bubble Triggers ─────────────────────────────────
+// B5 micro-slice 11.18 (#268): checkBubbleTriggers (173 lines) + 2
+// module-level vars (lastBubbleBiomeId, lastBubbleDiffTier) extracted
+// to ./game/bubble-triggers.ts. Pure logic — evaluates state and calls
+// triggerHint() for each matching hint category. Sister to wildlife-render.
 
-let lastBubbleBiomeId = -1;
-let lastBubbleDiffTier = -1;
-
-function checkBubbleTriggers(state: GameState): void {
-  const px = state.player.x;
-  const py = state.player.y;
-  const cs = WORLD_CONFIG.chunkSize;
-  const cKey = `${Math.floor(px / cs)},${Math.floor(py / cs)}`;
-  const chunk = state.chunks.get(cKey);
-
-  // Low resources
-  if (state.inventory.countItem('coin') === 0) {
-    triggerHint('low_coins');
-  }
-  if (state.inventory.countItem('key') === 0) {
-    triggerHint('no_keys');
-  }
-
-  // Nearby interactives — scan 3x3 cells around player
-  const rx = Math.round(px);
-  const ry = Math.round(py);
-  for (let dy = -2; dy <= 2; dy++) {
-    for (let dx = -2; dx <= 2; dx++) {
-      const gx = rx + dx;
-      const gy = ry + dy;
-      const ccx = Math.floor(gx / cs);
-      const ccy = Math.floor(gy / cs);
-      const nearChunk = state.chunks.get(`${ccx},${ccy}`);
-      if (!nearChunk?.generated) continue;
-      const lx = ((gx % cs) + cs) % cs;
-      const ly = ((gy % cs) + cs) % cs;
-      const cell = nearChunk.cells[ly]?.[lx];
-      if (!cell) continue;
-
-      if (cell.npcId) triggerHint('near_npc');
-      if (cell.assetKey === 'quiz_gate' || cell.assetKey === 'door') triggerHint('near_gate');
-      if (cell.assetKey === 'chest') triggerHint('near_chest');
-    }
-  }
-
-  // Wildlife nearby
-  const wildlife = getVisibleWildlife(state.camera, px, py);
-  if (wildlife.length > 0) {
-    // Only trigger if there's a close creature (within ~3 grid units)
-    const close = wildlife.some(e => {
-      const distSq = (e.worldX - px) ** 2 + (e.worldY - py) ** 2;
-      return distSq < 9; // 3^2
-    });
-    if (close) triggerHint('wildlife_spotted');
-  }
-
-  // Biome transitions
-  if (chunk?.generated && chunk.biomeId !== lastBubbleBiomeId) {
-    const oldBiome = lastBubbleBiomeId;
-    lastBubbleBiomeId = chunk.biomeId;
-    if (oldBiome >= 0) { // Don't trigger on first chunk
-      if (chunk.biomeId === 1) triggerHint('biome_forest');
-      else if (chunk.biomeId === 2) triggerHint('biome_cave');
-      else if (chunk.biomeId === 3) triggerHint('biome_castle');
-    }
-  }
-
-  // Difficulty warnings
-  if (chunk?.generated) {
-    const dist = Math.abs(Math.floor(px / cs)) + Math.abs(Math.floor(py / cs));
-    const diff = getDifficulty(dist);
-    if (diff.tier >= 3 && diff.tier !== lastBubbleDiffTier) {
-      triggerHint('danger_zone');
-    }
-    lastBubbleDiffTier = diff.tier;
-  }
-
-  // Quiz streak / wrong encouragement
-  if (state.quizStats.answered > 0) {
-    const streakPct = state.quizStats.correct / state.quizStats.answered;
-    if (streakPct >= 0.8 && state.quizStats.answered >= 3) {
-      triggerHint('quiz_streak');
-    }
-  }
-
-  // Nightfall / dawn from lighting (check cycle progress)
-  const progress = getCycleProgress();
-  if (progress >= 0.78 && progress < 0.82) {
-    triggerHint('nightfall');
-  } else if (progress >= 0.0 && progress < 0.05) {
-    triggerHint('dawn');
-  }
-
-  // Dark without flashlight
-  if (progress >= 0.80 && !isFlashlightOn()) {
-    triggerHint('dark_no_flashlight');
-  }
-
-  // Far from spawn
-  const spawnDist = Math.sqrt(px * px + py * py);
-  if (spawnDist > 60) {
-    triggerHint('far_from_spawn');
-  }
-
-  // ── Status-aware triggers (#111) ──
-  const LOW = 30;
-  const CRIT = 15;
-  const { energy, hydration, cleanliness } = state.status;
-
-  // Count how many stats are low
-  let lowCount = 0;
-  if (energy <= LOW) lowCount++;
-  if (hydration <= LOW) lowCount++;
-  if (cleanliness <= LOW) lowCount++;
-
-  // Combo trigger first (priority 8, highest)
-  if (lowCount >= 3) {
-    triggerHint('status_combo_bad');
-  } else {
-    // Individual status triggers
-    if (energy <= CRIT) triggerHint('critical_energy');
-    else if (energy <= LOW) triggerHint('low_energy');
-
-    if (hydration <= CRIT) triggerHint('critical_hydration');
-    else if (hydration <= LOW) triggerHint('low_hydration');
-
-    if (cleanliness <= CRIT) triggerHint('critical_cleanliness');
-    else if (cleanliness <= LOW) triggerHint('low_cleanliness');
-  }
-
-  // ── Shop proximity trigger (#111) ──
-  // Check nearby cells for shop/merchant structures
-  for (let dy2 = -3; dy2 <= 3; dy2++) {
-    for (let dx2 = -3; dx2 <= 3; dx2++) {
-      const gx2 = rx + dx2;
-      const gy2 = ry + dy2;
-      const ccx2 = Math.floor(gx2 / cs);
-      const ccy2 = Math.floor(gy2 / cs);
-      const nearChunk2 = state.chunks.get(`${ccx2},${ccy2}`);
-      if (!nearChunk2?.generated) continue;
-      const lx2 = ((gx2 % cs) + cs) % cs;
-      const ly2 = ((gy2 % cs) + cs) % cs;
-      const cell2 = nearChunk2.cells[ly2]?.[lx2];
-      if (!cell2) continue;
-      if (cell2.assetKey === 'shop' || cell2.assetKey?.startsWith('shop_') || cell2.assetKey === 'merchant' || cell2.assetKey === 'store') {
-        if (state.injury.injured) {
-          triggerHint('injury_near_shop'); // Injured + near shop (#109)
-        } else {
-          triggerHint('near_shop');
-        }
-      }
-      // Outhouse proximity (#110)
-      if (cell2.assetKey === 'outhouse') {
-        if (state.status.cleanliness <= LOW) {
-          triggerHint('outhouse_near');
-        }
-      }
-      // Water proximity — drink from stream (#110 Phase 3)
-      if (cell2.assetKey === 'water') {
-        if (hydration <= LOW) {
-          triggerHint('near_water');
-        }
-      }
-    }
-  }
-
-  // Injury-specific hints (#109)
-  if (state.injury.injured) {
-    triggerHint('need_bandaid');
-  }
-
-  // Starving desperation hint (#110 Phase 3)
-  if (energy <= CRIT) {
-    triggerHint('starving_worms');
-  }
-
-  // Dirty hint — outhouse needed (#110)
-  if (state.status.cleanliness <= LOW) {
-    triggerHint('outhouse_dirty');
-  }
-}
-
-// ─── Wildlife Rendering ──────────────────────────────────────
-
-// Track creatures revealed by flashlight this session (#114)
-const _revealedCreatures = new Set<string>(); // chunkKey_localId keys
-
-// Glowing eyes animation state (module-level, avoid per-frame alloc)
-let _eyeBlinkTimer = 0;
-let _eyeSwayPhase = 0;
-
-function renderWildlife(renderer: IsometricRenderer, state: GameState): void {
-  const wildlife = getVisibleWildlife(state.camera, state.player.x, state.player.y);
-  if (wildlife.length === 0) return;
-
-  const ctx = renderer.getCtx();
-  const cw = RENDER_CONFIG.canvasWidth;
-  const ch = RENDER_CONFIG.canvasHeight;
-  const timeSlot = getTimeSlot();
-  const isNight = timeSlot === 'night';
-
-  // Advance eye animation
-  _eyeBlinkTimer = (_eyeBlinkTimer + 1) % 240; // blink every ~4s at 60fps
-  _eyeSwayPhase += 0.03;
-
-  for (const entity of wildlife) {
-    const species = getSpecies(entity.speciesId);
-    if (!species) continue;
-
-    const anim = getAnimationOffset(entity);
-    const { x: sx, y: sy } = renderer.gridToScreen(entity.worldX, entity.worldY, state.camera);
-
-    // Viewport cull
-    if (sx < -64 || sx > cw + 64 || sy < -64 || sy > ch + 64) continue;
-
-    // Glowing eyes mechanic: nocturnal creatures at night (#114)
-    const isNocturnal = species.time.includes('night');
-    const entityKey = `${entity.chunkKey}_${entity.localId}`;
-    const wasRevealed = _revealedCreatures.has(entityKey);
-
-    if (isNight && isNocturnal && !wasRevealed) {
-      // Check if flashlight is revealing this creature
-      const inCone = isInFlashlightCone(
-        entity.worldX, entity.worldY,
-        state.player.x, state.player.y,
-        state.player.facingDx, state.player.facingDy,
-      );
-
-      if (inCone) {
-        // Reveal! Flash of discovery
-        _revealedCreatures.add(entityKey);
-        // Brief bright aura
-        ctx.save();
-        ctx.globalAlpha = 0.6;
-        ctx.fillStyle = '#ffffaa';
-        ctx.beginPath();
-        ctx.arc(sx, sy, 20, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-        // Show discovery toast
-        addToast(state.ui, `👀 You spotted a ${species.name}! ${species.emoji}`, '#ffee44', 3000);
-      } else {
-        // Draw glowing eyes (two small dots)
-        const eyeSize = 2.5;
-        const eyeSpacing = 5;
-        const eyeY = sy + anim.dy - 4;
-        const eyeX = sx + anim.dx;
-        // Slight sway
-        const sway = Math.sin(_eyeSwayPhase + entity.localId * 1.7) * 1.2;
-        // Blink: briefly close eyes (~12 frames every ~240 frames)
-        const blinkOffset = (entity.localId * 37) % 240;
-        const blinkPhase = (_eyeBlinkTimer + blinkOffset) % 240;
-        const isBlinking = blinkPhase > 228;
-
-        if (!isBlinking) {
-          ctx.save();
-          // Additive blend for glow effect
-          ctx.globalCompositeOperation = 'lighter';
-          // Outer glow
-          ctx.globalAlpha = 0.35;
-          ctx.fillStyle = '#ffdd44';
-          ctx.beginPath();
-          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
-          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize + 2, 0, Math.PI * 2);
-          ctx.fill();
-          // Inner bright
-          ctx.globalAlpha = 0.9;
-          ctx.fillStyle = '#ffff88';
-          ctx.beginPath();
-          ctx.arc(eyeX - eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
-          ctx.arc(eyeX + eyeSpacing + sway, eyeY, eyeSize, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-        continue; // Don't render full sprite
-      }
-    }
-
-    // Normal sprite rendering (day, or revealed creatures)
-    const sprite = getEmojiSprite(species.emoji, 0);
-    const size = sprite.width * species.scale;
-    const drawX = sx + anim.dx - size / 2;
-    const drawY = sy + anim.dy - size / 2;
-
-    // Fleeing creatures fade out
-    if (entity.behavior === 'flee') {
-      const fadeT = entity.fleeCooldown / 120;
-      ctx.globalAlpha = Math.max(0.15, fadeT);
-    }
-
-    // Directional flip based on facingDir (#80)
-    if (entity.facingDir === -1) {
-      ctx.save();
-      ctx.translate(drawX + size, drawY);
-      ctx.scale(-1, 1);
-      ctx.drawImage(sprite, 0, 0, size, size);
-      ctx.restore();
-    } else {
-      ctx.drawImage(sprite, drawX, drawY, size, size);
-    }
-
-    // Behavior indicator particles (#142: visual cues for sit/groom)
-    if (entity.behavior === 'groom') {
-      // Tiny sparkle dots for grooming
-      const sparkT = entity.animPhase * 4;
-      ctx.save();
-      ctx.globalAlpha = 0.5 + Math.sin(sparkT) * 0.3;
-      ctx.fillStyle = '#fff8e0';
-      for (let i = 0; i < 3; i++) {
-        const px = sx + Math.sin(sparkT + i * 2.1) * 6;
-        const py = sy + anim.dy - 8 + Math.cos(sparkT + i * 1.7) * 4;
-        ctx.fillRect(px - 1, py - 1, 2, 2);
-      }
-      ctx.restore();
-    } else if (entity.behavior === 'sit') {
-      // Tiny "Zzz" indicator when sitting still long enough
-      if (entity.behaviorTimer < 60) { // last second of sitting
-        ctx.save();
-        ctx.globalAlpha = 0.4;
-        ctx.font = '8px sans-serif';
-        ctx.fillStyle = '#aaccff';
-        ctx.fillText('z', sx + 8, sy + anim.dy - 12 + Math.sin(entity.animPhase * 2) * 2);
-        ctx.restore();
-      }
-    }
-
-    if (entity.behavior === 'flee') {
-      ctx.globalAlpha = 1.0;
-    }
-  }
-}
+// B5 micro-slice 11.13 (#268): renderWildlife + the _revealedCreatures /
+// _eyeBlinkTimer / _eyeSwayPhase state moved to ./game/wildlife-render.ts.
 
 // ─── Render ──────────────────────────────────────────────────
+// B5 micro-slice 11.19 (#268): _pendingPoopBurst state moved to
+// ./game/interaction-handler.ts. renderFrame uses getPendingPoopBurst()
+// + setPendingPoopBurst(false) to drain the flag after spawning the VFX.
 
-// Deferred poop burst — set in tick, resolved in render with screen coords (#133)
-let _pendingPoopBurst = false;
-
+// B5 micro-slice 11.27 (#268): renderFrame extracted to
+// ./rendering/render-frame.ts. Composes 7 render passes; perfStats
+// is passed as a parameter (caller owns the timing aggregation).
 function renderFrame(
   renderer: IsometricRenderer,
   state: GameState,
+  perfStats: { render: number; particles: number; wildlife: number; lighting: number; weather: number; update: number; total: number },
 ): void {
-  const _t0 = performance.now();
-
-  // World render (WASM if available, JS fallback)
-  renderer.renderAuto(
-    state.chunks,
-    state.camera,
-    { x: state.player.x, y: state.player.y },
-    state.player.direction,
-    state.egoImg,
-    state.ui.showDebug,
-  );
-
-  const _t1 = performance.now();
-  perfStats.render = perfSmooth(perfStats.render, _t1 - _t0);
-
-  // Ambient particles (butterflies, sparkles, leaves, birds)
-  updateAndRenderParticles(renderer.getCtx(), state.chunks, state.camera);
-
-  const _t2 = performance.now();
-  perfStats.particles = perfSmooth(perfStats.particles, _t2 - _t1);
-
-  // Wildlife layer: draw creatures after terrain/objects, before lighting
-  renderWildlife(renderer, state);
-
-  const _t3 = performance.now();
-  perfStats.wildlife = perfSmooth(perfStats.wildlife, _t3 - _t2);
-
-  // Debuff visual effects (#110): fly particles + dehydration blur
-  updateFlies(state.status);
-  updateBlurOverlay(state.status);
-  updateInjuryFlash(); // (#109 Phase 3) injury red flash
-  updateDiarrheaOverlay(); // (#133) green illness overlay
-  const playerScreenDbf = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
-  renderFlies(renderer.getCtx(), playerScreenDbf.x, playerScreenDbf.y);
-
-  // Poop markers in world space (#133)
-  const cam = state.camera;
-  renderPoopMarkers(
-    renderer.getCtx(),
-    state.poopMarkers,
-    state.frameCount,
-    DIARRHEA_CONFIG.MARKER_DURATION_FRAMES,
-    (gx: number, gy: number) => renderer.gridToScreen(gx, gy, cam),
-  );
-
-  // Poop particle burst (#133): resolve deferred burst with screen coords
-  if (_pendingPoopBurst) {
-    _pendingPoopBurst = false;
-    spawnPoopBurst(playerScreenDbf.x, playerScreenDbf.y, DIARRHEA_CONFIG.PARTICLE_COUNT);
-  }
-  updateAndRenderPoopParticles(renderer.getCtx());
-
-  // Fog-of-war overlay: darken unexplored areas (#114)
-  renderFog(renderer.getCtx(), state.camera);
-
-  // Update thought bubble position (anchored above player sprite screen position)
-  const playerScreen = renderer.gridToScreen(state.player.x, state.player.y, state.camera);
-  updateBubblePosition(playerScreen.x, playerScreen.y);
-
-  // Day/night cycle: tick the clock (rendering is handled by local-lights with lightmap)
-  // Pause-aware: don't advance time when menus/overlays are active (#136)
-  tickLighting(state.paused);
-
-  // Local lights: fire positions cached per chunk to avoid 5625+ cell scans every frame (#79, #81)
-  clearLights();
-  const cs2 = WORLD_CONFIG.chunkSize;
-  for (const [, chunk] of state.chunks) {
-    if (!chunk.generated) continue;
-    // lazily cache fire positions per chunk (bonfire, campfire, biomass_fire)
-    let fires = (chunk as any)._fireCache as { gx: number; gy: number; key: string }[] | undefined;
-    if (fires === undefined) {
-      fires = [];
-      const baseGX = chunk.chunkX * cs2;
-      const baseGY = chunk.chunkY * cs2;
-      for (let cy = 0; cy < cs2; cy++) {
-        for (let cx = 0; cx < cs2; cx++) {
-          const ak = chunk.cells[cy][cx].assetKey;
-          if (FIRE_ASSET_KEYS.has(ak)) {
-            fires.push({ gx: baseGX + cx, gy: baseGY + cy, key: ak });
-          }
-        }
-      }
-      (chunk as any)._fireCache = fires;
-    }
-    for (let i = 0; i < fires.length; i++) {
-      const f = fires[i];
-      const variant = FIRE_VARIANTS[f.key];
-      if (variant) {
-        addPointLight(f.gx, f.gy, {
-          radius: variant.lightRadius,
-          color: variant.lightColor,
-          intensity: variant.lightIntensity,
-        });
-      } else {
-        addPointLight(f.gx, f.gy);
-      }
-    }
-  }
-  addFlashlight(state.player.x, state.player.y, state.player.facingDx, state.player.facingDy);
-  // Torch: portable warm light when player has torch in inventory (#99)
-  if (state.inventory.hasItem('torch')) {
-    addPointLight(state.player.x, state.player.y, {
-      radius: 80,
-      color: [255, 160, 50],
-      intensity: 0.7,
-      flicker: true,
-    });
-  }
-  renderLocalLights(renderer.getCtx(), state.camera);
-
-  // Night desaturation: CSS filter on canvas element for GPU-composited grayscale (#114)
-  // Smooth ramp: full color during day, desaturated at night
-  const cycleT = getCycleProgress();
-  let desatFactor = 0; // 0 = full color, 1 = full desaturation 
-  if (cycleT >= 0.80) {
-    desatFactor = 0.75; // Full night: heavy desaturation
-  } else if (cycleT >= 0.65) {
-    // Dusk transition: 0 → 0.75 over dusk phase
-    desatFactor = ((cycleT - 0.65) / 0.15) * 0.75;
-  } else if (cycleT < 0.08) {
-    // Dawn: fade back 0.75 → 0 
-    desatFactor = (1 - cycleT / 0.08) * 0.75;
-  }
-  if (desatFactor > 0.01) {
-    const sat = 1 - desatFactor;
-    const bright = 1 - desatFactor * 0.15; // slight brightness reduction at night
-    renderer.getCanvas().style.filter = `saturate(${sat.toFixed(2)}) brightness(${bright.toFixed(2)})`;
-  } else {
-    renderer.getCanvas().style.filter = '';
-  }
-
-  const _t4 = performance.now();
-  perfStats.lighting = perfSmooth(perfStats.lighting, _t4 - _t3);
-
-  // Weather effects (rain, fog, clouds, lightning)
-  updateAndRenderWeather(renderer.getCtx());
-  // Thunder SFX on lightning strike (#75)
-  if (didLightningStrike()) {
-    playSfx(state.sfx, 'thunder');
-  }
-
-  const _t5 = performance.now();
-  perfStats.weather = perfSmooth(perfStats.weather, _t5 - _t4);
-
-  // UI overlay - throttle DOM sync to every 4th frame
-  if (state.frameCount % 4 === 0 || state.quiz.active || state.ui.dialog.active || state.trade.active) {
-    // Get current biome name from chunk map
-    const cs = WORLD_CONFIG.chunkSize;
-    const cKey = `${Math.floor(state.player.x / cs)},${Math.floor(state.player.y / cs)}`;
-    const currentChunk = state.chunks.get(cKey);
-    const biomeName = currentChunk ? getBiome(currentChunk.biomeId).displayName : undefined;
-
-    renderUI(
-      renderer.getCtx(),
-      state.ui,
-      state.inventory,
-      state.quiz,
-      { x: state.player.x, y: state.player.y },
-      state.fps,
-      state.quizStats,
-      biomeName,
-    );
-
-    // Trade panel DOM sync
-    if (state.trade.active) {
-      syncTradeDOM(state.trade, state.inventory);
-    }
-
-    // Status bars (#70, #109)
-    syncStatusBars(state.status, state.injury);
-
-    // Music ducking sync (#74) — duck when paused (quiz/dialog active)
-    if (state.paused && !state.music.ducking) {
-      startDucking(state.music);
-    } else if (!state.paused && state.music.ducking) {
-      stopDucking(state.music);
-    }
-
-    // Music UI sync (#74)
-    updateMidiProgress(state.music);
-    syncMusicUI(state.music);
-
-    // SFX UI sync (#75)
-    syncSfxUI(state.sfx);
-
-    // Voice UI sync (#76)
-    syncVoiceUI(state.voice);
-  }
-
-  // Minimap (self-throttling to ~6fps)
-  renderMinimap(state.chunks, state.player.x, state.player.y);
-
-  // Book of Knowledge overlay (self-throttling)
-  syncBookUI(state.knowledge);
+  renderFrameImpl(renderer, state, perfStats);
 }
 
-// ─── Game Loop ───────────────────────────────────────────────
 
-function gameLoop(
-  _time: number,
-  ctx: { state: GameState; renderer: IsometricRenderer; input: InputManager },
-): void {
-  const _frameStart = performance.now();
-  tickWaterAnimation();
-  const _updateStart = performance.now();
-  update(ctx.state, ctx.input);
-  const _updateEnd = performance.now();
-  perfStats.update = perfSmooth(perfStats.update, _updateEnd - _updateStart);
-  renderFrame(ctx.renderer, ctx.state);
-  const _frameEnd = performance.now();
-  const totalMs = _frameEnd - _frameStart;
-  perfStats.total = perfSmooth(perfStats.total, totalMs);
-  recordFrameTime(totalMs);
-  requestAnimationFrame((t) => gameLoop(t, ctx));
-}
+// ─── Game Loop (play-kernel startPlayLoop — PR2) ─────────────
 
 // ─── Extended Input (F3 debug, I inventory, Esc) ─────────────
 
-function setupExtraKeys(state: GameState, input?: InputManager): void {
-  window.addEventListener('keydown', (e) => {
-    switch (e.key) {
-      case 'F3':
-        e.preventDefault();
-        state.ui.showDebug = !state.ui.showDebug;
-        break;
-      case 'i':
-      case 'I':
-        if (!state.quiz.active && !state.ui.dialog.active) {
-          state.ui.showInventory = !state.ui.showInventory;
-        }
-        break;
-      case 'b':
-      case 'B':
-        if (e.shiftKey) {
-          // Shift+B: cycle terrain blend intensity (#84)
-          const steps = [0, 0.5, 1.0, 1.5, 2.0];
-          const curBlend = getBlendIntensity();
-          let nextIdx = 0;
-          for (let i = 0; i < steps.length; i++) {
-            if (curBlend < steps[i] + 0.01) { nextIdx = i; break; }
-            if (i === steps.length - 1) nextIdx = 0;
-          }
-          nextIdx = (nextIdx + 1) % steps.length;
-          setBlendIntensity(steps[nextIdx]);
-        } else if (!state.quiz.active && !state.ui.dialog.active) {
-          toggleBook(state.knowledge);
-          state.paused = state.knowledge.bookOpen;
-          // Close inventory if book opens
-          if (state.knowledge.bookOpen && state.ui.showInventory) {
-            state.ui.showInventory = false;
-          }
-        }
-        break;
-      case 'Escape': {
-        // Guard: don't show pause menu if full-screen modal or quiz is active
-        const overlayBlocks =
-          document.getElementById('customizerOverlay')?.style.display === 'flex' ||
-          document.getElementById('subjectOverlay')?.style.display === 'flex' ||
-          document.getElementById('mainMenu')?.style.display === 'flex' ||
-          state.quiz.active;
-        if (overlayBlocks) break;
-
-        if (state.trade.active) {
-          // If barter quiz is showing, escape closes just the quiz (#112 Phase 3)
-          if (state.trade.barterQuiz) {
-            state.trade.barterQuiz = null;
-            state.trade.barterSelectedIndex = 0;
-            syncBarterQuizDOM(state.trade);
-          } else {
-            closeTrade(state.trade);
-            syncTradeDOM(state.trade, state.inventory);
-            syncBarterQuizDOM(state.trade);
-            state.paused = false;
-          }
-        } else if (state.knowledge.bookOpen) {
-          state.knowledge.bookOpen = false;
-          state.knowledge.currentArticleId = null;
-          state.paused = false;
-        } else if (state.ui.showInventory) {
-          state.ui.showInventory = false;
-        } else if (state.ui.dialog.active) {
-          closeDialog(state.ui);
-          cancelSpeech(state.voice); // Cancel voice on escape close (#76)
-          state.pendingQuiz = null;
-          state.pendingGateQuiz = null;
-          state.pendingTrade = null;
-          state.paused = false;
-        } else if (document.getElementById('pauseMenu')?.style.display === 'flex') {
-          document.getElementById('pauseMenu')!.style.display = 'none';
-          state.paused = false;
-        } else {
-          showPauseMenu(state, input);
-        }
-        break;
-      }
-      case 'T': // Shift+T: advance day/night by 10%
-        if (e.shiftKey) {
-          setTimeOfDay(getCycleProgress() + 0.1);
-          invalidateShadowCache(); // #83 - force shadow recalc after time jump
-        }
-        break;
-      case 'Tab': // Toggle buy/sell mode in trade panel (#112)
-        if (state.trade.active && !state.trade.barterQuiz) {
-          e.preventDefault();
-          toggleTradeMode(state.trade);
-          syncTradeDOM(state.trade, state.inventory);
-          playSfx(state.sfx, 'menu_navigate');
-        }
-        break;
-      case 'W': // Shift+W: cycle weather
-        if (e.shiftKey) {
-          const types: Array<'clear' | 'cloudy' | 'rain' | 'storm' | 'fog'> = ['clear', 'cloudy', 'rain', 'storm', 'fog'];
-          const cur = getWeatherInfo().type;
-          const idx = types.indexOf(cur);
-          setWeather(types[(idx + 1) % types.length]);
-          invalidateShadowCache(); // #83 - weather affects shadow opacity
-        }
-        break;
-      case 'f':
-      case 'F':
-        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active) {
-          toggleFlashlight();
-        }
-        break;
-      case 'e':
-      case 'E':
-        // Use/consume best available status item (#70, #109)
-        if (!e.shiftKey && !e.ctrlKey && !state.quiz.active && !state.ui.dialog.active && !state.trade.active) {
-          // Priority: if injured and have bandage, use bandage first (#109)
-          if (state.injury.injured && state.inventory.hasItem('bandage')) {
-            state.inventory.removeItem('bandage', 1);
-            const healAmt = applyBandaid(state.injury, state.status);
-            playSfx(state.sfx, 'bandaid_use');
-            addToast(state.ui, `🩹 Applied bandage! +${healAmt} energy`, '#88ccff', 2000);
-            setTransientExpression(state, 'happy', 2000);
-            // Start wound-care quiz after brief delay
-            if (state.injury.pendingWoundQuiz) {
-              state.injury.pendingWoundQuiz = false;
-              const wq = getWoundCareQuestion();
-              // Use quiz system with custom wound-care question
-              _startWoundCareQuiz(state, wq);
-            }
-            break;
-          }
-          // Normal consumable path
-          const consumables = ['snack', 'water_flask', 'soap', 'mushroom', 'bandage', 'potion'];
-          for (const itemId of consumables) {
-            if (state.inventory.hasItem(itemId)) {
-              const result = useStatusItem(state.status, itemId);
-              if (result && result !== 'Already at full status!') {
-                state.inventory.removeItem(itemId, 1);
-                addToast(state.ui, result, '#88ccff', 2000);
-                // SFX based on consumable type (#75)
-                playSfx(state.sfx, itemId === 'water_flask' ? 'drink_water' : 'eat_food');
-                break;
-              } else if (result === 'Already at full status!') {
-                addToast(state.ui, '✨ All stats are full!', '#aaa', 1200);
-                break;
-              }
-            }
-          }
-        }
-        break;
-    }
-  });
-}
+// B5 micro-slice 11.20 (#268): setupExtraKeys (152 lines, hot-keys for
+// F3/i/B/Escape/Shift+T/Tab/Shift+W/F/E) extracted from main.ts to
+// ./game/input-extra-keys.ts. The existing quiz-accessibility helpers
+// (setupExtraKeyCapture, consumeExtraKey, clearExtraKeys) stay in the
+// same module. main.ts wires doSave + captureBugReport via SetupExtraKeysDeps.
 
 // ─── Entry Point ─────────────────────────────────────────────
 
 async function main(): Promise<void> {
   const { state, renderer, input, hasSaveData } = await init();
-  setupExtraKeys(state, input);
+  setupExtraKeys(state, input, { doSave, captureBugReport });
   _setupExtraKeyCapture(); // Numeric + R key capture for quiz accessibility (#94)
 
-  // Restore fog-of-war preference from localStorage (#127)
-  const fogPref = localStorage.getItem('emilys_game_fog_enabled');
-  if (fogPref !== null) {
-    setFogEnabled(fogPref === '1');
-  }
+  // HUD wiring + debug surface + startup toasts (#268 B5.43)
+  wireStartupHud(state, input);
 
-  // Apply Tesla mode badge on startup (#185)
-  if (isTeslaMode()) {
-    const teslaBadge = document.getElementById('teslaBadge');
-    if (teslaBadge) teslaBadge.classList.add('active');
-  }
+  // ─── Main Menu / New Game Flow (#268 B5.44) ─────────────────
+  await runMenuFlow(state, hasSaveData, () => showOptionsOverlay(null));
 
-  // Wire HTML HUD buttons
-  wireHudButtons(
-    () => { if (!state.quiz.active && !state.ui.dialog.active) state.ui.showInventory = !state.ui.showInventory; },
-    () => { state.ui.showDebug = !state.ui.showDebug; },
-    () => { doSave(state); addToast(state.ui, 'Game saved!', '#4caf50', 1500); },
-    // Slot save
-    (slot: number) => {
-      const data = buildSaveData(state);
-      saveToSlot(slot, data);
-      markSaveSlotsDirty();
-      addToast(state.ui, `Saved to slot ${slot + 1}!`, '#4caf50', 1500);
-    },
-    // Slot load
-    (slot: number) => {
-      const data = loadFromSlot(slot);
-      if (data) {
-        applySaveData(state, data);
-        markSaveSlotsDirty();
-        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-      }
-    },
-    // Slot delete
-    (slot: number) => {
-      deleteSlot(slot);
-      markSaveSlotsDirty();
-      addToast(state.ui, `Slot ${slot + 1} deleted`, '#ff8844', 1500);
-    },
-  );
+  // Audio bootstrap (background; oscillator fallbacks cover loading window)
+  bootstrapAudio(state);
 
-  // Debug hooks for testing (available via window.__gameDebug)
-  (window as any).__gameDebug = {
-    setTimeOfDay,
-    getCycleProgress,
-    toggleFlashlight,
-    isFlashlightOn,
+  // Single rAF chain via play-kernel (cancel-before-start inside startPlayLoop).
+  // Inventory: wall dt / FPS / inject / wall clocks / runPlayFrame / finalize live in loop.ts.
+  let _loopFrameStart = 0;
+  startPlayLoop({
     state,
-    // Input manager for touch/gamepad testing (#126)
-    inputMgr: input,
-    // Asset/biome metadata (#58)
-    getAssetDefs: () => ASSET_DEFS,
-    getBiomeDefs: () => BIOME_DEFS,
-    // Status helpers (#70)
-    getDebuffs: () => getDebuffs(state.status),
-    getDebuffVisuals: getDebuffVisualsState,
-    useStatusItem: (itemId: string) => {
-      const result = useStatusItem(state.status, itemId);
-      if (result) addToast(state.ui, result, '#88ccff', 2000);
-      return result;
+    input,
+    hooks: playFrameHooks,
+    extras: { clearExtraKeys: _clearExtraKeys },
+    onAfterFrame: () => {
+      // Render + perf marks (design inventory step 10)
+      const _renderStart = performance.now();
+      if (_loopFrameStart <= 0) _loopFrameStart = _renderStart;
+      renderFrame(renderer, state, perfStats);
+      markFirstFrameIfNeeded();
+      const _frameEnd = performance.now();
+      // Approximate update EMA from gap since last after-frame (render-only slice
+      // is tiny; full-frame total still feeds recordFrameTime for hitch metrics).
+      const totalMs = Math.max(_frameEnd - _renderStart, 0.01);
+      perfStats.total = perfSmooth(perfStats.total, totalMs);
+      recordFrameTime(totalMs);
+      _loopFrameStart = _frameEnd;
     },
-    // Injury helpers (#109, #137)
-    getInjury: () => state.injury,
-    checkHazardInjury: (dmg = 1.0) => checkHazardInjury(state.injury, dmg),
-    applyBandaid: () => applyBandaid(state.injury, state.status),
-    getWoundCareQuestion,
-    // Cosmetic unlock helpers (#66)
-    getUnlockedCosmetics: () => state.unlockedCosmetics,
-    grantCosmetic: (id: string) => {
-      if (!state.unlockedCosmetics.includes(id)) {
-        state.unlockedCosmetics.push(id);
-        setUnlockedCosmetics(state.unlockedCosmetics);
-        const cosmetic = getCosmeticById(id);
-        if (cosmetic) addToast(state.ui, `🔓 ${cosmetic.name} unlocked!`, '#ffab40', 3000);
-      }
-    },
-    checkUnlocks: () => checkCosmeticUnlocks(state),
-    // Music helpers (#74)
-    musicPlay: () => musicPlay(state.music),
-    musicPause: () => musicPause(state.music),
-    musicStop: () => musicStop(state.music),
-    musicNext: () => nextTrack(state.music),
-    musicToggle: () => togglePlayPause(state.music),
-    getMusicState: () => ({
-      playState: state.music.playState,
-      track: getCurrentTrackInfo(state.music),
-      volume: state.music.settings.volume,
-      muted: state.music.settings.muted,
-      ducking: state.music.ducking,
-    }),
-    // SFX helpers (#75, #108)
-    playSfx: (id: string) => playSfx(state.sfx, id),
-    getSfxState: () => ({
-      sfxVolume: state.sfx.settings.sfxVolume,
-      ambienceVolume: state.sfx.settings.ambienceVolume,
-      sfxMuted: state.sfx.settings.sfxMuted,
-      ambienceMuted: state.sfx.settings.ambienceMuted,
-      sfxEnabled: state.sfx.settings.sfxEnabled,
-      activeAmbience: state.sfx.activeAmbienceId,
-      sampledReady: state.sfx.sampledReady,
-      positionalSources: getPositionalSourceCount(state.sfx),
-    }),
-    // Voice helpers (#76)
-    getVoiceState: () => ({
-      enabled: state.voice.settings.enabled,
-      volume: state.voice.settings.volume,
-      supported: state.voice.supported,
-      speaking: state.voice.speaking,
-    }),
-    toggleVoice: () => toggleVoice(state.voice),
-    speakTest: (text: string) => speakLine(state.voice, text, null),
-    // Save/load helpers
-    save: () => doSave(state),
-    saveGame: () => doSave(state),
-    loadGame: () => {
-      const saveData = loadGame();
-      if (saveData) {
-        if (saveData.playerVariation) {
-          state.playerVariation = deserializeVariation(saveData.playerVariation);
-        }
-      }
-    },
-    // Sprite helpers (#86, #182 limb layering)
-    loadCharacterSprite,
-    loadCharacterSpriteAsync,
-    generateIdleCharacterSVG,
-    generateSideIdleCharacterSVG,
-    generateSideWalkingCharacterSVG,
-    spriteCache,
-    clearVariationCache,
-    showCustomizer: () => showCustomizer(state.playerVariation),
-    // NPC sprite helpers (#85)
-    generateNpcSVG,
-    loadNpcSpriteAsync,
-    getNpcSprite,
-    hasNpcSprite,
-    NPC_APPEARANCES,
-    // NPC mouth animation (#113)
-    setDialogNpc,
-    getDialogState: () => ({
-      active: state.ui.dialog.active,
-      npcName: state.ui.dialog.npcName,
-      currentLine: state.ui.dialog.currentLine,
-      lastDialogNpcId: _lastDialogNpcId,
-    }),
-    // Quiz streak helpers (#103)
-    getStreakDebug: () => getStreakDebugInfo(state.streak),
-    getStreakState: () => state.streak,
-    // Water/bridge debug (#100)
-    getWaterDebug: () => getWaterDebugInfo(),
-    // Lock-Key DAG debug (#98)
-    getLockKeyDAG: () => getLockKeyDebugInfo(),
-    // Tile metadata v2 (#101) — climate, LOD, anchor roles, validation
-    getTileConfig: () => ({
-      MICRO_TILE_DEFS,
-      WORLD_UNIT_TEMPLATES,
-      BIOME_PALETTES,
-    }),
-    validateAllTileDefs,
-    validateTemplate,
-    normalizeTileDef,
-    isValidAnchorRole,
-    tileMatchesClimate,
-    getTileLOD,
-    tilesAtLOD,
-    getBiomePalette,
-    // Edge contract v2 (#42) — traversal, corners, chain ports
-    computeTraversalChannels,
-    computeCornerCells,
-    computeChainPorts,
-    getAllTemplateRotations,
-    getChunkClimate,
-    // Fog-of-war debug (#114)
-    toggleFog,
-    isFogEnabled,
-    setFogEnabled,
-    getVisitedCount,
-    getFogDebug: getFogDebugInfo,
-    getTimeSlot,
-    // Night mode debug (#114)
-    getRevealedCreatures: () => _revealedCreatures.size,
-    // Book/Knowledge debug (#118, #120)
-    getKnowledgeState: () => state.knowledge,
-    openBookArticle: (id: string) => openArticle(state.knowledge, id),
-    toggleBook: () => {
-      toggleBook(state.knowledge);
-      state.paused = state.knowledge.bookOpen;
-    },
-    getBookContentStats,
-    isPackContentLoaded,
-    // Age profile debug (#92)
-    getAgeProfile: () => state.ageProfile,
-    getAgeProfileDebug: () => getAgeProfileDebug(state.ageProfile),
-    setAgeBand: (band: AgeBand) => setAgeBand(state.ageProfile, band),
-    // Quiz accessibility debug (#94)
-    quizRepeatRead: () => {
-      if (state.quiz.active && state.quiz.displayText) {
-        speakLine(state.voice, state.quiz.displayText, null);
-      }
-    },
-    shouldAutoRead: () => _shouldAutoRead(state),
-    quizSelectIndex: (idx: number) => quizSelectIndex(state.quiz, idx),
-    // Outhouse/hygiene debug (#110)
-    startHygieneQuiz: () => _startHygieneQuiz(state),
-    getHygieneQuizActive: () => state._hygieneQuiz === true,
-    // Stream/worm debug (#110 Phase 3, #133 illness chain)
-    getInsectQuestions: () => INSECT_QUESTIONS,
-    startInsectQuiz: () => _startInsectQuiz(state),
-    getStreamDrinkCount: () => state.streamDrinkCount,
-    getDiarrheaActive: () => state.diarrheaUntil > state.frameCount,
-    getDiarrheaLocked: () => state.diarrheaLocked,
-    getDiarrheaState: () => ({
-      streamDrinkCount: state.streamDrinkCount,
-      diarrheaUntil: state.diarrheaUntil,
-      diarrheaLocked: state.diarrheaLocked,
-      diarrheaLockUntil: state.diarrheaLockUntil,
-      diarrheaLastTrigger: state.diarrheaLastTrigger,
-      poopMarkerCount: state.poopMarkers.length,
-      frameCount: state.frameCount,
-    }),
-    // Force-trigger diarrhea event for testing (#133)
-    triggerDiarrhea: () => {
-      state.diarrheaLocked = true;
-      state.diarrheaLockUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES;
-      state.diarrheaUntil = state.frameCount + DIARRHEA_CONFIG.LOCK_DURATION_FRAMES + DIARRHEA_CONFIG.DEBUFF_DURATION_FRAMES;
-      state.diarrheaLastTrigger = state.frameCount;
-      state.poopMarkers.push({ x: Math.round(state.player.x), y: Math.round(state.player.y), placedAt: state.frameCount });
-      _pendingPoopBurst = true;
-      setDiarrheaOverlay(true);
-      playSfx(state.sfx, 'diarrhea_gurgle');
-      addToast(state.ui, '🤢 Oh no! Stomach emergency... can\'t move!', '#ff4444', 4000);
-    },
-    // Injury flash debug (#109 Phase 3)
-    triggerInjuryFlash,
-    getInjuryFlashAlpha,
-    // Customizer debug (#116)
-    getHairStyles: () => HAIR_STYLES,
-    getEyeColors: () => EYE_COLORS,
-    getAccessories: () => ACCESSORIES,
-    getOutfitPatterns: () => OUTFIT_PATTERNS,
-    // Barter quiz debug (#112 Phase 3)
-    getBarterStats: () => ({ quizCount: state.trade.barterQuizCount, correctCount: state.trade.barterCorrectCount }),
-    triggerBarterQuiz: (itemName: string, price: number) => {
-      state.trade.barterQuiz = generateBarterQuiz(itemName, price);
-      state.trade.barterSelectedIndex = 0;
-      syncBarterQuizDOM(state.trade);
-    },
-    getBarterQuiz: () => state.trade.barterQuiz,
-    // Asset sprite debug (#115)
-    hasAssetSprite,
-    getAssetSpriteKeys: () => [
-      'tree', 'tree_pine', 'tree_palm', 'rock', 'bonfire', 'campfire', 'biomass_fire',
-      'flower', 'flower_pink', 'flower_red', 'sunflower', 'tulip', 'bush', 'mushroom',
-      'stump', 'cactus', 'wheat', 'seedling', 'clover', 'wilted_flower', 'maple_leaf', 'tall_plant',
-      'coin', 'key', 'crowbar', 'potion',
-      'chest', 'sign', 'house', 'hut', 'shop', 'shop_general', 'shop_snack', 'shop_trading',
-      'outhouse', 'wall', 'door_locked', 'door_open', 'fence', 'quiz_gate', 'toll_gate',
-      'barricade', 'sparkle', 'bridge',
-      'chicken', 'rooster', 'pig', 'cow', 'sheep', 'goat', 'rabbit', 'duck', 'fox', 'deer', 'horse', 'dog',
-    ],
-    // Mood + biome transitions debug (#46)
-    deriveMood,
-    detectBiomeTransitions,
-    // #175: Biome selection with entropy bias
-    selectBiomeCoherent,
-    getChunkMood: (cx: number, cy: number) => {
-      const key = chunkKey(cx, cy);
-      return state.chunks.get(key)?.mood ?? null;
-    },
-    getChunkTransitions: (cx: number, cy: number) => {
-      const key = chunkKey(cx, cy);
-      return state.chunks.get(key)?.biomeTransitions ?? null;
-    },
-    // #175: Get all generated chunks for inspection
-    getChunks: () => Array.from(state.chunks.entries()).map(([k, c]) => ({
-      key: k, chunkX: c.chunkX, chunkY: c.chunkY,
-      biomeId: c.biomeId, biomeName: c.biomeName,
-    })),
-    // Playability validation debug (#46 Solver F)
-    getPlayabilityStats,
-    // #183: Performance benchmarking
-    getPerfStats: () => ({ ...perfStats }),
-    getFrameBenchmark,
-    resetFrameHistory,
-    // #185: Tesla mode
-    isTeslaMode,
-    setTeslaMode,
-    detectTeslaBrowser,
-    applyTeslaMode: (active: boolean) => {
-      const badge = document.getElementById('teslaBadge');
-      if (badge) badge.classList.toggle('active', active);
-      if (active && input && !input.touchEnabled) {
-        input.enableTouchControls();
-      }
-    },
-    // #186: Tutorial
-    resetTutorial,
-    initTutorial,
-    dismissTutorial,
-    isTutorialActive,
-    shouldShowTutorial,
-  };
-
-  addToast(state.ui, 'Welcome! Use WASD to move, Space to interact.', '#88ccff', 4000);
-  if (isTestMode()) {
-    addToast(state.ui, '🧪 Test mode — LLM disabled', '#ffaa00', 3000);
-  } else if (isWasmReady() && RENDER_CONFIG.useWasmRenderer) {
-    addToast(state.ui, '⚡ WASM rendering core active', '#7fff7f', 3000);
-  }
-
-  // Wire Book of Knowledge UI
-  wireBookUI(state.knowledge, () => { state.paused = false; });
-
-  // Wire Quiz Repeat button (#94)
-  document.getElementById('quizRepeat')?.addEventListener('click', () => {
-    if (state.quiz.active && state.quiz.displayText) {
-      speakLine(state.voice, state.quiz.displayText, null);
-    }
   });
-
-  // Wire HUD book button
-  document.getElementById('btnBook')?.addEventListener('click', () => {
-    if (!state.quiz.active && !state.ui.dialog.active) {
-      toggleBook(state.knowledge);
-      state.paused = state.knowledge.bookOpen;
-    }
-  });
-
-  // Wire HUD customize button
-  const openCustomizer = async () => {
-    if (state.paused || state.quiz.active || state.ui.dialog.active) return;
-    state.paused = true;
-    const newVariation = await showCustomizer(state.playerVariation, true);
-    if (!newVariation) {
-      // Cancelled — resume game
-      state.paused = false;
-      return;
-    }
-    clearVariationCache('custom'); // clear old cached sprites
-    state.playerVariation = newVariation;
-    state._baseExpression = newVariation.expression ?? 'happy';
-    state.expressionOverride = null;
-    state.egoImg = loadCharacterSprite(newVariation, 0, false);
-    state.lastAnimFrame = -1;
-    state.paused = false;
-    addToast(state.ui, '🎨 Character updated!', '#ce93d8', 2000);
-  };
-  document.getElementById('btnCustomize')?.addEventListener('click', openCustomizer);
-
-  // Wire 'C' key to open customizer
-  window.addEventListener('keydown', (e) => {
-    if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
-      openCustomizer();
-    }
-  });
-
-  // ─── Wire Music Controls (#74) ─────────────────────────────
-  document.getElementById('btnMusicPlayPause')?.addEventListener('click', () => {
-    togglePlayPause(state.music);
-  });
-  document.getElementById('btnMusicNext')?.addEventListener('click', () => {
-    nextTrack(state.music);
-  });
-  document.getElementById('btnMusicPrev')?.addEventListener('click', () => {
-    prevTrack(state.music);
-  });
-  document.getElementById('btnMusicMute')?.addEventListener('click', () => {
-    toggleMute(state.music);
-  });
-  document.getElementById('musicVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    musicSetVolume(state.music, val / 100);
-  });
-  // 'M' key toggles play/pause
-  window.addEventListener('keydown', (e) => {
-    if ((e.key === 'm' || e.key === 'M') && !e.ctrlKey && !e.metaKey) {
-      togglePlayPause(state.music);
-    }
-  });
-
-  // ─── Wire SFX Controls (#75) ──────────────────────────────
-  document.getElementById('btnSfxMute')?.addEventListener('click', () => {
-    toggleSfxMute(state.sfx);
-  });
-  document.getElementById('btnAmbienceMute')?.addEventListener('click', () => {
-    toggleAmbienceMute(state.sfx);
-  });
-  document.getElementById('sfxVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setSfxVolume(state.sfx, val / 100);
-  });
-  document.getElementById('ambienceVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setAmbienceVolume(state.sfx, val / 100);
-  });
-
-  // ─── Wire Voice Controls (#76) ─────────────────────────────
-  document.getElementById('btnVoiceToggle')?.addEventListener('click', () => {
-    toggleVoice(state.voice);
-  });
-  document.getElementById('voiceVolume')?.addEventListener('input', (e) => {
-    const val = parseInt((e.target as HTMLInputElement).value, 10);
-    setVoiceVolume(state.voice, val / 100);
-  });
-
-  // ─── Wire Touch Visibility (#144) ───────────────────────────
-  {
-    const TOUCH_VIS_KEY_INIT = 'emilys_game_touch_vis';
-    const savedMode = (localStorage.getItem(TOUCH_VIS_KEY_INIT) || 'whisper') as TouchControlMode;
-    input.setTouchControlMode(savedMode);
-    const sbVis = document.getElementById('sbTouchVisMode') as HTMLSelectElement | null;
-    if (sbVis) {
-      sbVis.value = savedMode;
-      sbVis.onchange = () => {
-        const m = sbVis.value as TouchControlMode;
-        input.setTouchControlMode(m);
-        localStorage.setItem(TOUCH_VIS_KEY_INIT, m);
-        // Sync options dropdown if open
-        const optVis = document.getElementById('optTouchVisibility') as HTMLSelectElement | null;
-        if (optVis) optVis.value = m;
-      };
-    }
-  }
-
-  // ─── Main Menu / New Game Flow ─────────────────────────────
-  if (!isTestMode()) {
-    // Welcome splash for first-time players (#117)
-    await showWelcomeSplash();
-
-    const choice = await showMainMenu(hasSaveData);
-
-    if (choice === 'new-game') {
-      resetGameState(state);
-      // Character customizer (no cancel on new game — must create character)
-      const customVariation = (await showCustomizer(state.playerVariation))!;
-      clearVariationCache('custom');
-      state.playerVariation = customVariation;
-      state._baseExpression = customVariation.expression ?? 'happy';
-      state.expressionOverride = null;
-      state.egoImg = loadCharacterSprite(customVariation, 0, false);
-      state.lastAnimFrame = -1;
-      // Age band selection (#92)
-      await showAgeSelection(state.ageProfile);
-      // Subject selection
-      await showSubjectSelection(state.knowledge);
-      addToast(state.ui, '📖 Press B to open your Book of Knowledge!', '#ce93d8', 5000);
-      // Tutorial for first-time players (#186)
-      if (shouldShowTutorial()) {
-        initTutorial();
-      }
-    } else if (choice.startsWith('load-slot-')) {
-      const slot = parseInt(choice.replace('load-slot-', ''));
-      const data = loadFromSlot(slot);
-      if (data) {
-        applySaveData(state, data);
-        addToast(state.ui, `Loaded slot ${slot + 1}!`, '#88ccff', 1500);
-      }
-    }
-    // 'continue' → auto-save already loaded by init()
-  }
-
-  // Load MIDI tracks in background (non-blocking, oscillator tracks work immediately)
-  initMidiTracks(state.music).then(() => {
-    if (getTotalTrackCount() > 4) {
-      console.log(`[Music] ${getTotalTrackCount()} MIDI tracks available`);
-    }
-    // Auto-start music after tracks are ready if music is enabled and not muted.
-    // Skip in test mode — tests control music state explicitly.
-    if (!isTestMode() && state.music.settings.enabled && !state.music.settings.muted) {
-      musicPlay(state.music);
-    }
-  });
-
-  // Load sampled SFX in background (oscillator SFX work immediately as fallback)
-  initSampledSfxPipeline(state.sfx).catch(e => console.warn('[SFX] Sample init failed:', e));
-
-  requestAnimationFrame((t) => gameLoop(t, { state, renderer, input }));
 }
 
 if (document.readyState === 'loading') {

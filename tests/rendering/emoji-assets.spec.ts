@@ -98,15 +98,18 @@ test.describe('Emoji Assets Library (#58)', () => {
   });
 
   // --- Biome integration ---
-  test('meadow biome includes farm animals in terrain weights', async ({ page }) => {
+  test('meadow biome keeps farm-animal asset keys (trace weights; not field salt)', async ({ page }) => {
     await waitForGame(page);
     const weights = await page.evaluate(() => {
       return (window as any).__gameDebug.getBiomeDefs()[0].terrainWeights;
     });
+    // S5: animals are rare Perlin salt + farm assemblies, not dense terrain
     expect(weights['chicken']).toBeGreaterThan(0);
     expect(weights['sheep']).toBeGreaterThan(0);
     expect(weights['cow']).toBeGreaterThan(0);
     expect(weights['pig']).toBeGreaterThan(0);
+    // Grass must dominate so FOV zoom-out is not emoji salt
+    expect(weights['grass']).toBeGreaterThan(0.5);
   });
 
   test('meadow biome includes new plants', async ({ page }) => {
@@ -119,14 +122,17 @@ test.describe('Emoji Assets Library (#58)', () => {
     expect(weights['wheat']).toBeGreaterThan(0);
   });
 
-  test('meadow obstacles include structures', async ({ page }) => {
+  test('meadow obstacles ban free building atoms (scene-first)', async ({ page }) => {
     await waitForGame(page);
     const weights = await page.evaluate(() => {
       return (window as any).__gameDebug.getBiomeDefs()[0].obstacleWeights;
     });
-    expect(weights['house']).toBeGreaterThan(0);
+    // Scene-first: house/hut only via modular scenes + starter homestead.
+    expect(weights['house'] ?? 0).toBe(0);
+    expect(weights['hut'] ?? 0).toBe(0);
     expect(weights['fence']).toBeGreaterThan(0);
-    expect(weights['hut']).toBeGreaterThan(0);
+    // Shops remain available for trading loop.
+    expect(weights['shop'] ?? weights['shop_general'] ?? 0).toBeGreaterThan(0);
   });
 
   test('forest biome includes wild animals', async ({ page }) => {

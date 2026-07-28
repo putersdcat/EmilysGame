@@ -1037,157 +1037,355 @@
     }
     .subject-confirm-btn:hover { background: #5a9fdd; }
 
-    /* ── Book of Knowledge Overlay ── */
+    /* ── Book of Knowledge Overlay (offline illustrated codex) ── */
     #bookOverlay {
-      position: absolute; inset: 20px;
-      background: rgba(15,12,28,0.96);
-      border: 2px solid #8866aa; border-radius: 10px;
+      position: absolute; inset: 12px;
       display: none; flex-direction: column;
       z-index: 18; pointer-events: auto;
       overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(200, 170, 120, 0.35);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% 0%, rgba(120, 70, 160, 0.25), transparent 55%),
+        radial-gradient(ellipse 70% 45% at 90% 100%, rgba(40, 80, 140, 0.3), transparent 50%),
+        linear-gradient(155deg, #1a1428 0%, #120e1c 45%, #0c1018 100%);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,0.5),
+        0 20px 50px rgba(0,0,0,0.65),
+        inset 0 1px 0 rgba(255,255,255,0.06);
     }
+    #bookOverlay::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        repeating-linear-gradient(
+          -12deg,
+          transparent,
+          transparent 11px,
+          rgba(255,255,255,0.012) 11px,
+          rgba(255,255,255,0.012) 12px
+        );
+      opacity: 0.7;
+    }
+    #bookOverlay > * { position: relative; z-index: 1; }
     .book-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 16px; border-bottom: 1px solid rgba(100,100,140,0.3);
+      padding: 12px 18px 10px;
+      border-bottom: 1px solid rgba(200, 170, 120, 0.2);
       flex-shrink: 0;
+      background: linear-gradient(180deg, rgba(40,28,55,0.9), rgba(20,16,32,0.4));
     }
     .book-title {
-      color: #ffdd88; font: bold 16px monospace;
+      color: #ffe6a8;
+      font: bold 17px/1.2 Georgia, "Times New Roman", serif;
+      letter-spacing: 0.04em;
+      text-shadow: 0 1px 8px rgba(255, 200, 100, 0.25);
+    }
+    .book-title-sub {
+      display: block;
+      font: 10px monospace;
+      color: #9a8ab8;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 2px;
     }
     .book-close {
-      color: #aaa; font: 18px monospace; cursor: pointer;
-      padding: 2px 8px; border-radius: 4px;
+      color: #c0b0d0; font: 20px/1 monospace; cursor: pointer;
+      padding: 4px 10px; border-radius: 8px;
+      border: 1px solid transparent;
       transition: all 0.15s;
     }
-    .book-close:hover { color: #fff; background: rgba(255,255,255,0.1); }
+    .book-close:hover {
+      color: #fff; background: rgba(255,80,100,0.2);
+      border-color: rgba(255,120,140,0.35);
+    }
     .book-tabs {
-      display: flex; gap: 0; border-bottom: 1px solid rgba(100,100,140,0.3);
+      display: flex; gap: 6px; padding: 8px 12px 0;
       flex-shrink: 0;
+      background: rgba(0,0,0,0.15);
     }
     .book-tab {
-      flex: 1; padding: 8px; text-align: center;
-      font: 12px monospace; color: #888; cursor: pointer;
-      border-bottom: 2px solid transparent;
+      flex: 1; padding: 10px 8px; text-align: center;
+      font: 12px monospace; color: #8a8098; cursor: pointer;
+      border-radius: 10px 10px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
       transition: all 0.15s;
+      user-select: none;
     }
-    .book-tab:hover { color: #ccc; background: rgba(100,130,200,0.1); }
+    .book-tab:hover { color: #ddd; background: rgba(100,130,200,0.12); }
     .book-tab.active {
-      color: #ffdd88; border-bottom-color: #ffdd88;
+      color: #ffe6a8;
+      background: linear-gradient(180deg, rgba(90,60,120,0.45), rgba(30,24,48,0.9));
+      border-color: rgba(200,170,120,0.28);
+      box-shadow: 0 -2px 12px rgba(120,80,160,0.2);
     }
     #bookContent {
-      flex: 1; overflow-y: auto; padding: 12px 16px;
-      scrollbar-width: thin; scrollbar-color: #555 transparent;
+      flex: 1; overflow-y: auto; padding: 14px 16px 20px;
+      scrollbar-width: thin; scrollbar-color: #6a5080 transparent;
     }
-    #bookContent::-webkit-scrollbar { width: 6px; }
-    #bookContent::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    #bookContent::-webkit-scrollbar { width: 8px; }
+    #bookContent::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #6a5080, #3a3050);
+      border-radius: 4px;
+    }
 
-    /* Book content styles */
-    .book-points {
-      text-align: right; font: 11px monospace; color: #ffaa44;
-      margin-bottom: 10px;
-    }
-    .book-subject-group { margin-bottom: 14px; }
-    .book-subject-header {
-      font: bold 13px monospace; margin-bottom: 6px;
-      padding-bottom: 3px; border-bottom: 1px solid rgba(100,100,140,0.2);
-    }
-    .book-article-card {
-      padding: 6px 10px; margin: 3px 0;
-      border: 1px solid rgba(100,100,140,0.2); border-radius: 5px;
-      cursor: pointer; transition: all 0.15s;
-    }
-    .book-article-card:hover {
-      background: rgba(100,130,200,0.15);
-      border-color: rgba(100,130,200,0.4);
-    }
-    .book-article-card.read { opacity: 0.7; }
-    .book-article-title { font: bold 12px monospace; color: #e0e0e0; }
-    .book-article-summary { font: 11px monospace; color: #999; margin-top: 2px; }
-    .book-empty {
-      text-align: center; color: #888; font: 13px monospace;
-      padding: 30px 10px;
-    }
-    /* Article view */
-    .book-back {
-      color: #88ccff; font: 12px monospace; cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .book-back:hover { text-decoration: underline; }
-    .book-article-header {
-      font: bold 16px monospace; color: #fff;
-      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
-    }
-    .book-article-body {
-      font: 13px/1.6 monospace; color: #d0d0d0;
+    .book-toolbar {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
       margin-bottom: 14px;
     }
-    .book-article-body strong { color: #ffdd88; }
-    .book-article-body em { color: #c8b8e8; font-style: italic; }
-    .book-article-body p { margin: 0 0 10px 0; }
+    .book-points {
+      margin-left: auto;
+      font: 11px monospace; color: #ffcc66;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255, 170, 60, 0.12);
+      border: 1px solid rgba(255, 180, 80, 0.28);
+    }
+    .book-subject-group { margin-bottom: 18px; }
+    .book-subject-header {
+      font: bold 13px monospace; margin-bottom: 8px;
+      padding: 4px 2px 6px;
+      border-bottom: 1px solid rgba(150,130,180,0.25);
+      letter-spacing: 0.03em;
+    }
+    .book-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .book-article-card {
+      display: flex; gap: 10px; align-items: stretch;
+      padding: 0; margin: 0;
+      border: 1px solid rgba(140,120,180,0.28);
+      border-radius: 12px;
+      cursor: pointer;
+      overflow: hidden;
+      background: linear-gradient(135deg, rgba(40,32,58,0.85), rgba(22,20,36,0.95));
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .book-article-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(180,150,255,0.5);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(200,170,255,0.12);
+    }
+    .book-article-card.read { opacity: 0.78; }
+    .book-card-thumb {
+      width: 88px; min-height: 78px; flex-shrink: 0;
+      object-fit: cover;
+      background: #1a1528;
+    }
+    .book-card-thumb-ph {
+      width: 88px; min-height: 78px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      background: linear-gradient(160deg, #2a2040, #181428);
+    }
+    .book-card-body { padding: 10px 12px 10px 0; min-width: 0; flex: 1; }
+    .book-article-title {
+      font: bold 12px/1.3 Georgia, serif; color: #f0e8ff;
+    }
+    .book-article-summary {
+      font: 11px/1.4 monospace; color: #9a90a8; margin-top: 4px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .book-card-badge {
+      display: inline-block; margin-top: 6px;
+      font: 9px monospace; color: #a8d4ff;
+      padding: 1px 6px; border-radius: 999px;
+      background: rgba(80,120,180,0.2);
+    }
+    .book-empty {
+      text-align: center; color: #8a8098; font: 13px monospace;
+      padding: 40px 16px;
+      border: 1px dashed rgba(140,120,180,0.3);
+      border-radius: 12px;
+      background: rgba(0,0,0,0.15);
+    }
+    /* Article reader */
+    .book-article-view {
+      max-width: 720px;
+      margin: 0 auto;
+      animation: bookPageIn 0.22s ease;
+    }
+    @keyframes bookPageIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    .book-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: #a8d4ff; font: 12px monospace; cursor: pointer;
+      margin-bottom: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(100,150,220,0.25);
+      background: rgba(60,90,140,0.15);
+      transition: all 0.15s;
+    }
+    .book-back:hover {
+      color: #fff;
+      background: rgba(80,120,200,0.28);
+      border-color: rgba(140,180,255,0.45);
+    }
+    .book-article-header {
+      font: bold 20px/1.25 Georgia, serif; color: #fff;
+      margin-bottom: 12px; display: flex; align-items: flex-start; gap: 10px;
+    }
+    .book-article-full-title { flex: 1; }
+    .book-article-figure, .book-md-figure {
+      margin: 0 0 16px 0;
+      padding: 0;
+      text-align: center;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(200,170,120,0.25);
+      background: rgba(0,0,0,0.35);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.4);
+    }
+    .book-article-img, .book-md-img {
+      max-width: 100%;
+      max-height: 280px;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      display: block;
+      background: #12101a;
+    }
+    .book-md-img-inline {
+      max-height: 180px;
+      width: auto;
+      max-width: 100%;
+      margin: 8px auto;
+      border-radius: 10px;
+      border: 1px solid rgba(120,140,180,0.35);
+    }
+    .book-image-credit {
+      display: block;
+      padding: 6px 10px 8px;
+      font: 10px/1.35 monospace;
+      color: #8a8098;
+      text-align: left;
+      background: rgba(0,0,0,0.35);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .book-article-body {
+      font: 14px/1.7 Georgia, "Times New Roman", serif;
+      color: #e4dcf0;
+      margin-bottom: 16px;
+      padding: 4px 2px 8px;
+    }
+    .book-article-body strong { color: #ffe6a8; font-weight: 700; }
+    .book-article-body em { color: #d0c0f0; font-style: italic; }
+    .book-article-body p { margin: 0 0 12px 0; }
     .book-article-body p:last-child { margin-bottom: 0; }
     .book-article-body h4 {
-      color: #88ccff; font-size: 13px; font-weight: bold;
-      margin: 12px 0 4px 0; padding: 0;
+      color: #9ad0ff; font: bold 14px monospace;
+      margin: 16px 0 6px 0; padding: 0;
+      letter-spacing: 0.03em;
     }
     .book-article-body ul, .book-article-body ol {
-      margin: 4px 0 10px 0; padding-left: 22px;
+      margin: 6px 0 12px 0; padding-left: 24px;
     }
     .book-article-body li {
-      margin-bottom: 3px; color: #d0d0d0;
+      margin-bottom: 5px; color: #ddd4ee;
     }
-    .book-article-body li strong { color: #ffdd88; }
+    .book-article-body li strong { color: #ffe6a8; }
     .book-article-body ul li { list-style-type: disc; }
     .book-article-body ol li { list-style-type: decimal; }
     .book-key-terms {
-      padding: 8px 10px; background: rgba(100,100,140,0.1);
-      border-radius: 5px; margin-bottom: 8px;
+      padding: 12px 14px;
+      background: linear-gradient(135deg, rgba(80,60,120,0.25), rgba(40,50,90,0.2));
+      border: 1px solid rgba(140,120,200,0.28);
+      border-radius: 12px;
+      margin-bottom: 12px;
     }
     .book-terms-label {
-      font: bold 11px monospace; color: #88ccff;
-      display: block; margin-bottom: 4px;
+      font: bold 11px monospace; color: #b8a0ff;
+      display: block; margin-bottom: 8px;
+      letter-spacing: 0.06em; text-transform: uppercase;
     }
     .book-term {
-      display: inline-block; padding: 2px 8px; margin: 2px;
-      background: rgba(100,130,200,0.2); border-radius: 3px;
-      font: 11px monospace; color: #ccc; cursor: pointer;
+      display: inline-block; padding: 4px 10px; margin: 3px;
+      background: rgba(100,130,200,0.18);
+      border: 1px solid rgba(120,150,220,0.25);
+      border-radius: 999px;
+      font: 11px monospace; color: #d8d0e8; cursor: pointer;
       transition: all 0.15s;
     }
-    .book-term:hover { background: rgba(100,130,200,0.4); }
-    .book-term.saved { color: #4caf50; cursor: default; }
-    .book-related { margin-top: 8px; }
-    .book-related-label { font: bold 11px monospace; color: #88ccff; }
-    .book-related-link {
-      display: inline-block; padding: 2px 8px; margin: 2px;
-      background: rgba(100,130,200,0.15); border-radius: 3px;
-      font: 11px monospace; color: #88ccff; cursor: pointer;
+    .book-term:hover {
+      background: rgba(120,150,240,0.35);
+      color: #fff;
+      border-color: rgba(160,180,255,0.5);
     }
-    .book-related-link:hover { background: rgba(100,130,200,0.3); }
-    /* Word bag styles */
+    .book-term.saved {
+      color: #7dffa0; cursor: default;
+      border-color: rgba(80,200,120,0.4);
+      background: rgba(40,120,70,0.25);
+    }
+    .book-related {
+      margin-top: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(100,150,200,0.22);
+      background: rgba(30,50,80,0.25);
+    }
+    .book-related-label {
+      font: bold 11px monospace; color: #88ccff;
+      display: block; margin-bottom: 8px;
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .book-related-link {
+      display: inline-block; padding: 5px 11px; margin: 3px;
+      background: rgba(80,120,200,0.18);
+      border: 1px solid rgba(100,150,220,0.3);
+      border-radius: 8px;
+      font: 11px monospace; color: #a8d4ff; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .book-related-link:hover {
+      background: rgba(100,140,240,0.35);
+      color: #fff;
+    }
+    /* Word bag */
     .wordbag-count {
-      font: 11px monospace; color: #aaa; margin-bottom: 8px;
+      font: 11px monospace; color: #aaa; margin-bottom: 10px;
     }
     .wordbag-entry {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 5px 8px; margin: 2px 0;
-      border: 1px solid rgba(100,100,140,0.2); border-radius: 4px;
+      padding: 8px 12px; margin: 4px 0;
+      border: 1px solid rgba(140,120,180,0.25);
+      border-radius: 10px;
+      background: rgba(30,24,48,0.55);
+      transition: border-color 0.15s;
     }
-    .wordbag-term { font: 13px monospace; color: #e0e0e0; }
-    .wordbag-actions { display: flex; gap: 8px; }
+    .wordbag-entry:hover { border-color: rgba(180,150,255,0.4); }
+    .wordbag-term { font: 14px Georgia, serif; color: #f0e8ff; }
+    .wordbag-actions { display: flex; gap: 10px; }
     .wordbag-lookup, .wordbag-remove {
-      cursor: pointer; font-size: 14px; opacity: 0.7;
-      transition: opacity 0.15s;
+      cursor: pointer; font-size: 15px; opacity: 0.75;
+      transition: opacity 0.15s, transform 0.15s;
     }
-    .wordbag-lookup:hover, .wordbag-remove:hover { opacity: 1; }
+    .wordbag-lookup:hover, .wordbag-remove:hover { opacity: 1; transform: scale(1.1); }
     .wordbag-lookup.looked-up { opacity: 0.4; }
     /* Search */
-    .book-search-box { margin-bottom: 12px; }
+    .book-search-box { margin-bottom: 14px; }
     .book-search-input {
-      width: 100%; padding: 6px 10px;
-      background: rgba(100,100,140,0.15); border: 1px solid rgba(100,100,140,0.3);
-      border-radius: 5px; color: #e0e0e0; font: 13px monospace;
-      outline: none;
+      width: 100%; padding: 10px 14px;
+      background: rgba(20,16,32,0.85);
+      border: 1px solid rgba(160,140,200,0.35);
+      border-radius: 12px; color: #f0e8ff;
+      font: 14px monospace; outline: none;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.35);
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
-    .book-search-input:focus { border-color: rgba(100,130,200,0.6); }
+    .book-search-input:focus {
+      border-color: rgba(180,160,255,0.65);
+      box-shadow: 0 0 0 3px rgba(120,100,200,0.2), inset 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .book-search-hint {
+      font: 10px monospace; color: #7a7090; margin-top: 6px;
+    }
 
     /* ── Tutorial Overlay (#186) ── */
     #tutorialOverlay {
@@ -2120,7 +2318,7 @@
         </div>
         <div class="options-row">
           <label>URL</label>
-          <input type="text" id="optLlmUrl" placeholder="http://127.0.0.1:8000" aria-label="LLM URL">
+          <input type="text" id="optLlmUrl" placeholder="http://127.0.0.1:8005" aria-label="LLM URL">
         </div>
         <div class="options-row">
           <label>API Key</label>
@@ -2232,8 +2430,23 @@
       </div>
 
       <div class="cust-section">
+        <div class="cust-section-label">👁️ Eye Shape</div>
+        <div class="cust-style-row" id="custEyeShapes"></div>
+      </div>
+
+      <div class="cust-section">
         <div class="cust-section-label">🎨 Outfit Pattern</div>
         <div class="cust-style-row" id="custOutfitPatterns"></div>
+      </div>
+
+      <div class="cust-section">
+        <div class="cust-section-label">🎒 Backpack</div>
+        <div class="cust-style-row" id="custBackAccessories"></div>
+      </div>
+
+      <div class="cust-section">
+        <div class="cust-section-label">🧣 Scarf</div>
+        <div class="cust-style-row" id="custNeckAccessories"></div>
       </div>
 
       <div class="cust-btn-row">
@@ -2360,8 +2573,11 @@
       <!-- Book of Knowledge overlay -->
       <div id="bookOverlay">
         <div class="book-header">
-          <span class="book-title">📖 Book of Knowledge</span>
-          <span class="book-close" id="bookClose">✕</span>
+          <div>
+            <span class="book-title">📖 Book of Knowledge</span>
+            <span class="book-title-sub">Illustrated codex · works offline</span>
+          </div>
+          <span class="book-close" id="bookClose" title="Close (B)">✕</span>
         </div>
         <div class="book-tabs">
           <div class="book-tab active" data-tab="browse">📚 Browse</div>

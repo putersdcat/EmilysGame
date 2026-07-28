@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- tall-grass-01: Tall dramatic grass blades with seed heads, reed-like -->
+  <defs>
+    <radialGradient id="tgBase" cx="50%" cy="60%" r="60%">
+      <stop offset="0%" stop-color="#5aaa38"/>
+      <stop offset="70%" stop-color="#388820"/>
+      <stop offset="100%" stop-color="#1e5810"/>
+    </radialGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#tgBase)"/>
+  <ellipse cx="64" cy="100" rx="60" ry="20" fill="#1e500e" opacity="0.5"/>
+  <ellipse cx="40" cy="90" rx="30" ry="15" fill="#1e500e" opacity="0.3"/>
+  <ellipse cx="90" cy="85" rx="28" ry="14" fill="#1e500e" opacity="0.3"/>
+  <!-- Background shorter blades -->
+  <g stroke="#2d7015" stroke-width="1" stroke-linecap="round" opacity="0.6">
+    <line x1="10" y1="128" x2="12" y2="88"/><line x1="20" y1="128" x2="18" y2="92"/>
+    <line x1="35" y1="128" x2="38" y2="85"/><line x1="50" y1="128" x2="48" y2="90"/>
+    <line x1="65" y1="128" x2="68" y2="82"/><line x1="80" y1="128" x2="78" y2="88"/>
+    <line x1="95" y1="128" x2="98" y2="82"/><line x1="110" y1="128" x2="108" y2="90"/>
+    <line x1="122" y1="128" x2="120" y2="95"/>
+    <line x1="5" y1="128" x2="7" y2="100"/><line x1="28" y1="128" x2="25" y2="93"/>
+    <line x1="44" y1="128" x2="42" y2="88"/><line x1="58" y1="128" x2="61" y2="84"/>
+    <line x1="73" y1="128" x2="70" y2="88"/><line x1="88" y1="128" x2="91" y2="82"/>
+    <line x1="103" y1="128" x2="100" y2="88"/><line x1="118" y1="128" x2="116" y2="92"/>
+  </g>
+  <!-- Far back blades (thinner, lighter) -->
+  <g stroke="#48a028" stroke-width="1.5" stroke-linecap="round" opacity="0.7">
+    <path d="M18,128 Q15,100 20,75 Q22,65 18,50" fill="none"/>
+    <path d="M45,128 Q48,98 42,72 Q40,60 45,42" fill="none"/>
+    <path d="M78,128 Q75,96 80,70 Q82,58 78,38" fill="none"/>
+    <path d="M105,128 Q108,98 102,72 Q100,60 106,40" fill="none"/>
+  </g>
+  <!-- Mid blades -->
+  <g stroke="#3d9c20" stroke-width="2" stroke-linecap="round" opacity="0.85">
+    <path d="M30,128 Q26,102 32,78 Q36,65 28,45" fill="none"/>
+    <path d="M54,128 Q58,100 52,74 Q48,60 55,38" fill="none"/>
+    <path d="M72,128 Q68,100 74,75 Q78,62 70,40" fill="none"/>
+    <path d="M92,128 Q96,102 90,76 Q86,62 93,42" fill="none"/>
+    <path d="M115,128 Q112,100 118,75 Q122,60 114,40" fill="none"/>
+  </g>
+  <!-- Close foreground blades (thickest) -->
+  <g stroke="#358e18" stroke-width="2.5" stroke-linecap="round" opacity="0.95">
+    <path d="M22,128 Q18,105 25,82 Q30,68 22,52 Q20,42 26,28" fill="none"/>
+    <path d="M62,128 Q65,105 58,82 Q54,68 62,52 Q64,42 58,26" fill="none"/>
+    <path d="M100,128 Q96,105 103,82 Q108,68 100,52 Q98,42 104,28" fill="none"/>
+  </g>
+  <!-- Seed heads at top of tall blades -->
+  <g fill="#8acc38" opacity="0.9">
+    <ellipse cx="26" cy="26" rx="5" ry="3"/>
+    <ellipse cx="24" cy="22" rx="3" ry="4"/>
+    <ellipse cx="58" cy="24" rx="5" ry="3"/>
+    <ellipse cx="60" cy="20" rx="3.5" ry="4"/>
+    <ellipse cx="104" cy="26" rx="5" ry="3"/>
+    <ellipse cx="102" cy="22" rx="3" ry="4"/>
+    <ellipse cx="28" cy="44" rx="4" ry="2.5"/>
+    <ellipse cx="55" cy="37" rx="4" ry="2.5"/>
+    <ellipse cx="70" cy="39" rx="3.5" ry="2.5"/>
+    <ellipse cx="93" cy="41" rx="4" ry="2.5"/>
+    <ellipse cx="114" cy="39" rx="4" ry="2.5"/>
+  </g>
+  <g fill="#b8e858" opacity="0.6">
+    <ellipse cx="26" cy="22" rx="2" ry="3"/>
+    <ellipse cx="58" cy="20" rx="2" ry="3"/>
+    <ellipse cx="104" cy="22" rx="2" ry="3"/>
+  </g>
+  <ellipse cx="64" cy="118" rx="58" ry="10" fill="#0e3808" opacity="0.4"/>
+</svg>

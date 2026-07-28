@@ -1,0 +1,340 @@
+# Emily's Game — Engine Architecture
+
+**Status:** Living document · **Product branch:** `experiment/isometric-2.0`
+
+> Canonical architectural reference. Read with root [AGENTS.md](AGENTS.md).
+> Module-size discipline: [`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md).
+
+---
+
+## 1. What Emily's Game is
+
+A procedurally generated, educational, **isometric** browser adventure built
+**from scratch** in TypeScript + HTML5 Canvas 2D (no game engine, no heavy libs),
+bundled with Vite. World generation is biased by LLM-derived entropy; progression
+is gated by educational quizzes; the world is organized into lazily-loaded chunks.
+
+Core constraints (do not violate without an explicit decision):
+
+- **Canvas 2D** is the primary renderer (WebGL/WASM are optional accelerators).
+- **HTML DOM** for all UI (not canvas-drawn UI).
+- **No external game engine**; everything is hand-rolled.
+- **Zero-allocation render hot path**; viewport-culled; chunk-cached.
+- **Deterministic generation**: a chunk is regenerated from its seed on re-entry,
+  not stored — so identical seed → identical chunk is load-bearing for save/load.
+
+---
+
+## 2. Current state (June 2026)
+
+**Phase B1 (folder restructure) is complete** (#251). `src/` is now organized into
+the layered structure described in §3: `engine/` (7), `rendering/` (15),
+`asset-pipeline/` (7), `game/` (13) + `game/audio/` (5), `ui/` (5), `config/` (18),
+`types/` (2). Only `main.ts` and `.d.ts` files remain at `src/` root.
+
+Two god-files still need internal decomposition (Phase B2/B3):
+
+- `src/main.ts` (**3316 lines**) — entry point + per-frame orchestration of ~20
+  concerns; exposes ~80–90 `window.__gameDebug` accessors. → #252
+- `src/engine/gen.ts` (**2558 lines**) — world generation monolith implementing a
+  partial version of the WorldEngine solver pipeline. → #253
+
+Layering is now enforced by folder boundaries (see §3 rules). This document defines the target
+layering; Phase B (#251–#254) executes the move.
+
+See layer layout in [AGENTS.md](AGENTS.md) and module budgets in
+[`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md) for the complete list of
+files > 400 lines with measured line counts and per-file split plans.
+
+---
+
+## 3. Layered structure
+
+Folders below exist as of B1 (#251). Items marked _(planned)_ are produced by the
+B2/B3 god-file decomposition (#252/#253) and do not exist yet.
+
+```
+src/
+├── engine/          # PURE logic — no DOM, no Canvas, no window
+│   ├── gen.ts                # world-gen monolith (B3 #253 splits into world/ ↓)
+│   ├── world/    (planned)   # BiomeSelector, TemplateStamper, Populator,
+│   │                         #   CollectibleScatterer, ObstacleSolver, Validation, Entropy, index
+│   ├── iso2-solver.ts        # nano footprint walkability / collision
+│   ├── iso2-assemblies.ts    # multi-tile structure stamping
+│   ├── mechanics.ts          # interaction, collision, autocollect
+│   ├── llm.ts                # LLM client, health, entropy expansion
+│   ├── utils.ts              # hash, RNG, BFS
+│   └── perf.ts               # frame timing / benchmark
+├── rendering/       # ALL Canvas drawing + isometric projection
+│   ├── render.ts             # IsometricRenderer, Camera consumer, draw pool, depth sort
+│   ├── terrain-cache.ts      # per-chunk baked terrain canvases
+│   ├── nano-tile.ts          # Z-pinned nano draw pipeline (extrude / carve / billboard)
+│   ├── nano-tile-defs.ts     # nano stack registry + renderer dispatch
+│   ├── nano-tile-svgs.ts     # nano SVG painters
+│   ├── tiles.ts              # base terrain tile SVG + iso transform
+│   ├── local-lights.ts, shadows.ts, fog.ts, lighting.ts, weather.ts
+│   ├── particles.ts, debuff-visuals.ts, minimap.ts
+│   └── wasm-bridge.ts        # optional WASM renderer integration
+├── asset-pipeline/  # procedural sprite + texture generation
+│   ├── sprites.ts, asset-sprites.ts, npc-sprites.ts, emoji-cache.ts
+│   ├── iso2-materials.ts     # face-slice structural materials
+│   └── asset-library.ts, content-loader.ts
+├── game/            # systems + orchestration
+│   ├── input.ts, quiz.ts, math-solver.ts, trading.ts, inventory.ts
+│   ├── status.ts, injury.ts, knowledge.ts, wildlife.ts, save.ts
+│   ├── age-profile.ts, tutorial.ts, platform.ts
+│   ├── audio/                # sfx.ts, music.ts, sampled-sfx.ts, midi-loader.ts, npc-voice.ts
+│   └── (planned, B2 #252)    # bootstrap, game-loop, input-wiring, interactions,
+│                             #   save-wiring, systems-orchestrator, debug-hooks, game-state
+├── ui/              # HUD, menus, overlays, DOM sync
+│   ├── ui.ts, customizer.ts, thought-bubbles.ts, markdown.ts, book-content.ts
+│   └── menus.ts   (planned, B2 #252 — extracted from main.ts)
+├── config/          # (unchanged) immutable, typed *.config.ts data
+├── types/           # shared cross-boundary types (Camera, world, interaction, ...)
+└── main.ts          # entry point — B2 #252 reduces to a thin bootstrap (< 400 lines target)
+```
+
+### Layering rules
+
+1. `engine/` must not import from `rendering/`, `ui/`, or touch `document`/`window`/Canvas.
+2. `rendering/` owns the Canvas. It may import from `engine/` and `asset-pipeline/`.
+3. `asset-pipeline/` produces images/SVGs; it does not drive the frame loop.
+4. `game/` orchestrates everything and owns the `GameState` object.
+5. `ui/` reads game state and renders DOM; it does not mutate world/render internals directly.
+6. **Data ≠ rendering.** A tile's logical data (walkability, height, kind) lives in
+   `engine/`; how it is drawn lives in `rendering/`.
+7. Shared types that cross two or more layers live in `src/types/` (see §7).
+
+> **Folder case:** `kebab-case` file names (existing convention), `PascalCase` for the
+> extracted `engine/world/` phase modules (they are conceptual "solvers"/services).
+> Decided once here; see [AGENTS.md](../AGENTS.md) for the full naming standard.
+
+---
+
+## 4. Spatial hierarchy (four tiers)
+
+From [WorldEngine-01-SpatialHierarchy.md](WorldEngine-01-SpatialHierarchy.md):
+
+```mermaid
+graph TD
+    Macro["Macro — 5×5 world units (25×25 micro, 625 cells)<br/>biome, difficulty, playability proof"]
+    WU["World Unit — 5×5 micro (25 cells)<br/>edge contracts, corridors, clearings"]
+    Micro["Micro — 1 cell<br/>traversal class, height, edge tags, surface"]
+    Nano["Nano — 3×3 sub-grid inside one micro<br/>kind, footprint, z-mode (±/flat), walkability"]
+
+    Macro --> WU --> Micro --> Nano
+```
+
+The **Nano** tier is the precision layer: it adds an addressable 3×3 sub-grid inside
+a micro **without** increasing the outer XY footprint, enabling sub-micro features
+(fence on a west edge, bridge through a center, wall corner variant) and sub-cell
+walkability. Nanos resolve into four render families:
+
+| Family | Behavior | Examples |
+|--------|----------|----------|
+| Positive-Z billboard | upright, Z-pinned skew | fence, gate, tall-grass |
+| Positive-Z extruded | solid 3-face box | stone-wall, cathedral-wall, homestead-wall |
+| Negative-Z carve-out | sunken channel below ground plane | river, river-bank |
+| Flat overlay | ground-hugging decal | trims, decals |
+
+**Player anchor convention** ([Iso2.0-PlayerAnchorConvention.md](Iso2.0-PlayerAnchorConvention.md)):
+the player anchors at the **center of a nano cell**:
+`foot = (col + (nanoCol+0.5)/3, row + (nanoRow+0.5)/3)`; depth sort uses the same
+foot coords. Falls back to the micro south-vertex if nano coords are omitted.
+
+---
+
+## 5. Rendering pipeline
+
+`render.ts` is the core terrain + object renderer. Per-frame overlay passes
+(lights, fog, weather, particles, minimap, DOM UI) are orchestrated from `main.ts`'s
+render section (≈ lines 3152–3250 today; moves to `game/game-loop.ts` in B2).
+
+```mermaid
+graph TD
+    Loop["game loop (main.ts → game/game-loop.ts)"]
+    Render["render.ts · IsometricRenderer.renderAuto()"]
+    TCache["terrain-cache.ts · drawCachedChunkTerrain()"]
+    Tiles["tiles.ts · getIsoTile()"]
+    NanoDefs["nano-tile-defs.ts · getNanoStack / hasNanoRenderer"]
+    Nano["nano-tile.ts · drawNanoStack() (extrude / carve / billboard)"]
+    NanoSvg["nano-tile-svgs.ts · SVG painters"]
+    Wasm["wasm-bridge.ts · optional WASM path"]
+    Shadows["shadows.ts · getShadowParams()"]
+    Overlays["overlay passes: local-lights, fog, weather, particles, debuff-visuals, minimap"]
+    UI["ui.ts · DOM HUD sync"]
+
+    Loop --> Render
+    Render --> TCache
+    Render --> Shadows
+    Render --> Nano
+    Render -.WASM available.-> Wasm
+    TCache --> Tiles
+    TCache --> NanoDefs
+    TCache --> Nano
+    Nano --> NanoSvg
+    Loop --> Overlays
+    Loop --> UI
+```
+
+**Hot-path rules** (`rendering.instructions.md`, `performance.instructions.md`):
+
+- Pre-allocated draw-command pool (`jsPool`, 8192) + sort index — no per-frame allocs.
+- Viewport culling: only chunks within camera view ± margin are drawn.
+- Per-chunk terrain is baked to an offscreen canvas and reused until invalidated.
+- SVG images decode once into an `HTMLImageElement` cache; nano stacks are cached.
+- Throttle `animFrame` ticks and DOM syncs (not every rAF).
+
+---
+
+## 6. Generation pipeline
+
+`gen.ts`'s `generateChunkSync()` is called when the player crosses a chunk boundary.
+It implements a partial version of the 10-phase
+[WorldEngine solver pipeline](WorldEngine-03-SolverPipeline.md):
+
+| Phase | Status | Where (gen.ts today → engine/world/ target) |
+|-------|--------|---------------------------------------------|
+| Entropy harvest / biome+mood select | ✅ implemented | `selectBiomeCoherent`, `deriveMood` → `BiomeSelector.ts`, `Entropy.ts` |
+| 1 Perlin base terrain | ✅ | `buildPerlinBase` → `TemplateStamper.ts` |
+| 2 AC-3 world-unit grid solve | ✅ | `solveWorldUnitGrid` + AC-3 → `TemplateStamper.ts` |
+| 3 Stamp grid | ✅ | `stampWorldUnitGrid` → `TemplateStamper.ts` |
+| 3b Boundary collection (cross-chunk) | ⚠️ partial | `applyBorderConstraints` (not fully enforced) |
+| 4 Passability | ✅ | `enforcePassability`, water integrity → `Passability.ts` |
+| 5 Population / decorations / collectibles | ✅ | `populateAnchors`, `cluster/scatterDecorations`, `scatterCollectibles`, `layCoinTrails` → `Populator.ts`, `CollectibleScatterer.ts` |
+| 5.4 Quiz gates / fence-run gates | ✅ | `placeQuizGates`, `placeGatesInFenceRuns` → `ObstacleSolver.ts` |
+| 6 Chain integrity (edge contracts) | ❌ planned | — |
+| 7 Progression placement (lock-key DAG) | ⚠️ partial | balance/repair + `getLockKeyDebugInfo` → `ObstacleSolver.ts` |
+| 8 Playability validation (Solver F) | ✅ | `validatePlayability`, `getPlayabilityStats` → `Validation.ts` |
+| 9–10 (full edge contracts, composite scene assembly) | ❌ planned | see "Entropy scope & the Composite Assembly pattern" below — clarified 2026-07-10 to be a template-driven sub-solver, not a bigger AC-3 macro-tier |
+
+**Determinism:** generation is seeded; chunks are **not** persisted — they regenerate
+identically on re-entry. The B3 split (#253) must preserve this exactly (covered by a
+determinism test).
+
+### Entropy scope & the Composite Assembly pattern
+
+**LLM-derived entropy is scoped to macro-level variety, not fine-grained construction.**
+Its job is to make world generation feel non-repetitive and non-pre-defined *across many
+playthroughs and across a large world* — which biome a region leans toward, what mood a
+macro tile has (river-heavy, fortified, sparse...), roughly where a notable scene should
+appear. It is explicitly **not** meant to drive a giant deterministic state machine that
+arbitrarily assembles nano tiles, terrain primitives, and structure primitives from raw
+entropy at the finest grain, every time. (Directive: 2026-07-10.)
+
+Just as textures and structural primitives (rivers, walls, fences, houses, churches) are
+**pre-authored, visually tested, and tuned** — not synthesized on the fly — complex
+*composite scenes* (a homestead with a fence and an open gate, a general store, a bounded
+gameplay section that needs its own structure) should be assembled by a dedicated
+**Composite Assembly Sub-Solver**, not improvised by the generic world-unit solver.
+
+The intended division of responsibility:
+
+1. The **macro/world-unit solver** (`solveWorldUnitGrid`, `ObstacleSolver.ts`) decides
+   *that* a footprint needs a named scene — e.g. "a homestead, meadow style, 7×7
+   footprint, gate facing south" — and *where* that footprint is. It does **not** work
+   out the nano-level composition itself.
+2. It hands that **recipe** (scene type + footprint + biome/style + specific parameters
+   like gate orientation) to the **Composite Assembly Sub-Solver**.
+3. The sub-solver selects a matching **pre-authored, hand-tuned template** for that scene
+   type and lays out the whole footprint's nano/micro elements atomically, honoring the
+   requested parameters (biome material variants, orientation, etc.).
+4. The result is handed back to the world/macro solver, which simply marks the footprint
+   as filled — the same way a single world-unit template is "just placed" today.
+
+This generalizes a pattern that **already exists in nascent form**: `stampIso2Assembly`
+(`src/engine/iso2-assemblies.ts`) is exactly this kind of sub-solver for two known scene
+types today (`'homestead-small'`, `'ruined-cathedral'`); `stampStarterHomestead`
+(`src/engine/iso2-assemblies/starter-homestead.ts`) and `maybePlaceCastleLandmark` are
+concrete callers deciding *where*/*whether* to invoke it. The target direction is a
+proper, reusable recipe → sub-solver → composite contract covering many scene types
+(stores, gatehouses, bounded progression sections, and — per Vision Alignment Audit
+Finding #3 — coherent ponds/lakes instead of emergent per-slot AC-3 water tiling), rather
+than a bigger/smarter version of the per-slot world-unit solver reaching for the same
+goal. See [WorldEngine-03-SolverPipeline.md](Docs/WorldEngine-03-SolverPipeline.md) §6.7
+and repo memory `iso2-portback-plan.md`'s "Phases 9-10" section for the fuller writeup.
+
+---
+
+## 7. State & save model
+
+- A single monolithic `GameState` object is created in `main.ts` (interface at
+  lines 148–290; moves to `src/types/game-state.ts` + a `game/game-state.ts` factory
+  in B2). It threads through `update()`, `render()`, interactions, and save/load.
+- `save.ts` serializes a reduced form to `localStorage` (player, inventory, quiz
+  streak, knowledge, status, injury, customization, cosmetics, visited cells, entropy
+  buffer, playtime). Chunks are **regenerated**, not stored.
+
+### Module-level mutable state (anti-pattern — B4 #254 classifies each)
+
+| Location | State | Classification |
+|----------|-------|----------------|
+| `gen.ts` | `_wordlist`, entropy pool, DAG accumulators | move to engine service / state |
+| `render.ts` | mouth/head-bob anim (`_dialogNpcId`…), draw `jsPool`, `occluderPool`, `objectCellCache` | **owned cache** (keep in module), animation may move to `npc-dialog-anim.ts` |
+| `local-lights.ts` | `_lights` | owned service |
+| `fog.ts` | `_visited` grid | serialized state (already saved) |
+| `weather.ts` | `_current` | ephemeral owned state |
+| `terrain-cache.ts` | `_terrainCache`, `_objectCache` Maps | owned cache |
+
+**Rule going forward:** state that must persist across save/load belongs in
+`GameState`; ephemeral render/generation caches are explicitly owned by their module
+and documented here. No new ad-hoc module-level mutable globals.
+
+### Shared types (centralize in `src/types/`)
+
+`Camera` is currently **duplicated** (`render.ts:30` and `local-lights.ts:47`) — B4
+promotes a single canonical `Camera` to `src/types/camera.types.ts`. Other
+cross-boundary types to centralize: `ChunkData`/`BorderConstraints` (from `gen.ts`),
+`InteractionResult` (from `mechanics.ts`). Module-internal types stay in-file.
+
+---
+
+## 8. Tooling & visual validation
+
+Visual/asset work in the Iso 2.0 experiment uses the **`isoSvgRenderer` MCP** tools
+(`render_game_tile`, `render_nano_assembly`, `render_iso_scene`, etc.) for fast,
+zero-browser iteration; see `.github/instructions/isosvgrenderer.instructions.md`.
+A canonical `VisualTestSuite` + `npm run visual-test` is defined in D1 (#259).
+
+Mandatory pre-commit checks: `npx tsc --noEmit` (root **and**
+`experiment/isometric-2.0`), `npx playwright test`, and (after D1) `npm run visual-test`.
+
+---
+
+## 9. Files > 400 lines (responsibility index)
+
+Module discipline: [`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md). Summary:
+
+| File | Lines | Primary responsibility | Target layer |
+|------|------:|------------------------|--------------|
+| `main.ts` | 3316 | entry + per-frame orchestration (~20 concerns) | `src/` + `game/` |
+| `gen.ts` | 2558 | world generation (solver pipeline) | `engine/world/` |
+| `config/tiles.config.ts` | 2381 | tile metadata, templates, biome palettes, edge contracts | `config/` |
+| `asset-sprites.ts` | 1092 | SVG asset factory (60+ assets, fire frames) | `asset-pipeline/` |
+| `nano-tile.ts` | 1030 | Z-pinned nano draw pipeline | `rendering/` |
+| `render.ts` | 870 | isometric renderer, draw pool, depth sort | `rendering/` |
+| `sprites.ts` | 837 | procedural character sprite generation | `asset-pipeline/` |
+| `terrain-cache.ts` | 749 | per-chunk baked terrain | `rendering/` |
+| `ui.ts` | 734 | HUD/DOM sync, dialog, debug panels | `ui/` |
+| `tiles.ts` | 661 | base tile SVG + iso transform | `rendering/` |
+| `sfx.ts` | 621 | WebAudio sound effects | `game/audio/` |
+| `wildlife.ts` | 579 | animal spawning/behavior/discovery | `game/` |
+| `input.ts` | 522 | input manager, edge detection | `game/` |
+| `config/assets.config.ts` | 493 | asset defs, obstacle templates | `config/` |
+| `knowledge.ts` | 479 | Book of Knowledge | `game/` |
+| `trading.ts` | 470 | NPC trading + barter quiz | `game/` |
+| `npc-sprites.ts` | 445 | paper-cut NPC sprites | `asset-pipeline/` |
+| `nano-tile-svgs.ts` | 439 | nano SVG painters | `rendering/` |
+| `local-lights.ts` | 430 | point/flashlight rendering | `rendering/` |
+| `config/npc.config.ts` | 418 | NPC personas, dialog, shops | `config/` |
+| `config/sfx.config.ts` | 411 | SFX defs | `config/` |
+| `customizer.ts` | 406 | character customizer UI | `ui/` |
+| `llm.ts` | 401 | LLM client / entropy | `engine/` |
+
+---
+
+## 10. How this document stays alive
+
+Update this file in the same PR as any change that alters: folder boundaries, the
+rendering or generation pipeline, the save/state model, or the shared-type set.
+Phase B issues (#251–#254) must each leave §3, §7, and §9 accurate.

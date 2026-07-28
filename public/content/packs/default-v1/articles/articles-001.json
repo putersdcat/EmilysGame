@@ -27,6 +27,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-000.png",
+        "alt": "What Are Fractions?",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -52,6 +58,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-001.png",
+        "alt": "Prime Numbers Explained",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -79,6 +91,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-002.png",
+        "alt": "Geometry Basics: Shapes Around Us",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -108,6 +126,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-003.png",
+        "alt": "Atoms: The Building Blocks of Everything",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -135,6 +159,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-004.png",
+        "alt": "Photosynthesis: How Plants Make Food",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -162,6 +192,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-005.png",
+        "alt": "Gravity: The Force That Keeps Us Down",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -188,6 +224,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -216,6 +258,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/river-delta.jpg",
+        "alt": "River landscape",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -244,6 +292,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/sputnik.jpg",
+        "alt": "Sputnik satellite",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -272,6 +326,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-language-009.png",
+        "alt": "Parts of Speech: The Building Blocks of Sentences",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -299,6 +359,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/books.jpg",
+        "alt": "Historic books",
+        "credit": "Wikimedia Commons",
+        "license": "Public domain"
       }
     },
     {
@@ -326,6 +392,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-technology-011.png",
+        "alt": "Binary Code: The Language of Computers",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -355,6 +427,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-technology-012.png",
+        "alt": "How the Internet Works",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -384,6 +462,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/continent.svg",
+        "alt": "World map",
+        "credit": "Wikimedia Commons",
+        "license": "Public domain"
       }
     },
     {
@@ -412,6 +496,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.689Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/ocean.jpg",
+        "alt": "Ocean",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -438,6 +528,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/abacus.png",
+        "alt": "Abacus",
+        "credit": "Wikimedia Commons",
+        "license": "CC / free"
       }
     },
     {
@@ -463,6 +559,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-math-016.png",
+        "alt": "Multiplication Tricks",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -495,6 +597,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/mars-rover.jpg",
+        "alt": "Mars rover",
+        "credit": "NASA/JPL",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -523,6 +631,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-019.png",
+        "alt": "Dinosaurs: Ancient Giants",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -551,6 +665,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/greece.jpg",
+        "alt": "The Parthenon",
+        "credit": "Wikimedia Commons",
+        "license": "CC / free"
       }
     },
     {
@@ -577,6 +697,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-history-021.png",
+        "alt": "The American Revolution",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -603,6 +729,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/iss-crew.jpg",
+        "alt": "Crew on the station",
+        "credit": "NASA",
+        "license": "Public domain (NASA)"
       }
     },
     {
@@ -629,6 +761,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-language-023.png",
+        "alt": "The English Alphabet and Phonics",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -656,6 +794,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-language-024.png",
+        "alt": "Types of Sentences",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -684,6 +828,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-technology-025.png",
+        "alt": "How Computers Work",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -712,6 +862,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-geography-026.png",
+        "alt": "Maps and How to Read Them",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -739,6 +895,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-art-027.png",
+        "alt": "Primary and Secondary Colors",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -767,6 +929,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-science-028.png",
+        "alt": "Magnets and Magnetism",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -797,6 +965,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-technology-029.png",
+        "alt": "The Internet: Connecting the World",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     },
     {
@@ -826,6 +1000,12 @@
         "license": "CC0-1.0",
         "dateIngested": "2026-02-17T08:50:38.690Z",
         "curator": "content-pipeline-v2"
+      },
+      "image": {
+        "url": "/content/packs/default-v1/images/gen-article-art-050.png",
+        "alt": "Shapes in Art",
+        "credit": "Generated educational illustration (local)",
+        "license": "CC0-1.0 (game pack)"
       }
     }
   ]

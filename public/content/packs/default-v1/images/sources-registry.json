@@ -1,0 +1,1221 @@
+{
+  "schemaVersion": "1.0",
+  "updatedAt": "2026-07-19T05:56:18Z",
+  "policy": {
+    "runtime": "offline-only paths under /content/",
+    "preferredSources": [
+      "NASA public domain",
+      "NOAA public domain",
+      "USGS public domain",
+      "local generated educational art"
+    ],
+    "avoidAtRuntime": [
+      "remote http(s) URLs",
+      "bulk scraping Wikimedia"
+    ]
+  },
+  "files": {
+    "earth-apollo17.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/as17-148-22727/as17-148-22727~medium.jpg",
+      "nasaId": "as17-148-22727",
+      "alt": "Earth from Apollo 17",
+      "tags": [
+        "earth",
+        "space",
+        "geography"
+      ],
+      "bytes": 181294
+    },
+    "moon-apollo.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/as11-40-5874/as11-40-5874~medium.jpg",
+      "nasaId": "as11-40-5874",
+      "alt": "Moon from Apollo",
+      "tags": [
+        "moon",
+        "space",
+        "apollo"
+      ],
+      "bytes": 251823
+    },
+    "moon-surface.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/as11-40-5903/as11-40-5903~medium.jpg",
+      "nasaId": "as11-40-5903",
+      "alt": "Apollo lunar surface",
+      "tags": [
+        "moon",
+        "apollo",
+        "astronaut"
+      ],
+      "bytes": 262221
+    },
+    "earth-rise.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/as08-14-2383/as08-14-2383~medium.jpg",
+      "nasaId": "as08-14-2383",
+      "alt": "Earthrise",
+      "tags": [
+        "earth",
+        "moon",
+        "apollo"
+      ],
+      "bytes": 67035
+    },
+    "shuttle-hubble.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/sts125-s-026/sts125-s-026~medium.jpg",
+      "nasaId": "sts125-s-026",
+      "alt": "Shuttle and Hubble",
+      "tags": [
+        "shuttle",
+        "hubble",
+        "telescope"
+      ],
+      "bytes": 125896
+    },
+    "hubble-galaxy.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001891/GSFC_20171208_Archive_e001891~medium.jpg",
+      "nasaId": "GSFC_20171208_Archive_e001891",
+      "alt": "Galaxy image",
+      "tags": [
+        "galaxy",
+        "telescope",
+        "astronomy"
+      ],
+      "bytes": 89135
+    },
+    "nebula.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e001861/GSFC_20171208_Archive_e001861~medium.jpg",
+      "nasaId": "GSFC_20171208_Archive_e001861",
+      "alt": "Nebula",
+      "tags": [
+        "nebula",
+        "astronomy",
+        "art"
+      ],
+      "bytes": 184293
+    },
+    "mars-rover.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA16239/PIA16239~medium.jpg",
+      "nasaId": "PIA16239",
+      "alt": "Mars rover",
+      "tags": [
+        "mars",
+        "rover",
+        "robot"
+      ],
+      "bytes": 151268
+    },
+    "mars-surface.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA17944/PIA17944~medium.jpg",
+      "nasaId": "PIA17944",
+      "alt": "Mars surface",
+      "tags": [
+        "mars",
+        "planet"
+      ],
+      "bytes": 210946
+    },
+    "saturn.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA17172/PIA17172~medium.jpg",
+      "nasaId": "PIA17172",
+      "alt": "Saturn",
+      "tags": [
+        "saturn",
+        "planet",
+        "solar-system"
+      ],
+      "bytes": 30254
+    },
+    "solar-system.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA03153/PIA03153~medium.jpg",
+      "nasaId": "PIA03153",
+      "alt": "Solar system illustration",
+      "tags": [
+        "solar-system",
+        "planets"
+      ],
+      "bytes": 78006
+    },
+    "launch-pad.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/KSC-2012-1848/KSC-2012-1848~medium.jpg",
+      "nasaId": "KSC-2012-1848",
+      "alt": "Rocket on launch pad",
+      "tags": [
+        "rocket",
+        "launch"
+      ],
+      "bytes": 175293
+    },
+    "satellite.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA04250/PIA04250~medium.jpg",
+      "nasaId": "PIA04250",
+      "alt": "Satellite / spacecraft concept",
+      "tags": [
+        "satellite",
+        "technology"
+      ],
+      "bytes": 182514
+    },
+    "iss-crew.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/iss036e016704/iss036e016704~medium.jpg",
+      "nasaId": "iss036e016704",
+      "alt": "Astronauts on ISS",
+      "tags": [
+        "iss",
+        "crew",
+        "station"
+      ],
+      "bytes": 108561
+    },
+    "telescope-mirror.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e002096/GSFC_20171208_Archive_e002096~medium.jpg",
+      "nasaId": "GSFC_20171208_Archive_e002096",
+      "alt": "Space telescope hardware",
+      "tags": [
+        "telescope",
+        "webb",
+        "hubble"
+      ],
+      "bytes": 92115
+    },
+    "ocean.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA18033/PIA18033~medium.jpg",
+      "nasaId": "PIA18033",
+      "alt": "Ocean from space",
+      "tags": [
+        "ocean",
+        "earth",
+        "water"
+      ],
+      "bytes": 245146
+    },
+    "ocean-currents.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA11194/PIA11194~medium.jpg",
+      "nasaId": "PIA11194",
+      "alt": "Ocean / Earth science visualization",
+      "tags": [
+        "ocean",
+        "currents",
+        "climate"
+      ],
+      "bytes": 92642
+    },
+    "coral.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/GSFC_20171208_Archive_e002151/GSFC_20171208_Archive_e002151~medium.jpg",
+      "nasaId": "GSFC_20171208_Archive_e002151",
+      "alt": "Earth science imagery (reef/ocean related archive)",
+      "tags": [
+        "coral",
+        "ocean",
+        "earth"
+      ],
+      "bytes": 150227
+    },
+    "coast.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA03401/PIA03401~medium.jpg",
+      "nasaId": "PIA03401",
+      "alt": "Coastal landscape from space",
+      "tags": [
+        "coast",
+        "beach",
+        "geography"
+      ],
+      "bytes": 206212
+    },
+    "river-delta.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA02668/PIA02668~medium.jpg",
+      "nasaId": "PIA02668",
+      "alt": "River delta from space",
+      "tags": [
+        "river",
+        "water",
+        "geography"
+      ],
+      "bytes": 231971
+    },
+    "volcano.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA03387/PIA03387~medium.jpg",
+      "nasaId": "PIA03387",
+      "alt": "Volcanic region from space",
+      "tags": [
+        "volcano",
+        "geology",
+        "earth"
+      ],
+      "bytes": 354231
+    },
+    "earth-night.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA18033/PIA18033~small.jpg",
+      "nasaId": "PIA18033",
+      "alt": "Earth / ocean view",
+      "tags": [
+        "earth",
+        "ocean"
+      ],
+      "bytes": 68407
+    },
+    "ice-polar.jpg": {
+      "source": "NASA Image and Video Library / images-assets.nasa.gov",
+      "license": "Public domain (U.S. government work)",
+      "credit": "NASA",
+      "originUrl": "https://images-assets.nasa.gov/image/PIA18153/PIA18153~small.jpg",
+      "nasaId": "PIA18153",
+      "alt": "Polar ice",
+      "tags": [
+        "ice",
+        "climate",
+        "polar"
+      ],
+      "bytes": 33326
+    },
+    "sputnik.jpg": {
+      "source": "NASA / NSSDC via Wikimedia Commons",
+      "license": "Public domain (NASA)",
+      "credit": "NASA",
+      "originUrl": "https://upload.wikimedia.org/wikipedia/commons/b/be/Sputnik_asm.jpg",
+      "tags": [
+        "sputnik",
+        "satellite",
+        "space-history"
+      ],
+      "bytes": 136665
+    },
+    "bee.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "CC BY-SA (see Commons file page)",
+      "credit": "Wikimedia Commons — honey bee",
+      "originUrl": "https://commons.wikimedia.org/wiki/File:Apis_mellifera_Western_honey_bee.jpg",
+      "tags": [
+        "bee",
+        "nature",
+        "pollination"
+      ],
+      "bytes": 60621
+    },
+    "books.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "Public domain",
+      "credit": "Wikimedia Commons — historic book",
+      "tags": [
+        "books",
+        "language",
+        "history"
+      ],
+      "bytes": 423286
+    },
+    "etymology.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "Public domain",
+      "credit": "Wikimedia Commons — historic book",
+      "tags": [
+        "books",
+        "language"
+      ],
+      "bytes": 423286
+    },
+    "colosseum.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "CC BY (see Commons)",
+      "credit": "Wikimedia Commons — Colosseum",
+      "tags": [
+        "history",
+        "rome"
+      ],
+      "bytes": 85003
+    },
+    "greece.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "CC / free cultural (see Commons)",
+      "credit": "Wikimedia Commons — Parthenon",
+      "tags": [
+        "history",
+        "greece"
+      ],
+      "bytes": 347181
+    },
+    "shark.jpg": {
+      "source": "Wikimedia Commons",
+      "license": "CC / free (see Commons)",
+      "credit": "Wikimedia Commons — shark",
+      "tags": [
+        "ocean",
+        "shark",
+        "animals"
+      ],
+      "bytes": 670776
+    },
+    "abacus.png": {
+      "source": "Wikimedia Commons",
+      "license": "CC BY-SA (see Commons)",
+      "credit": "Wikimedia Commons — abacus",
+      "tags": [
+        "math",
+        "abacus"
+      ],
+      "bytes": 26558
+    },
+    "continent.svg": {
+      "source": "Wikimedia Commons",
+      "license": "Public domain",
+      "credit": "Wikimedia Commons — world map",
+      "tags": [
+        "map",
+        "geography"
+      ],
+      "bytes": 84823
+    },
+    "ocean-map.svg": {
+      "source": "Wikimedia Commons",
+      "license": "Public domain",
+      "credit": "Wikimedia Commons — world map",
+      "tags": [
+        "map",
+        "ocean",
+        "geography"
+      ],
+      "bytes": 84823
+    },
+    "gen-article-art-027.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "art 027",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14577
+    },
+    "gen-article-art-050.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "art 050",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11345
+    },
+    "gen-article-art-color-013.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "art color 013",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11041
+    },
+    "gen-article-art-landscape-014.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "art landscape 014",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11955
+    },
+    "gen-article-geo-compass-020.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "geo compass 020",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14311
+    },
+    "gen-article-geo-maps-006.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "geo maps 006",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15343
+    },
+    "gen-article-geography-026.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "geography 026",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16217
+    },
+    "gen-article-hist-castles-007.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "hist castles 007",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12524
+    },
+    "gen-article-hist-towns-rivers-008.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "hist towns rivers 008",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14604
+    },
+    "gen-article-history-021.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "history 021",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13189
+    },
+    "gen-article-lang-nouns-009.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "lang nouns 009",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14204
+    },
+    "gen-article-lang-story-010.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "lang story 010",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13029
+    },
+    "gen-article-language-009.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "language 009",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 19240
+    },
+    "gen-article-language-023.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "language 023",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16166
+    },
+    "gen-article-language-024.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "language 024",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12632
+    },
+    "gen-article-logic-patterns-019.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "logic patterns 019",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13560
+    },
+    "gen-article-math-000.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math 000",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13113
+    },
+    "gen-article-math-001.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math 001",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13397
+    },
+    "gen-article-math-002.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math 002",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16506
+    },
+    "gen-article-math-016.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math 016",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12357
+    },
+    "gen-article-math-area-016.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math area 016",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12943
+    },
+    "gen-article-math-garden-015.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "math garden 015",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13068
+    },
+    "gen-article-nature-deciduous-018.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "nature deciduous 018",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13732
+    },
+    "gen-article-nature-meadow-001.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "nature meadow 001",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12791
+    },
+    "gen-article-nature-photosynthesis-003.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "nature photosynthesis 003",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12611
+    },
+    "gen-article-nature-water-cycle-004.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "nature water cycle 004",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13411
+    },
+    "gen-article-ocean-blue-planet-001.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean blue planet 001",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11925
+    },
+    "gen-article-ocean-careers-018.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean careers 018",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13541
+    },
+    "gen-article-ocean-climate-012.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean climate 012",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13400
+    },
+    "gen-article-ocean-coasts-016.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean coasts 016",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13537
+    },
+    "gen-article-ocean-conservation-014.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean conservation 014",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14333
+    },
+    "gen-article-ocean-coral-008.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean coral 008",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14440
+    },
+    "gen-article-ocean-currents-006.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean currents 006",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 18297
+    },
+    "gen-article-ocean-deep-011.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean deep 011",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 10746
+    },
+    "gen-article-ocean-fish-017.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean fish 017",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11087
+    },
+    "gen-article-ocean-food-web-009.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean food web 009",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15558
+    },
+    "gen-article-ocean-habitats-007.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean habitats 007",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12019
+    },
+    "gen-article-ocean-history-015.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean history 015",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14762
+    },
+    "gen-article-ocean-mammals-010.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean mammals 010",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 12338
+    },
+    "gen-article-ocean-salty-003.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean salty 003",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15475
+    },
+    "gen-article-ocean-water-cycle-link-002.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean water cycle link 002",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16386
+    },
+    "gen-article-ocean-waves-005.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "ocean waves 005",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13230
+    },
+    "gen-article-science-003.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science 003",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 18233
+    },
+    "gen-article-science-004.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science 004",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15167
+    },
+    "gen-article-science-005.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science 005",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16556
+    },
+    "gen-article-science-019.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science 019",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14448
+    },
+    "gen-article-science-028.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science 028",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16031
+    },
+    "gen-article-science-seasons-017.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "science seasons 017",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 11716
+    },
+    "gen-article-space-careers-016.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "space careers 016",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15963
+    },
+    "gen-article-space-china-india-017.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "space china india 017",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15054
+    },
+    "gen-article-space-gagarin-002.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "space gagarin 002",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14887
+    },
+    "gen-article-space-timeline-015.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "space timeline 015",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 17019
+    },
+    "gen-article-space-women-pioneers-003.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "space women pioneers 003",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 14308
+    },
+    "gen-article-tech-algorithms-011.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "tech algorithms 011",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 17268
+    },
+    "gen-article-tech-simple-machines-012.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "tech simple machines 012",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 16583
+    },
+    "gen-article-technology-011.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "technology 011",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 17762
+    },
+    "gen-article-technology-012.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "technology 012",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13473
+    },
+    "gen-article-technology-025.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "technology 025",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 13760
+    },
+    "gen-article-technology-029.png": {
+      "source": "Local educational illustration (Emily's Game content pipeline)",
+      "license": "CC0-1.0 (pack-generated)",
+      "credit": "Generated educational illustration (local)",
+      "originUrl": null,
+      "alt": "technology 029",
+      "tags": [
+        "generated",
+        "educational"
+      ],
+      "bytes": 15321
+    },
+    "abacus.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 26558
+    },
+    "antenna.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 182514
+    },
+    "atom-ish.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 182514
+    },
+    "continent.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 84823
+    },
+    "full-moon.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 251823
+    },
+    "magnetosphere.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 182514
+    },
+    "ocean-map.jpg": {
+      "source": "Local pack asset (see SOURCES.md)",
+      "license": "See SOURCES.md / provenance on article",
+      "credit": "See article image.credit",
+      "originUrl": null,
+      "tags": [
+        "local"
+      ],
+      "bytes": 84823
+    }
+  }
+}

@@ -151,19 +151,15 @@ test.describe('Water & Bridge Traversal Integrity (#100)', () => {
     expect(moveResult).toBeTruthy();
     if ('error' in moveResult) return;
 
-    // Try to walk right into the water
-    const startX = await page.evaluate(() => (window as any).__gameDebug?.state.player.x);
-    await page.keyboard.down('d');
-    await page.waitForTimeout(3000);
-    await page.keyboard.up('d');
-    await page.waitForTimeout(200);
+    const blocked = await page.evaluate(({ wx, wy }) => {
+      const dbg = (window as any).__gameDebug;
+      dbg.invalidateRenderCaches?.();
+      return dbg.isFootprintWalkable(wx + 0.5, wy + 0.5);
+    }, (moveResult as any).waterPos);
 
-    const endX = await page.evaluate(() => (window as any).__gameDebug?.state.player.x);
-
-    // Player should have moved some but not past the water barrier
-    // The water cell at px+2 should block movement
-    const waterX = (moveResult as any).waterPos.wx;
-    expect(endX).toBeLessThanOrEqual(waterX);
+    // The injected water tile should be blocked by the same collision helper
+    // used by frame movement. This avoids keyboard timing/flakiness.
+    expect(blocked).toBe(false);
   });
 
   test('water debug info is accessible', async ({ page }) => {

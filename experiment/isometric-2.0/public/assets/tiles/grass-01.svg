@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <!-- grass-01: Rich meadow grass with sun shading, blades, wildflowers -->
+  <defs>
+    <radialGradient id="g1" cx="45%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#72c450"/>
+      <stop offset="50%" stop-color="#4a9a35"/>
+      <stop offset="100%" stop-color="#2d7025"/>
+    </radialGradient>
+    <linearGradient id="sunGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a8e078" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#1a4010" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" fill="url(#g1)"/>
+  <rect width="128" height="128" fill="url(#sunGrad)"/>
+  <ellipse cx="30" cy="80" rx="22" ry="14" fill="#285a1e" opacity="0.3"/>
+  <ellipse cx="90" cy="30" rx="18" ry="12" fill="#285a1e" opacity="0.25"/>
+  <ellipse cx="70" cy="100" rx="25" ry="15" fill="#285a1e" opacity="0.2"/>
+  <ellipse cx="15" cy="40" rx="16" ry="10" fill="#285a1e" opacity="0.2"/>
+  <ellipse cx="60" cy="20" rx="20" ry="12" fill="#8cd85a" opacity="0.2"/>
+  <ellipse cx="100" cy="70" rx="16" ry="10" fill="#8cd85a" opacity="0.15"/>
+  <ellipse cx="40" cy="55" rx="12" ry="8" fill="#8cd85a" opacity="0.15"/>
+  <g stroke-linecap="round" opacity="0.9">
+    <g stroke="#3a8a2a" stroke-width="1.2">
+      <line x1="10" y1="115" x2="8" y2="107"/><line x1="14" y1="115" x2="16" y2="108"/>
+      <line x1="25" y1="100" x2="23" y2="93"/><line x1="29" y1="101" x2="31" y2="94"/>
+      <line x1="40" y1="118" x2="38" y2="111"/><line x1="44" y1="119" x2="46" y2="112"/>
+      <line x1="55" y1="105" x2="53" y2="98"/><line x1="59" y1="106" x2="61" y2="99"/>
+      <line x1="70" y1="120" x2="68" y2="113"/><line x1="74" y1="121" x2="76" y2="114"/>
+      <line x1="85" y1="108" x2="83" y2="100"/><line x1="89" y1="109" x2="91" y2="102"/>
+      <line x1="100" y1="118" x2="98" y2="111"/><line x1="104" y1="120" x2="106" y2="113"/>
+      <line x1="115" y1="105" x2="113" y2="98"/><line x1="119" y1="106" x2="121" y2="99"/>
+      <line x1="5" y1="80" x2="3" y2="73"/><line x1="9" y1="81" x2="11" y2="74"/>
+      <line x1="20" y1="68" x2="18" y2="61"/><line x1="24" y1="69" x2="26" y2="62"/>
+      <line x1="35" y1="85" x2="33" y2="78"/><line x1="39" y1="86" x2="41" y2="79"/>
+      <line x1="50" y1="72" x2="48" y2="65"/><line x1="54" y1="73" x2="56" y2="66"/>
+      <line x1="65" y1="88" x2="63" y2="81"/><line x1="69" y1="89" x2="71" y2="82"/>
+      <line x1="80" y1="75" x2="78" y2="68"/><line x1="84" y1="76" x2="86" y2="69"/>
+      <line x1="95" y1="90" x2="93" y2="83"/><line x1="99" y1="91" x2="101" y2="84"/>
+      <line x1="110" y1="78" x2="108" y2="71"/><line x1="114" y1="79" x2="116" y2="72"/>
+      <line x1="8" y1="50" x2="6" y2="43"/><line x1="12" y1="51" x2="14" y2="44"/>
+      <line x1="22" y1="38" x2="20" y2="31"/><line x1="26" y1="39" x2="28" y2="32"/>
+      <line x1="38" y1="52" x2="36" y2="45"/><line x1="42" y1="53" x2="44" y2="46"/>
+      <line x1="52" y1="40" x2="50" y2="33"/><line x1="56" y1="41" x2="58" y2="34"/>
+      <line x1="68" y1="55" x2="66" y2="48"/><line x1="72" y1="56" x2="74" y2="49"/>
+      <line x1="82" y1="42" x2="80" y2="35"/><line x1="86" y1="43" x2="88" y2="36"/>
+      <line x1="98" y1="58" x2="96" y2="51"/><line x1="102" y1="59" x2="104" y2="52"/>
+      <line x1="112" y1="45" x2="110" y2="38"/><line x1="116" y1="46" x2="118" y2="39"/>
+      <line x1="15" y1="22" x2="13" y2="15"/><line x1="19" y1="23" x2="21" y2="16"/>
+      <line x1="35" y1="18" x2="33" y2="11"/><line x1="39" y1="19" x2="41" y2="12"/>
+      <line x1="55" y1="25" x2="53" y2="18"/><line x1="59" y1="26" x2="61" y2="19"/>
+      <line x1="75" y1="15" x2="73" y2="8"/><line x1="79" y1="16" x2="81" y2="9"/>
+      <line x1="95" y1="28" x2="93" y2="21"/><line x1="99" y1="29" x2="101" y2="22"/>
+      <line x1="115" y1="18" x2="113" y2="11"/><line x1="119" y1="19" x2="121" y2="12"/>
+    </g>
+    <g stroke="#4aaa38" stroke-width="1.5">
+      <line x1="17" y1="95" x2="14" y2="82"/><line x1="45" y1="105" x2="43" y2="92"/>
+      <line x1="63" y1="88" x2="61" y2="75"/><line x1="82" y1="100" x2="80" y2="87"/>
+      <line x1="103" y1="93" x2="101" y2="80"/><line x1="120" y1="102" x2="118" y2="89"/>
+      <line x1="32" y1="58" x2="30" y2="45"/><line x1="60" y1="52" x2="58" y2="39"/>
+      <line x1="78" y1="65" x2="76" y2="52"/><line x1="96" y1="58" x2="94" y2="45"/>
+      <line x1="28" y1="30" x2="26" y2="17"/><line x1="48" y1="35" x2="46" y2="22"/>
+      <line x1="72" y1="28" x2="70" y2="15"/><line x1="92" y1="35" x2="90" y2="22"/>
+      <line x1="112" y1="30" x2="110" y2="17"/>
+    </g>
+  </g>
+  <g fill="#6cc030" opacity="0.8">
+    <ellipse cx="15" cy="81" rx="3" ry="2"/>
+    <ellipse cx="44" cy="91" rx="3" ry="2"/>
+    <ellipse cx="62" cy="74" rx="2.5" ry="1.8"/>
+    <ellipse cx="81" cy="86" rx="3" ry="2"/>
+    <ellipse cx="102" cy="79" rx="2.5" ry="1.8"/>
+  </g>
+  <g opacity="0.85">
+    <circle cx="22" cy="60" r="2" fill="#f0e060"/><circle cx="22" cy="60" r="1" fill="#e0a020"/>
+    <circle cx="55" cy="30" r="1.8" fill="#f0e060"/><circle cx="55" cy="30" r="0.9" fill="#e0a020"/>
+    <circle cx="98" cy="85" r="2" fill="#ffffff"/><circle cx="98" cy="85" r="1" fill="#f0c0c0"/>
+    <circle cx="34" cy="112" r="1.8" fill="#f0e060"/><circle cx="34" cy="112" r="0.8" fill="#e0a020"/>
+    <circle cx="75" cy="110" r="1.6" fill="#d8a0ff"/><circle cx="75" cy="110" r="0.8" fill="#a060c0"/>
+    <circle cx="112" cy="62" r="1.8" fill="#f0e060"/><circle cx="112" cy="62" r="0.9" fill="#e0a020"/>
+  </g>
+</svg>
