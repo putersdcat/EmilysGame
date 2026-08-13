@@ -75,11 +75,76 @@ neg-Z rivers, gate + troll-bridge + quiz.
 #248 **Author AGENTS.md** (closed) — this is where the poison pill was born.
 #250 Author ARCHITECTURE.md. #253 layered folders + instruction `applyTo` globs.
 
+## Bodies read this session (meaning merged into living files)
+
+| # | Merged as |
+|---|-----------|
+| 2 | Session, templates, biome ladder, Book, save, Canvas/TS |
+| 3 | 64×32 PoC, wide-berth contact, occlusion, arm flip, painter-as-consumer |
+| 4 | Entropy as creative RNG; play authors seeds; fallback |
+| 6 | Micro / world unit / macro; orthogonal MVP; BFS playability |
+| 7 | Subject select, Book, word bag, “I don’t know” |
+| 8 | Offline content packs; entropy LLM ≠ authoring LLM; age 5–12+ |
+| 42 | Multi-dimension edge contracts (intent; closed ≠ shipped) |
+| 70 | Survival-lite secondary, never lethal |
+| 77 | Shop / campfire / house interact — emoji era |
+| 87 | Age-band filter (closed as duplicate of #92) |
+| 98 | Lock-key DAG, no softlocks |
+| 99 | Homestead / seller cart / inn as compounds |
+| 109 | Injury + wound-care quiz |
+| 110 | Visual debuffs, outhouse, stream drink |
+| 151 | Paint vs collision; water from the north |
+| 179 | Occlusion feel (formula is not the product) |
+| 186 | Emily did not know how to move; first-run tutorial |
+| 214 | Iso2 reboot purpose; voided #194–#213; PNG-or-it-didn’t-happen |
+| 223 | Gate / bridge walk rules; quiz unlock must change the map |
+| 247 | Origin of AGENTS/ARCHITECTURE/god-file freeze — recover module *jobs*, not the split |
+| 131 | Time 12:1; event injuries; FoW default off; stream joke; HUD disclosure |
+| 180 | Tight hitbox / anchor (closed, still broken — see #266 open) |
+| 248 | Where the first AGENTS.md freeze was authored (nano walkthrough, MCP-first, Playwright as proof) |
+| 260 | Biome regions, hide diamond quilt, water continuity, bank-to-bank bridges |
+
+## Second pass (2026-08-13)
+
+**All 224 issues listed.** 176 closed + 48 open. Full dump:
+`docs/intent/harvest/issues-all.json`, catalog `ISSUE-CATALOG.md`,
+closed index `CLOSED-INDEX.md`.
+
+**Every comment thread except pagination was pulled.** 423 comments on
+the issue list + **253 on #223** (`comments-223.json`).
+
+#223’s thread is almost entirely autonomous-loop agent spam (252/253).
+The one design comment: troll-bridge is a **flat always-walkable**
+crossing; live quiz-UI unlock was never done. That is now in
+`CONTRADICTIONS.md` D17.
+
+Closed issues that added product law this pass (not just “tests pass”):
+#25 (owner cats/mushrooms/shadows), #26 (entropy once), #57 (homestead
+hubs, animals, bridges), #66 (menu + cosmetic unlocks), #67/#114 (night
+light / glowing eyes), #68/#142 (wildlife + cats), #71/#111 (thought
+bubbles), #72/#112 (buy/sell/themed shops/barter), #73–#76/#107/#191
+(WalkGirl cassette, MIDI, voice), #94 (early-reader), #100 (rivers
+impassable except crossings), #113 (mouth flap), #124/#126/#185 (Tesla/
+touch), #133–#139 (illness, 12:1 time, FoW default off), #184 (depth
+still open), #208/#209 (walk priority, assemblies).
+
+**Missing from the repo (cited by issues, not on disk):**
+`Docs/Side Quests, Inventory Management, and NPC Interactions,md.md`,
+`Docs/Epic Music and Sound Engine Implementation.md`,
+`Docs/Visual and Feature Enhancements.md`. Recovered only via the
+issues that quote them. If those files exist in an old commit or
+another machine, they still need scavenging.
+
+PRs: 48 listed (`prs-all.json`). Almost no discussion (0–3 comments).
+Bodies are implementation, not new law.
+
 ## Next harvest steps
 
-1. Read full bodies of #2, #3, #4, #6, #7, #214, #247 and their comments.
-2. Read WorldEngine archive 00–05 next to issues #42–#47.
-3. Read `archived-planning/NewGame_GameBible_StartHere.md` + Iso PoC + Addendum
-   (issue #3 says the addendum is the occlusion/contact spec).
-4. Write recovered meaning into `GAME.md` / `ENGINE.md` / `ISO.md`.
-5. Log contradictions (tile size 64×32 vs 128×64, etc.) in `CONTRADICTIONS.md`.
+1. Remaining closed WorldEngine bodies #17 #18 #22 #23 #24 #43 #44 #46 #47.
+2. Education #88–#96 (open and closed), #103.
+3. Survival / time #131 #133 #136 #137.
+4. Iso contact #180 #181; Iso2 first wave (voided) only if they add purpose not already in #214.
+5. **#223 comments (253)** — likely contains owner feel; do not skip.
+6. #248 / #250 / #253 — instruction-stack archaeology (how the freeze was born).
+7. Open #260, #273 bodies.
+8. PR discussion and milestones (project boards 403 this session).

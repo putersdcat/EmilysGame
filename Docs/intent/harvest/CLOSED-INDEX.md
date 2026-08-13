@@ -1,0 +1,178 @@
+# Closed issues (all 176)
+
+- #1 (1c) [task,performance,high-priority] Performance Optimizations: Throttling and GC Reduction
+- #5 (3c) [epic,sprites,art] [EPIC] Character Sprite System & Customization
+- #7 (2c) [epic,education,feature] [EPIC] Book of Knowledge — In-Game Encyclopedia
+- #8 (1c) [education,task,tooling] Knowledge Capture Automation Pipeline
+- #9 (0c) [task,infrastructure,ci-cd] CI/CD Pipeline — GitHub Actions to GitHub Pages
+- #10 (2c) [feature,task,ui] UI Layout — Sidebar, Options Menu & Save Slots
+- #15 (1c) [rendering,infrastructure,performance] WASM Rendering Core - Phase 1: AssemblyScript Integration
+- #17 (2c) [world-generation,task] Edge Contract System & Compatibility Table
+- #18 (1c) [rendering,world-generation,task] Rendering Pipeline — Layer System & Cache Alignment
+- #22 (2c) [world-generation,task,high-priority] Enhanced Micro Tile Metadata and Per-Side Edge Vectors
+- #23 (3c) [world-generation,task,high-priority] Generation Pipeline Refactor — Template Grid and Solver Integration
+- #24 (2c) [world-generation,art,task] World Unit Template Library Expansion
+- #25 (3c) [enhancement,sprites,art,feature] Developer Feedback
+- #26 (2c) [llm,task,tooling,performance,high-priority] Optimize LLM-Assisted Entropy Layer: Reduce Frequent Hammering of Local BitNet Model with Verb-Noun Pairs
+- #42 (5c) [world-generation,task] World Engine: Edge Contract System & Constraint Propagation
+- #43 (5c) [world-generation,task] World Engine: Population, Progression & Gameplay Logic
+- #44 (4c) [world-generation,task,high-priority] World Engine: Enhanced Spatial Hierarchy & Micro Tile Metadata
+- #46 (3c) [world-generation,task] World Engine: Multi-Solver Generation Pipeline
+- #47 (1c) [rendering,task,performance] World Engine: Rendering Pipeline & Cache Hierarchy Enhancements
+- #57 (6c) [enhancement,art,task] Feature Spec: Visual Improvements - Height, Walkability, Structures, and Directional Sprites
+- #58 (1c) [enhancement,art,task] Emoji Assets for Emily’s Game: Full-Body and Isometric-Compatible Suggestions
+- #66 (2c) [feature,task,ui,high-priority] [Feature] Main Menu Flow + Progression-Gated Customizer Unlockables
+- #67 (1c) [rendering,feature,task,high-priority] [Feature] Night Gameplay Pass: Local Light Sources (Bonfires) + Player Flashlight
+- #68 (1c) [world-generation,education,feature,task] [Feature] Time-of-Day Wildlife System (Day/Dusk/Night + Water Creatures)
+- #70 (1c) [education,feature,task,ui] [Feature] Survival-Lite Status Effects (Injury, Hunger/Thirst, Hygiene) with Kid-Friendly Debuffs
+- #71 (1c) [education,feature,task,ui] [Feature] Contextual Thought/Speech Bubble Hint System
+- #72 (1c) [feature,task,ui] [Feature] NPC Trading UX + Shop/Resupply Loop
+- #73 (1c) [epic,feature,task,ui,performance] [EPIC] Audio System: Music, SFX Ambience, and Optional NPC Voice
+- #74 (1c) [feature,task,ui] [Feature] Music Playback MVP + In-Game Player UI (Audio Files First, MIDI Optional Later)
+- #75 (1c) [feature,task,performance] [Feature] Contextual SFX and Time-of-Day Ambience (Web Audio)
+- #76 (1c) [education,feature,task,ui] [Feature] Optional NPC Voice Output (Web Speech API with Text Fallback)
+- #77 (1c) [feature,task,ui] Structure Interactions: Shop Trading, Campfire Rest, House Flavor Text
+- #78 (1c) [rendering,feature,task,performance] [Feature] Particle Density & Size Rebalance (Butterflies/Birds) with Context-Aware Spawn Caps
+- #79 (1c) [rendering,task,performance,high-priority] [Performance] Frame-Time Triage for Ambient Layers (Particles + Wildlife + Local Lights)
+- #80 (1c) [rendering,world-generation,feature,task] [Feature] Directionality Metadata for Ambient/Wildlife Sprites (Facing + Flip Rules)
+- #81 (1c) [rendering,art,feature,task] [Feature] Animated Fire Primitive Set (Bonfire/Campfire/Biomass) with Safe-Zone Placement Rules
+- #82 (1c) [rendering,world-generation,feature,task] [Feature] Micro-Tile Placement Jitter for Small Props (Decor + Collectibles)
+- #83 (1c) [rendering,feature,task,performance] [Rendering] Dynamic Shadow Pass Driven by Time-of-Day + Weather
+- #84 (1c) [rendering,art,feature,task] [Feature] Terrain Edge Blend Pass (Mask/Feather Transitions) for Reduced Tile Seams
+- #85 (1c) [rendering,sprites,feature,task] [Sprites] Human NPC Paper-Cut Style Refresh with Direction-Aware Facing
+- #86 (1c) [sprites,feature,task,ui] [Sprites] Character Hair Silhouette Polish + Ponytail/Bow Style Option
+- #87 (0c) [education,feature,task,ui] [Feature] Age-Banded Content Selection Runtime (Player Age Profile → Quiz/Book Filtering)
+- #88 (1c) [education,task,tooling] [Education] Content Pack Schema v1 (Sharded JSON + Age Metadata + Migration Path)
+- #92 (1c) [education,feature,task,ui] [Feature] Age-Banded Content Selection Runtime (Player Age Profile → Quiz/Book Filtering)
+- #94 (1c) [education,feature,task,ui] [Feature] Early-Reader Quiz Accessibility (Auto-Read Prompt, Repeat Button, 1-2-3 Choice Keys)
+- #97 (1c) [tooling,infrastructure,high-priority] 🔔 Agent Attention: Session Memory Purge, Terminal Cleanup, and Development Loop Directives
+- #98 (2c) [world-generation,feature,task,high-priority] [Solver D] Lock-Key DAG + Reachability Region Validation (No Softlocks)
+- #99 (4c) [world-generation,art,feature,task,high-priority] [World-Gen] Themed Structure Template Pack: Homestead/Farmhouse, Seller Cart Yard, and Inn Compound
+- #100 (2c) [world-generation,feature,task,high-priority] [World-Gen] Bridge & Water Traversal Integrity: Guaranteed Crossings + Impassable Rivers End-to-End
+- #101 (2c) [rendering,world-generation,feature,task] [World Metadata] MicroTileMeta v2: Moisture/Temperature Fields, Biome Palette Mapping, Dynamic LOD Tags, Typed Anchor Roles
+- #102 (3c) [sprites,feature,task,ui] [Sprites] Player Accessories + Expression Variants (Rollover from closed Epic #5)
+- #103 (2c) [education,feature,task,high-priority] [Progression] Streak-Aware Quiz Difficulty + Adaptive Recovery Rules
+- #104 (3c) [world-generation,feature,task,high-priority] [Population] Enforce Max-1 NPC per World Unit with Spawn Budget Validation
+- #107 (1c) [art,feature,ui,high-priority] [Audio] Real Audio Assets + Sonny WalkGirl Cassette Player UI
+- #109 (2c) [education,feature,task] [Gameplay] Injury & Bandaid System with Wound-Care Quizzes
+- #110 (4c) [feature,task,ui] [Gameplay] Survival Visual Debuffs + Interactive World Recovery Points (Outhouses, Streams)
+- #111 (2c) [feature,task,ui] [UI] Thought Bubble Polish: Cloud SVG Shape, Low-Status Triggers, Shop Proximity Hints
+- #112 (3c) [feature,task] [Gameplay] Trading Expansion: Sell-Back Economy, Barter Mini-Game, Themed Store Variants
+- #113 (1c) [rendering,sprites,feature] [Rendering] NPC Mouth Animation Hookup (Terrence and Philip Flapping)
+- #114 (1c) [rendering,feature,high-priority] [Rendering] Night Mode Completion: Fog-of-War, Canvas Desaturation, Glowing Eyes + Flashlight Reveal
+- #115 (4c) [rendering,art,feature,high-priority] [Art] Custom SVG Asset Library: Phase Out Emoji for Trees, Rocks, Fire, Structures, Wildlife
+- #116 (2c) [sprites,feature,ui] [Sprites] Customizer Expansion: Eye Options, Hair Styles (Braids/Spiky), Outfit Patterns, More Hats and Accessories
+- #117 (3c) [feature,task,ui] [UI] Alpha QoL: Welcome Splash + Controls Guide, In-Game Bug Reporter, Options Menu
+- #118 (1c) [education,task,ui,high-priority] [Book/UI] Replace regex markdown hack with safe rich-content renderer for article bodies
+- #119 (1c) [education,feature,task,ui] [Book] Expand subject taxonomy + UI filters to support new content-pack subjects (geography, art)
+- #120 (1c) [education,feature,task,ui] [Book] Wire Book of Knowledge to external content packs (PR #106 data is not surfaced in UI)
+- #121 (0c) [task] Update Readme.md
+- #124 (1c) [feature,task,ui] [Future/Nice-to-Have] Tesla touch + Bluetooth controller support (mobile/touchscreen control layer)
+- #125 (1c) [feature,task,ui] [Customizer] Add Cancel/Discard path when opening Character Customizer from pause
+- #126 (2c) [feature,task,ui,high-priority] [Touch UX] Auto-hide/slide edge controls + touch-first clickable parity for keyboard-bound interactions
+- #127 (1c) [feature,task,ui] [UX] Add user-facing Fog-of-War toggle in Options (main menu + pause) with persistence
+- #128 (1c) [sprites,art,feature,task] [Sprites] Wildlife directionality visual QA pass (rabbit moonwalk / bird orientation anomalies)
+- #129 (1c) [tooling,infrastructure,high-priority] [Testing] Restructure Playwright Tests by Code Area for Targeted Test Runs
+- #130 (1c) [art,feature,high-priority] [Audio] Replace Oscillator Music Playback with Real MIDI Library (midi-player-js + soundfont-player)
+- #131 (5c) [epic,feature,task,ui,high-priority] [EPIC] Survival + UX Regrounding Pass (Time, HUD, Deterministic Damage, Hygiene Events, Cleanup)
+- #132 (1c) [task,tooling,infrastructure,high-priority] [Cleanup] Dedicated deep-clean branch for orphaned/disconnected code removal + dead path audit
+- #133 (1c) [feature,task,ui,high-priority] [Survival Event] Unsafe stream water illness chain: diarrhea state, 25s control lock, poop particle/VFX
+- #134 (1c) [world-generation,feature,task,high-priority] [World Population] Reduce butterfly overpopulation with spawn cap + biome/time weighting
+- #135 (1c) [feature,task,ui,high-priority] [UX] Extend thought/speech bubble lifetime + add touch-friendly last-5 message history replay
+- #136 (1c) [feature,task,high-priority] [Simulation] Rebalance day/night pacing to 12:1 real-time scale + persist played hours
+- #137 (1c) [feature,task,high-priority] [Survival] Replace random bandaid injuries with deterministic collision/hazard injuries
+- #138 (2c) [epic,llm,feature,task,ui,high-priority] [UI Overhaul] HUD/menu refactor: inventory-triggered music popup, dedicated LLM settings menu, mini status meters
+- #139 (1c) [feature,task,ui,high-priority] [UX/Visibility] Fog of War should be OFF by default (still user-toggleable)
+- #142 (1c) [world-generation,sprites,art,feature,task,high-priority] [Feature] Add Cat NPC Wildlife Variants (Orange, Black, Fluffy Gray Persian) with roaming behaviors
+- #144 (1c) [feature,task,ui,high-priority] [Touch UX] Replace buggy off-screen control hide with default "whisper outline" alpha mode + 3-way visibility toggle
+- #148 (2c) [] [Audio][Agent] Produce markdown sourcing brief for ambience + complete SFX inventory
+- #151 (1c) [rendering,task,high-priority] Walkability/collision misalignment allows player to enter non-walkable water tiles when moving downward
+- #152 (2c) [task,high-priority] Survival: Time-scale rebalance & persist played-hours
+- #153 (2c) [feature,task] Survival: Deterministic injury model & hydration sanity
+- #154 (2c) [task,ui] Survival: Message bubble duration + recent message replay
+- #155 (2c) [feature,task] Survival: Stream-water illness event + control lock + VFX
+- #156 (2c) [feature,task] Survival: Butterfly spawn density cap & biome weighting
+- #157 (2c) [task,ui] Survival: Default Fog-of-War off + settings semantics
+- #158 (2c) [task,ui,high-priority] Survival: HUD/menu architecture — music popup, LLM settings, mini meters
+- #159 (1c) [task,infrastructure] Survival: Orphaned code cleanup (deep-clean branch)
+- #160 (2c) [task,ui] HUD: Music controls as inventory-invoked popup
+- #161 (2c) [llm,task,ui] HUD: Dedicated LLM settings screen in main menu
+- #162 (2c) [task,ui] HUD: Compact/mini status meters for collapsed HUD
+- #163 (1c) [art,task,ui] HUD: Visual style pass for HUD panels
+- #164 (2c) [task,ui] Tests: Playwright coverage for HUD/menu refactor
+- #165 (2c) [world-generation,task] WorldGen: Micro tile metadata schema (walkable, type, visual, interaction)
+- #166 (2c) [world-generation,art,task] WorldGen: World unit tile library (meadow, rock wall, river, bridge, gate)
+- #167 (2c) [world-generation,task] WorldGen: Procedural solver — theme bias, chunk selection, rotation/placement
+- #168 (2c) [world-generation,task] WorldGen: BFS traversability/playability check
+- #169 (1c) [rendering,world-generation,task] WorldGen: Auto-tiling via neighbor bitmask for SVG variants
+- #170 (2c) [world-generation,task] WorldGen: River/wall terminator logic (pond/rock pile endpoints)
+- #171 (2c) [world-generation,task] WorldGen: Edge-matching rules between adjacent tiles
+- #172 (2c) [llm,task] LLM Entropy: Wordlist initialization & LLM health-check at startup
+- #173 (2c) [llm,task] LLM Entropy: Movement → verb/noun mapping implementation
+- #174 (2c) [llm,task] LLM Entropy: SHA-256 hash chain & seed derivation
+- #175 (2c) [llm,world-generation,task] LLM Entropy: Biome selection from ASCII-sum mapping
+- #176 (2c) [llm,world-generation,task] LLM Entropy: Cell flag generation from binary mapping
+- #177 (2c) [llm,feature,task] LLM Entropy: NPC chat → entropy pool integration
+- #178 (2c) [llm,task,high-priority] LLM Entropy: LLM latency fallback & health-check gating
+- #179 (1c) [rendering,task] Render: Occlusion sorting & draw-order fixes (sortKey = y + height/2)
+- #180 (1c) [rendering,task] Render: Tightened player hitbox & collision footprint tuning
+- #181 (1c) [rendering,task] Render: Canvas clipping for partial hiding behind objects
+- #182 (1c) [rendering,art,task] Render: Sprite limb layering to avoid arm detachment on flip
+- #183 (1c) [rendering,task,performance] Render: Performance benchmarks & optimizations to meet <10ms/frame
+- #185 (1c) [feature,task,ui] Feature: Tesla in‑car browser mode — detect Tesla UA → enable on‑screen touch controls + Tesla 'T' UI flair
+- #186 (2c) [feature,ui,accessibility,tests] Onboarding: Interactive startup tutorial (keyboard + touch) — teach movement, action, flashlight, and HUD
+- #188 (2c) [] Tesla Browser Detection not working on GitHub pages deployed version
+- #189 (2c) [sprites,feature,infrastructure] Support replacing inline SVG/Emoji sprites with a configurable PNG asset library
+- #190 (2c) [sprites,feature,tooling] Create a web-based editor project for importing/exporting in-code SVG assets and A/B testing combinations
+- #191 (4c) [feature,infrastructure,audio] Replace music backend with MIDIocre-based TypeScript MIDI player (preserve tapeplayer UI)
+- #192 (2c) [rendering,world-generation,feature] Increase base micro-tile size from 32×32 to 96×96 (prep for PNG asset pipeline)
+- #193 (1c) [sprites,art,tooling] Asset Editor v2: PNG round-trip, new asset creation, sprite sheet import/export
+- #194 (3c) [rendering,iso-2.0-experiment] Iso 2.0 Phase 1: Project Setup & Core Types
+- #195 (3c) [rendering,iso-2.0-experiment] Iso 2.0 Phase 2: Tile & Chunk System
+- #196 (3c) [rendering,iso-2.0-experiment] Iso 2.0 Phase 3: Asset Loading
+- #197 (3c) [rendering,iso-2.0-experiment] Iso 2.0 Phase 4: Advanced Rendering Features
+- #198 (3c) [rendering,world-generation,iso-2.0-experiment] Iso 2.0 Phase 5: Continuous Feature Solver
+- #199 (3c) [tooling,iso-2.0-experiment] Iso 2.0 Phase 6: AiTools Component Integration
+- #200 (3c) [rendering,iso-2.0-experiment] Iso 2.0 Phase 7: Polish & Validation
+- #201 (2c) [infrastructure,iso-2.0-experiment] Iso 2.0: Merge Readiness Assessment & Integration Plan
+- #202 (3c) [rendering,world-generation,iso-2.0-experiment] Iso 2.0: Diagonal Fence Variants & Extended Solver Demo
+- #203 (4c) [tooling,iso-2.0-experiment] Iso 2.0: AiTools Animation Timing Annotations & Validation [scope reduced — see #207]
+- #204 (3c) [rendering,world-generation,iso-2.0-experiment] Iso 2.0: NanoTile Core Types & Architecture
+- #205 (3c) [rendering,high-priority,iso-2.0-experiment] Iso 2.0: NanoTile Rendering Engine (nano-tile.ts) — Z-Pinned Skew, Extrusions & Stack Draw
+- #206 (2c) [rendering,sprites,iso-2.0-experiment] Iso 2.0: Player Integration — Sink Effect, Draw-Order Occlusion & WASD Movement
+- #207 (3c) [rendering,llm,tooling,iso-2.0-experiment] Iso 2.0: MCP AiTools — Z-Pinned Nano Mode, Assembly Chains, Player Test Renders & Metadata Params
+- #208 (3c) [world-generation,feature,iso-2.0-experiment] Iso 2.0: Solver — NanoTile Walkable Logic, Gate Placement & Quiz/Key Unlock Integration
+- #209 (4c) [rendering,world-generation,art,iso-2.0-experiment] Iso 2.0: Large Structure Multi-Tile Assemblies — Homestead, Cathedral & Overhang Rendering
+- #210 (5c) [rendering,performance,high-priority,iso-2.0-experiment] Iso 2.0: Formal Visual Test Scenes, 60 FPS Validation & Experiment README
+- #211 (4c) [rendering,high-priority] Iso 2.0: Fix Broken 3D Wall Extrusion — Wrong Anchors, Transforms & Face Alignment
+- #212 (4c) [rendering,sprites,art,tooling,infrastructure,high-priority] AiTools SVG Renderer — Permanent Visual Validation Engine for Iso 2.0 / Nano Tiles
+- #213 (1c) [rendering,tooling,infrastructure,high-priority] New MCP Tool: Canvas-native game engine renderer (node-canvas direct execution)
+- #216 (0c) [rendering,high-priority,iso-2.0-experiment] Iso 2.0 [2/12]: Positive-Z Nano Billboard Rendering (fence, gate, tall-grass)
+- #217 (0c) [rendering,high-priority,iso-2.0-experiment] Iso 2.0 [3/12]: Extruded 3D Box Nano Rendering (stone-wall, cathedral-wall, homestead-wall)
+- #219 (0c) [rendering,world-generation,iso-2.0-experiment] Iso 2.0 [5/12]: Continuous Feature Chain Solver (variant selection by neighbors)
+- #224 (0c) [rendering,world-generation,art,iso-2.0-experiment] Iso 2.0 [10/12]: Large Multi-Tile Assemblies (homestead 5×4, cathedral spires)
+- #227 (0c) [] Iso 2.0 ancient-stone texture repeat seams visible across 48px tile boundaries
+- #228 (0c) [] Iso 2.0 ancient-stone texture needs cross-plane face alignment across wall folds
+- #229 (0c) [] Iso 2.0 needs reusable cross-plane material mapping for extruded textures
+- #230 (0c) [] Iso 2.0 3D material slices need world-coordinate face sampling at ridges
+- #231 (0c) [] Iso 2.0 preserve ancient-stone irregular 3D texture as gold standard
+- #232 (0c) [] Iso 2.0 restore attached ancient-stone L-wall closeup as actual gold standard
+- #233 (0c) [] Iso 2.0 restore actual iter24 ancient-stone gold standard
+- #234 (0c) [] Iso 2.0 restore ancient-stone iter18 direct-crop target as gold standard
+- #235 (0c) [] Iso 2.0 brick textures incorrectly use face-slice crop path after ancient-stone work
+- #236 (0c) [] Iso 2.0 red-clinker brick top/side/end grout alignment is broken
+- #237 (0c) [] Iso 2.0 rework red-clinker to match old gray brick masonry grammar
+- #238 (0c) [] Iso 2.0 red-clinker one exposed end misses authored end-cap texture
+- #240 (0c) [] Iso 2.0 red-clinker isolated column top east face misses authored end texture
+- #241 (0c) [] Iso 2.0 isolated red-clinker cubes/columns should use authored end-cap textures on exposed ends
+- #244 (0c) [rendering,task,ui] Iso 2.0 fence style family is defined but not wired into live fence/gate rendering
+- #245 (0c) [rendering,task,tooling,high-priority] Iso 2.0 texture factory stabilization and main-engine integration prep
+- #248 (1c) [task,tooling,infrastructure] A2: Author AGENTS.md + naming/convention standard
+- #249 (1c) [task,infrastructure] A3: File inventory & decomposition map (files > 400 lines)
+- #250 (1c) [task,infrastructure,high-priority] A1: Author ARCHITECTURE.md (layered target structure, data flow, conventions)
+- #251 (1c) [task,infrastructure,high-priority] B2: Decompose main.ts into bootstrap + focused modules
+- #253 (7c) [task,infrastructure,high-priority] B1: Layered folder skeleton + update .github/instructions applyTo globs
+- #259 (1c) [rendering,task,high-priority] C1: Iso2 port-back contract + fix stone-wall corner-void blocker
+- #265 (1c) [bug,world-generation,high-priority] gen.ts non-deterministic: obstacle placement uses Math.random() (blocks B3 #253, feeds scatter #261)
+- #268 (1c) [task,infrastructure,high-priority] B5: Decompose src/main.ts god file (bootstrap / game-loop / input / save / state)
+- #272 (1c) [rendering,task,infrastructure,high-priority] B6: Decompose src/render.ts (isometric renderer — projection / Z-sort / viewport culling / nano pipeline)

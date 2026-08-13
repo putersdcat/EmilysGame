@@ -1,0 +1,61 @@
+# Copilot session titles (from snapshot headers)
+
+- `062c026c` Update GameMan.agent.md for Playwright MCP removal
+- `098e012c` Updating game code for new LLMs endpoint
+- `0c04a914` B3 series completion summary
+- `11e559b8` ISO 2.0 Spec Issues Review and Prioritization
+- `15e7ed1f` Exporting World Tile Assets to PNG and JSON
+- `16c99d2f` Creating Issues for Iso Rendering 2.0 Experiment
+- `16e74b22` Review project scope document
+- `171f5256` Creating GitHub issues from feature document
+- `1ddfdae2` Listing and Ranking Open Issues with GitHub CLI
+- `2a028fa6` World Generation Design Documentation Expansion
+- `2c5a2f06` ISO 2.0 Spec Review and Task Prioritization
+- `318424e0` ISO 2.0 Spec Issues and Tooling Update Plan
+- `37b70a53` Development and Testing Workflow for Game Features
+- `39248919` Codebase refactoring and development suggestions
+- `3d4f5cd2` Extracting SVGs from Markdown to Individual Files
+- `3dad9eaf` Stone-wall corner variant validation task
+- `4564518d` Rendering Code Refactor and Modular Design Discussion
+- `484a7c4d` Game development toolchain improvement request
+- `4c9237f5` Game Sound Improvement and Asset Request
+- `58deb522` B-series god-file refactoring plan
+- `5b1c159a` Prioritizing and Managing ISO 2.0 Spec Issues
+- `65bc5baa` Install cursor and xai grok cli
+- `68e8ddeb` MCP Tool Development and Visual Testing Discussion
+- `6baa28e8` Calculating Isometric Tile Size Conversion
+- `7047c816` Isometric Renderer Task Management in GitHub
+- `72f41c3d` GitHub task development and testing process
+- `75dd3f3b` Localhost port for game engine
+- `7870a31e` Review and improve previous conversation outcomes
+- `81621d59` Extracting SVGs from Markdown to Individual Files
+- `83fa683f` Cleanup agent definition file
+- `86910121` Creating GitHub Issues for Project Enhancements
+- `87365f99` Refining Game World Generation Design Documentation
+- `8d73c4b7` Instructions for isoSvgRenderer Tooling and README Update
+- `91c0ed09` Wall alignment and void issue troubleshooting
+- `934af782` Adding RDP Access for Third Subnet Range
+- `9380cc24` 3D asset listing for Nano tile architecture
+- `9b6a6215` Next steps for GitHub task development
+- `9cf58980` Reviewing and Documenting Game Feature Specifications
+- `9ead28c2` Branch code commit and PR merge process
+- `9fd785a9` World Building System Development Plan
+- `a0d6e3d2` Find NANO tile definition location
+- `a548f95c` Tile and World Generation System Development Plan
+- `abef519b` GitHub Issue Management and Validation Process
+- `afab5fa1` Next steps for GitHub task development
+- `b26810c0` Bootstrapping workspace for NewGame PoC project
+- `b96cf6ce` Session Memory Management and Development Workflow
+- `bbaeabe0` Touchscreen controls visibility GitHub issue update
+- `c585480a` Fence texture variations and demo
+- `cf9d5145` Visual alignment bug in game walkable areas
+- `d308f1d2` Running Game Locally with New WASM Code
+- `d5496dfe` First commit and push to main for game code
+- `daaec5a1` Planning document review and creation
+- `dac01b2c` ISO 2.0 Spec Issues Review and Prioritization
+- `e73665d8` Phase C work continuation
+- `e8dfd631` Asset Management and Documentation Request
+- `ee539e01` Texture factory improvements and integration
+- `f26cc521` Local Development and Testing Workflow Instructions
+- `f38dd18b` Resume work on main.tx
+- `f50c3b81` Updating README for Game Project
