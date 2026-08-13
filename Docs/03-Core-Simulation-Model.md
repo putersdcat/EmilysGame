@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 03 — Core Simulation Model
 
-**Status:** Canonical. Assumes `02-Architecture-Core-Principle.md`.
+**Status:** Historical (was labeled canonical). Assumes `02-Architecture-Core-Principle.md`.
 
 This document describes the game's authoritative state and world model —
 what the game actually *is*, under the hood — using only flat 2D

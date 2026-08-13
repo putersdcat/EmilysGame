@@ -1,3 +1,7 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # Archived docs — idea library for Amy's Game agents
 
 These files were removed from the live Emily product tree in July 2026 (“gut agent-confusing cruft”) and **restored on purpose** as a durable idea library.

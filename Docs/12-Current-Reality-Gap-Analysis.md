@@ -1,11 +1,12 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 12 — Current Reality: Gap Analysis
 
-**Status:** Living document, source-verified. Supersedes the role of
-`archive-2026-07-14/VisionAlignmentAudit.md` (that document remains
-available in the archive and its individual findings are still accurate —
-this document folds its conclusions in, adds this session's new
-isometric/logic-entanglement findings, and becomes the ongoing home for
-this kind of audit going forward).
+**Status:** Historical (was labeled living). Gap analysis of a tree that
+is no longer the rewrite target. Archive `VisionAlignmentAudit.md` remains
+a source to scavenge. Do not treat this file as the ongoing home for audits.
 
 **Methodology**: every claim below is either a direct source read
 (file/function named) or an explicit reference to a prior, source-verified

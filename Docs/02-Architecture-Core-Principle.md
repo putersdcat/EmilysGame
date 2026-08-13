@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 02 — Architecture Core Principle: Flat 2D Simulation, Isometric Presentation
 
-**Status:** Canonical, keystone document. Every other document in this set
+**Status:** Historical (was labeled canonical), keystone document. Every other document in this set
 assumes this one. If you only read one document before touching code, read
 this one.
 

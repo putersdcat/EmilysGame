@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 07 — Education and Knowledge System
 
-**Status:** Canonical. Adapts `archived-planning/Grokipedia_Book_of_Knowledge.md`
+**Status:** Historical (was labeled canonical). Adapts `archived-planning/Grokipedia_Book_of_Knowledge.md`
 and `archived-planning/Knowledge_Capture_Automation.md`.
 
 ---

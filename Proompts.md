@@ -1,4 +1,6 @@
-
+> **HISTORICAL 2026-08-13.** Old paste prompts. Not current law. Do not
+> resume “implement every open GitHub issue against the current tree.”
+> Current law: `AGENTS.md`. Recover intent into `docs/intent/`.
 
 Use the GitHub MCP to quickly pull all the open issues for this project, then after reviewing the body's of each, also look at the ones with a long chain of comments and read the comment chain to find out what is still open and what is done, then create a list of the open items that are still needed to be done, and then prioritize them based on the impact to the overall project and the dependencies between them, then start working on them in that order, making sure to update the status in the issues in GitHub as you go along.
 

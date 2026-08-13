@@ -1,6 +1,13 @@
 # Emily's Game — Design documentation
 
-**Read first for code work:** root [`AGENTS.md`](../AGENTS.md) and [`ARCHITECTURE.md`](../ARCHITECTURE.md).
+> **HISTORICAL as of 2026-08-13.** This set is memory of work past, including
+> a cleaned/diluted restatement of earlier genius. Current law:
+> [`AGENTS.md`](../AGENTS.md). Living recovered design:
+> [`docs/intent/`](intent/README.md). Scavenge these files. Do not obey
+> “no speculative rewrites,” paint-only, or closed-campaign framing.
+
+**Read first:** root [`AGENTS.md`](../AGENTS.md) and [`docs/intent/`](intent/README.md).
+[`ARCHITECTURE.md`](../ARCHITECTURE.md) is historical.
 
 ## Reading order
 
@@ -34,8 +41,9 @@ Also: root [`ARCHITECTURE.md`](../ARCHITECTURE.md), [`memories/repo/`](../memori
 
 ## Agent notes (short)
 
-Canonical **live** product notes: [`memories/repo/`](../memories/repo/) + this Docs set.  
-**Archives are restored on purpose** for AmysGame / future agents — mine ideas, do not re-bind Emily's iso FOV laws as product law.
+**Nothing in this folder is live law.** Recover into [`docs/intent/`](intent/README.md).
+Archives exist to be scavenged for Emily’s Game rewrite — not only AmysGame.
+Do not re-bind old FOV / paint-only / no-greenfield rules from these pages.
 
 ## Out of tree
 

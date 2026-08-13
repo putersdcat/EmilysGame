@@ -1,11 +1,16 @@
 # 13 — Development Roadmap
 
-**Status:** Living document. Assumes `12`. This document is about *how* the
-rest of this set gets applied to real work, not a new design.
+> **HISTORICAL as of 2026-08-13.** The “no speculative rewrites” constraint
+> in §1 is **repealed**. Current law: root `AGENTS.md`. Recover intent into
+> `docs/intent/`, then rewrite on `rewrite/intent-first`.
+
+**Status:** Historical. Assumes historical `12`.
 
 ---
 
 ## 1. The standing constraint: no speculative rewrites
+
+> **Repealed 2026-08-13.** Kept below as a record of the rule that boxed agents.
 
 This repository has an explicit, prior user directive
 (`/memories/repo/code-organization-philosophy.md`) against reorganizing

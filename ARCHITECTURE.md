@@ -1,9 +1,13 @@
 # Emily's Game — Engine Architecture
 
-**Status:** Living document · **Product branch:** `experiment/isometric-2.0`
+> **HISTORICAL as of 2026-08-13.** Snapshot of a tree the owner no longer trusts.
+> Current law: root [`AGENTS.md`](AGENTS.md). Living design: [`docs/intent/`](docs/intent/README.md).
+> Do not treat this file, or its module-size links, as a reason to keep or incrementally patch `src/`.
 
-> Canonical architectural reference. Read with root [AGENTS.md](AGENTS.md).
-> Module-size discipline: [`.github/instructions/architecture.instructions.md`](.github/instructions/architecture.instructions.md).
+**Status:** Historical · **Former product branch:** `experiment/isometric-2.0`
+
+> Former architectural reference. Recover intent from archives/issues into `docs/intent/`.
+> Module-size discipline in `.github/instructions/architecture.instructions.md` is superseded.
 
 ---
 

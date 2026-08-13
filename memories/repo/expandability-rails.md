@@ -1,3 +1,7 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # Expandability rails — scene-first product base
 
 **Status:** Place Coherence landed (2026-07-19); scene-first PR7 base (2026-07-16)  

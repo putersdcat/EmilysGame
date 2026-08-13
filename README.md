@@ -6,13 +6,17 @@ Isometric browser adventure (TypeScript + Vite + Canvas 2D): places, quiz gates,
 
 | Doc | Why |
 |-----|-----|
-| **[AGENTS.md](AGENTS.md)** | Product laws, branch, where code goes — **read first** |
-| **[ARCHITECTURE.md](ARCHITECTURE.md)** | Engine layers, pipelines, save model |
-| **[Docs/00-INDEX.md](Docs/00-INDEX.md)** | Design doc map (`docs/01`–`11`) |
-| **[.github/copilot-instructions.md](.github/copilot-instructions.md)** | Copilot session habits |
+| **[AGENTS.md](AGENTS.md)** | **Current law** (replaced 2026-08-13) — read first |
+| **[Docs/intent/](Docs/intent/README.md)** | Living recovered design. Write here. |
+| **[memories/repo/cutover-prompt-2026-08-13.md](memories/repo/cutover-prompt-2026-08-13.md)** | Paste after `/new` |
 
-**Product branch:** `experiment/isometric-2.0`  
-**App code:** `src/` (not the nested `experiment/` package — that is AiTools + legacy iso sources for MCP).
+`Docs/01`–`13`, `ARCHITECTURE.md`, `memories/repo/*`, archives, and
+`.github/instructions` / `.github/agents` are **historical**. Scavenge.
+Do not treat `src/` as the thing to extend.
+
+**Rewrite branch:** `rewrite/intent-first`  
+**Old product tip (crime scene):** `experiment/isometric-2.0` / `src/`  
+Nested `experiment/` is AiTools + legacy iso sources, not the rewrite target.
 
 ## Run
 
@@ -34,9 +38,10 @@ src/game/        # loop systems, save, audio, menus
 src/ui/          # DOM HUD
 src/config/      # content knobs
 tests/           # Playwright
-Docs/            # design (01–11)
-memories/repo/   # short agent design notes (not session chat dumps)
-.github/agents/  # optional Copilot personas (GameMan, …)
+Docs/intent/     # living recovered design (current)
+Docs/            # historical design (01–13) + archives
+memories/repo/   # historical agent notes — not law
+.github/agents/  # repealed personas — do not invoke
 experiment/isometric-2.0/AiTools/  # isoSvgRenderer MCP (optional)
 ```
 

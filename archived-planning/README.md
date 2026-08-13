@@ -1,3 +1,7 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # Archived Planning Documents
 
 These Markdown files were the original planning and design documents for Emily's Game. They have been **migrated to GitHub Issues** as part of the native GitHub project management setup.

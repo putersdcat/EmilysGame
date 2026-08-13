@@ -1,6 +1,14 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # Definitive path forward — one determination (2026-07-16)
 
-**Status:** Binding recommendation — **campaign P0–P2 executed (2026-07-16)**  
+> **HISTORICAL 2026-08-13.** The “one path” here was stay-on-branch
+> scene-first incrementalism. That campaign is historical. Current law:
+> `AGENTS.md`. Recover intent; rewrite on `rewrite/intent-first`.
+
+**Status:** Historical — **campaign P0–P2 executed (2026-07-16)**  
 **Question answered:** What path is *most likely* to deliver the best long-term outcome in the *shortest* calendar time — not merely a throwaway MVP, but a **clean, focused base engine/game** that can grow learning content, assets, characters, and side quests?
 
 **Prior note:** `first-principles-path-forward-2026-07-16.md` surveyed options. This document **collapses to one path** with evidence and a concrete operating model.

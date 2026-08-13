@@ -1,9 +1,13 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 01 — Game Vision & Design Pillars
 
-**Status:** Canonical · **Supersedes:** `archive-2026-07-14/README.md`,
+**Status:** Historical (was labeled canonical) · **Supersedes:** `archive-2026-07-14/README.md`,
 the original `archived-planning/NewGame_GameBible_StartHere.md` (still the
-primary historical source — read it for full original color; this document
-is the current, living restatement).
+primary historical source — read it for full original color). This cleaned
+restatement is also historical as of 2026-08-13.
 
 ---
 

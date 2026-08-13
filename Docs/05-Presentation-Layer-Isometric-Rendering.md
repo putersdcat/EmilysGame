@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 05 — Presentation Layer: Isometric Rendering
 
-**Status:** Canonical. Assumes `02` and `03`. Adapts and supersedes
+**Status:** Historical (was labeled canonical). Assumes `02` and `03`. Adapts and supersedes
 `archive-2026-07-14/WorldEngine-04-RenderingPipeline.md` and the rendering-
 relevant portions of `WorldEngine-01-SpatialHierarchy.md` §3.2 (the Nano
 tile's render-family concepts, which belong here, not in `03`).

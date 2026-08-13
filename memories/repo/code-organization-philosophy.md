@@ -1,5 +1,11 @@
 # Code organization philosophy (user directive, 2026-07-09 — overrides stale instruction-file line-count ceilings)
 
+> **HISTORICAL / SUPERSEDED 2026-08-13 as a ban on rewrite.** Line-count
+> ceilings were already not a reason to split files. That does **not**
+> mean keep the current tree. Current law: root `AGENTS.md` — recover
+> intent, then rewrite from scratch. This note remains useful only as
+> “don’t split files for aesthetics while you are still in a tree.”
+
 **User's exact framing (verbatim intent, paraphrased minimally):** decomposition
 work "does not really move the needle in terms of delivering the game and is
 token heavy busy work." Defined maximum line numbers "are not really relevant."

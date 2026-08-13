@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 10 — UI, UX, and Accessibility
 
-**Status:** Canonical. Adapts the UI/Menu sections of `archived-planning/
+**Status:** Historical (was labeled canonical). Adapts the UI/Menu sections of `archived-planning/
 NewGame_GameBible_StartHere.md` and `archived-planning/NewGame_Isometric_PoC.md`.
 
 ---

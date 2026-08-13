@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 09 — Audio Design
 
-**Status:** Canonical. Adapts `archive-2026-07-14/Audio_Asset_Sourcing_Brief.md`
+**Status:** Historical (was labeled canonical). Adapts `archive-2026-07-14/Audio_Asset_Sourcing_Brief.md`
 and the audio sections of `archived-planning/NewGame_GameBible_StartHere.md`.
 
 ---

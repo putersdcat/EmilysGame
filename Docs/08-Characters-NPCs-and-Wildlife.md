@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 08 — Characters, NPCs, and Wildlife
 
-**Status:** Canonical. Adapts `archived-planning/Character_Sprite_System.md`
+**Status:** Historical (was labeled canonical). Adapts `archived-planning/Character_Sprite_System.md`
 and the NPC/character sections of `archived-planning/NewGame_GameBible_
 StartHere.md`.
 

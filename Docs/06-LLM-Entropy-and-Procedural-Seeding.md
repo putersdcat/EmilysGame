@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 06 — LLM Entropy and Procedural Seeding
 
-**Status:** Canonical. Adapts `archived-planning/NewGame_LlmEntropyAddendum.md`
+**Status:** Historical (was labeled canonical). Adapts `archived-planning/NewGame_LlmEntropyAddendum.md`
 (still the richest historical source — read it for full original detail;
 this document restates the mechanic in light of `02`'s principle and notes
 what's changed operationally since).

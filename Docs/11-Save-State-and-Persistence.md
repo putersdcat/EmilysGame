@@ -1,6 +1,10 @@
+> **HISTORICAL as of 2026-08-13.** Memory of work past. Not living law.
+> Current law: root `AGENTS.md`. Living design: `docs/intent/`.
+> Scavenge ideas. Do not obey paint-only / no-greenfield / stay-on-branch /
+> closed-campaign / FOV-lock / one-scoped-goal framing in this file.
 # 11 — Save, State, and Persistence
 
-**Status:** Canonical. Adapts the save/load sections of `archived-planning/
+**Status:** Historical (was labeled canonical). Adapts the save/load sections of `archived-planning/
 NewGame_GameBible_StartHere.md` and the determinism principle from `03` §8.
 
 ---
